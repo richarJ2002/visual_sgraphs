@@ -341,6 +341,9 @@ int main(int argc, char **argv)
     vs_graphs::common::setupPublishers(node, image_transport, nodeName);
     vs_graphs::common::setupServices(node, nodeName);
 
+    /* Exchange wall slabs with Voxblox in the skeleton callback group */
+    vs_graphs::common::setupWallSlabProfileClient(node, skeletonCallbackGroup);
+
     /* Syncing images with IMU */
     std::thread sync_thread(
         &vs_graphs::image_grabber::ImageGrabber::syncWithImu,

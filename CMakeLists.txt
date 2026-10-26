@@ -82,6 +82,7 @@ find_package(situational_graphs_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(voxblox_msgs REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -312,6 +313,7 @@ set(COMMON_DEPENDENCIES
   pcl_ros
   segmenter_ros
   situational_graphs_msgs
+  voxblox_msgs
 )
 
 # ---------------------------------------------------------------------------

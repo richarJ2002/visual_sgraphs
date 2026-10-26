@@ -183,6 +183,12 @@
 #include <situational_graphs_msgs/msg/rooms_data.hpp>
 
 /* -------------------------------------------------------------------------- *
+ * VOXBLOX SERVICES
+ * -------------------------------------------------------------------------- */
+
+#include <voxblox_msgs/srv/get_plane_slab_profiles.hpp>
+
+/* -------------------------------------------------------------------------- *
  * VISUAL S-GRAPHS MESSAGES AND SERVICES
  * -------------------------------------------------------------------------- */
 
@@ -405,6 +411,21 @@ extern std::string frameSE;
  * @note            Global variable declared in `commonStat.cpp`
  */
 extern std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
+
+/*!
+ * @brief           Client of the Voxblox plane-slab profile service; created
+ *                  by setupWallSlabProfileClient(), released by
+ *                  shutdownRosInterfaces().
+ */
+extern rclcpp::Client<voxblox_msgs::srv::GetPlaneSlabProfiles>::SharedPtr
+    p_wallSlabProfileClient;
+
+/*!
+ * @brief           Node-clock timer that sends the wall-slab queries to
+ *                  Voxblox; created by setupWallSlabProfileClient(), released
+ *                  by shutdownRosInterfaces().
+ */
+extern rclcpp::TimerBase::SharedPtr p_wallSlabProfileTimer;
 
 /*!
  * @brief           TF listener responsible for populating tfBuffer_.
@@ -1015,6 +1036,25 @@ extern bool
                          const rclcpp::Time               &msgTime_in,
                          geometry_msgs::msg::PointStamped &roomPointSE_out,
                          geometry_msgs::msg::PointStamped &roomPointWorld_out);
+
+/*!
+ * @brief           Resolves the latest transformation from a TF frame into the
+ *                  configured world frame (identity when they are equal).
+ *
+ * @param[in]       sourceFrameId_in
+ *                  TF frame the data is expressed in.
+ *
+ * @param[out]      frameTransform_sourceToWorld_out
+ *                  Maps a point in the source frame to the world frame;
+ *                  identity on failure.
+ *
+ * @return          True when the transformation was resolved; false (with a
+ *                  warning) when a frame is empty, the TF buffer is missing or
+ *                  the lookup fails or is not finite.
+ */
+extern bool lookupWorldFromFrameTransform(
+    const std::string &sourceFrameId_in,
+    tf2::Transform    &frameTransform_sourceToWorld_out);
 
 /*!
  * @brief           Resolves the transformation from a Voxblox skeleton marker's
@@ -1680,6 +1720,28 @@ extern void setupPublishers(
  *                  has been finalised, which crashes the process at exit.
  */
 extern void shutdownRosInterfaces();
+
+/*!
+ * @brief           Starts the Voxblox wall-slab exchange: a 1 s node-clock
+ *                  timer reads the semantic thread's wall-slab queries, sends
+ *                  them (world frame converted to the TSDF frame) to
+ *                  /voxblox_skeletonizer/get_plane_slab_profiles with at most
+ *                  one request in flight, and hands each answer back to the
+ *                  semantic thread. Never takes the semantic update lock.
+ *
+ *                  The timer, the client and the response all run in
+ *                  callbackGroup_in, which must be mutually exclusive: that
+ *                  serialises the exchange state without a mutex.
+ *
+ * @param[in]       node_in
+ *                  ROS node owning the timer and the client.
+ *
+ * @param[in]       callbackGroup_in
+ *                  Mutually exclusive callback group for the exchange.
+ */
+extern void setupWallSlabProfileClient(
+    const std::shared_ptr<rclcpp::Node>    &node_in,
+    const rclcpp::CallbackGroup::SharedPtr &callbackGroup_in);
 
 /*!
  * @brief           Initialises the ROS services provided by the Visual S-Graphs

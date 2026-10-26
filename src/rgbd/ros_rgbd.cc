@@ -349,6 +349,9 @@ int main(int argc, char **argv)
     /* Setup services for system */
     vs_graphs::common::setupServices(node, nodeName);
 
+    /* Exchange wall slabs with Voxblox in the skeleton callback group */
+    vs_graphs::common::setupWallSlabProfileClient(node, skeletonCallbackGroup);
+
     /* ---------------------------------------------------------------------- *
      * SENSOR PROCESSING THREAD
      * ---------------------------------------------------------------------- */
