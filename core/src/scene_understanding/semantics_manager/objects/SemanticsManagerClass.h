@@ -38,6 +38,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <pcl/PCLPointCloud2.h>
@@ -496,6 +497,14 @@ class SemanticsManager
      *                  idempotent, only the log line needs deduplicating.
      */
     std::set<std::pair<int, int>> loggedPassageMergeIds;
+
+    /*!
+     * @brief           Last logged twin-face state of a wall pair (lower id,
+     *                  higher id), as "<state>:<check>" (for example
+     *                  UNLINKED:OBSERVED_FROM_SAME_SIDE), so the twin_face
+     *                  event is emitted once per pair per state change.
+     */
+    std::map<std::pair<int, int>, std::string> loggedTwinFaceStates;
 
     /*!
      * @brief           Maximum number of prospective rooms allowed

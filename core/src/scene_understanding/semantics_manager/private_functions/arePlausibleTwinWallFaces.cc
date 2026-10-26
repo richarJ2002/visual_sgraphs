@@ -30,6 +30,7 @@
 
 #include "mapping/geometry_helpers/utils.h"
 #include "private_functions.h"
+#include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 
 #include <algorithm>
@@ -48,8 +49,12 @@ SemanticsManagerStatus
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
                               const Eigen::Vector3d &groundNormal_world_in,
-                              bool &arePlausibleTwinWallFaces_out)
+                              bool          &arePlausibleTwinWallFaces_out,
+                              TwinFaceCheck &decidingCheck_out,
+                              double        &decidingValue_out)
 {
+    decidingValue_out = 0.0;
+
     bool firstIsBad{};
     if (!(p_first_in == nullptr) &&
         p_first_in->isBad(firstIsBad) !=
@@ -74,6 +79,7 @@ SemanticsManagerStatus
         secondIsBad || p_first_in == p_second_in)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::INVALID_PLANE;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -91,6 +97,7 @@ SemanticsManagerStatus
     if (!arePlanesParallel2)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::NOT_PARALLEL;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -121,6 +128,7 @@ SemanticsManagerStatus
         normalNorm1 < 1e-8 || normalNorm2 < 1e-8)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::INVALID_PLANE;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -160,6 +168,8 @@ SemanticsManagerStatus
         separation_m > maximumThickness_m_in)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::THICKNESS_OUT_OF_RANGE;
+        decidingValue_out             = separation_m;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -193,6 +203,7 @@ SemanticsManagerStatus
         /* Planes created before the stamp existed carry no face identity;
          * make no claim rather than a wrong one. */
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::NO_OBSERVATION_ORIGIN;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -206,6 +217,10 @@ SemanticsManagerStatus
     const double side2AtOrigin2 =
         equation2.head<3>().dot(origin2.value()) + equation2(3);
 
+    const double smallestOriginSide_m = std::min({std::abs(side1AtOrigin1),
+                                                  std::abs(side1AtOrigin2),
+                                                  std::abs(side2AtOrigin1),
+                                                  std::abs(side2AtOrigin2)});
     if (!std::isfinite(side1AtOrigin1) || !std::isfinite(side1AtOrigin2) ||
         !std::isfinite(side2AtOrigin1) || !std::isfinite(side2AtOrigin2) ||
         std::abs(side1AtOrigin1) < minimumResolvableSide_m ||
@@ -214,6 +229,8 @@ SemanticsManagerStatus
         std::abs(side2AtOrigin2) < minimumResolvableSide_m)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out = TwinFaceCheck::OBSERVATION_SIDE_UNRESOLVED;
+        decidingValue_out = smallestOriginSide_m;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -223,6 +240,7 @@ SemanticsManagerStatus
     if (!oppositeAcrossPlane1 || !oppositeAcrossPlane2)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::OBSERVED_FROM_SAME_SIDE;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -291,6 +309,7 @@ SemanticsManagerStatus
     if (!isProjected || !isProjected2)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::NO_FOOTPRINT_OVERLAP;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -302,6 +321,7 @@ SemanticsManagerStatus
     if (overlapU_m <= 0.0 || overlapV_m <= 0.0)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::NO_FOOTPRINT_OVERLAP;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -313,11 +333,15 @@ SemanticsManagerStatus
     if (!std::isfinite(smallerArea_m2) || smallerArea_m2 < 1e-6)
     {
         arePlausibleTwinWallFaces_out = false;
+        decidingCheck_out             = TwinFaceCheck::NO_FOOTPRINT_OVERLAP;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    arePlausibleTwinWallFaces_out =
-        (overlapArea_m2 / smallerArea_m2) >= minimumOverlapRatio_in;
+    decidingValue_out             = overlapArea_m2 / smallerArea_m2;
+    arePlausibleTwinWallFaces_out = decidingValue_out >= minimumOverlapRatio_in;
+    decidingCheck_out             = arePlausibleTwinWallFaces_out
+                                        ? TwinFaceCheck::PLAUSIBLE
+                                        : TwinFaceCheck::LOW_OVERLAP;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

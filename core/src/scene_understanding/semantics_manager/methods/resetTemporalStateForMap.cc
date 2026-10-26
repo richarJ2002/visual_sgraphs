@@ -84,6 +84,7 @@ SemanticsManagerStatus
         loggedWallRejectionReasons.clear();
         loggedRetiredWallIds.clear();
         loggedRoomCleanupIds.clear();
+        loggedTwinFaceStates.clear();
     }
     else if (frameChanged && hasTraversalKeyFrameCursor)
     {

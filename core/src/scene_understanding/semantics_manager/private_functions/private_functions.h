@@ -20,6 +20,7 @@
 
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
 #include "configuration/types/types.h"
 
 namespace vs_graphs::core::map
@@ -645,6 +646,21 @@ Eigen::Quaterniond
  *                  opposite faces of the same physical wall (axiom (e)):
  *                  parallel, a plausible wall thickness apart, observed from
  *                  opposite exterior sides, and overlapping in-plane footprint.
+ *
+ * @param[out]      arePlausibleTwinWallFaces_out
+ *                  True when every check passes.
+ *
+ * @param[out]      decidingCheck_out
+ *                  PLAUSIBLE, or the first check that failed.
+ *
+ * @param[out]      decidingValue_out
+ *                  Measurement behind decidingCheck_out: the face separation
+ *                  in metres for THICKNESS_OUT_OF_RANGE, the smallest
+ *                  observation-origin distance from a face plane in metres for
+ *                  OBSERVATION_SIDE_UNRESOLVED, the footprint overlap ratio
+ *                  for PLAUSIBLE and LOW_OVERLAP; 0 otherwise.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticsManagerStatus
     arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
@@ -653,7 +669,9 @@ Eigen::Quaterniond
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
                               const Eigen::Vector3d &groundNormal_world_in,
-                              bool &arePlausibleTwinWallFaces_out);
+                              bool          &arePlausibleTwinWallFaces_out,
+                              TwinFaceCheck &decidingCheck_out,
+                              double        &decidingValue_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */
