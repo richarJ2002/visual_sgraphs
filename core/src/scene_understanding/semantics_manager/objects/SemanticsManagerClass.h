@@ -327,8 +327,10 @@ class SemanticsManager
     /*!
      * @brief           Latest UAV camera centre in the active map frame.
      *
-     *                  Maintained while consuming ordered keyframes so
-     *                  traversal tests cover every consecutive camera segment.
+     *                  Refreshed at the start of each semantic cycle
+     *                  (refreshCurrentCameraCenter()) and advanced by
+     *                  updateTraversalEvidence() while it replays ordered
+     *                  keyframes, which ends on the newest one again.
      */
     Eigen::Vector3d currentCameraCenter_world_m = Eigen::Vector3d::Zero();
 
@@ -732,21 +734,19 @@ class SemanticsManager
         detachWallsBeyondConfirmedPassages(void);
 
     /*!
-     * @brief           Reads the camera centre of the newest usable key frame
-     *                  of the active map.
+     * @brief           Sets currentCameraCenter_world_m to the camera centre of
+     *                  the newest usable key frame of the active map; called
+     *                  once at the start of each semantic cycle.
      *
      *                  A key frame is usable when it is not bad and its centre
      *                  is finite and not exactly zero (an exactly-zero centre
      *                  marks an uninitialised first-frame pose).
-     *
-     * @param[out]      cameraCenter_world_m_out
-     *                  Camera centre in the active map frame, metres; empty
-     *                  when there is no active map or no usable key frame.
+     *                  hasCameraCenter is false when there is no active map or
+     *                  no usable key frame.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
      */
-    [[nodiscard]] SemanticsManagerStatus getCurrentCameraCenter(
-        std::optional<Eigen::Vector3d> &cameraCenter_world_m_out);
+    [[nodiscard]] SemanticsManagerStatus refreshCurrentCameraCenter(void);
 
     /*!
      * @brief           Chooses the point a room is seen from: the current

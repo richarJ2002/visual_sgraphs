@@ -30,7 +30,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterWallPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentCameraCenter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLatestSkeletonCluster.cc
@@ -52,6 +51,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/partitionFreeSpaceAtPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/processRoomTrackerPendingForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/recomputeRoomCentroidsFromWalls.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/refreshCurrentCameraCenter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanesForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileWallFacePairs.cc

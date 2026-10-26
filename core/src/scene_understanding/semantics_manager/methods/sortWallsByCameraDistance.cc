@@ -45,16 +45,6 @@ namespace core
 SemanticsManagerStatus SemanticsManager::sortWallsByCameraDistance(
     std::vector<geometric::Plane *> &walls_inout)
 {
-    std::optional<Eigen::Vector3d> cameraCenter_world_m{};
-    if (getCurrentCameraCenter(cameraCenter_world_m) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCurrentCameraCenter returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     /* Ground axes exactly as admitWallToRoom() builds them, so the distance
      * is measured on the same finite segments admission reasons about. */
     Eigen::Vector3d   groundNormal_world = Eigen::Vector3d::Zero();
@@ -98,7 +88,7 @@ SemanticsManagerStatus SemanticsManager::sortWallsByCameraDistance(
         }
     }
     const bool canMeasureDistance =
-        cameraCenter_world_m.has_value() && !groundNormal_world.isZero();
+        hasCameraCenter && !groundNormal_world.isZero();
     const Eigen::Vector3d groundAxisU_world =
         groundNormal_world.unitOrthogonal().normalized();
     const Eigen::Vector3d groundAxisV_world =
@@ -166,8 +156,8 @@ SemanticsManagerStatus SemanticsManager::sortWallsByCameraDistance(
             if (canMeasureDistance && isBuilt)
             {
                 const Eigen::Vector2d cameraGround_world_m(
-                    cameraCenter_world_m->dot(groundAxisU_world),
-                    cameraCenter_world_m->dot(groundAxisV_world));
+                    currentCameraCenter_world_m.dot(groundAxisU_world),
+                    currentCameraCenter_world_m.dot(groundAxisV_world));
                 if (pointToSegmentDistance_m(cameraGround_world_m,
                                              wallSegment,
                                              cameraDistance_m) !=

@@ -127,6 +127,17 @@ void SemanticsManager::run(void)
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
+        /* One camera centre per cycle for bootstrap, admission ordering and
+         * the room viewpoint. */
+        if (refreshCurrentCameraCenter() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: refreshCurrentCameraCenter returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
         SemanticsManager::ActiveMapBootstrapResult bootstrapResult{};
         if (ensureActiveMapBootstrapHierarchy(bootstrapResult) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

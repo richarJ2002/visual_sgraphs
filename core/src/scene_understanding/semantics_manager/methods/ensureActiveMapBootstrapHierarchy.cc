@@ -233,24 +233,14 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     }
     else
     {
-        std::optional<Eigen::Vector3d> currentCameraCenter_world_m{};
-        if (getCurrentCameraCenter(currentCameraCenter_world_m) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        /* Refreshed at the start of this cycle; an exactly-zero centre is
+         * never accepted there (refreshCurrentCameraCenter()): accepting it
+         * misplaces the bootstrap room and poisons centroid-distance matching
+         * for the cycles until walls correct it. Fall through to the snapshot
+         * centroid, else yield and retry once poses exist. */
+        if (hasCameraCenter && p_cameraCenterMap == p_activeMap)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCurrentCameraCenter returned a failure "
-                         "status although it cannot fail; continuing as "
-                         "before.",
-                         __func__);
-        }
-        /* An exactly-zero centre is never accepted (see
-         * getCurrentCameraCenter()): accepting it misplaces the bootstrap
-         * room and poisons centroid-distance matching for the cycles until
-         * walls correct it. Fall through to the snapshot centroid, else
-         * yield and retry once poses exist. */
-        if (currentCameraCenter_world_m.has_value())
-        {
-            cameraPosition_world_m  = currentCameraCenter_world_m.value();
+            cameraPosition_world_m  = currentCameraCenter_world_m;
             hasUsableCameraPosition = true;
         }
     }

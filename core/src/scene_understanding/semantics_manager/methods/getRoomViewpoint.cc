@@ -96,18 +96,9 @@ SemanticsManagerStatus SemanticsManager::getRoomViewpoint(
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    std::optional<Eigen::Vector3d> cameraCenter_world_m{};
-    if (getCurrentCameraCenter(cameraCenter_world_m) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    if (hasCameraCenter && p_cameraCenterMap == p_activeMap)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCurrentCameraCenter returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (cameraCenter_world_m.has_value())
-    {
-        roomViewpoint_world_m_out = cameraCenter_world_m.value();
+        roomViewpoint_world_m_out = currentCameraCenter_world_m;
         isCameraViewpoint_out     = true;
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

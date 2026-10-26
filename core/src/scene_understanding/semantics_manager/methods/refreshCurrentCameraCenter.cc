@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            getCurrentCameraCenter.cc
+ * @file            refreshCurrentCameraCenter.cc
  *
- * @brief           Implements SemanticsManager::getCurrentCameraCenter(),
+ * @brief           Implements SemanticsManager::refreshCurrentCameraCenter(),
  *                  declared in SemanticsManager.h.
  */
 
@@ -38,10 +38,9 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::getCurrentCameraCenter(
-    std::optional<Eigen::Vector3d> &cameraCenter_world_m_out)
+SemanticsManagerStatus SemanticsManager::refreshCurrentCameraCenter(void)
 {
-    cameraCenter_world_m_out.reset();
+    hasCameraCenter = false;
 
     map::Map *p_activeMap = nullptr;
     if ((p_atlas != nullptr) && p_atlas->getCurrentMap(p_activeMap) !=
@@ -106,7 +105,9 @@ SemanticsManagerStatus SemanticsManager::getCurrentCameraCenter(
         if (keyFrameCameraCenter_world_m.allFinite() &&
             !keyFrameCameraCenter_world_m.isZero())
         {
-            cameraCenter_world_m_out = keyFrameCameraCenter_world_m;
+            currentCameraCenter_world_m = keyFrameCameraCenter_world_m;
+            hasCameraCenter             = true;
+            p_cameraCenterMap           = p_activeMap;
             break;
         }
     }
