@@ -35,6 +35,7 @@
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/semantic/value_order/value_order.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
@@ -1127,17 +1128,11 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         /*!
          * @brief           Perspective guard: a wall observed through an
          *                  opening is on the far side of the passage's
-         *                  supporting wall and therefore cannot bound the near
-         *                  room. Bind such walls to the passage's prospective
-         *                  room instead, where they can later be matched by
-         *                  independently validated far-side cluster evidence.
-         *                  Keyed by the room centroid so the near side stays
-         *                  stable. When no prospective exists yet, the wall is
-         *                  left off the near room so it can bind onto a
-         *                  prospective created later in the same cycle. The
-         *                  crossing geometry alone drives the far-side
-         *                  decision, independent of the passage's passability
-         *                  state.
+         *                  supporting wall and therefore cannot bound this
+         *                  room. enforcePassageApertureBackstop() decides and
+         *                  applies the routing, the same check wall admission
+         *                  uses, so cluster-driven and orphan-driven admission
+         *                  route a far-side wall identically.
          */
         for (vs_graphs::core::geometric::Plane *wall : closestWalls)
         {
@@ -1158,9 +1153,9 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
 
             /*!
-             * @brief           Reroute far-side walls to the passage's
-             *                  prospective room. The ground normal is needed to
-             *                  project the aperture crossing.
+             * @brief           Route far-side walls away from this room.
+             *                  The ground normal is needed to project the
+             *                  aperture crossing.
              */
             bool farSideBound = false;
             {
@@ -1218,303 +1213,26 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                for (semantic::Passage *p_passage : atlasAllPassages2)
+                std::sort(atlasAllPassages2.begin(),
+                          atlasAllPassages2.end(),
+                          semantic::isEntityIdLess<semantic::Passage>);
+
+                PassageSideEnforcementOutcome outcome{};
+                if (enforcePassageApertureBackstop(p_room,
+                                                   wall,
+                                                   atlasAllPassages2,
+                                                   groundNormal_world,
+                                                   outcome) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
-                    if (p_passage == nullptr)
-                    {
-                        continue;
-                    }
-
-                    /* The aperture geometry alone decides the far side; the
-                     * passage need not yet be passable or have a prospective.
-                     */
-                    Eigen::Vector3d roomCentroid{};
-                    if (p_room->getCentroid(roomCentroid) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getCentroid returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    Eigen::Vector3d wallGetCentroid{};
-                    if (wall->getCentroid(wallGetCentroid) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getCentroid returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    bool crossesPassageOpening{};
-                    if (segmentCrossesPassageOpening(
-                            roomCentroid,
-                            wallGetCentroid.cast<double>(),
-                            p_passage,
-                            groundNormal_world,
-                            static_cast<double>(
-                                p_sysParams->roomSeg.passagePartition
-                                    .openingMargin_m),
-                            static_cast<double>(
-                                p_sysParams->roomSeg.passagePartition
-                                    .minimumSideDistance_m),
-                            crossesPassageOpening,
-                            false) != SemanticsManagerStatus::
-                                          SEMANTICS_MANAGER_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: segmentCrossesPassageOpening "
-                                     "returned a failure status although it "
-                                     "cannot fail; continuing as before.",
-                                     __func__);
-                    }
-                    if (!crossesPassageOpening)
-                    {
-                        continue;
-                    }
-
-                    /* The wall lies beyond the opening: it belongs to the far
-                     * room, which the free-space clustering will create and
-                     * claim. The wall is held on the passage's prospective room
-                     * so it keeps accumulating walls and is not re-absorbed by
-                     * the near room, nor stolen by a confirmed room. Only
-                     * divert a wall that is still unowned or owned by the near
-                     * room, so a wall already bound to a distinct confirmed
-                     * room is never stolen. */
-                    bool                          ownedByConfirmedRoom = false;
-                    std::vector<semantic::Room *> atlasAllRooms{};
-                    if (p_atlas->getAllRooms(atlasAllRooms) !=
-                        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getAllRooms returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    for (vs_graphs::core::semantic::Room *p_other :
-                         atlasAllRooms)
-                    {
-                        bool otherIsBad{};
-                        if (!(p_other == nullptr) &&
-                            p_other->isBad(otherIsBad) !=
-                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: isBad returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        semantic::Room::RoomVariant otherRoomVariant{};
-                        if (!(p_other == nullptr || otherIsBad ||
-                              p_other == p_room) &&
-                            p_other->getRoomVariant(otherRoomVariant) !=
-                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getRoomVariant returned a "
-                                         "failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
-                        }
-                        if (p_other == nullptr || otherIsBad ||
-                            p_other == p_room ||
-                            otherRoomVariant ==
-                                vs_graphs::core::semantic::Room::RoomVariant::
-                                    UNDEFINED)
-                        {
-                            continue;
-                        }
-                        std::vector<geometric::Plane *> otherWalls{};
-                        if (p_other->getWalls(otherWalls) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getWalls returned a failure "
-                                         "status although it cannot fail; "
-                                         "continuing as before.",
-                                         __func__);
-                        }
-                        if (std::find(otherWalls.begin(),
-                                      otherWalls.end(),
-                                      wall) != otherWalls.end())
-                        {
-                            ownedByConfirmedRoom = true;
-                            break;
-                        }
-                    }
-                    if (ownedByConfirmedRoom)
-                    {
-                        break;
-                    }
-
-                    vs_graphs::core::semantic::Room *p_prospectiveRoom =
-                        nullptr;
-                    if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getProspectiveRoom returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-
-                    bool prospectiveRoomIsBad{};
-                    if (!(p_prospectiveRoom == nullptr) &&
-                        p_prospectiveRoom->isBad(prospectiveRoomIsBad) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: isBad returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (p_prospectiveRoom == nullptr || prospectiveRoomIsBad)
-                    {
-                        /* The far-side room does not exist yet (it may be
-                         * created later in this cycle by
-                         * associatePassagesToRooms). Keep the wall off the
-                         * near room so it can bind onto the prospective. */
-                        bool roomWasWallRemoved{};
-                        if (p_room->removeWall(wall, roomWasWallRemoved) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            roomWasWallRemoved = false;
-                            RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                        "%s: removeWall rejected its input; "
-                                        "continuing as before.",
-                                        __func__);
-                        }
-                        int wallGetId{};
-                        if (wall->getId(wallGetId) !=
-                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        vs_graphs::core::geometric::Plane
-                            *p_atlasRoomWallPlaneById = nullptr;
-                        if (p_atlas->getRoomWallPlaneById(
-                                wallGetId,
-                                p_atlasRoomWallPlaneById) !=
-                            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getRoomWallPlaneById returned a "
-                                         "failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
-                        }
-                        if (p_atlasRoomWallPlaneById == nullptr)
-                        {
-                            if (p_atlas->addRoomWallPlane(wall) !=
-                                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                            {
-                                RCLCPP_ERROR(
-                                    rclcpp::get_logger("vs_graphs"),
-                                    "%s: addRoomWallPlane returned a failure "
-                                    "status although it cannot fail; "
-                                    "continuing as before.",
-                                    __func__);
-                            }
-                        }
-                        int passageId{};
-                        if (p_passage->getId(passageId) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        int wallGetId2{};
-                        if (wall->getId(wallGetId2) !=
-                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        std::cout
-                            << "[SemMgr] Far-side Wall#" << wallGetId2
-                            << " at Passage#" << passageId
-                            << " has no prospective yet; held unbound for the "
-                               "far-side room."
-                            << std::endl;
-                        farSideBound = true;
-                        break;
-                    }
-
-                    bool roomWasWallRemoved2{};
-                    if (p_room->removeWall(wall, roomWasWallRemoved2) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        roomWasWallRemoved2 = false;
-                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                    "%s: removeWall rejected its input; "
-                                    "continuing as before.",
-                                    __func__);
-                    }
-                    int wallGetId3{};
-                    if (wall->getId(wallGetId3) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    vs_graphs::core::geometric::Plane
-                        *p_atlasRoomWallPlaneById2 = nullptr;
-                    if (p_atlas->getRoomWallPlaneById(
-                            wallGetId3,
-                            p_atlasRoomWallPlaneById2) !=
-                        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: getRoomWallPlaneById returned a "
-                                     "failure status although it cannot fail; "
-                                     "continuing as before.",
-                                     __func__);
-                    }
-                    if (p_atlasRoomWallPlaneById2 == nullptr)
-                    {
-                        if (p_atlas->addRoomWallPlane(wall) !=
-                            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: addRoomWallPlane returned a "
-                                         "failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
-                        }
-                    }
-                    bool wasAdmitted{};
-                    if (admitWallToRoom(p_prospectiveRoom, wall, wasAdmitted) !=
-                        SemanticsManagerStatus::
-                            SEMANTICS_MANAGER_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: admitWallToRoom returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    farSideBound = true;
-                    break;
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: enforcePassageApertureBackstop returned "
+                                 "a failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
                 }
+                farSideBound =
+                    outcome != PassageSideEnforcementOutcome::NO_VIOLATION;
             }
 
             if (farSideBound)
