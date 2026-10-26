@@ -212,7 +212,10 @@ sem_seg:
   # These thresholds decide when two such Planes are plausibly the two faces
   # of the same physical wall (SemanticsManager::reconcileWallFacePairs()).
   wall_pairing:
-    minimum_thickness: 0.05 # metres -- thinnest plausible physical wall
+    # Fitted faces sit closer than the physical wall: the 0.10 m office_clean
+    # walls measure 0.02-0.05 m between faces. Same-face duplicates are still
+    # rejected by the opposite-observation-side test.
+    minimum_thickness: 0.015 # metres
     maximum_thickness: 0.60 # metres -- thickest plausible physical wall
     minimum_overlap_ratio: 0.30 # required in-plane footprint overlap
 
