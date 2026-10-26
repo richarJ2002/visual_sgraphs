@@ -516,10 +516,29 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
+    /* The candidate's other face (reconcileWallFacePairs()) is the same
+     * physical wall. Its fitted plane may differ by a few degrees, so the two
+     * finite segments can cross, but that is not a clash; the face rule
+     * decides which room owns which face. */
+    geometric::Plane *p_candidateTwinFace = nullptr;
+    if (p_candidateWall_in->getTwinFace(p_candidateTwinFace) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTwinFace returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
     std::vector<geometric::Plane *> weakerClashingWalls;
 
     for (geometric::Plane *p_existingWall : existingWalls)
     {
+        if (p_existingWall == nullptr || p_existingWall == p_candidateTwinFace)
+        {
+            continue;
+        }
+
         FiniteWallSegment2d existingSegment;
 
         bool isBuilt2{};
@@ -655,8 +674,8 @@ SemanticsManagerStatus
     /* Cross-room check: real walls only meet at shared corners -- a
      * candidate whose finite segment decisively crosses the interior of
      * another room's already-admitted wall is a modeling error, not a
-     * legitimate admission. (Twin faces from reconcileWallFacePairs() are
-     * parallel by construction and cannot trigger this.) Reject outright
+     * legitimate admission. The candidate's twin face is skipped, as in
+     * the within-room check above. Reject outright
      * rather than perturb the foreign room's wall: ownership of an
      * already-admitted wall is never taken by another room's admission
      * attempt, only by enforceUniqueWallOwnership()/validateRoomBoundaries()'
@@ -699,7 +718,8 @@ SemanticsManagerStatus
         }
         for (geometric::Plane *p_otherWall : otherRoomWalls)
         {
-            if (p_otherWall == nullptr || p_otherWall == p_candidateWall_in)
+            if (p_otherWall == nullptr || p_otherWall == p_candidateWall_in ||
+                p_otherWall == p_candidateTwinFace)
             {
                 continue;
             }
