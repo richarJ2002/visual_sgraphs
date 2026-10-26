@@ -185,6 +185,36 @@ sem_seg:
     minimum_horizontal_flank_extent: 0.35
     # Minimum wall-cloud points required on each side of an opening.
     minimum_horizontal_flank_points: 12
+    # Free-space gap measurement in wall slabs from the Voxblox TSDF.
+    # Door band searched for free space, heights above the floor (metres).
+    door_band_min_height_m: 0.5
+    door_band_max_height_m: 1.5
+    # Accepted gap width range and minimum gap height (metres).
+    minimum_opening_width_m: 0.6
+    maximum_opening_width_m: 2.5
+    minimum_opening_height_m: 1.5
+    # Highest gap bottom above the floor (metres).
+    maximum_sill_height_m: 0.3
+    # Slab raster cell size and half thickness across the wall (metres).
+    slab_cell_size_m: 0.10
+    slab_half_thickness_m: 0.20
+    # Fraction of door-band rows that must be bounded by wall on both ends.
+    minimum_bounded_band_fraction: 0.5
+    # Fraction of aperture cells observed before a verdict is given.
+    minimum_observed_fraction: 0.5
+    # Wall support points inside the shrunk aperture that mean "closed".
+    maximum_aperture_wall_points: 25
+    # Consecutive open verdicts to create a passage.
+    minimum_open_verdicts: 2
+    # Consecutive closed verdicts to delete an observed passage or block a
+    # traversed one.
+    closed_confirmation_count: 3
+    # Consecutive open verdicts to unblock a blocked passage.
+    reopen_confirmation_count: 2
+    # A profile is used only while its wall plane still matches (degrees,
+    # metres).
+    plane_match_angle_deg: 2.0
+    plane_match_offset_m: 0.05
 
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
   min_votes: 1.0

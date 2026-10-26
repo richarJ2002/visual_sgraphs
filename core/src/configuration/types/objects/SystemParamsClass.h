@@ -607,6 +607,85 @@ class SystemParams
              *                  flank.
              */
             unsigned int minimumHorizontalFlankPointCount = 12U;
+            /*!
+             * @brief           Lowest height above the floor of the door band
+             *                  searched for free space through a wall, in
+             *                  metres.
+             */
+            float        doorBandMinHeight_m = 0.5f;
+            /*!
+             * @brief           Highest height above the floor of the door band,
+             *                  in metres.
+             */
+            float        doorBandMaxHeight_m = 1.5f;
+            /*!
+             * @brief           Narrowest wall gap accepted as a passage, in
+             *                  metres.
+             */
+            float        minimumOpeningWidth_m = 0.6f;
+            /*!
+             * @brief           Widest wall gap accepted as a passage, in
+             *                  metres.
+             */
+            float        maximumOpeningWidth_m = 2.5f;
+            /*!
+             * @brief           Lowest gap top accepted as a passage, in metres.
+             */
+            float        minimumOpeningHeight_m = 1.5f;
+            /*!
+             * @brief           Highest gap bottom (sill) above the floor, in
+             *                  metres.
+             */
+            float        maximumSillHeight_m = 0.3f;
+            /*!
+             * @brief           Raster cell size of a wall slab profile, in
+             *                  metres.
+             */
+            float        slabCellSize_m = 0.10f;
+            /*!
+             * @brief           Half thickness of a wall slab sampled across the
+             *                  wall plane, in metres.
+             */
+            float        slabHalfThickness_m = 0.20f;
+            /*!
+             * @brief           Fraction of door-band rows whose free run must
+             *                  end at wall on both sides.
+             */
+            float        minimumBoundedBandFraction = 0.5f;
+            /*!
+             * @brief           Fraction of aperture cells that must be observed
+             *                  for a profile to give an open or closed verdict.
+             */
+            float        minimumObservedFraction = 0.5f;
+            /*!
+             * @brief           Wall support points inside the shrunk aperture
+             *                  that make the opening closed.
+             */
+            unsigned int maximumApertureWallPoints = 25U;
+            /*!
+             * @brief           Consecutive open verdicts that create a passage.
+             */
+            unsigned int minimumOpenVerdicts = 2U;
+            /*!
+             * @brief           Consecutive closed verdicts that delete an
+             *                  observed passage or block a traversed one.
+             */
+            unsigned int closedConfirmationCount = 3U;
+            /*!
+             * @brief           Consecutive open verdicts that unblock a blocked
+             *                  passage.
+             */
+            unsigned int reopenConfirmationCount = 2U;
+            /*!
+             * @brief           Largest wall-normal change for a profile to
+             *                  still describe the wall, in degrees.
+             */
+            float        planeMatchAngle_deg = 2.0f;
+            /*!
+             * @brief           Largest wall-offset change for a profile to
+             *                  still describe the wall, in metres.
+             */
+            float        planeMatchOffset_m = 0.05f;
         };
         /*!
          * @brief           Open-passage evidence extraction settings.

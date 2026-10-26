@@ -222,6 +222,56 @@ SystemParamsStatus
             config["sem_seg"]["passage_detection"]
                   ["minimum_horizontal_flank_points"]
                       .as<unsigned int>();
+        semSeg.passageDetection.doorBandMinHeight_m =
+            config["sem_seg"]["passage_detection"]["door_band_min_height_m"]
+                .as<float>();
+        semSeg.passageDetection.doorBandMaxHeight_m =
+            config["sem_seg"]["passage_detection"]["door_band_max_height_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumOpeningWidth_m =
+            config["sem_seg"]["passage_detection"]["minimum_opening_width_m"]
+                .as<float>();
+        semSeg.passageDetection.maximumOpeningWidth_m =
+            config["sem_seg"]["passage_detection"]["maximum_opening_width_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumOpeningHeight_m =
+            config["sem_seg"]["passage_detection"]["minimum_opening_height_m"]
+                .as<float>();
+        semSeg.passageDetection.maximumSillHeight_m =
+            config["sem_seg"]["passage_detection"]["maximum_sill_height_m"]
+                .as<float>();
+        semSeg.passageDetection.slabCellSize_m =
+            config["sem_seg"]["passage_detection"]["slab_cell_size_m"]
+                .as<float>();
+        semSeg.passageDetection.slabHalfThickness_m =
+            config["sem_seg"]["passage_detection"]["slab_half_thickness_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumBoundedBandFraction =
+            config["sem_seg"]["passage_detection"]
+                  ["minimum_bounded_band_fraction"]
+                      .as<float>();
+        semSeg.passageDetection.minimumObservedFraction =
+            config["sem_seg"]["passage_detection"]["minimum_observed_fraction"]
+                .as<float>();
+        semSeg.passageDetection.maximumApertureWallPoints =
+            config["sem_seg"]["passage_detection"]
+                  ["maximum_aperture_wall_points"]
+                      .as<unsigned int>();
+        semSeg.passageDetection.minimumOpenVerdicts =
+            config["sem_seg"]["passage_detection"]["minimum_open_verdicts"]
+                .as<unsigned int>();
+        semSeg.passageDetection.closedConfirmationCount =
+            config["sem_seg"]["passage_detection"]["closed_confirmation_count"]
+                .as<unsigned int>();
+        semSeg.passageDetection.reopenConfirmationCount =
+            config["sem_seg"]["passage_detection"]["reopen_confirmation_count"]
+                .as<unsigned int>();
+        semSeg.passageDetection.planeMatchAngle_deg =
+            config["sem_seg"]["passage_detection"]["plane_match_angle_deg"]
+                .as<float>();
+        semSeg.passageDetection.planeMatchOffset_m =
+            config["sem_seg"]["passage_detection"]["plane_match_offset_m"]
+                .as<float>();
         semSeg.pointcloud.downsample.leafSize =
             config["sem_seg"]["pointcloud"]["downsample"]["leaf_size"]
                 .as<float>();
@@ -506,6 +556,25 @@ SystemParamsStatus
             passageDetection.minimumCrossingClusterSize < 1U ||
             passageDetection.minimumHorizontalFlankExtent_m <= 0.0F ||
             passageDetection.minimumHorizontalFlankPointCount < 1U ||
+            passageDetection.doorBandMinHeight_m < 0.0F ||
+            passageDetection.doorBandMaxHeight_m <=
+                passageDetection.doorBandMinHeight_m ||
+            passageDetection.minimumOpeningWidth_m <= 0.0F ||
+            passageDetection.maximumOpeningWidth_m <=
+                passageDetection.minimumOpeningWidth_m ||
+            passageDetection.minimumOpeningHeight_m <= 0.0F ||
+            passageDetection.maximumSillHeight_m < 0.0F ||
+            passageDetection.slabCellSize_m <= 0.0F ||
+            passageDetection.slabHalfThickness_m < 0.0F ||
+            passageDetection.minimumBoundedBandFraction <= 0.0F ||
+            passageDetection.minimumBoundedBandFraction > 1.0F ||
+            passageDetection.minimumObservedFraction <= 0.0F ||
+            passageDetection.minimumObservedFraction > 1.0F ||
+            passageDetection.minimumOpenVerdicts < 1U ||
+            passageDetection.closedConfirmationCount < 1U ||
+            passageDetection.reopenConfirmationCount < 1U ||
+            passageDetection.planeMatchAngle_deg <= 0.0F ||
+            passageDetection.planeMatchOffset_m <= 0.0F ||
             passagePartition.edgeVertexAssociationDistance_m <= 0.0F ||
             passagePartition.minimumGraphCoverageRatio <= 0.0F ||
             passagePartition.minimumGraphCoverageRatio > 1.0F ||
