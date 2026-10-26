@@ -211,6 +211,7 @@ SemanticsManagerStatus SemanticsManager::buildWallSlabQueries(
             (centroidHeight_m / upAxisRise) * upAxis_world;
         wallQuery.alongAxis_world = alongAxis_world;
         wallQuery.upAxis_world    = upAxis_world;
+        wallQuery.upAxisRise      = upAxisRise;
         wallQuery.normal_world    = wallNormal_world;
         wallQuery.columnCount     = static_cast<std::uint32_t>(
             std::ceil((maximumAlong_m - minimumAlong_m) / cellSize_m));

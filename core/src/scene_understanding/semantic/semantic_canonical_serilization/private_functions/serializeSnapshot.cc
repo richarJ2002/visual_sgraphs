@@ -75,26 +75,6 @@ nlohmann::json serializeSnapshot(const SemanticGraphSnapshot &snapshot_in,
     json["roomContextHistoryReason"] =
         static_cast<unsigned int>(snapshot_in.roomContextHistoryReason);
 
-    std::vector<OpenPassageHypothesisRecord> openPassageHypotheses =
-        snapshot_in.managerPrivateOpenPassageHypotheses;
-    std::sort(openPassageHypotheses.begin(),
-              openPassageHypotheses.end(),
-              includeGeometry_in
-                  ? &isOpenPassageHypothesisRecordLessFullGeometry
-                  : &isOpenPassageHypothesisRecordLessTopologyOnly);
-    nlohmann::json openPassageHypothesesJson = nlohmann::json::array();
-    for (const OpenPassageHypothesisRecord &hypothesis : openPassageHypotheses)
-    {
-        openPassageHypothesesJson.push_back(
-            serializeOpenPassageHypothesisRecord(hypothesis,
-                                                 includeGeometry_in));
-    }
-    json["managerPrivateOpenPassageHypotheses"] =
-        std::move(openPassageHypothesesJson);
-    json["managerPrivateOpenPassageHypothesesReason"] =
-        static_cast<unsigned int>(
-            snapshot_in.managerPrivateOpenPassageHypothesesReason);
-
     std::vector<UnresolvedWallHypothesisRecord> unresolvedWallHypotheses =
         snapshot_in.managerPrivateUnresolvedWallHypotheses;
     std::sort(unresolvedWallHypotheses.begin(),

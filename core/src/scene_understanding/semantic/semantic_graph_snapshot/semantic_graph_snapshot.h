@@ -12,7 +12,6 @@
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/EntityRefStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/FloorRecordStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/MapSnapshotStruct.h"
-#include "scene_understanding/semantic/semantic_graph_snapshot/objects/OpenPassageHypothesisRecordStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/PassageRecordStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/RawPlaneRefStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/RoomRecordStruct.h"
@@ -105,7 +104,7 @@ namespace vs_graphs::core::semantic
  *                  genuinely WALL-typed and mapped). Public (not
  *                  private_functions.h) because SemanticsManager also needs it
  *                  to convert its own manager-private Plane* evidence
- *                  (openPassageEvidence/undefendedWalls) into pointer-free
+ *                  (undefendedWalls) into pointer-free
  *                  value records at the semantic transaction boundary.
  */
 [[nodiscard]] SemanticGraphSnapshotStatus

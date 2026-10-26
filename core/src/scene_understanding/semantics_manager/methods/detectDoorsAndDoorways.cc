@@ -292,18 +292,13 @@ SemanticsManagerStatus
         }
     }
 
-    /*!
-     * Detect open passages from connected Voxblox skeleton edges which breach
-     * finite mapped wall surfaces.
-     *
-     * @note            Camera trajectory crossings are deliberately not used.
-     */
-    if (detectOpenPassagesFromSkeletonEdges(confirmedWallPlanes) !=
+    /* Detect open passages from the Voxblox free space through each wall. */
+    if (detectPassagesFromFreeSpace(confirmedWallPlanes) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),
-            "%s: detectOpenPassagesFromSkeletonEdges returned a failure status "
+            "%s: detectPassagesFromFreeSpace returned a failure status "
             "although it cannot fail; continuing as before.",
             __func__);
     }

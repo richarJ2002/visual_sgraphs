@@ -1242,21 +1242,6 @@ void SemanticsManager::run(void)
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        std::vector<semantic::OpenPassageHypothesisRecord>
-            captureOpenPassageHypotheses2{};
-        if (captureOpenPassageHypotheses(captureOpenPassageHypotheses2) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: captureOpenPassageHypotheses returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-        snapshot.managerPrivateOpenPassageHypotheses =
-            captureOpenPassageHypotheses2;
-        snapshot.managerPrivateOpenPassageHypothesesReason =
-            semantic::UnavailableReason::NONE;
         std::vector<semantic::UnresolvedWallHypothesisRecord>
             captureUnresolvedWallHypotheses2{};
         if (captureUnresolvedWallHypotheses(captureUnresolvedWallHypotheses2) !=

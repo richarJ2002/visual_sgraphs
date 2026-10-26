@@ -8,7 +8,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/buildWallSlabQueries.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/captureOpenPassageHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/computeGroundPlaneHeight.cc
@@ -17,7 +16,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateRoomsInFreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectDoorsAndDoorways.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/detectOpenPassagesFromSkeletonEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectPassagesFromFreeSpace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectRoom_FreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
@@ -85,8 +84,10 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRotationBetweenDirections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/crossProduct2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateWallAdmissionEvidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/findWallRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasSeparatingFiniteWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneFootprintOntoSharedAxes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc

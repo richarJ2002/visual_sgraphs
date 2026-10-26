@@ -535,16 +535,6 @@ class SystemParams
              */
             float        minimumSideDistance_m = 0.15f;
             /*!
-             * @brief           Minimum absolute edge-to-wall-normal dot
-             *                  product.
-             */
-            float        minimumEdgeNormalAlignment = 0.50f;
-            /*!
-             * @brief           Minimum empty in-plane aperture radius, in
-             *                  metres.
-             */
-            float        minimumOpeningRadius_m = 0.30f;
-            /*!
              * @brief           Passage-test expansion of finite wall bounds, in
              *                  metres.
              */
@@ -567,46 +557,6 @@ class SystemParams
              * @brief           Maximum ambiguous plane offset, in metres.
              */
             float        ambiguousDuplicatePlaneSeparation_m = 0.75f;
-            /*!
-             * @brief           Maximum crossing-cluster separation, in metres.
-             */
-            float        crossingClusterDistance_m = 0.65f;
-            /*!
-             * @brief           Distinct skeleton snapshots required for
-             *                  confirmation. No longer gates passage CREATION
-             *                  (see minimumCrossingClusterSize) -- retained
-             *                  only to cap the temporal-evidence smoothing
-             *                  weight.
-             */
-            unsigned int minimumConfirmationSnapshots = 4U;
-            /*!
-             * @brief           Individual skeleton-edge crossings that must
-             *                  cluster into one opening in a SINGLE cycle
-             *                  before a passage is created for it -- the
-             *                  same-cycle evidence-quantity gate a wall's own
-             *                  admission uses (cluster point count /
-             *                  connectivity ratio), applied at the same
-             *                  semantic level and priority: enough of the
-             *                  free-space skeleton breaking through the wall
-             *                  this cycle is sufficient on its own, with no
-             *                  separate multi-cycle waiting period.
-             */
-            unsigned int minimumCrossingClusterSize = 2U;
-            /*!
-             * @brief           Missed snapshots retained before discarding
-             *                  evidence.
-             */
-            unsigned int maximumMissedSnapshots = 4U;
-            /*!
-             * @brief           Required wall extent beside each opening, in
-             *                  metres.
-             */
-            float        minimumHorizontalFlankExtent_m = 0.35f;
-            /*!
-             * @brief           Required mapped wall points on each opening
-             *                  flank.
-             */
-            unsigned int minimumHorizontalFlankPointCount = 12U;
             /*!
              * @brief           Lowest height above the floor of the door band
              *                  searched for free space through a wall, in

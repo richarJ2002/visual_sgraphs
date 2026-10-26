@@ -59,9 +59,8 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    openPassageEvidence.clear();
-    lastSkeletonFingerprint = 0U;
-    hasSkeletonFingerprint  = false;
+    pendingOpenings.clear();
+    lastUsedSlabProfileStamp_ns = 0;
 
     if (mapChanged)
     {

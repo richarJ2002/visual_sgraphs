@@ -74,6 +74,12 @@ struct WallSlabQuery
     Eigen::Vector3d upAxis_world{Eigen::Vector3d::Zero()};
 
     /*!
+     * @brief           Height gained per metre along upAxis_world (1 for a
+     *                  vertical wall); row heights are above the floor.
+     */
+    double upAxisRise{1.0};
+
+    /*!
      * @brief           Unit wall normal, world frame.
      */
     Eigen::Vector3d normal_world{Eigen::Vector3d::Zero()};

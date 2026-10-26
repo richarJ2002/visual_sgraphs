@@ -146,16 +146,12 @@ sem_seg:
   # Passage centroid distance threshold for associating passages (in meters)
   passage_centroid_distance_thresh: 1.0
 
-  # Open-passage evidence derived from Voxblox skeleton edges. A passage is
-  # still detected before a room is complete, but a single noisy post-merge
-  # skeleton snapshot is not sufficient to create a permanent graph entity.
+  # Open passages measured from the Voxblox free space through each wall. A
+  # passage is still detected before a room is complete, but one profile is
+  # not sufficient to create a permanent graph entity.
   passage_detection:
     # Minimum signed distance of both edge endpoints from the wall (metres).
     minimum_side_distance: 0.15
-    # Minimum alignment between the skeleton edge and wall normal.
-    minimum_edge_normal_alignment: 0.50
-    # Minimum empty in-plane radius at a candidate opening (metres).
-    minimum_opening_radius: 0.30
     # Finite wall-bound tolerance used only for passage detection (metres).
     wall_bounds_margin: 0.10
     # Maximum distance for tracking the same opening across revisions (metres).
@@ -166,25 +162,6 @@ sem_seg:
     ambiguous_duplicate_normal_alignment: 0.70
     # Maximum wall-plane offset for suppressing an ambiguous duplicate (metres).
     ambiguous_duplicate_plane_separation: 0.75
-    # Maximum separation between crossings forming one opening (metres).
-    crossing_cluster_distance: 0.65
-    # Number of distinct skeleton snapshots required for confirmation. No
-    # longer gates passage creation (see minimum_crossing_cluster_size
-    # below) -- retained only to cap the temporal-evidence smoothing weight.
-    minimum_confirmation_snapshots: 4
-    # Individual skeleton-edge crossings that must cluster into one opening
-    # in a SINGLE cycle before a passage is created for it -- same-cycle
-    # evidence-quantity gate, same semantic level/priority as a wall's own
-    # admission (cluster point count / connectivity ratio). Enough of the
-    # free-space skeleton breaking through the wall this cycle is
-    # sufficient on its own; no separate multi-cycle waiting period.
-    minimum_crossing_cluster_size: 2
-    # Number of missed snapshots before an unconfirmed track is discarded.
-    maximum_missed_snapshots: 4
-    # Required observed wall extent on both horizontal sides of an opening.
-    minimum_horizontal_flank_extent: 0.35
-    # Minimum wall-cloud points required on each side of an opening.
-    minimum_horizontal_flank_points: 12
     # Free-space gap measurement in wall slabs from the Voxblox TSDF.
     # Door band searched for free space, heights above the floor (metres).
     door_band_min_height_m: 0.5

@@ -18,10 +18,12 @@
 
 #include <Eigen/Geometry>
 
+#include "configuration/types/types.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
-#include "configuration/types/types.h"
+#include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
+#include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 
 namespace vs_graphs::core::map
 {
@@ -672,6 +674,47 @@ Eigen::Quaterniond
                               bool          &arePlausibleTwinWallFaces_out,
                               TwinFaceCheck &decidingCheck_out,
                               double        &decidingValue_out);
+
+/*!
+ * @brief           Measures the openings through one wall from its Voxblox
+ *                  free-space slab: FREE door-band cells seed 4-connected
+ *                  components, each end is refined at the TSDF zero crossing,
+ *                  and only openings of door size are kept.
+ *
+ * @param[in]       wallProfile_in
+ *                  Slab profile of the wall, world frame, metres.
+ *
+ * @param[in]       passageParameters_in
+ *                  Door band, size limits and bounded-row fraction.
+ *
+ * @param[out]      wallGaps_out
+ *                  Accepted openings; empty when there is none.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus measureWallGap(
+    const WallSlabProfile                               &wallProfile_in,
+    const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
+    std::vector<WallGap>                                &wallGaps_out);
+
+/*!
+ * @brief           Finds the room whose walls include a wall.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms to search; null and bad rooms are skipped.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall to look up; non-owning.
+ *
+ * @param[out]      p_wallRoom_out
+ *                  First room owning the wall; null when none does.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus
+    findWallRoom(const std::vector<semantic::Room *> &rooms_in,
+                 geometric::Plane                    *p_wall_in,
+                 semantic::Room                     *&p_wallRoom_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

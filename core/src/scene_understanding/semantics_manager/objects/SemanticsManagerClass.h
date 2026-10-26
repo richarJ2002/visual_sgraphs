@@ -32,6 +32,7 @@
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
+#include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabQueryStruct.h"
@@ -258,74 +259,16 @@ class SemanticsManager
     types::SystemParams *p_sysParams;
 
     /*!
-     * @brief           Temporally tracked evidence for one open-passage
-     *                  hypothesis.
+     * @brief           Openings measured OPEN in wall slabs that are not yet
+     *                  passages; cleared with the map's temporal state.
      */
-    struct OpenPassageEvidence
-    {
-        /*!
-         * @brief           Borrowed wall the opening lies in; replaced by the
-         *                  wall of the latest matching crossing. The hypothesis
-         *                  is dropped when it is null or bad.
-         */
-        geometric::Plane *p_supportingWall = nullptr;
-
-        /*!
-         * @brief           Running average of the opening centre in the world
-         *                  frame, metres.
-         */
-        Eigen::Vector3d openingCentroid_world_m = Eigen::Vector3d::Zero();
-
-        /*!
-         * @brief           Number of distinct skeleton snapshots that have
-         *                  confirmed the opening.
-         */
-        std::size_t confirmationCount = 0U;
-
-        /*!
-         * @brief           Number of updates in a row without a matching
-         *                  crossing; reset to 0 on a match.
-         */
-        std::size_t missedUpdateCount = 0U;
-
-        /*!
-         * @brief           Fingerprint of the skeleton snapshot that last
-         *                  confirmed the opening; a confirmation is counted
-         *                  only when it changes.
-         */
-        std::uint64_t lastConfirmedSkeletonFingerprint = 0U;
-        /*!
-         * @brief           Best (largest) opening radius / vertical span
-         *                  observed across all cycles this hypothesis has been
-         *                  confirmed in -- the running size estimate later
-         *                  written onto the confirmed Passage's width/height.
-         */
-        double        openingRadius_m = 0.0;
-
-        /*!
-         * @brief           Largest vertical span of the opening seen across
-         *                  confirmations, metres; 0 when it was never measured
-         *                  reliably.
-         */
-        double heightSpan_m = 0.0;
-    };
+    std::vector<PendingOpening> pendingOpenings;
 
     /*!
-     * @brief           Passage hypotheses awaiting repeated Voxblox
-     *                  confirmation.
+     * @brief           Stamp of the last wall-slab answer used, nanoseconds;
+     *                  older or repeated answers are ignored.
      */
-    std::vector<OpenPassageEvidence> openPassageEvidence;
-
-    /*!
-     * @brief           Fingerprint of the last processed sparse-graph snapshot.
-     */
-    std::uint64_t lastSkeletonFingerprint = 0U;
-
-    /*!
-     * @brief           Whether lastSkeletonFingerprint contains a valid
-     *                  snapshot.
-     */
-    bool hasSkeletonFingerprint = false;
+    std::int64_t lastUsedSlabProfileStamp_ns = 0;
 
     /*!
      * @brief           Latest UAV camera centre in the active map frame.
@@ -698,19 +641,10 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus suppressUndefendedWalls(void);
 
     /*!
-     * @brief           Converts openPassageEvidence into pointer-free,
-     *                  map-sorted OpenPassageHypothesisRecord values.
+     * @brief           Converts undefendedWalls into pointer-free,
+     *                  map-sorted UnresolvedWallHypothesisRecord values.
      *                  Read-only; must be called while the semantic-update lock
-     *                  is still held (openPassageEvidence holds raw Plane*
-     *                  pointers).
-     */
-    [[nodiscard]] SemanticsManagerStatus captureOpenPassageHypotheses(
-        std::vector<semantic::OpenPassageHypothesisRecord>
-            &captureOpenPassageHypotheses_out) const;
-
-    /*!
-     * @brief           Same as captureOpenPassageHypotheses(), for
-     *                  undefendedWalls.
+     *                  is still held.
      */
     [[nodiscard]] SemanticsManagerStatus captureUnresolvedWallHypotheses(
         std::vector<semantic::UnresolvedWallHypothesisRecord>
@@ -1114,13 +1048,17 @@ class SemanticsManager
         const std::vector<WallSlabProfile> &wallSlabProfiles_in);
 
     /*!
-     * @brief           Detects open passages where a connected Voxblox skeleton
-     *                  edge crosses a finite mapped wall.
+     * @brief           Detects open passages from the latest unused Voxblox
+     *                  wall-slab profiles: measures each wall's openings,
+     *                  updates the passage at an opening and creates one after
+     *                  minimumOpenVerdicts consecutive OPEN profiles.
      *
      * @param[in]       wallPlanes_in
      *                  Confirmed wall planes available in the current map.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
-    [[nodiscard]] SemanticsManagerStatus detectOpenPassagesFromSkeletonEdges(
+    [[nodiscard]] SemanticsManagerStatus detectPassagesFromFreeSpace(
         const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes_in);
 
     /*!

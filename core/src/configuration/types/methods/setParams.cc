@@ -176,13 +176,6 @@ SystemParamsStatus
         semSeg.passageDetection.minimumSideDistance_m =
             config["sem_seg"]["passage_detection"]["minimum_side_distance"]
                 .as<float>();
-        semSeg.passageDetection.minimumEdgeNormalAlignment =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_edge_normal_alignment"]
-                      .as<float>();
-        semSeg.passageDetection.minimumOpeningRadius_m =
-            config["sem_seg"]["passage_detection"]["minimum_opening_radius"]
-                .as<float>();
         semSeg.passageDetection.wallBoundsMargin_m =
             config["sem_seg"]["passage_detection"]["wall_bounds_margin"]
                 .as<float>();
@@ -200,28 +193,6 @@ SystemParamsStatus
             config["sem_seg"]["passage_detection"]
                   ["ambiguous_duplicate_plane_separation"]
                       .as<float>();
-        semSeg.passageDetection.crossingClusterDistance_m =
-            config["sem_seg"]["passage_detection"]["crossing_cluster_distance"]
-                .as<float>();
-        semSeg.passageDetection.minimumConfirmationSnapshots =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_confirmation_snapshots"]
-                      .as<unsigned int>();
-        semSeg.passageDetection.minimumCrossingClusterSize =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_crossing_cluster_size"]
-                      .as<unsigned int>();
-        semSeg.passageDetection.maximumMissedSnapshots =
-            config["sem_seg"]["passage_detection"]["maximum_missed_snapshots"]
-                .as<unsigned int>();
-        semSeg.passageDetection.minimumHorizontalFlankExtent_m =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_horizontal_flank_extent"]
-                      .as<float>();
-        semSeg.passageDetection.minimumHorizontalFlankPointCount =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_horizontal_flank_points"]
-                      .as<unsigned int>();
         semSeg.passageDetection.doorBandMinHeight_m =
             config["sem_seg"]["passage_detection"]["door_band_min_height_m"]
                 .as<float>();
@@ -540,9 +511,6 @@ SystemParamsStatus
             roomSeg.passagePartition;
 
         if (passageDetection.minimumSideDistance_m <= 0.0F ||
-            passageDetection.minimumEdgeNormalAlignment <= 0.0F ||
-            passageDetection.minimumEdgeNormalAlignment > 1.0F ||
-            passageDetection.minimumOpeningRadius_m <= 0.0F ||
             passageDetection.wallBoundsMargin_m < 0.0F ||
             passageDetection.duplicatePassageDistance_m <= 0.0F ||
             passageDetection.duplicateNormalAlignment <= 0.0F ||
@@ -551,11 +519,6 @@ SystemParamsStatus
             passageDetection.ambiguousDuplicateNormalAlignment >
                 passageDetection.duplicateNormalAlignment ||
             passageDetection.ambiguousDuplicatePlaneSeparation_m < 0.30F ||
-            passageDetection.crossingClusterDistance_m <= 0.0F ||
-            passageDetection.minimumConfirmationSnapshots < 2U ||
-            passageDetection.minimumCrossingClusterSize < 1U ||
-            passageDetection.minimumHorizontalFlankExtent_m <= 0.0F ||
-            passageDetection.minimumHorizontalFlankPointCount < 1U ||
             passageDetection.doorBandMinHeight_m < 0.0F ||
             passageDetection.doorBandMaxHeight_m <=
                 passageDetection.doorBandMinHeight_m ||

@@ -192,15 +192,6 @@ nlohmann::json
     serializeMapCompletenessResult(const MapCompletenessResult &value_in);
 
 /*!
- * @brief           Serializes one OpenPassageHypothesisRecord. Every geometric
- *                  field (openingCentroid_world_m, openingRadius_m,
- *                  heightSpan_m) is omitted unless \p includeGeometry_in.
- */
-nlohmann::json serializeOpenPassageHypothesisRecord(
-    const OpenPassageHypothesisRecord &value_in,
-    bool                               includeGeometry_in);
-
-/*!
  * @brief           Serializes one UnresolvedWallHypothesisRecord.
  */
 nlohmann::json serializeUnresolvedWallHypothesisRecord(
@@ -355,34 +346,6 @@ bool isFloorRecordLessFullGeometry(const FloorRecord &lhs_in,
 bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
                                  const MapSnapshot &rhs_in,
                                  bool               includeGeometry_in);
-
-/*!
- * @brief           Strict weak "less than" over every
- *                  OpenPassageHypothesisRecord
- *                   field the topology-only projection emits (supportingWallRef
- *                   via isRawPlaneRefLess(), confirmationCount,
- *                   missedUpdateCount, lastConfirmedSkeletonFingerprint).
- *                   Deliberately never inspects a geometric field
- *                   (openingCentroid_world_m, openingRadius_m, heightSpan_m),
- *                   so
- *                  a geometry-only perturbation of otherwise colliding records
- *                  can never reorder or alter the topology-only projection's
- *                  bytes.
- */
-bool isOpenPassageHypothesisRecordLessTopologyOnly(
-    const OpenPassageHypothesisRecord &lhs_in,
-    const OpenPassageHypothesisRecord &rhs_in);
-
-/*!
- * @brief           Same as isOpenPassageHypothesisRecordLessTopologyOnly(),
- *                  additionally comparing every field the full-geometry
- *                  projection emits (openingCentroid_world_m via
- *                  isVector3dLess(), openingRadius_m, heightSpan_m via
- *                  isDoubleLess()) after the topology-only fields.
- */
-bool isOpenPassageHypothesisRecordLessFullGeometry(
-    const OpenPassageHypothesisRecord &lhs_in,
-    const OpenPassageHypothesisRecord &rhs_in);
 
 /*!
  * @brief           Strict weak "less than" over every
