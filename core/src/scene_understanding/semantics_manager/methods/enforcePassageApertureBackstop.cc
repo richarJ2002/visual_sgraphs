@@ -115,12 +115,15 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
          * no-crossing report, not better. With no known side yet, this
          * degenerate case is left exactly as before the fix. */
         Eigen::Vector3d segmentStart_world_m{};
-        if (p_room_inout->getCentroid(segmentStart_world_m) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        bool            isCameraViewpoint{};
+        if (getRoomViewpoint(p_room_inout,
+                             segmentStart_world_m,
+                             isCameraViewpoint) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
+                         "%s: getRoomViewpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
         g2o::Plane3D passageGlobalEquation{};
@@ -447,13 +450,16 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
      * against an already-confirmed passage. */
     for (const OpenPassageEvidence &evidence : openPassageEvidence)
     {
-        Eigen::Vector3d room_inoutCentroid{};
-        if (p_room_inout->getCentroid(room_inoutCentroid) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        Eigen::Vector3d roomViewpoint_world_m{};
+        bool            isCameraViewpoint2{};
+        if (getRoomViewpoint(p_room_inout,
+                             roomViewpoint_world_m,
+                             isCameraViewpoint2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
+                         "%s: getRoomViewpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
         Eigen::Vector3d wallGetCentroid2{};
@@ -467,7 +473,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         }
         bool crossesOpenPassageEvidence{};
         if (segmentCrossesOpenPassageEvidence(
-                room_inoutCentroid,
+                roomViewpoint_world_m,
                 wallGetCentroid2.cast<double>(),
                 evidence.p_supportingWall,
                 evidence.openingCentroid_world_m,

@@ -115,17 +115,20 @@ SemanticsManagerStatus
     const double observedSide_m =
         planeEquation_world.head<3>().dot(observationOrigin_world_m.value()) +
         planeEquation_world(3);
-    Eigen::Vector3d room_inCentroid{};
-    if (p_room_in->getCentroid(room_inCentroid) !=
-        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    /* The camera stands in for the room it is in; a drifting centroid of a
+     * young room must not decide which side of its own wall it lies on. */
+    Eigen::Vector3d roomViewpoint_world_m{};
+    bool            isCameraViewpoint{};
+    if (getRoomViewpoint(p_room_in, roomViewpoint_world_m, isCameraViewpoint) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCentroid returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getRoomViewpoint returned a failure status although "
+                     "it cannot fail; continuing as before.",
                      __func__);
     }
     const double roomSide_m =
-        planeEquation_world.head<3>().dot(room_inCentroid.cast<double>()) +
+        planeEquation_world.head<3>().dot(roomViewpoint_world_m) +
         planeEquation_world(3);
 
     if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))

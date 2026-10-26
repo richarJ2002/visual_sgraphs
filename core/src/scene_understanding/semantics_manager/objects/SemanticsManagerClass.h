@@ -732,6 +732,69 @@ class SemanticsManager
         detachWallsBeyondConfirmedPassages(void);
 
     /*!
+     * @brief           Reads the camera centre of the newest usable key frame
+     *                  of the active map.
+     *
+     *                  A key frame is usable when it is not bad and its centre
+     *                  is finite and not exactly zero (an exactly-zero centre
+     *                  marks an uninitialised first-frame pose).
+     *
+     * @param[out]      cameraCenter_world_m_out
+     *                  Camera centre in the active map frame, metres; empty
+     *                  when there is no active map or no usable key frame.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus getCurrentCameraCenter(
+        std::optional<Eigen::Vector3d> &cameraCenter_world_m_out);
+
+    /*!
+     * @brief           Chooses the point a room is seen from: the current
+     *                  camera centre for the room the camera is in, the room
+     *                  centroid for every other room.
+     *
+     *                  The damped centroid of a young room can drift across
+     *                  one of its own walls; the camera inside the room
+     *                  cannot. The room the camera is in is the room whose id
+     *                  is getCurrentRoomId() and whose map is the active map.
+     *
+     * @param[in]       p_room_in
+     *                  Room to place; shall be non-null.
+     *
+     * @param[out]      roomViewpoint_world_m_out
+     *                  Chosen point in the active map frame, metres.
+     *
+     * @param[out]      isCameraViewpoint_out
+     *                  True when the point is the camera centre.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getRoomViewpoint(semantic::Room  *p_room_in,
+                         Eigen::Vector3d &roomViewpoint_world_m_out,
+                         bool            &isCameraViewpoint_out);
+
+    /*!
+     * @brief           Orders wall admission candidates so nearer walls are
+     *                  tried first.
+     *
+     *                  Order: horizontal distance from the current camera
+     *                  centre to the wall's finite ground segment (nearest
+     *                  first), then the time the wall was first observed
+     *                  (oldest first), then plane id. A wall without a finite
+     *                  segment, or every wall when there is no camera centre
+     *                  or ground plane, has an infinite distance. The order is
+     *                  deterministic for a given map state.
+     *
+     * @param[in,out]   walls_inout
+     *                  Candidate planes, reordered in place.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        sortWallsByCameraDistance(std::vector<geometric::Plane *> &walls_inout);
+
+    /*!
      * @brief           Adds a wall only when it preserves a valid room
      *                  boundary.
      *
@@ -772,7 +835,9 @@ class SemanticsManager
      * @brief           Shared far-side-passage backstop: a wall whose centroid
      *                  lies beyond a passable passage's own BOUNDED aperture
      *                  (segmentCrossesPassageOpening() -- does the straight
-     *                  path from p_room_inout's centroid to the wall actually
+     *                  path from p_room_inout's viewpoint (getRoomViewpoint():
+     *                  the camera for the room it is in, else the centroid) to
+     *                  the wall actually
      *                  thread that specific doorway's width/height, not "which
      *                  side of an infinite plane is the wall on") cannot bound
      *                  p_room_inout. Deliberately NOT a room-vs-wall-normal
@@ -830,7 +895,10 @@ class SemanticsManager
      *                  and is stamped then as the observing camera position
      *                  (Plane::getObservationOrigin_world()). A room owns a
      *                  face only if the room lies on the same side of the plane
-     *                  as that camera did; a room on the opposite side is
+     *                  as that camera did (the room's position is its
+     *                  getRoomViewpoint(): the current camera for the room the
+     *                  camera is in, else the centroid); a room on the opposite
+     *                  side is
      *                  looking at the OTHER face, which is a different surface
      *                  it has not observed.
      *

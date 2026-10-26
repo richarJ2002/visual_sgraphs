@@ -549,6 +549,18 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 }),
             closestWalls.end());
 
+        /* Admit nearer walls first (see admitWallToRoom()'s see-through
+         * gate); the id order above only serves the duplicate removal. */
+        if (sortWallsByCameraDistance(closestWalls) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: sortWallsByCameraDistance returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
         /* If there are no closest walls then skip to next cluster */
         if (closestWalls.empty())
         {

@@ -375,6 +375,8 @@ SystemParamsStatus
             config["room_seg"]["passage_partition"]
                   ["wall_centroid_minimum_side_distance"]
                       .as<float>();
+        roomSeg.isSeeThroughGateEnabled =
+            config["room_seg"]["see_through_gate"]["enabled"].as<bool>();
 
         /* Map-merge and axiom thresholds. */
         mapMerge.passageMatchTolerance_m =

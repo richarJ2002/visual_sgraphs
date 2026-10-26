@@ -26,8 +26,6 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "map_state/keyframe/keyframe.h"
-#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/semantic/floor/floor.h"
@@ -235,61 +233,25 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     }
     else
     {
-        std::vector<keyframe::KeyFrame *> keyFrames{};
-        if (p_activeMap->getAllKeyFrames(keyFrames) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        std::optional<Eigen::Vector3d> currentCameraCenter_world_m{};
+        if (getCurrentCameraCenter(currentCameraCenter_world_m) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllKeyFrames returned a failure status "
-                         "although it cannot fail; continuing as before.",
+                         "%s: getCurrentCameraCenter returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
                          __func__);
         }
-        std::sort(keyFrames.begin(), keyFrames.end(), keyframe::KeyFrame::lId);
-        for (std::vector<keyframe::KeyFrame *>::reverse_iterator keyFrameIterator =
-                 keyFrames.rbegin();
-             keyFrameIterator != keyFrames.rend();
-             ++keyFrameIterator)
+        /* An exactly-zero centre is never accepted (see
+         * getCurrentCameraCenter()): accepting it misplaces the bootstrap
+         * room and poisons centroid-distance matching for the cycles until
+         * walls correct it. Fall through to the snapshot centroid, else
+         * yield and retry once poses exist. */
+        if (currentCameraCenter_world_m.has_value())
         {
-            keyframe::KeyFrame *p_keyFrame = *keyFrameIterator;
-            bool      keyFrameIsBad{};
-            if (!(p_keyFrame == nullptr) &&
-                p_keyFrame->isBad(keyFrameIsBad) !=
-                    keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_keyFrame == nullptr || keyFrameIsBad)
-            {
-                continue;
-            }
-            Eigen::Vector3f keyFrameCameraCenter{};
-            if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
-                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCameraCenter returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const Eigen::Vector3d candidatePosition_world_m =
-                keyFrameCameraCenter.cast<double>();
-            /* An exactly-zero center marks an uninitialized first-frame pose
-             * (live-observed: brand-new map, identity pose, room planted at
-             * the origin), never a genuine measurement: real computed centers
-             * carry rotation/translation noise. Accepting it misplaces the
-             * bootstrap room and poisons centroid-distance matching for the
-             * cycles until walls correct it. Fall through to the snapshot
-             * centroid, else yield and retry once poses exist. */
-            if (candidatePosition_world_m.allFinite() &&
-                !candidatePosition_world_m.isZero())
-            {
-                cameraPosition_world_m  = candidatePosition_world_m;
-                hasUsableCameraPosition = true;
-                break;
-            }
+            cameraPosition_world_m  = currentCameraCenter_world_m.value();
+            hasUsableCameraPosition = true;
         }
     }
 

@@ -30,6 +30,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterWallPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentCameraCenter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLatestSkeletonCluster.cc
@@ -37,6 +38,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerEventHistoryForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerPendingForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerStateForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomViewpoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloorsForTest.cc
@@ -62,6 +64,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentRoomIdForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomTrackerPendingPublishHookForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/sortWallsByCameraDistance.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/submitVerificationVerdict.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWallsForTest.cc

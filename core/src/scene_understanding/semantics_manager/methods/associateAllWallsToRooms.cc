@@ -60,6 +60,17 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+    /* The atlas hands planes out in pointer order. Admit nearer walls first
+     * so a wall seen through a doorway meets the doorway wall already in
+     * the room (see admitWallToRoom()'s see-through gate). */
+    if (sortWallsByCameraDistance(allPlanes) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: sortWallsByCameraDistance returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Extract all current rooms and provisional structural elements */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};

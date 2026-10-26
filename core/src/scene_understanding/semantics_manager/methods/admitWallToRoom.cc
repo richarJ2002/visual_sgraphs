@@ -25,8 +25,11 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/map/map.h"
+#include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
@@ -236,6 +239,179 @@ SemanticsManagerStatus
                   << std::endl;
         wasAdmitted_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    /*!
+     * See-through gate, only for the room the camera is in: a candidate whose
+     * centroid the camera sees through a nearer wall N of this room (through
+     * N's doorway) lies beyond N, so it is held pending. The condition is
+     * re-evaluated on every attempt, so the hold ends by itself when
+     *  - the opening in N becomes a confirmed passage (N is then associated
+     *    with a passage and no longer blocks; the far-side backstop above
+     *    routes the candidate to the room beyond), or
+     *  - the camera crosses N's plane (camera and candidate are then on the
+     *    same side of N).
+     * hasSeparatingFiniteWall() requires both points at least 0.10 m (equal
+     * to passage_partition.minimum_side_distance) from N's plane and the
+     * crossing inside N's observed in-plane extent and height, widened by
+     * wall_extension.maximum_in_plane_gap so a doorway at N's end counts.
+     */
+    Eigen::Vector3d roomViewpoint_world_m{};
+    bool            isCameraViewpoint{};
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
+        getRoomViewpoint(p_room_inout,
+                         roomViewpoint_world_m,
+                         isCameraViewpoint) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomViewpoint returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled && isCameraViewpoint)
+    {
+        Eigen::Vector3d candidateCentroid_world_m{};
+        if (p_candidateWall_in->getCentroid(candidateCentroid_world_m) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<geometric::Plane *> passageWalls{};
+        for (semantic::Passage *p_passage : allPassages)
+        {
+            bool passageIsBad{};
+            if ((p_passage != nullptr) &&
+                p_passage->isBad(passageIsBad) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::vector<geometric::Plane *> associateWalls{};
+            if ((p_passage != nullptr && !passageIsBad) &&
+                p_passage->getAssociateWalls(associateWalls) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            passageWalls.insert(passageWalls.end(),
+                                associateWalls.begin(),
+                                associateWalls.end());
+        }
+
+        for (geometric::Plane *p_nearerWall : existingWalls)
+        {
+            if (p_nearerWall == nullptr || p_nearerWall == p_candidateWall_in ||
+                std::find(passageWalls.begin(),
+                          passageWalls.end(),
+                          p_nearerWall) != passageWalls.end())
+            {
+                continue;
+            }
+            bool isSeenThroughNearerWall{};
+            if (hasSeparatingFiniteWall(
+                    {p_nearerWall},
+                    roomViewpoint_world_m,
+                    candidateCentroid_world_m,
+                    static_cast<double>(p_sysParams->semSeg.reassociate
+                                            .wallExtension.maximumInPlaneGap_m),
+                    isSeenThroughNearerWall) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: hasSeparatingFiniteWall returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (!isSeenThroughNearerWall)
+            {
+                continue;
+            }
+
+            int candidateWallId{};
+            if (p_candidateWall_in->getId(candidateWallId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            /* Logged once per pending episode; the set is the same one the
+             * orphan-wall pending event uses, so the two never repeat. */
+            if (loggedOrphanWallIds.insert(candidateWallId).second)
+            {
+                int nearerWallId{};
+                if (p_nearerWall->getId(nearerWallId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                int roomId{};
+                if (p_room_inout->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                map::Map *p_activeMap = nullptr;
+                if (p_atlas->getCurrentMap(p_activeMap) !=
+                    atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getCurrentMap returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                unsigned long activeMapId{};
+                if ((p_activeMap != nullptr) &&
+                    p_activeMap->getId(activeMapId) !=
+                        map::MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                std::cout << "[SemMgr] Wall#" << candidateWallId
+                          << " held from Room#" << roomId
+                          << ": seen through nearer Wall#" << nearerWallId
+                          << "." << std::endl;
+                std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                             "\"map_id\":"
+                          << (p_activeMap != nullptr
+                                  ? static_cast<long long>(activeMapId)
+                                  : -1)
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                          << ",\"wall_id\":" << candidateWallId
+                          << ",\"class\":\"WALL\","
+                             "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                             "\"reason\":\"SEEN_THROUGH_NEARER_WALL\","
+                             "\"support\":"
+                          << admissionEvidence.fittedPointCount
+                          << ",\"observations\":"
+                          << admissionEvidence.observationCount
+                          << ",\"pending_age\":0}" << std::endl;
+            }
+            wasAdmitted_out = false;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+        }
     }
 
     const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =

@@ -995,6 +995,14 @@ class SystemParams
         PassagePartition passagePartition;
 
         /*!
+         * @brief           Enables the see-through gate: a wall of the room
+         *                  the camera is in is held pending while the line
+         *                  from the camera to the wall passes through a
+         *                  nearer wall of that room.
+         */
+        bool isSeeThroughGateEnabled = true;
+
+        /*!
          * @brief           Version of the GNN-based room segmentation: 1 is the
          *                  S-Graphs one, 2 the vS-Graphs one. Loaded from YAML
          *                  but not read anywhere yet.
