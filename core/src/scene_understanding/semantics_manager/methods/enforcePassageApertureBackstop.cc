@@ -99,21 +99,28 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         const double minimumSideDistance_m = static_cast<double>(
             p_sysParams->roomSeg.passagePartition.minimumSideDistance_m);
 
-        /* B2 fix: segmentCrossesPassageOpening silently reports "no crossing"
-         * whenever its segment-start point sits within minimumSideDistance_m
-         * of the passage plane -- which the room's own centroid commonly
-         * does for a sparsely-observed room. Rather than let that ambiguity
-         * masquerade as "not crossing" (silently admitting a genuine
-         * far-side wall to the near room), substitute a point pushed out
-         * along the passage's known near side when the raw centroid is too
-         * close to call. Only apply this when a reliable near-side direction
-         * is actually available (Passage::KnownSideProvenance, built up from
-         * other walls' admission history for this passage): the ambiguous
-         * centroid's own residual sign is noise, not a signal, and guessing
-         * from it can just as easily push the synthesized point to the
-         * WRONG side as the right one -- worse than the original silent
-         * no-crossing report, not better. With no known side yet, this
-         * degenerate case is left exactly as before the fix. */
+        /* The passage's far-side handle (the prospective room, or the
+         * confirmed room beyond it once both sides are known). The room under
+         * test is either that far-side room or a room on the known side. */
+        vs_graphs::core::semantic::Room *p_prospective = nullptr;
+        if (p_passage->getProspectiveRoom(p_prospective) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const bool isFarSideRoom = p_prospective == p_room_inout;
+
+        /* segmentCrossesPassageOpening reports "no crossing" whenever the
+         * segment start lies within minimumSideDistance_m of the passage
+         * plane, which the centroid of a sparsely observed room often does.
+         * When the passage's known-side direction is available, substitute a
+         * point pushed off the plane on the tested room's own side: along the
+         * known-side direction for a known-side room, against it for the
+         * far-side room. Without a known side the residual sign is noise, so
+         * the start is left unchanged. */
         Eigen::Vector3d segmentStart_world_m{};
         bool            isCameraViewpoint{};
         if (getRoomViewpoint(p_room_inout,
@@ -142,11 +149,11 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
             passageEquation_world /= passageNormalNorm;
             const Eigen::Vector3d passageNormal_world =
                 passageEquation_world.head<3>();
-            const double roomCentroidSide_m =
+            const double roomViewpointSide_m =
                 passageNormal_world.dot(segmentStart_world_m) +
                 passageEquation_world(3);
 
-            if (std::abs(roomCentroidSide_m) < minimumSideDistance_m)
+            if (std::abs(roomViewpointSide_m) < minimumSideDistance_m)
             {
                 semantic::Passage::KnownSideProvenance knownSide{};
                 if (p_passage->getKnownSideProvenance(knownSide) !=
@@ -181,10 +188,11 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
+                    const double roomSideOffset_m =
+                        (isFarSideRoom ? -2.0 : 2.0) * minimumSideDistance_m;
                     segmentStart_world_m =
                         passageCentroid +
-                        (minimumSideDistance_m * 2.0) *
-                            knownSide.knownSideDirection_world;
+                        roomSideOffset_m * knownSide.knownSideDirection_world;
                 }
             }
         }
@@ -295,28 +303,33 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
             return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
-        vs_graphs::core::semantic::Room *p_prospective = nullptr;
-        if (p_passage->getProspectiveRoom(p_prospective) !=
-            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        /* Seen from the far-side room, a wall reached through the opening
+         * lies on the known side and cannot bound this room. A wall the room
+         * already owns is kept: the far-side room's viewpoint may be the
+         * camera while the current-room estimate still lags a crossing back
+         * through the opening, and evicting on that alone would strip the
+         * room's own walls. A wall not yet owned is refused and left to
+         * ordinary admission, which applies the full admission checks to the
+         * known-side rooms. */
+        if (isFarSideRoom)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getProspectiveRoom returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /* The wall is already sitting in the room this exact aperture
-         * crossing would route it to -- there is nothing to enforce. Live-
-         * observed 2026-09-04: this branch previously fell through the same
-         * eviction as "no prospective room exists at all", so a wall that
-         * had ALREADY been correctly rerouted to its far-side prospective
-         * kept getting evicted from it every single cycle this sweep re-ran
-         * (enforcePassageSideInvariant runs every Run() cycle), leaving it
-         * permanently homeless even though Passage#0's own SemMgrSummary
-         * line showed a perfectly live p_prospectiveRoom the whole time. */
-        if (p_prospective == p_room_inout)
-        {
-            continue;
+            std::vector<geometric::Plane *> farSideRoomWalls{};
+            if (p_room_inout->getWalls(farSideRoomWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (std::find(farSideRoomWalls.begin(),
+                          farSideRoomWalls.end(),
+                          p_wall_in) != farSideRoomWalls.end())
+            {
+                continue;
+            }
+            outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
         bool prospectiveIsBad{};

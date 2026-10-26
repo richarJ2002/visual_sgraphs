@@ -855,6 +855,11 @@ class SemanticsManager
      *                  wall is otherwise never re-checked once a relevant
      *                  passage's geometry stabilises after the fact.
      *
+     *                  When p_room_inout is the passage's far-side room, a
+     *                  crossing wall lies on the known side: a wall the room
+     *                  does not own yet is refused (REMOVED_UNBOUND), one it
+     *                  already owns is kept.
+     *
      * @param[in,out]   p_room_inout
      *                  Room the wall is currently (or about to be) bound to. On
      *                  a violation, the wall is removed from it (and rerouted,
