@@ -34,6 +34,7 @@
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabQueryStruct.h"
 
@@ -414,6 +415,29 @@ class SemanticsManager
      *                  by wallSlabMutex.
      */
     std::vector<WallSlabProfile> wallSlabProfiles;
+
+    /*!
+     * @brief           Gives each passage anchored on a wall its verdict from
+     *                  the wall's slab profile: NO_EVIDENCE (too little of the
+     *                  aperture observed; counters frozen), OPEN (a measured
+     *                  gap with few wall points inside) or CLOSED; then
+     *                  blocks, unblocks or retires the passage.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall the profile belongs to; non-owning.
+     *
+     * @param[in]       wallProfile_in
+     *                  Fresh slab profile of the wall, world frame.
+     *
+     * @param[in]       openGaps_in
+     *                  Gap measured at each passage anchored on the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus applyPassageVerdicts(
+        geometric::Plane                                       *p_wall_in,
+        const WallSlabProfile                                  &wallProfile_in,
+        const std::unordered_map<semantic::Passage *, WallGap> &openGaps_in);
 
     /*!
      * @brief           Rebuilds wallSlabQueries from the confirmed walls: a

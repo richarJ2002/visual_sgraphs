@@ -2,6 +2,7 @@
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoomForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyPassageVerdicts.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRooms.cc

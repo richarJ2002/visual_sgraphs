@@ -745,6 +745,38 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                 /* Only newly accepted segment evidence is a new tracker event.
                  * The passage owns segment deduplication, so replayed history
                  * must not republish crossing evidence. */
+                /* A new crossing proves a blocked passage open again. */
+                bool passageIsBlocked{};
+                if (addedTraversal &&
+                    p_passage->isBlocked(passageIsBlocked) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isBlocked returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (addedTraversal && passageIsBlocked)
+                {
+                    int blockedPassageId{};
+                    if (p_passage->setBlocked(false) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                        p_passage->setVerdictCounters(0U, 0U, 0) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                        p_passage->getId(blockedPassageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: setBlocked/setVerdictCounters/getId "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    std::cout << "[SemMgr] Passage#" << blockedPassageId
+                              << " unblocked: crossed again." << std::endl;
+                }
+
                 if (addedTraversal)
                 {
                     std::lock_guard<std::mutex> currentRoomLock(

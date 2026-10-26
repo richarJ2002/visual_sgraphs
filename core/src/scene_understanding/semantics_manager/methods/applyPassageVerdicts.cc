@@ -1,0 +1,352 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            applyPassageVerdicts.cc
+ *
+ * @brief           Implements SemanticsManager::applyPassageVerdicts(),
+ *                  declared in SemanticsManager.h.
+ */
+
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+
+#include <rclcpp/logging.hpp>
+
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/semantic/passage/passage.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+
+SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
+    geometric::Plane                                       *p_wall_in,
+    const WallSlabProfile                                  &wallProfile_in,
+    const std::unordered_map<semantic::Passage *, WallGap> &openGaps_in)
+{
+    const types::SystemParams::SemSeg::PassageDetection &passageParameters =
+        p_sysParams->semSeg.passageDetection;
+    const WallSlabQuery &wallQuery = wallProfile_in.query;
+    const double         doorBandMinimum_m =
+        static_cast<double>(passageParameters.doorBandMinHeight_m);
+    const double doorBandMaximum_m =
+        static_cast<double>(passageParameters.doorBandMaxHeight_m);
+    /* The aperture is shrunk by one cell per side before counting wall
+     * points, so the door frame itself never counts as a closed door. */
+    const double apertureShrink_m = wallQuery.cellSize_m;
+
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    geometric::Plane::GeometrySnapshot wallGeometry{};
+    if (p_wall_in->getGeometrySnapshot(wallGeometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getGeometrySnapshot returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+
+    /* Wall support points inside an along/height window of the slab. */
+    const auto countWallPoints = [&](double alongStart_m, double alongEnd_m)
+    {
+        std::size_t pointCount = 0U;
+        if (wallGeometry.supportCloud == nullptr)
+        {
+            return pointCount;
+        }
+        for (const pcl::PointXYZRGBA &supportPoint :
+             wallGeometry.supportCloud->points)
+        {
+            const Eigen::Vector3d offset_world_m =
+                Eigen::Vector3d(supportPoint.x,
+                                supportPoint.y,
+                                supportPoint.z) -
+                wallQuery.origin_world_m;
+            const double along_m =
+                offset_world_m.dot(wallQuery.alongAxis_world);
+            const double height_m = offset_world_m.dot(wallQuery.upAxis_world) *
+                                    wallQuery.upAxisRise;
+            if (pcl::isFinite(supportPoint) && along_m >= alongStart_m &&
+                along_m <= alongEnd_m && height_m >= doorBandMinimum_m &&
+                height_m <= doorBandMaximum_m)
+            {
+                pointCount++;
+            }
+        }
+        return pointCount;
+    };
+
+    /* Fraction of door-band cells with any TSDF observation. */
+    const auto observedFraction = [&](double alongStart_m, double alongEnd_m)
+    {
+        std::size_t cellCount = 0U, observedCount = 0U;
+        for (std::size_t row = 0U; row < wallQuery.rowCount; row++)
+        {
+            const double height_m = (static_cast<double>(row) + 0.5) *
+                                    wallQuery.cellSize_m * wallQuery.upAxisRise;
+            if (height_m < doorBandMinimum_m || height_m > doorBandMaximum_m)
+            {
+                continue;
+            }
+            for (std::size_t column = 0U; column < wallQuery.columnCount;
+                 column++)
+            {
+                const double along_m =
+                    (static_cast<double>(column) + 0.5) * wallQuery.cellSize_m;
+                if (along_m < alongStart_m || along_m > alongEnd_m)
+                {
+                    continue;
+                }
+                cellCount++;
+                if (wallProfile_in.cellStates[row * wallQuery.columnCount +
+                                              column] != SlabCellState::UNKNOWN)
+                {
+                    observedCount++;
+                }
+            }
+        }
+        return cellCount == 0U ? 0.0
+                               : static_cast<double>(observedCount) /
+                                     static_cast<double>(cellCount);
+    };
+
+    for (semantic::Passage *p_passage : allPassages)
+    {
+        bool passageIsBad = true;
+        if (p_passage != nullptr &&
+            p_passage->isBad(passageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<geometric::Plane *> passageWalls{};
+        if (p_passage != nullptr && !passageIsBad &&
+            p_passage->getAssociateWalls(passageWalls) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAssociateWalls returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+        /* Only the anchoring face of a passage gives its verdicts. */
+        if (p_passage == nullptr || passageIsBad || passageWalls.empty() ||
+            passageWalls.front() != p_wall_in)
+        {
+            continue;
+        }
+
+        Eigen::Vector3d passageCentroid_world_m{};
+        double          passageWidth_m{};
+        int             passageId{};
+        if (p_passage->getCentroid(passageCentroid_world_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_passage->getWidth(passageWidth_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_passage->getId(passageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid/getWidth/getId returned a failure "
+                         "status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Aperture in slab coordinates: the measured gap, else the passage. */
+        const auto   openGap = openGaps_in.find(p_passage);
+        const double passageAlong_m =
+            (passageCentroid_world_m - wallQuery.origin_world_m)
+                .dot(wallQuery.alongAxis_world);
+        const double apertureStart_m =
+            openGap != openGaps_in.end()
+                ? openGap->second.alongStart_m
+                : passageAlong_m - 0.5 * passageWidth_m;
+        const double apertureEnd_m =
+            openGap != openGaps_in.end()
+                ? openGap->second.alongEnd_m
+                : passageAlong_m + 0.5 * passageWidth_m;
+
+        enum class PassageVerdict
+        {
+            NO_EVIDENCE,
+            OPEN,
+            CLOSED
+        };
+        PassageVerdict passageVerdict = PassageVerdict::CLOSED;
+        if (observedFraction(apertureStart_m, apertureEnd_m) <
+            static_cast<double>(passageParameters.minimumObservedFraction))
+        {
+            passageVerdict = PassageVerdict::NO_EVIDENCE;
+        }
+        else if (openGap != openGaps_in.end() &&
+                 countWallPoints(apertureStart_m + apertureShrink_m,
+                                 apertureEnd_m - apertureShrink_m) <
+                     passageParameters.maximumApertureWallPoints)
+        {
+            passageVerdict = PassageVerdict::OPEN;
+        }
+        if (passageVerdict == PassageVerdict::NO_EVIDENCE)
+        {
+            continue;
+        }
+
+        std::size_t  consecutiveOpenVerdicts{}, consecutiveClosedVerdicts{};
+        std::int64_t lastVerdictStamp_ns{};
+        bool         passageIsBlocked{}, passageIsTraversed{};
+        if (p_passage->getVerdictCounters(consecutiveOpenVerdicts,
+                                          consecutiveClosedVerdicts,
+                                          lastVerdictStamp_ns) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_passage->isBlocked(passageIsBlocked) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_passage->getTraversalEvidence(passageIsTraversed) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getVerdictCounters/isBlocked/getTraversalEvidence "
+                "returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+        if (passageVerdict == PassageVerdict::OPEN)
+        {
+            consecutiveOpenVerdicts++;
+            consecutiveClosedVerdicts = 0U;
+            /* The plane stays anchored on the first face; only size and
+             * centre follow the measured gap. */
+            if (p_passage->setWidth(openGap->second.width_m) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                p_passage->setHeight(openGap->second.topHeight_m) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                p_passage->setCentroid(openGap->second.centre_world_m) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth/setHeight/setCentroid returned a "
+                             "failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (passageIsBlocked &&
+                consecutiveOpenVerdicts >=
+                    passageParameters.reopenConfirmationCount)
+            {
+                if (p_passage->setBlocked(false) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setBlocked returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                std::cout << "[SemMgr] Passage#" << passageId
+                          << " unblocked: open again for "
+                          << consecutiveOpenVerdicts << " profiles."
+                          << std::endl;
+            }
+        }
+        else
+        {
+            consecutiveClosedVerdicts++;
+            consecutiveOpenVerdicts = 0U;
+            if (consecutiveClosedVerdicts >=
+                passageParameters.closedConfirmationCount)
+            {
+                /* A crossed passage stays in the graph, only blocked; an
+                 * uncrossed one was never confirmed and is retired. */
+                if (passageIsTraversed && !passageIsBlocked)
+                {
+                    if (p_passage->setBlocked(true) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: setBlocked returned a failure status "
+                                     "although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    std::cout << "[SemMgr] Passage#" << passageId
+                              << " blocked: closed for "
+                              << consecutiveClosedVerdicts << " profiles."
+                              << std::endl;
+                }
+                else if (!passageIsTraversed)
+                {
+                    if (p_passage->setBad() !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    std::cout << "[SemMgr] Passage#" << passageId
+                              << " retired: closed for "
+                              << consecutiveClosedVerdicts
+                              << " profiles before any crossing." << std::endl;
+                    continue;
+                }
+            }
+        }
+        if (p_passage->setVerdictCounters(consecutiveOpenVerdicts,
+                                          consecutiveClosedVerdicts,
+                                          wallProfile_in.profileStamp_ns) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setVerdictCounters returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */

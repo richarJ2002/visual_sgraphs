@@ -4534,6 +4534,23 @@ void maybeArchiveSGraph(
                         __func__);
                 }
                 passageJson["passable"] = passageIsPassable;
+                bool passageIsTraversed{};
+                bool passageIsBlocked{};
+                if (p_passage->getTraversalEvidence(passageIsTraversed) !=
+                        vs_graphs::core::semantic::PassageStatus::
+                            PASSAGE_STATUS_SUCCESS ||
+                    p_passage->isBlocked(passageIsBlocked) !=
+                        vs_graphs::core::semantic::PassageStatus::
+                            PASSAGE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getTraversalEvidence/isBlocked returned "
+                                 "a failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
+                passageJson["traversed"] = passageIsTraversed;
+                passageJson["blocked"]   = passageIsBlocked;
 
                 Json connects = Json::array();
                 for (std::size_t roomOrdinal = 0U;

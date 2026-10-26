@@ -230,6 +230,7 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                 __func__);
         }
 
+        std::unordered_map<semantic::Passage *, WallGap> openGapsByPassage{};
         for (const WallGap &wallGap : wallGaps)
         {
             std::vector<semantic::Passage *> allPassages{};
@@ -307,23 +308,10 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                                  __func__);
                 }
 
-                /* The first face anchors the passage geometry. */
+                /* The first face anchors the passage and its verdicts. */
                 if (!passageWalls.empty() && passageWalls.front() == p_wall)
                 {
-                    if (p_matchingPassage->setWidth(wallGap.width_m) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-                        p_matchingPassage->setHeight(wallGap.topHeight_m) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-                        p_matchingPassage->setCentroid(
-                            wallGap.centre_world_m) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: setWidth/setHeight/setCentroid "
-                                     "returned a failure status although it "
-                                     "cannot fail; continuing as before.",
-                                     __func__);
-                    }
+                    openGapsByPassage[p_matchingPassage] = wallGap;
                     continue;
                 }
                 if (passageWalls.empty() ||
@@ -464,6 +452,16 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                              "cannot fail; continuing as before.",
                              __func__);
             }
+        }
+
+        if (applyPassageVerdicts(p_wall, wallProfile, openGapsByPassage) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyPassageVerdicts returned a failure status "
+                         "although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
