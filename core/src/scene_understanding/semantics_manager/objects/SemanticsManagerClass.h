@@ -758,30 +758,41 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus refreshCurrentCameraCenter(void);
 
     /*!
-     * @brief           Chooses the point a room is seen from: the current
-     *                  camera centre for the room the camera is in, the room
-     *                  centroid for every other room.
+     * @brief           Gives the points a room is judged from: its centroid,
+     *                  and for the room the camera is in also the current
+     *                  camera centre.
      *
      *                  The damped centroid of a young room can drift across
-     *                  one of its own walls; the camera inside the room
-     *                  cannot. The room the camera is in is the room whose id
-     *                  is getCurrentRoomId() and whose map is the active map.
+     *                  one of its own walls, and the current-room estimate can
+     *                  lag the camera crossing a doorway. So for the room the
+     *                  camera is in, the face rule and the doorway backstop act
+     *                  only when the camera and the centroid agree; a point too
+     *                  close to a plane to tell its side counts as
+     *                  disagreement. The room the camera is in is the room
+     *                  whose id is getCurrentRoomId() and whose map is the
+     *                  active map.
      *
      * @param[in]       p_room_in
      *                  Room to place; shall be non-null.
      *
-     * @param[out]      roomViewpoint_world_m_out
-     *                  Chosen point in the active map frame, metres.
+     * @param[out]      roomCentroid_world_m_out
+     *                  Room centroid in the active map frame, metres.
      *
-     * @param[out]      isCameraViewpoint_out
-     *                  True when the point is the camera centre.
+     * @param[out]      cameraCenter_world_m_out
+     *                  Current camera centre in the active map frame, metres;
+     *                  zero when hasCameraViewpoint_out is false.
+     *
+     * @param[out]      hasCameraViewpoint_out
+     *                  True when p_room_in is the room the camera is in and a
+     *                  camera centre is available.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
      */
     [[nodiscard]] SemanticsManagerStatus
-        getRoomViewpoint(semantic::Room  *p_room_in,
-                         Eigen::Vector3d &roomViewpoint_world_m_out,
-                         bool            &isCameraViewpoint_out);
+        getRoomViewpoints(semantic::Room  *p_room_in,
+                          Eigen::Vector3d &roomCentroid_world_m_out,
+                          Eigen::Vector3d &cameraCenter_world_m_out,
+                          bool            &hasCameraViewpoint_out);
 
     /*!
      * @brief           Orders wall admission candidates so nearer walls are
@@ -844,9 +855,9 @@ class SemanticsManager
      * @brief           Shared far-side-passage backstop: a wall whose centroid
      *                  lies beyond a passable passage's own BOUNDED aperture
      *                  (segmentCrossesPassageOpening() -- does the straight
-     *                  path from p_room_inout's viewpoint (getRoomViewpoint():
-     *                  the camera for the room it is in, else the centroid) to
-     *                  the wall actually
+     *                  path from p_room_inout's centroid -- and, for the room
+     *                  the camera is in, also from the camera
+     *                  (getRoomViewpoints()) -- to the wall actually
      *                  thread that specific doorway's width/height, not "which
      *                  side of an infinite plane is the wall on") cannot bound
      *                  p_room_inout. Deliberately NOT a room-vs-wall-normal
@@ -910,8 +921,9 @@ class SemanticsManager
      *                  (Plane::getObservationOrigin_world()). A room owns a
      *                  face only if the room lies on the same side of the plane
      *                  as that camera did (the room's position is its
-     *                  getRoomViewpoint(): the current camera for the room the
-     *                  camera is in, else the centroid); a room on the opposite
+     *                  centroid; for the room the camera is in, the camera and
+     *                  the centroid must both be on the opposite side -- see
+     *                  getRoomViewpoints()); a room on the opposite
      *                  side is
      *                  looking at the OTHER face, which is a different surface
      *                  it has not observed.

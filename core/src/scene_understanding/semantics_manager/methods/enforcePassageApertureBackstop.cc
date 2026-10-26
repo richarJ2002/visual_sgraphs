@@ -116,20 +116,26 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         /* segmentCrossesPassageOpening reports "no crossing" whenever the
          * segment start lies within minimumSideDistance_m of the passage
          * plane, which the centroid of a sparsely observed room often does.
-         * When the passage's known-side direction is available, substitute a
-         * point pushed off the plane on the tested room's own side: along the
-         * known-side direction for a known-side room, against it for the
-         * far-side room. Without a known side the residual sign is noise, so
-         * the start is left unchanged. */
+         * For a room judged from its centroid alone, when the passage's
+         * known-side direction is available, substitute a point pushed off
+         * the plane on the tested room's own side: along the known-side
+         * direction for a known-side room, against it for the far-side room.
+         * Without a known side the residual sign is noise, so the start is
+         * left unchanged. For the room the camera is in, the camera and the
+         * centroid must both see the crossing (getRoomViewpoints()); one too
+         * close to the plane to call is disagreement, so no substitute is
+         * made there. */
         Eigen::Vector3d segmentStart_world_m{};
-        bool            isCameraViewpoint{};
-        if (getRoomViewpoint(p_room_inout,
-                             segmentStart_world_m,
-                             isCameraViewpoint) !=
+        Eigen::Vector3d cameraCenter_world_m{};
+        bool            hasCameraViewpoint{};
+        if (getRoomViewpoints(p_room_inout,
+                              segmentStart_world_m,
+                              cameraCenter_world_m,
+                              hasCameraViewpoint) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomViewpoint returned a failure status "
+                         "%s: getRoomViewpoints returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
@@ -144,7 +150,8 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         }
         Eigen::Vector4d passageEquation_world = passageGlobalEquation.coeffs();
         const double passageNormalNorm = passageEquation_world.head<3>().norm();
-        if (passageEquation_world.allFinite() && passageNormalNorm > 1e-8)
+        if (!hasCameraViewpoint && passageEquation_world.allFinite() &&
+            passageNormalNorm > 1e-8)
         {
             passageEquation_world /= passageNormalNorm;
             const Eigen::Vector3d passageNormal_world =
@@ -206,24 +213,36 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        bool crossesPassageOpening{};
-        if (segmentCrossesPassageOpening(
-                segmentStart_world_m,
-                wallGetCentroid.cast<double>(),
-                p_passage,
-                groundNormal_world_in,
-                static_cast<double>(
-                    p_sysParams->roomSeg.passagePartition.openingMargin_m),
-                minimumSideDistance_m,
-                crossesPassageOpening) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        const auto crossesFrom =
+            [this,
+             &wallGetCentroid,
+             p_passage,
+             &groundNormal_world_in,
+             minimumSideDistance_m](const Eigen::Vector3d &segmentStart_in)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: segmentCrossesPassageOpening returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
+            bool crossesPassageOpening_out{};
+            if (segmentCrossesPassageOpening(
+                    segmentStart_in,
+                    wallGetCentroid.cast<double>(),
+                    p_passage,
+                    groundNormal_world_in,
+                    static_cast<double>(
+                        p_sysParams->roomSeg.passagePartition.openingMargin_m),
+                    minimumSideDistance_m,
+                    crossesPassageOpening_out) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: segmentCrossesPassageOpening returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            return crossesPassageOpening_out;
+        };
+        const bool crossesPassageOpening =
+            crossesFrom(segmentStart_world_m) &&
+            (!hasCameraViewpoint || crossesFrom(cameraCenter_world_m));
         if (!crossesPassageOpening)
         {
             continue;

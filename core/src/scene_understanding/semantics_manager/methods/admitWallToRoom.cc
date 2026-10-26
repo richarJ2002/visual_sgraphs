@@ -256,16 +256,18 @@ SemanticsManagerStatus
      * crossing inside N's observed in-plane extent and height, widened by
      * wall_extension.maximum_in_plane_gap so a doorway at N's end counts.
      */
+    Eigen::Vector3d roomCentroid_world_m{};
     Eigen::Vector3d roomViewpoint_world_m{};
     bool            isCameraViewpoint{};
     if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
-        getRoomViewpoint(p_room_inout,
-                         roomViewpoint_world_m,
-                         isCameraViewpoint) !=
+        getRoomViewpoints(p_room_inout,
+                          roomCentroid_world_m,
+                          roomViewpoint_world_m,
+                          isCameraViewpoint) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getRoomViewpoint returned a failure status although "
+                     "%s: getRoomViewpoints returned a failure status although "
                      "it cannot fail; continuing as before.",
                      __func__);
     }

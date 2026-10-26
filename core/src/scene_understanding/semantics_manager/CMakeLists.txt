@@ -37,7 +37,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerEventHistoryForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerPendingForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerStateForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomViewpoint.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomViewpoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloorsForTest.cc

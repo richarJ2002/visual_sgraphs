@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            getRoomViewpoint.cc
+ * @file            getRoomViewpoints.cc
  *
- * @brief           Implements SemanticsManager::getRoomViewpoint(), declared
+ * @brief           Implements SemanticsManager::getRoomViewpoints(), declared
  *                  in SemanticsManager.h.
  */
 
@@ -35,13 +35,15 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::getRoomViewpoint(
+SemanticsManagerStatus SemanticsManager::getRoomViewpoints(
     semantic::Room  *p_room_in,
-    Eigen::Vector3d &roomViewpoint_world_m_out,
-    bool            &isCameraViewpoint_out)
+    Eigen::Vector3d &roomCentroid_world_m_out,
+    Eigen::Vector3d &cameraCenter_world_m_out,
+    bool            &hasCameraViewpoint_out)
 {
-    isCameraViewpoint_out = false;
-    if (p_room_in->getCentroid(roomViewpoint_world_m_out) !=
+    hasCameraViewpoint_out   = false;
+    cameraCenter_world_m_out = Eigen::Vector3d::Zero();
+    if (p_room_in->getCentroid(roomCentroid_world_m_out) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -98,8 +100,8 @@ SemanticsManagerStatus SemanticsManager::getRoomViewpoint(
 
     if (hasCameraCenter && p_cameraCenterMap == p_activeMap)
     {
-        roomViewpoint_world_m_out = currentCameraCenter_world_m;
-        isCameraViewpoint_out     = true;
+        cameraCenter_world_m_out = currentCameraCenter_world_m;
+        hasCameraViewpoint_out   = true;
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
