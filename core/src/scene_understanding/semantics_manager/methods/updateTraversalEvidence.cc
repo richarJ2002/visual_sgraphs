@@ -45,6 +45,7 @@
 #include <algorithm>
 #include <cmath>
 #include <rclcpp/logging.hpp>
+#include <unordered_map>
 
 #include "execution/profiling/profiling.h"
 
@@ -233,6 +234,17 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     hasCameraCenter   = true;
     p_cameraCenterMap = p_activeMap;
 
+    /*!
+     * Last camera centre that lay resolvably (at least minimumSideDistance_m)
+     * on one side of each passage's plane. A crossing is tested from this
+     * point, not from the previous key frame: key frames of a slow flight are
+     * a few centimetres apart, so two consecutive centres can never both be
+     * minimumSideDistance_m from the plane on opposite sides, and a crossing
+     * between consecutive key frames alone would never be seen.
+     */
+    std::unordered_map<semantic::Passage *, Eigen::Vector3d>
+        resolvedSideCenter_world_m{};
+
     for (std::size_t keyFrameIndex = historyStartIndex + 1U;
          keyFrameIndex < orderedKeyFrames.size();
          ++keyFrameIndex)
@@ -279,12 +291,61 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                 continue;
             }
 
-            /* The segment joining the last two camera centres approximates the
-             * UAV trajectory. When it crosses inside the finite aperture while
-             * the passage is passable, the UAV has flown through the opening:
-             * record traversal evidence. */
+            g2o::Plane3D passagePlane{};
+            if (p_passage->getGlobalEquation(passagePlane) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector4d passagePlaneEquation = passagePlane.coeffs();
+            const double    passageNormalNorm =
+                passagePlaneEquation.head<3>().norm();
+            if (!passagePlaneEquation.allFinite() || passageNormalNorm <= 1e-8)
+            {
+                continue;
+            }
+            passagePlaneEquation /= passageNormalNorm;
+            const auto signedSideDistance_m =
+                [&passagePlaneEquation](const Eigen::Vector3d &point_world_m_in)
+            {
+                return passagePlaneEquation.head<3>().dot(point_world_m_in) +
+                       passagePlaneEquation(3);
+            };
+
+            /* The first resolvable centre in the replayed history (possibly
+             * the seed) starts the crossing segment. */
+            if (resolvedSideCenter_world_m.count(p_passage) == 0U &&
+                std::abs(signedSideDistance_m(previousCameraCenter_world_m)) >=
+                    minimumSideDistance_m)
+            {
+                resolvedSideCenter_world_m[p_passage] =
+                    previousCameraCenter_world_m;
+            }
+            if (std::abs(signedSideDistance_m(currentCameraCenter_world_m)) <
+                minimumSideDistance_m)
+            {
+                /* Too close to the plane to tell the side; keep the start. */
+                continue;
+            }
+            if (resolvedSideCenter_world_m.count(p_passage) == 0U)
+            {
+                resolvedSideCenter_world_m[p_passage] =
+                    currentCameraCenter_world_m;
+                continue;
+            }
+            const Eigen::Vector3d crossingStart_world_m =
+                resolvedSideCenter_world_m[p_passage];
+            resolvedSideCenter_world_m[p_passage] = currentCameraCenter_world_m;
+
+            /* The segment from the last resolvable centre to this one
+             * approximates the UAV trajectory. When it crosses inside the
+             * finite aperture while the passage is passable, the UAV has flown
+             * through the opening: record traversal evidence. */
             bool crossesPassageOpening{};
-            if (segmentCrossesPassageOpening(previousCameraCenter_world_m,
+            if (segmentCrossesPassageOpening(crossingStart_world_m,
                                              currentCameraCenter_world_m,
                                              p_passage,
                                              groundNormal_world,
@@ -356,7 +417,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                         passageEquation /= normalNorm;
                         const double observationSide =
                             passageEquation.head<3>().dot(
-                                previousCameraCenter_world_m) +
+                                crossingStart_world_m) +
                             passageEquation(3);
                         if (std::abs(observationSide) > minimumSideDistance_m)
                         {
@@ -410,7 +471,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                             __func__);
                     }
                     const Eigen::Vector3d startFromPassage_world_m =
-                        previousCameraCenter_world_m - passageCentroid;
+                        crossingStart_world_m - passageCentroid;
                     traversalDirection =
                         startFromPassage_world_m.dot(
                             knownSide.knownSideDirection_world) >= 0.0
