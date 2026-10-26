@@ -127,14 +127,34 @@ SemanticsManagerStatus
     equation1 /= normalNorm1;
     equation2 /= normalNorm2;
 
-    /* Align equation2's sign to equation1's before comparing offsets --
-     * plane-equation sign is arbitrary. */
-    Eigen::Vector4d alignedEquation2 = equation2;
-    if (equation1.head<3>().dot(equation2.head<3>()) < 0.0)
+    /* Wall thickness is measured at the faces themselves: the mean distance
+     * of each face's centroid from the other face's plane. Comparing the
+     * plane offsets instead measures the gap next to the map origin, which
+     * for faces a few degrees apart differs from the gap at the wall by
+     * the tilt times the wall's distance along the plane from that point --
+     * comparable to the thickness of a thin wall. */
+    Eigen::Vector3d centroid1_world_m{};
+    if (p_first_in->getCentroid(centroid1_world_m) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        alignedEquation2 *= -1.0;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
-    const double separation_m = std::abs(equation1(3) - alignedEquation2(3));
+    Eigen::Vector3d centroid2_world_m{};
+    if (p_second_in->getCentroid(centroid2_world_m) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    const double separation_m =
+        0.5 *
+        (std::abs(equation1.head<3>().dot(centroid2_world_m) + equation1(3)) +
+         std::abs(equation2.head<3>().dot(centroid1_world_m) + equation2(3)));
 
     if (separation_m < minimumThickness_m_in ||
         separation_m > maximumThickness_m_in)
