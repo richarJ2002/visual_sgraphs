@@ -242,6 +242,32 @@ class Passage
      */
     std::deque<std::pair<unsigned long, unsigned long>> traversalSegmentHistory;
 
+    /*!
+     * @brief           True while a traversed passage looks closed (for
+     *                  example a shut door). The room link and passable flag
+     *                  are kept; the passage can reopen. Guarded by typeMutex.
+     */
+    bool isMarkedBlocked{false};
+
+    /*!
+     * @brief           Free-space verdicts in a row that found the opening
+     *                  open. Guarded by typeMutex.
+     */
+    std::size_t consecutiveOpenVerdicts{0U};
+
+    /*!
+     * @brief           Free-space verdicts in a row that found the opening
+     *                  closed. Guarded by typeMutex.
+     */
+    std::size_t consecutiveClosedVerdicts{0U};
+
+    /*!
+     * @brief           Stamp of the wall-slab profile behind the latest
+     *                  verdict, node-clock nanoseconds; 0 = none yet. Guarded
+     *                  by typeMutex.
+     */
+    std::int64_t lastVerdictStamp_ns{0};
+
   public:
     /*!
      * @brief           Creates an empty passage with default ids and no map
@@ -513,6 +539,66 @@ class Passage
      */
     [[nodiscard]] PassageStatus
         setTraversalObservationCount(std::size_t value_in);
+
+    /*!
+     * @brief           Tells whether this traversed passage is currently
+     *                  blocked.
+     *
+     * @param[out]      isBlocked_out
+     *                  True while the passage is marked blocked.
+     *
+     * @return          PASSAGE_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] PassageStatus isBlocked(bool &isBlocked_out) const;
+
+    /*!
+     * @brief           Marks this passage blocked or unblocked.
+     *
+     * @param[in]       value_in
+     *                  True when the opening is closed after a traversal.
+     *
+     * @return          PASSAGE_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] PassageStatus setBlocked(bool value_in);
+
+    /*!
+     * @brief           Returns the free-space verdict counters.
+     *
+     * @param[out]      consecutiveOpenVerdicts_out
+     *                  Open verdicts in a row.
+     *
+     * @param[out]      consecutiveClosedVerdicts_out
+     *                  Closed verdicts in a row.
+     *
+     * @param[out]      lastVerdictStamp_ns_out
+     *                  Profile stamp of the latest verdict, nanoseconds; 0 =
+     *                  none yet.
+     *
+     * @return          PASSAGE_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] PassageStatus
+        getVerdictCounters(std::size_t  &consecutiveOpenVerdicts_out,
+                           std::size_t  &consecutiveClosedVerdicts_out,
+                           std::int64_t &lastVerdictStamp_ns_out) const;
+
+    /*!
+     * @brief           Sets the free-space verdict counters.
+     *
+     * @param[in]       consecutiveOpenVerdicts_in
+     *                  Open verdicts in a row.
+     *
+     * @param[in]       consecutiveClosedVerdicts_in
+     *                  Closed verdicts in a row.
+     *
+     * @param[in]       lastVerdictStamp_ns_in
+     *                  Profile stamp of the latest verdict, nanoseconds.
+     *
+     * @return          PASSAGE_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] PassageStatus
+        setVerdictCounters(std::size_t  consecutiveOpenVerdicts_in,
+                           std::size_t  consecutiveClosedVerdicts_in,
+                           std::int64_t lastVerdictStamp_ns_in);
 
     /*!
      * @brief           Returns the width of this passage.
@@ -825,7 +911,8 @@ class Passage
 
     /*!
      * @brief           Guards the passable flag, the passage type, the recovery
-     *                  proxy flag and the traversal counters and history.
+     *                  proxy flag, the traversal counters and history, the
+     *                  blocked flag and the verdict counters.
      */
     mutable std::mutex typeMutex;
 

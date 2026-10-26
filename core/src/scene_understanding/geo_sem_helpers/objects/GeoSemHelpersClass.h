@@ -37,7 +37,12 @@
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 namespace vs_graphs::core::atlas { class Atlas; }
 namespace vs_graphs::core::keyframe { class KeyFrame; }
-namespace vs_graphs::core::semantic { class Room; class Marker; }
+namespace vs_graphs::core::semantic
+{
+class Room;
+class Marker;
+class Passage;
+} /* namespace vs_graphs::core::semantic */
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
@@ -192,6 +197,11 @@ class GeoSemHelpers
      * @param[in]       p_wallPlane_in
      *                  Plane representing the wall containing the opening.
      *
+     * @param[out]      p_createdPassage_out
+     *                  The passage this call added to the Atlas; null when it
+     *                  updated an existing duplicate or created nothing.
+     *                  Borrowed: the Atlas owns it.
+     *
      * @param[in]       isOpenPassage_in
      *                  True when connected free-space evidence confirms that
      *                  the opening is traversable.
@@ -201,9 +211,10 @@ class GeoSemHelpers
      *                  metres.
      */
     [[nodiscard]] static GeoSemHelpersStatus createMapPassage(
-        atlas::Atlas            *p_atlas_inout,
+        atlas::Atlas                      *p_atlas_inout,
         vs_graphs::core::geometric::Plane *p_doorPlane_in,
         vs_graphs::core::geometric::Plane *p_wallPlane_in,
+        semantic::Passage                *&p_createdPassage_out,
         bool                               isOpenPassage_in = false,
         Eigen::Vector3d passageCentroid_world_m_in = Eigen::Vector3d::Zero());
 

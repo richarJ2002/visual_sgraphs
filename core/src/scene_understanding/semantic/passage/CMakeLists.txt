@@ -21,10 +21,12 @@ set(VS_GRAPHS_SEMANTIC_PASSAGE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTraversalKnownToFarCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTraversalObservationCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTraversalUnknownCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getVerdictCounters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWidth.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasBidirectionalTraversalEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasProspectiveRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBlocked.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isPassable.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isRecoveryProxy.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/mergeFromDuplicate.cc
@@ -32,6 +34,7 @@ set(VS_GRAPHS_SEMANTIC_PASSAGE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/replacePlaneAssociation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceProspectiveRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setAssociateDoor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBlocked.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setGlobalEquation.cc
@@ -48,5 +51,6 @@ set(VS_GRAPHS_SEMANTIC_PASSAGE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRecoveryProxy.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setTraversalEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setTraversalObservationCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setVerdictCounters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setWidth.cc
 )

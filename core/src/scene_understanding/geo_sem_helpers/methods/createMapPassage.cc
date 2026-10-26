@@ -48,12 +48,15 @@ namespace vs_graphs::core::utils::geo_sem_helpers
 {
 
 GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
-    atlas::Atlas            *p_atlas_inout,
+    atlas::Atlas                      *p_atlas_inout,
     vs_graphs::core::geometric::Plane *p_doorPlane_in,
     vs_graphs::core::geometric::Plane *p_wallPlane_in,
+    semantic::Passage                *&p_createdPassage_out,
     bool                               isOpenPassage_in,
     Eigen::Vector3d                    passageCentroid_world_m_in)
 {
+    p_createdPassage_out = nullptr;
+
     /* ---------------------------------------------------------------------- *
      * VALIDATE REQUIRED INPUTS
      * ---------------------------------------------------------------------- */
@@ -837,6 +840,8 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    p_createdPassage_out = p_newMapPassage;
 
     std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
     if (p_atlas_inout->getAllPassages(atlasAllPassages) !=

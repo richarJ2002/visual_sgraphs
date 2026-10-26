@@ -190,6 +190,16 @@ SemanticsManagerStatus
         }
     }
 
+    /* Ask Voxblox for a free-space slab around every confirmed wall. */
+    if (buildWallSlabQueries(confirmedWallPlanes) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: buildWallSlabQueries returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     /*  Detect blocked passages represented by closed semantic door planes */
     for (vs_graphs::core::geometric::Plane *p_door : doorPlanes)
     {
@@ -265,11 +275,14 @@ SemanticsManagerStatus
             }
 
             /* Create a blocked passage associated with the supporting wall */
-            if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(p_atlas,
-                                                p_door,
-                                                p_wall,
-                                                false) !=
-                utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            semantic::Passage *p_createdPassage = nullptr;
+            if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(
+                    p_atlas,
+                    p_door,
+                    p_wall,
+                    p_createdPassage,
+                    false) != utils::geo_sem_helpers::GeoSemHelpersStatus::
+                                  GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: createMapPassage returned a failure status "

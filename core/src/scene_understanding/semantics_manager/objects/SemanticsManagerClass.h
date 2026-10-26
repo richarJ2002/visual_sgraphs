@@ -26,13 +26,15 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_SEMANTICS_MANAGER_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_SEMANTICS_MANAGER_CLASS_H
 
+#include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
-#include "configuration/types/types.h"
+#include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
+#include "scene_understanding/semantics_manager/objects/WallSlabQueryStruct.h"
 
 #include <Eigen/Core>
 #include <cstddef>
@@ -450,6 +452,40 @@ class SemanticsManager
      *                  SG_PIPELINE.
      */
     std::uint64_t pipelineSemanticCycle{0U};
+
+    /*!
+     * @brief           Guards wallSlabQueries and wallSlabProfiles only; never
+     *                  held together with the semantic update lock, so the ROS
+     *                  slab client cannot stall a semantic cycle.
+     */
+    mutable std::mutex wallSlabMutex;
+
+    /*!
+     * @brief           One slab query per confirmed wall, rebuilt every
+     *                  semantic cycle. Guarded by wallSlabMutex.
+     */
+    std::vector<WallSlabQuery> wallSlabQueries;
+
+    /*!
+     * @brief           Latest Voxblox profiles, one per queried wall. Guarded
+     *                  by wallSlabMutex.
+     */
+    std::vector<WallSlabProfile> wallSlabProfiles;
+
+    /*!
+     * @brief           Rebuilds wallSlabQueries from the confirmed walls: a
+     *                  slab along each wall plane over its support-cloud extent
+     *                  (+- wall_bounds_margin) from the floor up to
+     *                  door_band_max_height_m + 0.3 m. Clears the queries when
+     *                  no ground plane or camera centre is known.
+     *
+     * @param[in]       confirmedWalls_in
+     *                  Walls with enough observations for passage detection.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus buildWallSlabQueries(
+        const std::vector<geometric::Plane *> &confirmedWalls_in);
 
     /*!
      * @brief           Result of establishing the active map's bootstrap
@@ -1051,6 +1087,31 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus isSemanticReportCacheAvailable(
         bool &isSemanticReportCacheAvailable_out) const;
+
+    /*!
+     * @brief           Copies the wall-slab queries of the latest semantic
+     *                  cycle. Thread-safe; takes only wallSlabMutex.
+     *
+     * @param[out]      wallSlabQueries_out
+     *                  Queries in the world frame; empty before the first
+     *                  cycle.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus getWallSlabQueries(
+        std::vector<WallSlabQuery> &wallSlabQueries_out) const;
+
+    /*!
+     * @brief           Replaces the stored wall-slab profiles with a new
+     *                  Voxblox answer. Thread-safe; takes only wallSlabMutex.
+     *
+     * @param[in]       wallSlabProfiles_in
+     *                  Profiles in the world frame, one per answered query.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus setWallSlabProfiles(
+        const std::vector<WallSlabProfile> &wallSlabProfiles_in);
 
     /*!
      * @brief           Detects open passages where a connected Voxblox skeleton

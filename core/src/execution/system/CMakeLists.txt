@@ -29,6 +29,7 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackedKeyPointsUn.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackedMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackingState.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getWallSlabQueries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/haveWorkersFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/incrementSegmentationPublishedCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/initialize.cc
@@ -53,6 +54,7 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/saveTrajectoryTUM.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setWallSlabProfiles.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/shutdown.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/trackMonocular.cc

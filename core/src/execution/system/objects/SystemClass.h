@@ -1269,6 +1269,32 @@ class System
         const;
 
     /*!
+     * @brief           Copies the latest wall-slab queries of the semantic
+     *                  thread; empty when no SemanticsManager exists yet.
+     *                  Thread-safe; never takes the semantic update lock.
+     *
+     * @param[out]      wallSlabQueries_out
+     *                  Queries in the SLAM world frame.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SystemStatus getWallSlabQueries(
+        std::vector<WallSlabQuery> &wallSlabQueries_out) const;
+
+    /*!
+     * @brief           Hands a Voxblox wall-slab answer to the semantic
+     *                  thread; ignored when no SemanticsManager exists yet.
+     *                  Thread-safe; never takes the semantic update lock.
+     *
+     * @param[in]       wallSlabProfiles_in
+     *                  Profiles in the SLAM world frame.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SystemStatus setWallSlabProfiles(
+        const std::vector<WallSlabProfile> &wallSlabProfiles_in);
+
+    /*!
      * @brief           True once p_semanticsManager exists and has cached at
      *                  least one complete semantic evaluation cycle.
      */

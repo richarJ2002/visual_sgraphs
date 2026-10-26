@@ -1296,12 +1296,16 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * Creating a prospective room eagerly at detection time (when the
          * passage has 0 associated rooms) leaves a spurious prospective room on
          * passages that later acquire two associated rooms. */
-        if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(p_atlas,
-                                            nullptr,
-                                            candidate.p_wall,
-                                            true,
-                                            candidate.crossingPoint) !=
-            utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+        semantic::Passage *p_createdPassage = nullptr;
+        if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(
+                p_atlas,
+                nullptr,
+                candidate.p_wall,
+                p_createdPassage,
+                true,
+                candidate.crossingPoint) !=
+            utils::geo_sem_helpers::GeoSemHelpersStatus::
+                GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: createMapPassage returned a failure status "
