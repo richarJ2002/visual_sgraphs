@@ -88,7 +88,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneFootprintOntoSharedAxes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesOpenPassageEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/sharesRoomNameTag.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc

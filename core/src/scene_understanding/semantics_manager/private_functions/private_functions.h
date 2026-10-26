@@ -437,12 +437,9 @@ Eigen::Quaterniond
     double                             &polygonArea_m2_out);
 
 /*!
- * @brief           Core aperture-crossing math shared by both a confirmed
- *                  Passage and a still-unconfirmed OpenPassageEvidence
- *                  hypothesis (see segmentCrossesOpenPassageEvidence below) --
- *                  the two differ only in where the plane equation, centroid,
- *                  and opening size come from, never in how the crossing test
- *                  itself works.
+ * @brief           Core aperture-crossing math behind
+ *                  segmentCrossesPassageOpening(), taking the aperture plane,
+ *                  centroid and opening size directly.
  *
  * @param[in]       segmentStart_world_m_in
  *                  First endpoint, in metres.
@@ -532,45 +529,6 @@ Eigen::Quaterniond
                                  const double minimumSideDistance_m_in,
                                  bool        &crossesPassageOpening_out,
                                  const bool   requirePassable_in = true);
-
-/*!
- * @brief           Same aperture-crossing test as segmentCrossesPassageOpening,
- *                  but against a still-unconfirmed OpenPassageEvidence
- *                  hypothesis instead of a confirmed Passage.
- *
- *                  Passage confirmation requires several genuinely independent
- *                  Voxblox skeleton snapshots (minimumConfirmationSnapshots,
- *                  config-gated to guard against double-counting one latched
- *                  ROS message -- see the skeleton-fingerprint check in
- *                  detectDoorsAndDoorways()) and therefore real elapsed
- *                  exploration time. Until that confirmation completes, no
- *                  Passage object exists for mpAtlas->GetAllPassages() to
- *                  return, so any far-side-routing check that only consults
- *                  confirmed passages is blind for that entire window -- a wall
- *                  genuinely on the far side of a real, already-evidenced
- *                  opening falls through to ordinary admission and gets bound
- *                  to the WRONG (near) room, exactly the corruption far-side
- *                  routing exists to prevent. Using the same aperture geometry
- *                  math against the pending evidence (its supporting wall's
- *                  plane stands in for the eventual passage plane, its
- *                  openingRadius_m/heightSpan_m for the eventual width/height
- *                  -- the same derivation createMapPassage() itself uses once
- *                  confirmed) closes that window without weakening the
- *                  confirmation gate itself: the passage still is not created,
- *                  only wall ADMISSION becomes conservative while its identity
- *                  is still ambiguous.
- */
-[[nodiscard]] SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
-    const Eigen::Vector3d &segmentStart_world_m_in,
-    const Eigen::Vector3d &segmentEnd_world_m_in,
-    geometric::Plane      *p_evidenceSupportingWall_in,
-    const Eigen::Vector3d &evidenceCentroid_world_m_in,
-    const double           evidenceOpeningRadius_m_in,
-    const double           evidenceHeightSpan_m_in,
-    const Eigen::Vector3d &groundNormal_world_in,
-    const double           openingMargin_m_in,
-    const double           minimumSideDistance_m_in,
-    bool                  &crossesOpenPassageEvidence_out);
 
 /*!
  * @brief           Tests whether a straight segment between two points is
