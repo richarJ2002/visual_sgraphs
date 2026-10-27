@@ -183,6 +183,21 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         {
             continue;
         }
+        /* Rooms across a passage or a wall's twin faces never merge. */
+        bool areRoomsSeparated{};
+        if (p_selectedRoom_inout->getIsSeparatedFrom(p_candidateRoom,
+                                                     areRoomsSeparated) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getIsSeparatedFrom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (areRoomsSeparated)
+        {
+            continue;
+        }
 
         /*!
          * Only automatically absorb undefined structural elements.

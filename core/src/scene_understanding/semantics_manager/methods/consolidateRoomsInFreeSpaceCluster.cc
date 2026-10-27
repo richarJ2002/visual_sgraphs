@@ -294,15 +294,6 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        std::vector<semantic::Passage *> retainedPassages{};
-        if (p_retainedRoom_inout->getPassages(retainedPassages) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getPassages returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
         std::vector<semantic::Passage *> duplicatePassages{};
         if (p_duplicateRoom->getPassages(duplicatePassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -313,165 +304,18 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          __func__);
         }
 
-        bool              roomsSeparatedByConfirmedPassage = false;
-        geometric::Plane *p_groundPlane                    = nullptr;
-        if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        /* Rooms across a passage or a wall's twin faces never fuse. */
+        bool areRoomsSeparated{};
+        if (p_retainedRoom_inout->getIsSeparatedFrom(p_duplicateRoom,
+                                                     areRoomsSeparated) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getBiggestGroundPlane returned a failure status "
+                         "%s: getIsSeparatedFrom returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-
-        bool groundPlaneIsBad{};
-        if ((p_groundPlane != nullptr) &&
-            p_groundPlane->isBad(groundPlaneIsBad) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_groundPlane != nullptr && !groundPlaneIsBad)
-        {
-            g2o::Plane3D groundPlaneGetGlobalEquation{};
-            if (p_groundPlane->getGlobalEquation(
-                    groundPlaneGetGlobalEquation) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getGlobalEquation returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            Eigen::Vector4d groundEquation_world =
-                groundPlaneGetGlobalEquation.coeffs();
-            const double groundNormalNorm =
-                groundEquation_world.head<3>().norm();
-
-            if (groundEquation_world.allFinite() && groundNormalNorm > 1e-8)
-            {
-                const Eigen::Vector3d groundNormal_world =
-                    groundEquation_world.head<3>() / groundNormalNorm;
-                std::vector<semantic::Passage *> confirmedPassages{};
-                if (p_atlas->getAllPassages(confirmedPassages) !=
-                    atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getAllPassages returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-
-                roomsSeparatedByConfirmedPassage = std::any_of(
-                    confirmedPassages.begin(),
-                    confirmedPassages.end(),
-                    [&retainedCentroid_world_m,
-                     &duplicateCentroid_world_m,
-                     &groundNormal_world,
-                     this](semantic::Passage *p_passage)
-                    {
-                        bool crossesPassageOpening{};
-                        if (segmentCrossesPassageOpening(
-                                retainedCentroid_world_m,
-                                duplicateCentroid_world_m,
-                                p_passage,
-                                groundNormal_world,
-                                p_sysParams->roomSeg.passagePartition
-                                    .openingMargin_m,
-                                p_sysParams->roomSeg.passagePartition
-                                    .minimumSideDistance_m,
-                                crossesPassageOpening) !=
-                            SemanticsManagerStatus::
-                                SEMANTICS_MANAGER_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: segmentCrossesPassageOpening returned a "
-                                "failure status although it cannot fail; "
-                                "continuing as before.",
-                                __func__);
-                        }
-                        return crossesPassageOpening;
-                    });
-            }
-        }
-
-        if (roomsSeparatedByConfirmedPassage)
-        {
-            continue;
-        }
-
-        /*
-         * A shared passage only proves that two hypotheses represent adjacent
-         * rooms when their centroids lie on opposite sides of the passage
-         * plane. During incremental mapping, the same opening may temporarily
-         * be associated with two duplicate hypotheses on the same side. Using
-         * passage identity alone would then preserve the duplicate forever.
-         */
-        constexpr double minimumPassageSideDistance_m = 0.20;
-
-        const bool roomsSeparatedBySharedPassage = std::any_of(
-            retainedPassages.begin(),
-            retainedPassages.end(),
-            [&duplicatePassages,
-             &retainedCentroid_world_m,
-             &duplicateCentroid_world_m](semantic::Passage *p_sharedPassage_in)
-            {
-                if (p_sharedPassage_in == nullptr ||
-                    std::find(duplicatePassages.begin(),
-                              duplicatePassages.end(),
-                              p_sharedPassage_in) == duplicatePassages.end())
-                {
-                    return false;
-                }
-
-                g2o::Plane3D sharedPassage_inGlobalEquation{};
-                if (p_sharedPassage_in->getGlobalEquation(
-                        sharedPassage_inGlobalEquation) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getGlobalEquation returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                Eigen::Vector4d passageEquation_world =
-                    sharedPassage_inGlobalEquation.coeffs();
-
-                const double passageNormalNorm =
-                    passageEquation_world.head<3>().norm();
-
-                if (!passageEquation_world.allFinite() ||
-                    passageNormalNorm < 1e-8)
-                {
-                    return false;
-                }
-
-                passageEquation_world /= passageNormalNorm;
-
-                const double retainedSide_m =
-                    passageEquation_world.head<3>().dot(
-                        retainedCentroid_world_m) +
-                    passageEquation_world(3);
-
-                const double duplicateSide_m =
-                    passageEquation_world.head<3>().dot(
-                        duplicateCentroid_world_m) +
-                    passageEquation_world(3);
-
-                return retainedSide_m * duplicateSide_m < 0.0 &&
-                       std::abs(retainedSide_m) >=
-                           minimumPassageSideDistance_m &&
-                       std::abs(duplicateSide_m) >=
-                           minimumPassageSideDistance_m;
-            });
-
-        if (roomsSeparatedBySharedPassage)
+        if (areRoomsSeparated)
         {
             continue;
         }

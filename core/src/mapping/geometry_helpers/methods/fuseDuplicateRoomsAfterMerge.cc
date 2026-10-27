@@ -372,6 +372,22 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
+            /* Rooms across a passage or a wall's twin faces never fuse. */
+            bool areRoomsSeparated{};
+            if (p_importedRoom->getIsSeparatedFrom(p_candidateRoom,
+                                                   areRoomsSeparated) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getIsSeparatedFrom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (areRoomsSeparated)
+            {
+                continue;
+            }
+
             std::string importedIdentity{};
             if (p_importedRoom->getRoomTag(importedIdentity) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)

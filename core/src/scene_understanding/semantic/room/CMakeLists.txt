@@ -9,6 +9,7 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getGroundPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getHasKnownLabel.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getIsSeparatedFrom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMatchedContext.cc

@@ -733,6 +733,23 @@ class Room
         std::vector<vs_graphs::core::semantic::Passage *> &passages_out) const;
 
     /*!
+     * @brief           Decides whether another room lies across a boundary
+     *                  from this one, so the two must never be merged or
+     *                  fused: both are linked to one passage, or they own
+     *                  the two faces of one wall (twin faces).
+     *
+     * @param[in]       p_other_in
+     *                  Room to test; null or this room is never separated.
+     *
+     * @param[out]      isSeparated_out
+     *                  True when the rooms are separated.
+     *
+     * @return          ROOM_STATUS_SUCCESS.
+     */
+    [[nodiscard]] RoomStatus getIsSeparatedFrom(const Room *p_other_in,
+                                                bool &isSeparated_out) const;
+
+    /*!
      * @brief           Replaces a retired passage with its retained fused
      *                  entity.
      *
