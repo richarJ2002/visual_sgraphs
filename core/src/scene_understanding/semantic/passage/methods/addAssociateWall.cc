@@ -52,7 +52,8 @@ PassageStatus
         [p_wall_in](vs_graphs::core::geometric::Plane *p_existingWall)
         { return p_existingWall == p_wall_in; });
 
-    if (!alreadyPresent)
+    /* A passage is framed by at most the two faces of one wall. */
+    if (!alreadyPresent && associateWalls.size() < 2U)
     {
         associateWalls.push_back(p_wall_in);
     }

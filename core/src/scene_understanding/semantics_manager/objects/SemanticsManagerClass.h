@@ -346,15 +346,6 @@ class SemanticsManager
     std::unordered_map<int, int> prospectiveRoomCycles;
 
     /*!
-     * @brief           Consecutive cycles a passage has had zero associated
-     *                  rooms (real or prospective). A passage linked to no room
-     *                  at all is not a valid passage -- reset to 0 the moment
-     *                  any room is associated, entries removed once the
-     *                  passage is marked bad (Passage::setBad()).
-     */
-    std::unordered_map<int, std::size_t> passageZeroRoomCycles;
-
-    /*!
      * @brief           Evidence bookkeeping for one wall that belongs to no
      *                  room or passage yet.
      */
@@ -970,6 +961,16 @@ class SemanticsManager
      *                  until the wall happens to be re-admitted from scratch.
      */
     [[nodiscard]] SemanticsManagerStatus enforcePassageSideInvariant(void);
+
+    /*!
+     * @brief           Per-cycle sweep of the passage topology rules
+     *                  (isPassageTopologyValid()); a violating passage is set
+     *                  bad and one SG_PIPELINE passage_invalid line names the
+     *                  broken rule.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus enforcePassageTopologyInvariant(void);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

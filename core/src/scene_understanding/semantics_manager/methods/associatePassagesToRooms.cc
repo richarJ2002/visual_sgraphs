@@ -257,16 +257,6 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         __func__);
                 }
             }
-            int passageId{};
-            if (p_passage->getId(passageId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            passageZeroRoomCycles.erase(passageId);
             continue;
         }
 
@@ -1301,107 +1291,6 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                 }
                 knownSide = passageKnownSideProvenance2;
             }
-        }
-
-        if (associatedRoomCount == 0)
-        {
-            /* A passage linked to no room at all -- real or prospective --
-             * is not a valid passage. Give it a short grace period (fresh
-             * passages start at 0 rooms for a cycle or two before nearby
-             * wall/room evidence catches up) before invalidating it, rather
-             * than deleting on the very first zero-room cycle. Passage has
-             * no removal from the Atlas, only Plane/Room's isBad()
-             * convention (see Passage::setBad()'s own comment). */
-            constexpr std::size_t maximumZeroRoomCycles = 5U;
-            int                   passageId6{};
-            if (p_passage->getId(passageId6) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            const std::size_t zeroRoomCycles =
-                ++passageZeroRoomCycles[passageId6];
-
-            if (zeroRoomCycles > maximumZeroRoomCycles)
-            {
-                if (p_passage->setBad() !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setBad returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                int passageId7{};
-                if (p_passage->getId(passageId7) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                passageZeroRoomCycles.erase(passageId7);
-                int passageId8{};
-                if (p_passage->getId(passageId8) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                std::cout << "[SemMgr] Passage#" << passageId8
-                          << " invalidated: 0 associated rooms for "
-                          << zeroRoomCycles << " consecutive cycles."
-                          << std::endl;
-            }
-            else
-            {
-                int passageId9{};
-                if (p_passage->getId(passageId9) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                bool knownSideHasDirection4{};
-                if (knownSide.hasDirection(knownSideHasDirection4) !=
-                    semantic::KnownSideProvenanceStatus::
-                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: hasDirection returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                std::cout << "[SemMgr] Passage#" << passageId9
-                          << " has 0 associated rooms (" << zeroRoomCycles
-                          << "/" << maximumZeroRoomCycles
-                          << " grace cycles); camera-side provenance="
-                          << (knownSideHasDirection4 ? "known" : "missing")
-                          << "." << std::endl;
-            }
-        }
-        else
-        {
-            int passageId10{};
-            if (p_passage->getId(passageId10) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            passageZeroRoomCycles.erase(passageId10);
         }
 
         if (associatedRoomCount > 2)
@@ -2769,9 +2658,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                     nullptr;
 
                 /*!
-                 * Per WP8-B's own driving principle: "a wall observed on the
-                 * far side of ANY confirmed passage aperture belongs to that
-                 * passage's prospective room... decide which side of every
+                 * Driving principle of far-side ownership: "a wall observed on
+                 * the far side of ANY confirmed passage aperture belongs to
+                 * that passage's prospective room... decide which side of every
                  * passage it lies on" -- using segmentCrossesPassageOpening,
                  * the same purely semantic (passage width/height aperture,
                  * not voxblox cluster geometry) test already used for wall

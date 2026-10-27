@@ -14,6 +14,7 @@
 #define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_PRIVATE_FUNCTIONS_H
 
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include <Eigen/Geometry>
@@ -715,6 +716,37 @@ Eigen::Quaterniond
     findWallRoom(const std::vector<semantic::Room *> &rooms_in,
                  geometric::Plane                    *p_wall_in,
                  semantic::Room                     *&p_wallRoom_out);
+
+/*!
+ * @brief           Checks the topology rules of one passage: one or two walls,
+ *                  two walls in different rooms once both are owned, at most
+ *                  two linked rooms, and a prospective room other than the
+ *                  host wall's room.
+ *
+ * @param[in]       wallRooms_in
+ *                  Owning room of each valid wall, host wall first; null for
+ *                  an unowned wall.
+ *
+ * @param[in]       linkedRoomCount_in
+ *                  Number of rooms listing the passage.
+ *
+ * @param[in]       p_prospectiveRoom_in
+ *                  Prospective room of the passage; null when it has none.
+ *
+ * @param[out]      isPassageTopologyValid_out
+ *                  True when every rule holds.
+ *
+ * @param[out]      violationReason_out
+ *                  First broken rule; empty when valid.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus
+    isPassageTopologyValid(const std::vector<semantic::Room *> &wallRooms_in,
+                           std::size_t     linkedRoomCount_in,
+                           semantic::Room *p_prospectiveRoom_in,
+                           bool           &isPassageTopologyValid_out,
+                           std::string    &violationReason_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

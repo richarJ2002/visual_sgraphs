@@ -723,7 +723,8 @@ class Passage
 
     /*!
      * @brief           Adds a wall plane next to this passage; a wall already
-     *                  listed is not added twice.
+     *                  listed is not added twice, and a third wall is not
+     *                  added (a passage has at most the two wall faces).
      *
      * @param[in]       p_wall_in
      *                  Borrowed wall plane; a null pointer is ignored.

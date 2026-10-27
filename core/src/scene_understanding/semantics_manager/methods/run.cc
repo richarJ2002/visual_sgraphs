@@ -364,6 +364,17 @@ void SemanticsManager::run(void)
                     __func__);
             }
 
+            /* Topology rules of every passage, after its side invariant. */
+            if (enforcePassageTopologyInvariant() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: enforcePassageTopologyInvariant returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+
             /* PROSPECTIVE ROOM CLEANUP
              * A passage reference is the stable far-side handle. Zero-wall
              * prospectives remain alive while that reference and its geometry

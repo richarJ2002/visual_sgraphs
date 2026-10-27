@@ -22,6 +22,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariantForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageTopologyInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforceUniqueWallOwnership.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/ensureActiveMapBootstrapHierarchy.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/ensureActiveMapBootstrapHierarchyForTest.cc
@@ -88,6 +89,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findWallRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasSeparatingFiniteWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneFootprintOntoSharedAxes.cc

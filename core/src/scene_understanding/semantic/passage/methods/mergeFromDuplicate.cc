@@ -152,7 +152,8 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
 
         for (geometric::Plane *p_duplicateWall : duplicateWalls)
         {
-            if (p_duplicateWall != nullptr &&
+            /* A passage is framed by at most the two faces of one wall. */
+            if (p_duplicateWall != nullptr && associateWalls.size() < 2U &&
                 std::find(associateWalls.begin(),
                           associateWalls.end(),
                           p_duplicateWall) == associateWalls.end())

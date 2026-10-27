@@ -270,7 +270,7 @@ AtlasStatus Atlas::matchRoomsToContext(map::Map *p_newMap_in)
             }
 
             /* Locate the snapshot pointer in the stored history so the
-             * room can hold a non-owning reference for WP3. */
+             * room can hold a non-owning reference to it. */
             for (std::pair<const unsigned long,
                            std::vector<semantic::RoomContextSnapshot>> &entry :
                  roomContextHistory)
