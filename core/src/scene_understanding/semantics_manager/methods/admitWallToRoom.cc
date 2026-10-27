@@ -416,6 +416,102 @@ SemanticsManagerStatus
         }
     }
 
+    /*
+     * Admits the candidate. The see-through gate also holds in reverse: when
+     * a far wall was mapped before the nearer wall it is seen through (the
+     * camera looked through the doorway first), admitting the nearer wall
+     * detaches that far wall again, so admission order cannot let the room
+     * own the face beyond a doorway.
+     */
+    const auto admitCandidateWall = [&]()
+    {
+        if (p_room_inout->setWalls(p_candidateWall_in) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_sysParams->roomSeg.isSeeThroughGateEnabled ||
+            !isCameraViewpoint ||
+            std::any_of(allPassages.begin(),
+                        allPassages.end(),
+                        [p_candidateWall_in](semantic::Passage *p_passage)
+                        {
+                            bool                            passageIsBad{true};
+                            std::vector<geometric::Plane *> associateWalls{};
+                            return p_passage != nullptr &&
+                                   p_passage->isBad(passageIsBad) ==
+                                       semantic::PassageStatus::
+                                           PASSAGE_STATUS_SUCCESS &&
+                                   !passageIsBad &&
+                                   p_passage->getAssociateWalls(
+                                       associateWalls) ==
+                                       semantic::PassageStatus::
+                                           PASSAGE_STATUS_SUCCESS &&
+                                   std::find(associateWalls.begin(),
+                                             associateWalls.end(),
+                                             p_candidateWall_in) !=
+                                       associateWalls.end();
+                        }))
+        {
+            return;
+        }
+        for (geometric::Plane *p_fartherWall : existingWalls)
+        {
+            Eigen::Vector3d fartherCentroid_world_m{};
+            if (p_fartherWall == nullptr ||
+                p_fartherWall == p_candidateWall_in ||
+                p_fartherWall->getCentroid(fartherCentroid_world_m) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                continue;
+            }
+            bool isSeenThroughCandidate{};
+            if (hasSeparatingFiniteWall(
+                    {p_candidateWall_in},
+                    roomViewpoint_world_m,
+                    fartherCentroid_world_m,
+                    static_cast<double>(p_sysParams->semSeg.reassociate
+                                            .wallExtension.maximumInPlaneGap_m),
+                    isSeenThroughCandidate) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasSeparatingFiniteWall returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
+            }
+            bool wasWallRemoved{};
+            if (!isSeenThroughCandidate ||
+                p_room_inout->removeWall(p_fartherWall, wasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                !wasWallRemoved)
+            {
+                continue;
+            }
+            int fartherWallId{}, candidateWallId{}, roomId{};
+            if (p_fartherWall->getId(fartherWallId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                p_candidateWall_in->getId(candidateWallId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                p_room_inout->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::cout << "[SemMgr] Wall#" << fartherWallId
+                      << " detached from Room#" << roomId
+                      << ": seen through nearer Wall#" << candidateWallId << "."
+                      << std::endl;
+        }
+    };
+
     const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =
         p_sysParams->roomSeg.boundaryTopology;
     geometric::Plane *p_groundPlane = nullptr;
@@ -441,14 +537,7 @@ SemanticsManagerStatus
     if (!topologyParameters.enabled || p_groundPlane == nullptr ||
         groundPlaneIsBad)
     {
-        if (p_room_inout->setWalls(p_candidateWall_in) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        admitCandidateWall();
         wasAdmitted_out = true;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
@@ -468,14 +557,7 @@ SemanticsManagerStatus
 
     if (!groundEquation_world.allFinite() || groundNormalNorm < 1e-8)
     {
-        if (p_room_inout->setWalls(p_candidateWall_in) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        admitCandidateWall();
         wasAdmitted_out = true;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
@@ -506,14 +588,7 @@ SemanticsManagerStatus
     }
     if (!isBuilt)
     {
-        if (p_room_inout->setWalls(p_candidateWall_in) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        admitCandidateWall();
         wasAdmitted_out = true;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
@@ -837,14 +912,7 @@ SemanticsManagerStatus
         }
     }
 
-    if (p_room_inout->setWalls(p_candidateWall_in) !=
-        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setWalls returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
+    admitCandidateWall();
     wasAdmitted_out = true;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
