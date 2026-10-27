@@ -58,9 +58,12 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
         static_cast<double>(passageParameters.doorBandMinHeight_m);
     const double doorBandMaximum_m =
         static_cast<double>(passageParameters.doorBandMaxHeight_m);
-    /* The aperture is shrunk by one cell per side before counting wall
-     * points, so the door frame itself never counts as a closed door. */
-    const double apertureShrink_m = wallQuery.cellSize_m;
+    /*
+     * Wall points are counted in the central half of the aperture only: the
+     * measured gap can be a TSDF voxel wider than the door, and the jamb
+     * faces and wall edges must never count as a closed door.
+     */
+    constexpr double apertureShrinkFraction = 0.25;
 
     std::vector<semantic::Passage *> allPassages{};
     if (p_atlas->getAllPassages(allPassages) !=
@@ -82,7 +85,12 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
             __func__);
     }
 
-    /* Wall support points inside an along/height window of the slab. */
+    /*
+     * Wall support points inside an along/height window of the slab, counted
+     * only where the slab is not FREE: the TSDF is integrated at the poses of
+     * the moment, so after a SLAM correction current wall points can land in
+     * free space carved at a stale pose and must not close the door.
+     */
     const auto countWallPoints = [&](double alongStart_m, double alongEnd_m)
     {
         std::size_t pointCount = 0U;
@@ -102,9 +110,19 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                 offset_world_m.dot(wallQuery.alongAxis_world);
             const double height_m = offset_world_m.dot(wallQuery.upAxis_world) *
                                     wallQuery.upAxisRise;
-            if (pcl::isFinite(supportPoint) && along_m >= alongStart_m &&
-                along_m <= alongEnd_m && height_m >= doorBandMinimum_m &&
-                height_m <= doorBandMaximum_m)
+            if (!pcl::isFinite(supportPoint) || along_m < 0.0 ||
+                along_m < alongStart_m || along_m > alongEnd_m ||
+                height_m < doorBandMinimum_m || height_m > doorBandMaximum_m)
+            {
+                continue;
+            }
+            const std::size_t column =
+                static_cast<std::size_t>(along_m / wallQuery.cellSize_m);
+            const std::size_t row = static_cast<std::size_t>(
+                height_m / (wallQuery.cellSize_m * wallQuery.upAxisRise));
+            if (column < wallQuery.columnCount && row < wallQuery.rowCount &&
+                wallProfile_in.cellStates[row * wallQuery.columnCount +
+                                          column] != SlabCellState::FREE)
             {
                 pointCount++;
             }
@@ -220,8 +238,11 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
             passageVerdict = PassageVerdict::NO_EVIDENCE;
         }
         else if (openGap != openGaps_in.end() &&
-                 countWallPoints(apertureStart_m + apertureShrink_m,
-                                 apertureEnd_m - apertureShrink_m) <
+                 countWallPoints(
+                     apertureStart_m + apertureShrinkFraction *
+                                           (apertureEnd_m - apertureStart_m),
+                     apertureEnd_m - apertureShrinkFraction *
+                                         (apertureEnd_m - apertureStart_m)) <
                      passageParameters.maximumApertureWallPoints)
         {
             passageVerdict = PassageVerdict::OPEN;
