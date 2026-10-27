@@ -735,8 +735,10 @@ class Room
     /*!
      * @brief           Decides whether another room lies across a boundary
      *                  from this one, so the two must never be merged or
-     *                  fused: both are linked to one passage, or they own
-     *                  the two faces of one wall (twin faces).
+     *                  fused: both are on one passage (a doorway link,
+     *                  its prospective room, or the owner of one of its wall
+     *                  faces), or they own the two faces of one wall (twin
+     *                  faces).
      *
      * @param[in]       p_other_in
      *                  Room to test; null or this room is never separated.

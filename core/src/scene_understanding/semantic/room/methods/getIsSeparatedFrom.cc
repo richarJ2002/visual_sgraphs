@@ -25,6 +25,8 @@
 
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include <algorithm>
 #include <rclcpp/logging.hpp>
@@ -60,12 +62,56 @@ RoomStatus Room::getIsSeparatedFrom(const Room *p_other_in,
                      __func__);
     }
 
-    /* A passage links at most two rooms, one per side. */
-    for (Passage *p_passage : ownPassages)
+    /*
+     * A passage has two sides: a room is on it when the passage is among its
+     * doorways, it is the passage's prospective (far-side) room, or it owns
+     * one of the passage's wall faces. Two rooms on one passage are on its
+     * two sides.
+     */
+    const auto isOnPassage =
+        [](Passage                               *p_passage_in,
+           const Room                            *p_room_in,
+           const std::vector<Passage *>          &roomPassages_in,
+           const std::vector<geometric::Plane *> &roomWalls_in)
+    {
+        if (std::find(roomPassages_in.begin(),
+                      roomPassages_in.end(),
+                      p_passage_in) != roomPassages_in.end())
+        {
+            return true;
+        }
+        Room                           *p_prospectiveRoom = nullptr;
+        std::vector<geometric::Plane *> passageWalls{};
+        if (p_passage_in->getProspectiveRoom(p_prospectiveRoom) !=
+                PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_passage_in->getAssociateWalls(passageWalls) !=
+                PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoom/getAssociateWalls returned a "
+                         "failure status although it cannot fail; continuing "
+                         "as before.",
+                         __func__);
+        }
+        return p_prospectiveRoom == p_room_in ||
+               std::any_of(passageWalls.begin(),
+                           passageWalls.end(),
+                           [&roomWalls_in](geometric::Plane *p_face)
+                           {
+                               return std::find(roomWalls_in.begin(),
+                                                roomWalls_in.end(),
+                                                p_face) != roomWalls_in.end();
+                           });
+    };
+    std::vector<Passage *> candidatePassages = ownPassages;
+    candidatePassages.insert(candidatePassages.end(),
+                             otherPassages.begin(),
+                             otherPassages.end());
+    for (Passage *p_passage : candidatePassages)
     {
         if (p_passage != nullptr &&
-            std::find(otherPassages.begin(), otherPassages.end(), p_passage) !=
-                otherPassages.end())
+            isOnPassage(p_passage, this, ownPassages, ownWalls) &&
+            isOnPassage(p_passage, p_other_in, otherPassages, otherWalls))
         {
             isSeparated_out = true;
             return RoomStatus::ROOM_STATUS_SUCCESS;
