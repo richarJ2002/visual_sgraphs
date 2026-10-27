@@ -483,6 +483,11 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                              "cannot fail; continuing as before.",
                              __func__);
             }
+            /* The gap that created the passage is its first verdict. */
+            if (p_createdPassage != nullptr)
+            {
+                openGapsByPassage[p_createdPassage] = wallGap;
+            }
             if (p_createdPassage != nullptr &&
                 (p_createdPassage->setWidth(wallGap.width_m) !=
                      semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
