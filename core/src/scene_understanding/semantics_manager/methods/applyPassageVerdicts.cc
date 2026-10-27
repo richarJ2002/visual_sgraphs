@@ -253,11 +253,25 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                     apertureShrinkFraction * (apertureEnd_m - apertureStart_m),
                 apertureEnd_m -
                     apertureShrinkFraction * (apertureEnd_m - apertureStart_m));
-            if (openGap != openGaps_in.end() &&
+            /*
+             * A mostly FREE aperture without wall points is no closure even
+             * when no door-sized gap was measured (the free space ran past
+             * the wall's end or merged with a neighbouring opening).
+             */
+            constexpr double minimumUnboundedFreeFraction = 0.5;
+            const bool       hasNoWallPoints =
                 apertureWallPoints <
-                    passageParameters.maximumApertureWallPoints)
+                passageParameters.maximumApertureWallPoints;
+            if (openGap != openGaps_in.end() && hasNoWallPoints)
             {
                 passageVerdict = PassageVerdict::OPEN;
+            }
+            else if (hasNoWallPoints &&
+                     static_cast<double>(lastFreeCount) >
+                         minimumUnboundedFreeFraction *
+                             static_cast<double>(lastCellCount))
+            {
+                passageVerdict = PassageVerdict::NO_EVIDENCE;
             }
             else
             {
