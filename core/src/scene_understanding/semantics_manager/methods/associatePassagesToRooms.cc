@@ -1381,9 +1381,20 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                  existingProspectiveRoomVariant !=
                      vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
-            /* Promotion/replacement keeps the same far-side resolution. */
-            if (p_existingProspective->setDoorways(p_passage) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            /*
+             * Promotion/replacement keeps the same far-side resolution, but
+             * never as a third room: once two other rooms hold both sides the
+             * promoted handle is stale (it is cleared below).
+             */
+            const bool areBothSidesHeldByOthers =
+                p_negativeSideRoom != nullptr &&
+                p_positiveSideRoom != nullptr &&
+                p_negativeSideRoom != p_positiveSideRoom &&
+                p_existingProspective != p_negativeSideRoom &&
+                p_existingProspective != p_positiveSideRoom;
+            if (!areBothSidesHeldByOthers &&
+                p_existingProspective->setDoorways(p_passage) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: setDoorways returned a failure status "
