@@ -237,15 +237,29 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
         {
             passageVerdict = PassageVerdict::NO_EVIDENCE;
         }
-        else if (openGap != openGaps_in.end() &&
-                 countWallPoints(
-                     apertureStart_m + apertureShrinkFraction *
-                                           (apertureEnd_m - apertureStart_m),
-                     apertureEnd_m - apertureShrinkFraction *
-                                         (apertureEnd_m - apertureStart_m)) <
-                     passageParameters.maximumApertureWallPoints)
+        else
         {
-            passageVerdict = PassageVerdict::OPEN;
+            const std::size_t apertureWallPoints = countWallPoints(
+                apertureStart_m +
+                    apertureShrinkFraction * (apertureEnd_m - apertureStart_m),
+                apertureEnd_m -
+                    apertureShrinkFraction * (apertureEnd_m - apertureStart_m));
+            if (openGap != openGaps_in.end() &&
+                apertureWallPoints <
+                    passageParameters.maximumApertureWallPoints)
+            {
+                passageVerdict = PassageVerdict::OPEN;
+            }
+            else
+            {
+                std::cout
+                    << "SG_PIPELINE {\"event\":\"passage_closed_verdict\","
+                       "\"passage_id\":"
+                    << passageId << ",\"gap\":"
+                    << (openGap != openGaps_in.end() ? "true" : "false")
+                    << ",\"wall_points\":" << apertureWallPoints << "}"
+                    << std::endl;
+            }
         }
         if (passageVerdict == PassageVerdict::NO_EVIDENCE)
         {
