@@ -246,6 +246,21 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                              __func__);
             }
         }
+        /* Wall points crossing a free-space gap mean it is no door. */
+        wallGaps.erase(
+            std::remove_if(
+                wallGaps.begin(),
+                wallGaps.end(),
+                [&passageParameters](const WallGap &wallGap)
+                {
+                    return wallGap.width_m <
+                               static_cast<double>(
+                                   passageParameters.minimumOpeningWidth_m) ||
+                           wallGap.width_m >
+                               static_cast<double>(
+                                   passageParameters.maximumOpeningWidth_m);
+                }),
+            wallGaps.end());
 
         semantic::Room *p_wallRoom = nullptr;
         if (findWallRoom(allRooms, p_wall, p_wallRoom) !=
