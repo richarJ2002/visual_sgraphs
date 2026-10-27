@@ -219,6 +219,34 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                 __func__);
         }
 
+        /* Width, height and centre come from the wall's own points. */
+        geometric::Plane::GeometrySnapshot wallGeometry{};
+        if (p_wall->getGeometrySnapshot(wallGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getGeometrySnapshot returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+        for (WallGap &wallGap : wallGaps)
+        {
+            if (wallGeometry.supportCloud != nullptr &&
+                refineWallGapFromPoints(wallProfile.query,
+                                        *wallGeometry.supportCloud,
+                                        passageParameters,
+                                        wallGap) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: refineWallGapFromPoints returned a failure "
+                             "status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
+
         semantic::Room *p_wallRoom = nullptr;
         if (findWallRoom(allRooms, p_wall, p_wallRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

@@ -18,6 +18,8 @@
 #include <vector>
 
 #include <Eigen/Geometry>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 #include "configuration/types/types.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
@@ -747,6 +749,33 @@ Eigen::Quaterniond
                            semantic::Room *p_prospectiveRoom_in,
                            bool           &isPassageTopologyValid_out,
                            std::string    &violationReason_out);
+
+/*!
+ * @brief           Refines a slab gap at the wall's own points: per door-band
+ *                  row the point-free run around the coarse gap centre gives
+ *                  the two wall ends, the medians give width and centre, and
+ *                  the lowest point above the band inside them the lintel.
+ *                  The gap is left unchanged when too few rows are bounded.
+ *
+ * @param[in]       wallQuery_in
+ *                  Slab query of the wall, world frame, metres.
+ *
+ * @param[in]       wallCloud_in
+ *                  Support points of the wall, world frame, metres.
+ *
+ * @param[in]       passageParameters_in
+ *                  Door band and bounded-row fraction.
+ *
+ * @param[in,out]   wallGap_inout
+ *                  Coarse gap from measureWallGap(); refined in place.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus refineWallGapFromPoints(
+    const WallSlabQuery                                 &wallQuery_in,
+    const pcl::PointCloud<pcl::PointXYZRGBA>            &wallCloud_in,
+    const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
+    WallGap                                             &wallGap_inout);
 
 } /* namespace core */
 } /* namespace vs_graphs */
