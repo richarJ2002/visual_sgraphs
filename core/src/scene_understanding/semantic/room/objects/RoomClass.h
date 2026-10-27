@@ -792,7 +792,9 @@ class Room
      *                  by plane identity. The semantic manager enforces
      *                  one owning room per mapped wall surface. Adjacent
      *                  rooms therefore use distinct observations of the
-     *                  two physical wall faces.
+     *                  two physical wall faces: a face of a linked
+     *                  passage whose other face this room already owns
+     *                  is not added.
      *
      * @param[in]       p_wall_in
      *                  Wall plane to associate; null pointers are
