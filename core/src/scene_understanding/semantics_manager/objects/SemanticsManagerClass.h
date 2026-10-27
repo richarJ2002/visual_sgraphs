@@ -965,8 +965,9 @@ class SemanticsManager
     /*!
      * @brief           Per-cycle sweep of the passage topology rules
      *                  (isPassageTopologyValid()); a violating passage is set
-     *                  bad and one SG_PIPELINE passage_invalid line names the
-     *                  broken rule.
+     *                  bad, except that a second face in the host wall's room
+     *                  is detached, and one SG_PIPELINE passage_invalid line
+     *                  names the broken rule and the action.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */

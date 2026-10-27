@@ -92,7 +92,8 @@ SemanticsManagerStatus SemanticsManager::enforcePassageTopologyInvariant(void)
                 "cannot fail; continuing as before.",
                 __func__);
         }
-        std::vector<semantic::Room *> wallRooms{};
+        std::vector<geometric::Plane *> validWalls{};
+        std::vector<semantic::Room *>   wallRooms{};
         for (geometric::Plane *p_wall : passageWalls)
         {
             bool wallIsBad = true;
@@ -119,6 +120,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageTopologyInvariant(void)
                     "cannot fail; continuing as before.",
                     __func__);
             }
+            validWalls.push_back(p_wall);
             wallRooms.push_back(p_wallRoom);
         }
 
@@ -179,21 +181,34 @@ SemanticsManagerStatus SemanticsManager::enforcePassageTopologyInvariant(void)
             continue;
         }
 
-        int passageId{};
-        if (p_passage->setBad() !=
+        /*
+         * A second face owned by the host wall's room is not the far face of
+         * this opening: detach it (replacing it by the host wall drops it)
+         * instead of discarding a passage that may already be crossed.
+         */
+        const bool isSameRoomFace = violationReason == "walls_in_same_room";
+        bool       wasFaceDetached{};
+        int        passageId{};
+        if ((isSameRoomFace
+                 ? p_passage->replacePlaneAssociation(validWalls[1],
+                                                      validWalls[0],
+                                                      wasFaceDetached)
+                 : p_passage->setBad()) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
             p_passage->getId(passageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: setBad/getId returned a failure status although it "
-                "cannot fail; continuing as before.",
-                __func__);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: replacePlaneAssociation/setBad/getId returned a "
+                         "failure status although it cannot fail; continuing "
+                         "as before.",
+                         __func__);
         }
         std::cout
             << "SG_PIPELINE {\"event\":\"passage_invalid\",\"passage_id\":"
-            << passageId << ",\"reason\":\"" << violationReason << "\"}"
+            << passageId << ",\"reason\":\"" << violationReason
+            << "\",\"action\":\""
+            << (isSameRoomFace ? "detached_face" : "set_bad") << "\"}"
             << std::endl;
     }
 
