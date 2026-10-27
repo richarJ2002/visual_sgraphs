@@ -304,6 +304,28 @@ class Room
      */
     std::vector<ObservationGap> observationGaps;
 
+    /* ---------------------------------------------------------------------- *
+     * PRIVATE METHODS
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Decides whether a wall must not join this room: it is a
+     *                  face of a linked passage whose other face this room
+     *                  already owns, or the host (first) face of a passage
+     *                  this room is the prospective room of.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall plane to test; non-null.
+     *
+     * @param[out]      isRefused_out
+     *                  True when the wall is refused.
+     *
+     * @return          ROOM_STATUS_SUCCESS.
+     */
+    [[nodiscard]] RoomStatus
+        getIsPassageFaceRefused(geometric::Plane *p_wall_in,
+                                bool             &isRefused_out) const;
+
   public:
     /* ---------------------------------------------------------------------- *
      * PUBLIC METHODS
@@ -828,7 +850,9 @@ class Room
      *
      *                  This is used when two mapped plane hypotheses are fused.
      *                  Existing membership of the retained plane is
-     *                  deduplicated.
+     *                  deduplicated; a retained plane refused by setWalls()
+     *                  (a passage face) is not taken, the retired one is
+     *                  still dropped.
      *
      * @param[in]       p_retiredWall_in
      *                  Wall plane which is being retired.

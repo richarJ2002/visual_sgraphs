@@ -23,10 +23,11 @@
  * semantic/room/objects/RoomClass.h.
  */
 
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include "mapping/geometric/Plane/Plane.h"
+#include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -45,6 +46,16 @@ RoomStatus Room::replaceWall(geometric::Plane *p_retiredWall_in,
         return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
+    bool isRetainedWallRefused{};
+    if (getIsPassageFaceRefused(p_retainedWall_in, isRetainedWallRefused) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getIsPassageFaceRefused returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     std::lock_guard<std::mutex> lock(wallsMutex);
 
     bool                            wasRetiredWallReplaced = false;
@@ -57,7 +68,8 @@ RoomStatus Room::replaceWall(geometric::Plane *p_retiredWall_in,
 
         if (p_existingWall == p_retiredWall_in)
         {
-            p_candidateWall        = p_retainedWall_in;
+            p_candidateWall =
+                isRetainedWallRefused ? nullptr : p_retainedWall_in;
             wasRetiredWallReplaced = true;
         }
 
