@@ -91,7 +91,18 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
                                              ownedWalls.end(),
                                              p_face) != ownedWalls.end();
                         });
-        if (ownsOtherFace)
+        /* The host (first) face bounds the near side, never the far side. */
+        Room *p_prospectiveRoom = nullptr;
+        if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (ownsOtherFace ||
+            (p_prospectiveRoom == this && passageWalls.front() == p_wall_in))
         {
             return RoomStatus::ROOM_STATUS_SUCCESS;
         }

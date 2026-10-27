@@ -793,8 +793,9 @@ class Room
      *                  one owning room per mapped wall surface. Adjacent
      *                  rooms therefore use distinct observations of the
      *                  two physical wall faces: a face of a linked
-     *                  passage whose other face this room already owns
-     *                  is not added.
+     *                  passage whose other face this room already owns,
+     *                  or the host face of a passage this room is the
+     *                  prospective room of, is not added.
      *
      * @param[in]       p_wall_in
      *                  Wall plane to associate; null pointers are

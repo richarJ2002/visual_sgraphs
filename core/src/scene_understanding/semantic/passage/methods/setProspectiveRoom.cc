@@ -24,10 +24,14 @@
  */
 
 #include "scene_understanding/semantic/passage/objects/PassageClass.h"
+#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
+
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +43,24 @@ namespace semantic
 PassageStatus
     Passage::setProspectiveRoom(vs_graphs::core::semantic::Room *p_room_in)
 {
+    /* The room owning the host (first) face is the near side. */
+    std::vector<geometric::Plane *> roomWalls{};
+    if (p_room_in != nullptr &&
+        p_room_in->getWalls(roomWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
     std::lock_guard<std::mutex> lock(geometryMutex);
+    if (!associateWalls.empty() &&
+        std::find(roomWalls.begin(), roomWalls.end(), associateWalls.front()) !=
+            roomWalls.end())
+    {
+        return PassageStatus::PASSAGE_STATUS_SUCCESS;
+    }
     p_prospectiveRoom = p_room_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

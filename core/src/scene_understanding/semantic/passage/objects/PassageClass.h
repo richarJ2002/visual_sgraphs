@@ -751,9 +751,9 @@ class Passage
 
     /*!
      * @brief           Sets the stable far-side room resolution for this
-     *                  passage.
-     *                               Caller retains ownership; Passage stores a
-     *                               non-owning
+     *                  passage; a room owning the host (first) wall is the
+     *                  near side and is refused, keeping the previous room.
+     *                  Caller retains ownership; Passage stores a non-owning
      *                  reference.
      */
     [[nodiscard]] PassageStatus
