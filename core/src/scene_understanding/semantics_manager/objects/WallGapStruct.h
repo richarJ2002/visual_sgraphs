@@ -42,7 +42,8 @@ struct WallGap
   public:
     /*!
      * @brief           Left and right ends of the opening along the wall,
-     *                  metres, refined at the TSDF zero crossing.
+     *                  metres, refined at the TSDF zero crossing: the coarse
+     *                  aperture in which the slab confirms FREE.
      */
     double alongStart_m{0.0};
     double alongEnd_m{0.0};
@@ -54,7 +55,8 @@ struct WallGap
     double topHeight_m{0.0};
 
     /*!
-     * @brief           Median width over the bounded door-band rows, metres.
+     * @brief           Median width over the bounded door-band rows, metres;
+     *                  measured at the wall points when they bound the rows.
      */
     double width_m{0.0};
 

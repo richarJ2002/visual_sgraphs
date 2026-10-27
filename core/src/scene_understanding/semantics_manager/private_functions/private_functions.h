@@ -755,7 +755,8 @@ Eigen::Quaterniond
  *                  row the point-free run around the coarse gap centre gives
  *                  the two wall ends, the medians give width and centre, and
  *                  the lowest point above the band inside them the lintel.
- *                  The gap is left unchanged when too few rows are bounded.
+ *                  The along extent stays the coarse slab aperture; the gap
+ *                  is left unchanged when too few rows are bounded.
  *
  * @param[in]       wallQuery_in
  *                  Slab query of the wall, world frame, metres.

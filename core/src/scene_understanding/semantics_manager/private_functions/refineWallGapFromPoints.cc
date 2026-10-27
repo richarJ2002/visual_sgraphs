@@ -204,8 +204,7 @@ SemanticsManagerStatus refineWallGapFromPoints(
         wallGap_inout.topHeight_m = median(observedTops_m);
     }
 
-    wallGap_inout.alongStart_m = alongStart_m;
-    wallGap_inout.alongEnd_m   = alongEnd_m;
+    /* The along extent stays the slab's coarse aperture for the verdicts. */
     wallGap_inout.width_m      = width_m;
     wallGap_inout.centre_world_m =
         wallQuery_in.origin_world_m +
