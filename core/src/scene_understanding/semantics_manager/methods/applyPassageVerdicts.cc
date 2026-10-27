@@ -130,10 +130,12 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
         return pointCount;
     };
 
-    /* Fraction of door-band cells with any TSDF observation. */
-    const auto observedFraction = [&](double alongStart_m, double alongEnd_m)
+    /* Fraction of door-band cells with any TSDF observation; the free and
+     * total cell counts of the last call are kept for the closed log. */
+    std::size_t lastFreeCount = 0U, lastCellCount = 0U;
+    const auto  observedFraction = [&](double alongStart_m, double alongEnd_m)
     {
-        std::size_t cellCount = 0U, observedCount = 0U;
+        std::size_t cellCount = 0U, observedCount = 0U, freeCount = 0U;
         for (std::size_t row = 0U; row < wallQuery.rowCount; row++)
         {
             const double height_m = (static_cast<double>(row) + 0.5) *
@@ -157,8 +159,15 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                 {
                     observedCount++;
                 }
+                if (wallProfile_in.cellStates[row * wallQuery.columnCount +
+                                              column] == SlabCellState::FREE)
+                {
+                    freeCount++;
+                }
             }
         }
+        lastFreeCount = freeCount;
+        lastCellCount = cellCount;
         return cellCount == 0U ? 0.0
                                : static_cast<double>(observedCount) /
                                      static_cast<double>(cellCount);
@@ -257,8 +266,9 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                        "\"passage_id\":"
                     << passageId << ",\"gap\":"
                     << (openGap != openGaps_in.end() ? "true" : "false")
-                    << ",\"wall_points\":" << apertureWallPoints << "}"
-                    << std::endl;
+                    << ",\"wall_points\":" << apertureWallPoints
+                    << ",\"free_cells\":" << lastFreeCount
+                    << ",\"band_cells\":" << lastCellCount << "}" << std::endl;
             }
         }
         if (passageVerdict == PassageVerdict::NO_EVIDENCE)
