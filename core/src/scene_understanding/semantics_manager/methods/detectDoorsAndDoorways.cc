@@ -254,22 +254,32 @@ SemanticsManagerStatus
                 continue;
             }
 
-            /* Door must lie close to the supporting wall */
-            bool arePlanesApartEnough2{};
-            if (utils::utils::Utils::arePlanesApartEnough(
-                    p_door,
-                    p_wall,
-                    p_sysParams->semSeg.maxWallDoorDistance,
-                    arePlanesApartEnough2) !=
-                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            /*
+             * Door must lie close to the supporting wall: its centroid within
+             * maxWallDoorDistance of the wall plane. Comparing plane offsets
+             * instead treats a wall a few degrees off parallel as close at any
+             * distance.
+             */
+            Eigen::Vector3d doorCentroid_world_m{};
+            g2o::Plane3D    wallGlobalEquation{};
+            if (p_door->getCentroid(doorCentroid_world_m) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                p_wall->getGlobalEquation(wallGlobalEquation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),
-                    "%s: arePlanesApartEnough returned a failure status "
-                    "although it cannot fail; continuing as before.",
+                    "%s: getCentroid/getGlobalEquation returned a failure "
+                    "status although it cannot fail; continuing as before.",
                     __func__);
             }
-            if (arePlanesApartEnough2)
+            const Eigen::Vector4d wallEquation = wallGlobalEquation.coeffs();
+            const double wallNormalNorm        = wallEquation.head<3>().norm();
+            if (!(wallNormalNorm > 1e-8) ||
+                !(std::abs(wallEquation.head<3>().dot(doorCentroid_world_m) +
+                           wallEquation(3)) /
+                      wallNormalNorm <=
+                  static_cast<double>(p_sysParams->semSeg.maxWallDoorDistance)))
             {
                 continue;
             }
