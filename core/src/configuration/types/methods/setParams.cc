@@ -143,6 +143,14 @@ SystemParamsStatus
         optimization.planeMapPoint.informationGain =
             config["optimization"]["plane_map_point"]["information_gain"]
                 .as<float>();
+        optimization.wallThickness.enabled =
+            config["optimization"]["wall_thickness"]["enabled"].as<bool>();
+        optimization.minimumThickness_m =
+            config["optimization"]["wall_thickness"]["minimum_thickness"]
+                .as<float>();
+        optimization.wallThickness.informationGain =
+            config["optimization"]["wall_thickness"]["information_gain"]
+                .as<float>();
 
         /* Geometric Segmentation Parameters */
         geoSeg.pointcloud.downsample.leafSize =
@@ -276,8 +284,6 @@ SystemParamsStatus
             config["sem_seg"]["wall_creation"]["connectivity"]
                   ["minimum_component_ratio"]
                       .as<float>();
-        semSeg.wallPairing.minimumThickness_m =
-            config["sem_seg"]["wall_pairing"]["minimum_thickness"].as<float>();
         semSeg.wallPairing.maximumThickness_m =
             config["sem_seg"]["wall_pairing"]["maximum_thickness"].as<float>();
         semSeg.wallPairing.minimumOverlapRatio =

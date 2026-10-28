@@ -216,6 +216,15 @@ class SystemParams
          *                  lying on it.
          */
         Constraint planePoint;
+        /*!
+         * @brief           Factor enforcing minimum thickness between twin wall
+         *                  faces (both faces of one physical wall).
+         */
+        Constraint wallThickness;
+        /*!
+         * @brief           Minimum enforced wall thickness, metres.
+         */
+        float      minimumThickness_m = 0.08f;
     };
     /*!
      * @brief           Switches and gains of the plane-based optimisation
