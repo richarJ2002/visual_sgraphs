@@ -625,9 +625,10 @@ class SemanticsManager
      *                  A physical wall can produce two independent Plane
      *                  objects, one per face, distinguished only by
      *                  observationOrigin_world_m. This pass identifies
-     *                  plausible twin pairs (parallel, plausibly wall-thick
-     *                  apart, observed from opposite sides, overlapping
-     *                  in-plane footprint) and links them symmetrically via
+     *                  plausible twin pairs (parallel, no thicker than the
+     *                  maximum plausible wall thickness, observed from
+     *                  opposite sides, overlapping in-plane footprint) and
+     *                  links them symmetrically via
      *                  Plane::setTwinFace(), re-validating and unlinking pairs
      *                  that stop being plausible (e.g. after a refit). Run
      *                  after enforceUniqueWallOwnership() so both faces of a

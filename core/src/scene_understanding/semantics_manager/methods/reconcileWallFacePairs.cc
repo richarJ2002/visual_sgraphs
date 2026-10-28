@@ -23,22 +23,22 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <utility>
-#include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
 
@@ -89,8 +89,6 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
         }
     }
 
-    const double minimumThickness_m =
-        static_cast<double>(p_sysParams->semSeg.wallPairing.minimumThickness_m);
     const double maximumThickness_m =
         static_cast<double>(p_sysParams->semSeg.wallPairing.maximumThickness_m);
     const double minimumOverlapRatio = static_cast<double>(
@@ -194,7 +192,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             geometric::Plane *p_second_in,
             const char       *state_in,
             TwinFaceCheck     check_in,
-            double            value_in)
+            double            value_in,
+            double            thickness_m_in)
     {
         int firstId{};
         if (p_first_in->getId(firstId) !=
@@ -233,7 +232,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                   << ",\"second_wall_id\":" << pairKey.second << ",\"state\":\""
                   << state_in << "\",\"check\":\""
                   << twinFaceCheckName(check_in) << "\",\"value\":" << value_in
-                  << "}" << std::endl;
+                  << ",\"thickness_m\":" << thickness_m_in << "}" << std::endl;
     };
 
     for (geometric::Plane *p_wall : wallPlanes)
@@ -278,15 +277,16 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             bool          arePlausibleTwinWallFaces2{};
             TwinFaceCheck decidingCheck{};
             double        decidingValue{};
+            double        separation1{};
             if (arePlausibleTwinWallFaces(p_wall,
                                           p_existingTwin,
-                                          minimumThickness_m,
                                           maximumThickness_m,
                                           minimumOverlapRatio,
                                           groundNormal_world,
                                           arePlausibleTwinWallFaces2,
                                           decidingCheck,
-                                          decidingValue) !=
+                                          decidingValue,
+                                          separation1) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -307,7 +307,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                              p_existingTwin,
                              "UNLINKED",
                              decidingCheck,
-                             decidingValue);
+                             decidingValue,
+                             separation1);
             if (p_existingTwin->clearTwinFace() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
@@ -345,8 +346,9 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             continue;
         }
 
-        geometric::Plane *p_bestMatch         = nullptr;
-        double            bestOverlapRatio_m2 = -1.0;
+        geometric::Plane *p_bestMatch           = nullptr;
+        double            bestOverlapRatio_m2   = -1.0;
+        double            bestMatchSeparation_m = 0.0;
 
         for (std::size_t secondIndex = firstIndex + 1;
              secondIndex < wallPlanes.size();
@@ -370,15 +372,16 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             bool          arePlausibleTwinWallFaces3{};
             TwinFaceCheck decidingCheck2{};
             double        decidingValue2{};
+            double        separation2{};
             if (arePlausibleTwinWallFaces(p_first,
                                           p_second,
-                                          minimumThickness_m,
                                           maximumThickness_m,
                                           minimumOverlapRatio,
                                           groundNormal_world,
                                           arePlausibleTwinWallFaces3,
                                           decidingCheck2,
-                                          decidingValue2) !=
+                                          decidingValue2,
+                                          separation2) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -424,7 +427,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                                      p_second,
                                      "REFUSED",
                                      decidingCheck2,
-                                     decidingValue2);
+                                     decidingValue2,
+                                     separation2);
                 }
                 continue;
             }
@@ -446,8 +450,9 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                 static_cast<double>(secondGetObservationCount);
             if (p_bestMatch == nullptr || candidateScore > bestOverlapRatio_m2)
             {
-                p_bestMatch         = p_second;
-                bestOverlapRatio_m2 = candidateScore;
+                p_bestMatch           = p_second;
+                bestOverlapRatio_m2   = candidateScore;
+                bestMatchSeparation_m = separation2;
             }
         }
 
@@ -491,7 +496,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                              p_bestMatch,
                              "LINKED",
                              TwinFaceCheck::PLAUSIBLE,
-                             0.0);
+                             0.0,
+                             bestMatchSeparation_m);
             std::cout << "[SemMgr] Linked Wall#" << firstGetId << " and Wall#"
                       << bestMatchGetId
                       << " as opposite faces of one physical wall."

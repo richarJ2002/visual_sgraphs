@@ -649,8 +649,9 @@ Eigen::Quaterniond
 /*!
  * @brief           Decides whether two WALL Planes are plausibly the two
  *                  opposite faces of the same physical wall (axiom (e)):
- *                  parallel, a plausible wall thickness apart, observed from
- *                  opposite exterior sides, and overlapping in-plane footprint.
+ *                  parallel, no thicker than the maximum plausible wall
+ *                  thickness, observed from opposite exterior sides, and
+ *                  overlapping in-plane footprint.
  *
  * @param[out]      arePlausibleTwinWallFaces_out
  *                  True when every check passes.
@@ -665,18 +666,23 @@ Eigen::Quaterniond
  *                  OBSERVATION_SIDE_UNRESOLVED, the footprint overlap ratio
  *                  for PLAUSIBLE and LOW_OVERLAP; 0 otherwise.
  *
+ * @param[out]      separation_m_out
+ *                  Measured face separation in metres (the mean distance of
+ *                  each face's centroid from the other face's plane), set
+ *                  whenever the thickness calculation is reached; 0 otherwise.
+ *
  * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticsManagerStatus
     arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                               geometric::Plane      *p_second_in,
-                              double                 minimumThickness_m_in,
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
                               const Eigen::Vector3d &groundNormal_world_in,
                               bool          &arePlausibleTwinWallFaces_out,
                               TwinFaceCheck &decidingCheck_out,
-                              double        &decidingValue_out);
+                              double        &decidingValue_out,
+                              double        &separation_m_out);
 
 /*!
  * @brief           Measures the openings through one wall from its Voxblox

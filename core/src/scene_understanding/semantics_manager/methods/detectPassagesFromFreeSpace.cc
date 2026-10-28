@@ -371,11 +371,10 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                 bool              isTwinFace   = false;
                 TwinFaceCheck     twinFaceCheck{};
                 double            twinFaceValue{};
+                double            twinFaceSeparation{};
                 if (arePlausibleTwinWallFaces(
                         p_wall,
                         p_anchorWall,
-                        static_cast<double>(
-                            p_sysParams->semSeg.wallPairing.minimumThickness_m),
                         static_cast<double>(
                             p_sysParams->semSeg.wallPairing.maximumThickness_m),
                         static_cast<double>(p_sysParams->semSeg.wallPairing
@@ -383,7 +382,8 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                         groundNormal_world,
                         isTwinFace,
                         twinFaceCheck,
-                        twinFaceValue) !=
+                        twinFaceValue,
+                        twinFaceSeparation) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -23,15 +23,15 @@
  *                  SemanticsManager/private_functions.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "private_functions.h"
 #include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
 
 #include <algorithm>
 #include <cmath>
@@ -45,15 +45,16 @@ namespace core
 SemanticsManagerStatus
     arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                               geometric::Plane      *p_second_in,
-                              double                 minimumThickness_m_in,
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
                               const Eigen::Vector3d &groundNormal_world_in,
                               bool          &arePlausibleTwinWallFaces_out,
                               TwinFaceCheck &decidingCheck_out,
-                              double        &decidingValue_out)
+                              double        &decidingValue_out,
+                              double        &separation_m_out)
 {
     decidingValue_out = 0.0;
+    separation_m_out  = 0.0;
 
     bool firstIsBad{};
     if (!(p_first_in == nullptr) &&
@@ -164,8 +165,9 @@ SemanticsManagerStatus
         (std::abs(equation1.head<3>().dot(centroid2_world_m) + equation1(3)) +
          std::abs(equation2.head<3>().dot(centroid1_world_m) + equation2(3)));
 
-    if (separation_m < minimumThickness_m_in ||
-        separation_m > maximumThickness_m_in)
+    separation_m_out = separation_m;
+
+    if (separation_m > maximumThickness_m_in)
     {
         arePlausibleTwinWallFaces_out = false;
         decidingCheck_out             = TwinFaceCheck::THICKNESS_OUT_OF_RANGE;

@@ -744,10 +744,6 @@ class SystemParams
         struct WallPairing
         {
             /*!
-             * @brief           Thinnest plausible physical wall, in metres.
-             */
-            float minimumThickness_m = 0.05f;
-            /*!
              * @brief           Thickest plausible physical wall, in metres.
              */
             float maximumThickness_m = 0.60f;
