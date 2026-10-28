@@ -30,36 +30,38 @@
  *                  Optimizer.h.
  */
 
-#include "optimization/optimizer/objects/OptimizerClass.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
+#include "mapping/geometry_helpers/utils.h"
 #include "optimization/optimizable_types/EdgeSE3KFPointToPlane/EdgeSE3KFPointToPlane.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZ/EdgeSE3ProjectXYZ.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZToBody/EdgeSE3ProjectXYZToBody.h"
 #include "optimization/optimizable_types/EdgeVertexPlaneParallelism/EdgeVertexPlaneParallelism.h"
 #include "optimization/optimizable_types/EdgeVertexPlanePerpendicularity/EdgeVertexPlanePerpendicularity.h"
 #include "optimization/optimizable_types/EdgeVertexPlaneProjectSE3KF/EdgeVertexPlaneProjectSE3KF.h"
+#include "optimization/optimizable_types/EdgeWallFaceThickness/EdgeWallFaceThickness.h"
 #include "optimization/optimizer/private_functions/private_functions.h"
-#include "mapping/geometry_helpers/utils.h"
 
 #include "../private_functions/private_functions.h"
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
+#include <set>
 
 namespace vs_graphs
 {
@@ -134,10 +136,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     const int expectedEdgeCount = (keyFrames_in.size()) * mapPoints_in.size();
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *> monoEdges;
+    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *>
+        monoEdges;
     monoEdges.reserve(expectedEdgeCount);
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *> bodyEdges;
+    std::vector<
+        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *>
+        bodyEdges;
     bodyEdges.reserve(expectedEdgeCount);
 
     std::vector<keyframe::KeyFrame *> monoEdgeKeyFrames;
@@ -299,8 +304,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 observation << undistortedKeyPoint.pt.x,
                     undistortedKeyPoint.pt.y;
 
-                optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *p_edge =
-                    new optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ();
+                optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ
+                    *p_edge = new optimizable_types::EdgeSE3ProjectXYZ::
+                        EdgeSE3ProjectXYZ();
 
                 p_edge->setVertex(0,
                                   dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -396,8 +402,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
                         p_keyFrame->keyPointsRight[rightIndex];
                     observation << rightKeyPoint.pt.x, rightKeyPoint.pt.y;
 
-                    optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *p_edge =
-                        new optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody();
+                    optimizable_types::EdgeSE3ProjectXYZToBody::
+                        EdgeSE3ProjectXYZToBody *p_edge =
+                            new optimizable_types::EdgeSE3ProjectXYZToBody::
+                                EdgeSE3ProjectXYZToBody();
 
                     p_edge->setVertex(
                         0,
@@ -608,8 +616,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
             {
                 if (p_systemParams->optimization.planeKf.enabled)
                 {
-                    optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF *p_edge =
-                        new optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF();
+                    optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                        EdgeVertexPlaneProjectSE3KF *p_edge =
+                            new optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                                EdgeVertexPlaneProjectSE3KF();
                     p_edge->setVertex(
                         0,
                         dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -659,8 +669,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     if (planeClassIndex != -1)
                     {
                         /* add the plane-point constraint */
-                        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *p_edge =
-                            new optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane();
+                        optimizable_types::EdgeSE3KFPointToPlane::
+                            EdgeSE3KFPointToPlane *p_edge =
+                                new optimizable_types::EdgeSE3KFPointToPlane::
+                                    EdgeSE3KFPointToPlane();
                         p_edge->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -855,8 +867,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                 optimizer.vertex(firstWallOptimizationId) &&
                                 optimizer.vertex(secondWallOptimizationId))
                             {
-                                optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism
-                                    *p_edge = new optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism();
+                                optimizable_types::EdgeVertexPlaneParallelism::
+                                    EdgeVertexPlaneParallelism *p_edge =
+                                        new optimizable_types::
+                                            EdgeVertexPlaneParallelism::
+                                                EdgeVertexPlaneParallelism();
                                 p_edge->setVertex(
                                     0,
                                     dynamic_cast<g2o::OptimizableGraph::Vertex
@@ -928,8 +943,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             optimizer.vertex(firstWallOptimizationId) &&
                             optimizer.vertex(secondWallOptimizationId))
                         {
-                            optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity
-                                *p_edge = new optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity();
+                            optimizable_types::EdgeVertexPlanePerpendicularity::
+                                EdgeVertexPlanePerpendicularity *p_edge =
+                                    new optimizable_types::
+                                        EdgeVertexPlanePerpendicularity::
+                                            EdgeVertexPlanePerpendicularity();
                             p_edge->setVertex(
                                 0,
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -967,6 +985,25 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
+    /* [BA] Twin-face thickness edges + parallel term between twins. C4 */
+    std::set<int> constrainedPlaneIds;
+    auto          getVertexIdG = [](geometric::Plane *p_plane_in) -> int
+    {
+        int opId{};
+        if (p_plane_in->getOpIdG(opId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            return -1;
+        }
+        return opId;
+    };
+    (void)addTwinFaceThicknessEdges(optimizer,
+                                    planes_in,
+                                    getVertexIdG,
+                                    p_systemParams,
+                                    huberThreshold1D,
+                                    constrainedPlaneIds);
+
     maxGlobalOptimizationId += roomCount;
 
     /* Optimize! */
@@ -976,7 +1013,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     optimizer.removePreIterationAction(&stopBridge);
     optimizer.removePostIterationAction(&stopBridge);
     if (system::Verbose::printMess("BA: End of the optimization",
-                           system::Verbose::VERBOSITY_NORMAL) !=
+                                   system::Verbose::VERBOSITY_NORMAL) !=
         system::VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1069,8 +1106,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      edgeIndex < edgeCount;
                      edgeIndex++)
                 {
-                    optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *p_edge =
-                        monoEdges[edgeIndex];
+                    optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ
+                                        *p_edge = monoEdges[edgeIndex];
                     map_point::MapPoint *p_mapPoint =
                         monoEdgeMapPoints[edgeIndex];
                     keyframe::KeyFrame *p_edgeSourceKeyFrame = nullptr;
