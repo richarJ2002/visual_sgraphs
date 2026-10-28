@@ -277,7 +277,7 @@ void SemanticsManager::run(void)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),
-                    "%s: detectRoom_FreeSpaceCluster returned a failure status "
+                    "%s: updateRoomsFromFreeSpaceClusters returned a failure status "
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
@@ -653,7 +653,7 @@ void SemanticsManager::run(void)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),
-                    "%s: detectRoom_FreeSpaceCluster returned a failure status "
+                    "%s: updateRoomsFromFreeSpaceClusters returned a failure status "
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
