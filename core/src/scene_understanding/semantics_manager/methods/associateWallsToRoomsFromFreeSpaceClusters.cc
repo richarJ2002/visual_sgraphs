@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            detectRoom_FreeSpaceCluster.cc
+ * @file            associateWallsToRoomsFromFreeSpaceClusters.cc
  *
- * @brief           Implements SemanticsManager::detectRoom_FreeSpaceCluster(),
+ * @brief           Implements SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(),
  *                  declared in SemanticsManager.h.
  */
 
@@ -55,7 +55,7 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
+SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(void)
 {
     PROFILE_FUNCTION();
     /* Extract latest skeleton cluster */

@@ -264,7 +264,7 @@ void SemanticsManager::run(void)
         }
 
         /*!
-         * Use free-space evidence to create and update rooms.
+         * Associate walls with rooms using free-space evidence.
          *
          * @note            This is the preferred wall-to-room association
          *                  method.
@@ -272,7 +272,7 @@ void SemanticsManager::run(void)
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
-            if (detectRoom_FreeSpaceCluster() !=
+            if (associateWallsToRoomsFromFreeSpaceClusters() !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -640,15 +640,15 @@ void SemanticsManager::run(void)
             }
         }
 
-        /* Second pass: re-detect rooms from passage-partitioned free-space
+        /* Second pass: associate walls with rooms using free-space
          * clusters. Now that passages exist, partitionFreeSpaceAtPassages()
          * will split clusters at doorways, yielding correct per-room clusters.
          */
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
-            /* Second pass - updates existing rooms */
-            if (detectRoom_FreeSpaceCluster() !=
+            /* Second pass - refreshes wall-to-room associations. */
+            if (associateWallsToRoomsFromFreeSpaceClusters() !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(

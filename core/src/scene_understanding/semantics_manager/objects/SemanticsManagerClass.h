@@ -1321,10 +1321,14 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus associatePassagesToRooms(void);
 
     /*!
-     * @brief           Processes the latest skeleton cluster to detect rooms
-     *                  based on free space clustering.
+     * @brief           Associates cluster-supported walls with rooms using
+     *                  passage-partitioned free-space evidence, maintaining
+     *                  matched rooms and promoting supported candidates.
+     *
+     * @return          Status of the wall-to-room association cycle.
      */
-    [[nodiscard]] SemanticsManagerStatus detectRoom_FreeSpaceCluster(void);
+    [[nodiscard]] SemanticsManagerStatus
+        associateWallsToRoomsFromFreeSpaceClusters(void);
 
     /*!
      * @brief           Gets the updated floors containing rooms and corridors.

@@ -2594,10 +2594,11 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
          * * PROSPECTIVE ROOM PROMOTION
          * ----------------------------------------------------------------------
          * * Wall ownership alone cannot promote a prospective. Promotion is
-         * performed only by detectRoom_FreeSpaceCluster() after an independent
-         * far-side cluster matches the prospective's existing walls. If a
-         * distinct confirmed room already resolves the far side, retire the
-         * placeholder and preserve that room as the passage's stable handle.
+         * performed only by associateWallsToRoomsFromFreeSpaceClusters() after
+         * an independent far-side cluster matches the prospective's existing
+         * walls. If a distinct confirmed room already resolves the far side,
+         * retire the placeholder and preserve that room as the passage's
+         * stable handle.
          */
         bool passageHasProspectiveRoom4{};
         if (p_passage->hasProspectiveRoom(passageHasProspectiveRoom4) !=

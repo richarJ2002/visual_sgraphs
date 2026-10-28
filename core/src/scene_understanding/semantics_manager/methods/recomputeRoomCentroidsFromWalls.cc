@@ -43,8 +43,8 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 {
     PROFILE_FUNCTION();
     /* Same inward-nudge-then-average construction as
-     * detectRoom_FreeSpaceCluster()'s wall-centroid correction -- see that
-     * site's comment for why a plain mean of wall centroids is not
+     * associateWallsToRoomsFromFreeSpaceClusters()'s wall-centroid correction
+     * -- see that site's comment for why a plain mean of wall centroids is not
      * guaranteed to land inside the room. Kept in sync with it rather than
      * shared, since this function only runs for non-FREE_SPACE
      * roomSeg.method configurations (the FREE_SPACE path, this project's

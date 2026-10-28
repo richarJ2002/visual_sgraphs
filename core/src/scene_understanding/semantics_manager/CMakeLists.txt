@@ -18,7 +18,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectDoorsAndDoorways.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectPassagesFromFreeSpace.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/detectRoom_FreeSpaceCluster.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/associateWallsToRoomsFromFreeSpaceClusters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariantForTest.cc
