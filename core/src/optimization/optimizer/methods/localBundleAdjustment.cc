@@ -30,24 +30,26 @@
  *                  Optimizer.h.
  */
 
-#include "optimization/optimizer/objects/OptimizerClass.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
+#include "execution/system/system.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "optimization/optimizable_types/EdgeSE3KFPointToPlane/EdgeSE3KFPointToPlane.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZ/EdgeSE3ProjectXYZ.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZToBody/EdgeSE3ProjectXYZToBody.h"
@@ -55,11 +57,12 @@
 #include "optimization/optimizable_types/EdgeVertexPlanePerpendicularity/EdgeVertexPlanePerpendicularity.h"
 #include "optimization/optimizable_types/EdgeVertexPlaneProjectPointXYZ/EdgeVertexPlaneProjectPointXYZ.h"
 #include "optimization/optimizable_types/EdgeVertexPlaneProjectSE3KF/EdgeVertexPlaneProjectSE3KF.h"
-#include "mapping/geometry_helpers/utils.h"
-#include "execution/system/system.h"
+#include "optimization/optimizable_types/EdgeWallFaceThickness/EdgeWallFaceThickness.h"
+#include "optimization/optimizer/private_functions/private_functions.h"
 
 #include <mutex>
 #include <rclcpp/logging.hpp>
+#include <set>
 
 #include "execution/profiling/profiling.h"
 
@@ -112,7 +115,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::list<vs_graphs::core::map_point::MapPoint *>  localMapPointList;
     std::vector<vs_graphs::core::keyframe::KeyFrame *> neighborKeyFrameVector;
     std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
-    if (p_currentMap->getAllRooms(allRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_currentMap->getAllRooms(allRooms) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRooms returned a failure status although it "
@@ -189,8 +193,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
         map::Map *p_keyFrameMap = nullptr;
-        if ((!keyFrameIsBad) && p_keyFrame->getMap(p_keyFrameMap) !=
-                                    keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        if ((!keyFrameIsBad) &&
+            p_keyFrame->getMap(p_keyFrameMap) !=
+                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMap returned a failure status although it "
@@ -687,7 +692,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     g2o::OptimizationAlgorithmLevenberg *p_solver =
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     bool mapIsInertial{};
-    if (p_map_inout->isInertial(mapIsInertial) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_map_inout->isInertial(mapIsInertial) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: isInertial returned a failure status although it "
@@ -790,10 +796,13 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         (localKeyFrameList.size() + fixedCameras.size()) *
         localMapPointList.size();
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *> edgesMonos;
+    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *>
+        edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *> edgesBodies;
+    std::vector<
+        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *>
+        edgesBodies;
     edgesBodies.reserve(expectedSizeCount);
 
     std::vector<keyframe::KeyFrame *> edgeKeyFrameMonos;
@@ -820,7 +829,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     const int expectedSizePlaneCount =
         (localKeyFrameList.size() + fixedCameras.size()) *
         localPlaneList.size();
-    std::vector<optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF *> edgesPlanes;
+    std::vector<optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                    EdgeVertexPlaneProjectSE3KF *>
+        edgesPlanes;
     edgesPlanes.reserve(expectedSizePlaneCount);
 
     std::vector<keyframe::KeyFrame *> edgeKeyFramePlanes;
@@ -829,7 +840,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::vector<geometric::Plane *> planeEdgePlanes;
     planeEdgePlanes.reserve(expectedSizePlaneCount);
 
-    std::vector<optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *> edgesPlanePoints;
+    std::vector<
+        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *>
+        edgesPlanePoints;
     edgesPlanePoints.reserve(expectedSizePlaneCount);
 
     std::vector<keyframe::KeyFrame *> edgeKeyFramePlanePoints;
@@ -932,7 +945,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
                     optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *e =
-                        new optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ();
+                        new optimizable_types::EdgeSE3ProjectXYZ::
+                            EdgeSE3ProjectXYZ();
 
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -1027,8 +1041,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                             p_keyFrame->keyPointsRight[rightIndex];
                         observation << keyPoint.pt.x, keyPoint.pt.y;
 
-                        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *e =
-                            new optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody();
+                        optimizable_types::EdgeSE3ProjectXYZToBody::
+                            EdgeSE3ProjectXYZToBody *e =
+                                new optimizable_types::EdgeSE3ProjectXYZToBody::
+                                    EdgeSE3ProjectXYZToBody();
 
                         if (optimizer.vertex(id) &&
                             optimizer.vertex(p_keyFrame->id))
@@ -1056,7 +1072,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                             Sophus::SE3f stereoPose_leftCameraToRightCamera{};
                             if (p_keyFrame->getRelativePoseTrl(
                                     stereoPose_leftCameraToRightCamera) !=
-                                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                                keyframe::KeyFrameStatus::
+                                    KEY_FRAME_STATUS_SUCCESS)
                             {
                                 RCLCPP_ERROR(
                                     rclcpp::get_logger("vs_graphs"),
@@ -1227,8 +1244,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                 if (optimizer.vertex(opId) &&
                     optimizer.vertex(p_mapPoint->id + maximumKeyFrameId + 1))
                 {
-                    optimizable_types::EdgeVertexPlaneProjectPointXYZ::EdgeVertexPlaneProjectPointXYZ *e =
-                        new optimizable_types::EdgeVertexPlaneProjectPointXYZ::EdgeVertexPlaneProjectPointXYZ();
+                    optimizable_types::EdgeVertexPlaneProjectPointXYZ::
+                        EdgeVertexPlaneProjectPointXYZ *e =
+                            new optimizable_types::
+                                EdgeVertexPlaneProjectPointXYZ::
+                                    EdgeVertexPlaneProjectPointXYZ();
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(p_mapPoint->id +
@@ -1322,8 +1342,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             {
                 if (p_sysParams->optimization.planeKf.enabled)
                 {
-                    optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF *e =
-                        new optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF();
+                    optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                        EdgeVertexPlaneProjectSE3KF *e =
+                            new optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                                EdgeVertexPlaneProjectSE3KF();
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(p_keyFrame->id)));
@@ -1376,8 +1398,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     if (clsCloudIndex != -1)
                     {
                         /* Add the plane-point constraint */
-                        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *e =
-                            new optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane();
+                        optimizable_types::EdgeSE3KFPointToPlane::
+                            EdgeSE3KFPointToPlane *e = new optimizable_types::
+                                EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane();
                         e->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -1574,8 +1597,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                 optimizer.vertex(opId1) &&
                                 optimizer.vertex(opId2))
                             {
-                                optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism *e =
-                                    new optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism();
+                                optimizable_types::EdgeVertexPlaneParallelism::
+                                    EdgeVertexPlaneParallelism *e =
+                                        new optimizable_types::
+                                            EdgeVertexPlaneParallelism::
+                                                EdgeVertexPlaneParallelism();
                                 e->setVertex(
                                     0,
                                     dynamic_cast<
@@ -1646,8 +1672,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                         if (optimizer.vertex(opId) && optimizer.vertex(opId1) &&
                             optimizer.vertex(opId2))
                         {
-                            optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity
-                                *e = new optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity();
+                            optimizable_types::EdgeVertexPlanePerpendicularity::
+                                EdgeVertexPlanePerpendicularity *e =
+                                    new optimizable_types::
+                                        EdgeVertexPlanePerpendicularity::
+                                            EdgeVertexPlanePerpendicularity();
                             e->setVertex(
                                 0,
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -1684,6 +1713,27 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             continue;
         }
     }
+
+    /* [LBA] Twin-face thickness edges + parallel term between twins. C3 */
+    std::vector<geometric::Plane *> localPlaneVec(localPlaneList.begin(),
+                                                  localPlaneList.end());
+    std::set<int>                   constrainedPlaneIds;
+    auto getVertexId = [](geometric::Plane *p_plane_in) -> int
+    {
+        int opId{};
+        if (p_plane_in->getOpId(opId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            return -1;
+        }
+        return opId;
+    };
+    (void)addTwinFaceThicknessEdges(optimizer,
+                                    localPlaneVec,
+                                    getVertexId,
+                                    p_sysParams,
+                                    thresholdHuber1d,
+                                    constrainedPlaneIds);
 
     maximumOpId += roomCount;
 
@@ -1727,8 +1777,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     for (size_t edgeIndex = 0, iend = edgesMonos.size(); edgeIndex < iend;
          edgeIndex++)
     {
-        optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *e = edgesMonos[edgeIndex];
-        map_point::MapPoint *p_mapPoint       = mapPointEdgeMonos[edgeIndex];
+        optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *e =
+            edgesMonos[edgeIndex];
+        map_point::MapPoint *p_mapPoint = mapPointEdgeMonos[edgeIndex];
 
         bool mapPointIsBad4{};
         if (p_mapPoint->isBad(mapPointIsBad4) !=
@@ -1754,7 +1805,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     for (size_t edgeIndex = 0, iend = edgesBodies.size(); edgeIndex < iend;
          edgeIndex++)
     {
-        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *e = edgesBodies[edgeIndex];
+        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *e =
+            edgesBodies[edgeIndex];
         map_point::MapPoint *p_mapPoint = mapPointEdgeBodies[edgeIndex];
 
         bool mapPointIsBad5{};
@@ -1808,15 +1860,17 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     for (size_t edgeIndex = 0, iend = edgesPlanes.size(); edgeIndex < iend;
          edgeIndex++)
     {
-        optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF *e =
-            edgesPlanes[edgeIndex];
-        geometric::Plane *p_edgePlane = planeEdgePlanes[edgeIndex];
+        optimizable_types::EdgeVertexPlaneProjectSE3KF::
+            EdgeVertexPlaneProjectSE3KF *e = edgesPlanes[edgeIndex];
+        geometric::Plane *p_edgePlane      = planeEdgePlanes[edgeIndex];
 
         const bool isChi2Exceeded = e->chi2() > 7.815;
         bool       eIsDistanceCorrect{};
         if (!(isChi2Exceeded) &&
             e->isDistanceCorrect(eIsDistanceCorrect) !=
-                optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KFStatus::EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS)
+                optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                    EdgeVertexPlaneProjectSE3KFStatus::
+                        EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: isDistanceCorrect returned a failure status "
@@ -1841,14 +1895,17 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     for (size_t edgeIndex = 0, iend = edgesPlanePoints.size(); edgeIndex < iend;
          edgeIndex++)
     {
-        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *e = edgesPlanePoints[edgeIndex];
+        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *e =
+            edgesPlanePoints[edgeIndex];
         geometric::Plane *p_edgePlane = planeEdgePlanePoints[edgeIndex];
 
         const bool isChi2Exceeded = e->chi2() > 3.841;
         bool       eIsDistanceCorrect2{};
         if (!(isChi2Exceeded) &&
             e->isDistanceCorrect(eIsDistanceCorrect2) !=
-                optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlaneStatus::EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS)
+                optimizable_types::EdgeSE3KFPointToPlane::
+                    EdgeSE3KFPointToPlaneStatus::
+                        EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: isDistanceCorrect returned a failure status "
@@ -2065,20 +2122,36 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
                 optimizer.vertex(mapPlaneGetOpId));
             g2o::Plane3D planePlane = p_planeVertex->estimate();
-            if (p_mapPlane->setGlobalEquation(planePlane) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            if (constrainedPlaneIds.count(mapPlaneGetOpId) > 0)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setGlobalEquation returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                if (p_mapPlane->alignGeometryToEquation(planePlane) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: alignGeometryToEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+            }
+            else
+            {
+                if (p_mapPlane->setGlobalEquation(planePlane) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         catch (std::exception &e)
         {
-            std::cerr
-                << "[Optimizer] Error while locally updating optimized plane: "
-                << e.what() << std::endl;
+            std::cerr << "[Optimizer] Error while locally updating "
+                         "optimized plane: "
+                      << e.what() << std::endl;
             continue;
         }
     }
@@ -2089,7 +2162,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
      * dragged into the wall equation centroid
      */
 
-    if (p_map_inout->increaseChangeIndex() != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_map_inout->increaseChangeIndex() !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: increaseChangeIndex returned a failure status "
