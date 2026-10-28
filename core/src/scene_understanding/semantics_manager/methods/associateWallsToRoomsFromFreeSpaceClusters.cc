@@ -19,43 +19,51 @@
 /*!
  * @file            associateWallsToRoomsFromFreeSpaceClusters.cc
  *
- * @brief           Implements SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(),
- *                  declared in SemanticsManager.h.
+ * @brief           Implements
+ * SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(), declared in
+ * SemanticsManagerClass.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "scene_understanding/semantics_manager/objects/SemanticsManagerClass.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <optional>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
+#include <rclcpp/logging.hpp>
+
+#include "execution/profiling/profiling.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
-#include "mapping/geometry_helpers/utils.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
-
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <rclcpp/logging.hpp>
-#include <unordered_set>
-
-#include "execution/profiling/profiling.h"
 
 namespace vs_graphs
 {
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(void)
+SemanticsManagerStatus
+    SemanticsManager::associateWallsToRoomsFromFreeSpaceClusters(void)
 {
     PROFILE_FUNCTION();
     /* Extract latest skeleton cluster */
@@ -86,7 +94,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
 
     /* Extract all planes from the map */
     std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};
-    if (p_atlas->getAllPlanes(allPlanes) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_atlas->getAllPlanes(allPlanes) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPlanes returned a failure status although it "
@@ -314,11 +323,11 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
             const Eigen::Vector3d wallNormUnitVector =
                 wallNormalVector / normalMagnitude;
 
-            /* Find an axis U which tangental to the wall plane */
+            /* Find an axis U tangent to the wall plane. */
             const Eigen::Vector3d axisU =
                 wallNormUnitVector.unitOrthogonal().normalized();
 
-            /* Find orthogonal axis to make handed axis with U and normal */
+            /* Find the orthogonal axis completing the wall-plane basis. */
             const Eigen::Vector3d axisV =
                 wallNormUnitVector.cross(axisU).normalized();
 
@@ -405,7 +414,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                 /* Find the absolute value of the plane distance */
                 const double planeDistance = std::abs(signedPlaneDistance);
 
-                /* Update if the disatance is smaller than currently tracked */
+                /* Keep the smallest observed plane distance. */
                 minimumPlaneDistance =
                     std::min(minimumPlaneDistance, planeDistance);
 
@@ -448,8 +457,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             p_sysParams->roomSeg.finiteWallBoundsMargin_m;
 
                 /*!
-                 * If the point is within the wall plane, incriment counter or
-                 * otherwise skip.
+                 * Count nearby points projected inside the finite wall patch.
                  */
                 if (insideFiniteWall)
                 {
@@ -741,13 +749,13 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
         }
 
         /* Prefer the passage's stable handle; otherwise use normal matching. */
-        vs_graphs::core::semantic::Room *p_room2 = nullptr;
+        vs_graphs::core::semantic::Room *p_reusedClusterRoom = nullptr;
         if (!(p_clusterProspective != nullptr) &&
             associateRooms(clusterCentroid,
                            closestWalls,
                            cluster,
                            matchedRoomIds,
-                           p_room2) !=
+                           p_reusedClusterRoom) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -756,7 +764,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                          __func__);
         }
         vs_graphs::core::semantic::Room *p_room =
-            p_clusterProspective != nullptr ? p_clusterProspective : p_room2;
+            p_clusterProspective != nullptr ? p_clusterProspective
+                                            : p_reusedClusterRoom;
 
         /* Track matched room to prevent double-matching in this cycle */
         if (p_room != nullptr)
@@ -774,8 +783,9 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
         }
 
         /*!
-         * If no existing room describes this free-space cluster.
-         * Create one.
+         * If no existing room describes this free-space cluster, try to reuse
+         * a wall owner; otherwise defer creation to the bootstrap or a
+         * passage-linked prospective room.
          *
          * Do not remove walls that are globally registered. Each mapped wall
          * surface remains owned by one room.
@@ -882,8 +892,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
             {
                 p_room = p_wallOwnerRoom;
 
-                int roomId2{};
-                if (p_room->getId(roomId2) !=
+                int reusedClusterRoomId{};
+                if (p_room->getId(reusedClusterRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -891,8 +901,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Reusing existing Room#" << roomId2
-                          << " for cluster " << clusterId
+                std::cout << "[SemMgr] Reusing existing Room#"
+                          << reusedClusterRoomId << " for cluster " << clusterId
                           << " (cluster walls already owned)." << std::endl;
             }
         }
@@ -1137,9 +1147,9 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
         for (vs_graphs::core::geometric::Plane *wall : closestWalls)
         {
             /* Skip invalid walls */
-            bool wallIsBad2{};
+            bool clusterWallIsBad{};
             if (!(wall == nullptr) &&
-                wall->isBad(wallIsBad2) !=
+                wall->isBad(clusterWallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1147,7 +1157,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            if (wall == nullptr || wallIsBad2)
+            if (wall == nullptr || clusterWallIsBad)
             {
                 continue;
             }
@@ -1203,8 +1213,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                 }
 
                 std::vector<vs_graphs::core::semantic::Passage *>
-                    atlasAllPassages2{};
-                if (p_atlas->getAllPassages(atlasAllPassages2) !=
+                    wallOwnerPassages{};
+                if (p_atlas->getAllPassages(wallOwnerPassages) !=
                     atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -1213,14 +1223,14 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                std::sort(atlasAllPassages2.begin(),
-                          atlasAllPassages2.end(),
+                std::sort(wallOwnerPassages.begin(),
+                          wallOwnerPassages.end(),
                           semantic::isEntityIdLess<semantic::Passage>);
 
                 PassageSideEnforcementOutcome outcome{};
                 if (enforcePassageApertureBackstop(p_room,
                                                    wall,
-                                                   atlasAllPassages2,
+                                                   wallOwnerPassages,
                                                    groundNormal_world,
                                                    outcome) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -1272,7 +1282,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                            existingWallGetId == wallGetId;
                 });
 
-            /* If the wall is already in a room, skip to next slosest wall */
+            /* Skip walls already owned by a room. */
             if (alreadyInRoom)
             {
                 continue;
@@ -1344,8 +1354,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
 
             if (p_existingWallOwner != nullptr)
             {
-                g2o::Plane3D wallGetGlobalEquation2{};
-                if (wall->getGlobalEquation(wallGetGlobalEquation2) !=
+                g2o::Plane3D candidateWallGlobalEquation{};
+                if (wall->getGlobalEquation(candidateWallGlobalEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -1355,7 +1365,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         __func__);
                 }
                 Eigen::Vector4d wallEquation_world =
-                    wallGetGlobalEquation2.coeffs();
+                    candidateWallGlobalEquation.coeffs();
                 const double wallNormalNorm =
                     wallEquation_world.head<3>().norm();
 
@@ -1483,10 +1493,10 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                     }
                 }
 
-                bool groundPlaneIsBad2{};
+                bool ownerGroundPlaneIsBad{};
                 if ((!existingOwnerIsTransferableProvisional &&
                      validObservationCount > 0U && p_groundPlane != nullptr) &&
-                    p_groundPlane->isBad(groundPlaneIsBad2) !=
+                    p_groundPlane->isBad(ownerGroundPlaneIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1496,14 +1506,14 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                 }
                 if (!existingOwnerIsTransferableProvisional &&
                     validObservationCount > 0U && p_groundPlane != nullptr &&
-                    !groundPlaneIsBad2)
+                    !ownerGroundPlaneIsBad)
                 {
                     meanObservationPosition_world_m /=
                         static_cast<double>(validObservationCount);
 
-                    g2o::Plane3D groundPlaneGetGlobalEquation2{};
+                    g2o::Plane3D ownerGroundPlaneGlobalEquation{};
                     if (p_groundPlane->getGlobalEquation(
-                            groundPlaneGetGlobalEquation2) !=
+                            ownerGroundPlaneGlobalEquation) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1513,7 +1523,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             __func__);
                     }
                     Eigen::Vector4d groundEquation_world =
-                        groundPlaneGetGlobalEquation2.coeffs();
+                        ownerGroundPlaneGlobalEquation.coeffs();
                     const double groundNormalNorm =
                         groundEquation_world.head<3>().norm();
 
@@ -1524,8 +1534,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             groundEquation_world.head<3>() / groundNormalNorm;
 
                         std::vector<vs_graphs::core::semantic::Passage *>
-                            atlasAllPassages3{};
-                        if (p_atlas->getAllPassages(atlasAllPassages3) !=
+                            ownerBoundaryPassages{};
+                        if (p_atlas->getAllPassages(ownerBoundaryPassages) !=
                             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1534,11 +1544,12 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        for (semantic::Passage *p_passage : atlasAllPassages3)
+                        for (semantic::Passage *p_passage :
+                             ownerBoundaryPassages)
                         {
-                            Eigen::Vector3d existingWallOwnerCentroid2{};
+                            Eigen::Vector3d passageOwnerCentroid{};
                             if (p_existingWallOwner->getCentroid(
-                                    existingWallOwnerCentroid2) !=
+                                    passageOwnerCentroid) !=
                                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                             {
                                 RCLCPP_ERROR(
@@ -1548,9 +1559,9 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                     "before.",
                                     __func__);
                             }
-                            bool crossesPassageOpening2{};
+                            bool crossesOwnerPassageOpening{};
                             if (segmentCrossesPassageOpening(
-                                    existingWallOwnerCentroid2,
+                                    passageOwnerCentroid,
                                     clusterCentroid,
                                     p_passage,
                                     groundNormal_world,
@@ -1558,7 +1569,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                         .openingMargin_m,
                                     p_sysParams->roomSeg.passagePartition
                                         .minimumSideDistance_m,
-                                    crossesPassageOpening2) !=
+                                    crossesOwnerPassageOpening) !=
                                 SemanticsManagerStatus::
                                     SEMANTICS_MANAGER_STATUS_SUCCESS)
                             {
@@ -1569,14 +1580,14 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                     "continuing as before.",
                                     __func__);
                             }
-                            if (!crossesPassageOpening2)
+                            if (!crossesOwnerPassageOpening)
                             {
                                 continue;
                             }
 
-                            g2o::Plane3D passageGlobalEquation2{};
+                            g2o::Plane3D ownerPassageGlobalEquation{};
                             if (p_passage->getGlobalEquation(
-                                    passageGlobalEquation2) !=
+                                    ownerPassageGlobalEquation) !=
                                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                             {
                                 /*!
@@ -1585,7 +1596,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  */
                             }
                             Eigen::Vector4d passageEquation_world =
-                                passageGlobalEquation2.coeffs();
+                                ownerPassageGlobalEquation.coeffs();
                             const double passageNormalNorm =
                                 passageEquation_world.head<3>().norm();
 
@@ -1633,8 +1644,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
             }
 
             /* Reject wall hypotheses which would corrupt this boundary. */
-            bool wasAdmitted2{};
-            if (admitWallToRoom(p_room, wall, wasAdmitted2) !=
+            bool wasWallAdmitted{};
+            if (admitWallToRoom(p_room, wall, wasWallAdmitted) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1642,7 +1653,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (!wasAdmitted2)
+            if (!wasWallAdmitted)
             {
                 continue;
             }
@@ -1720,8 +1731,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    int roomId3{};
-                    if (p_room->getId(roomId3) !=
+                    int orphanReceivingRoomId{};
+                    if (p_room->getId(orphanReceivingRoomId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1730,8 +1741,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    int wallGetId6{};
-                    if (wall->getId(wallGetId6) !=
+                    int orphanWallId{};
+                    if (wall->getId(orphanWallId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1741,14 +1752,14 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             __func__);
                     }
                     std::cout << "[SemMgr] Transferred orphan Wall#"
-                              << wallGetId6 << " from provisional SE#"
-                              << existingWallOwnerId << " to Room#" << roomId3
-                              << "." << std::endl;
+                              << orphanWallId << " from provisional SE#"
+                              << existingWallOwnerId << " to Room#"
+                              << orphanReceivingRoomId << "." << std::endl;
                 }
                 else
                 {
-                    int existingWallOwnerId2{};
-                    if (p_existingWallOwner->getId(existingWallOwnerId2) !=
+                    int previousRoomId{};
+                    if (p_existingWallOwner->getId(previousRoomId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1757,8 +1768,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    int roomId4{};
-                    if (p_room->getId(roomId4) !=
+                    int transferReceivingRoomId{};
+                    if (p_room->getId(transferReceivingRoomId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1777,8 +1788,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    int wallGetId7{};
-                    if (wall->getId(wallGetId7) !=
+                    int transferWallId{};
+                    if (wall->getId(transferWallId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -1787,16 +1798,17 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout
-                        << "[SemMgr] Transferred Wall#" << wallGetId7
-                        << " from Room#" << existingWallOwnerId2 << " to Room#"
-                        << roomId4 << " through Passage#" << transferPassageId
-                        << " using wall-observation evidence." << std::endl;
+                    std::cout << "[SemMgr] Transferred Wall#" << transferWallId
+                              << " from Room#" << previousRoomId << " to Room#"
+                              << transferReceivingRoomId << " through Passage#"
+                              << transferPassageId
+                              << " using wall-observation evidence."
+                              << std::endl;
                 }
             }
 
-            std::vector<geometric::Plane *> roomWalls2{};
-            if (p_room->getWalls(roomWalls2) !=
+            std::vector<geometric::Plane *> wallsAfterAdmission{};
+            if (p_room->getWalls(wallsAfterAdmission) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1804,11 +1816,11 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            roomWalls = roomWalls2;
+            roomWalls = wallsAfterAdmission;
 
             /* Register the uniquely owned room-wall surface. */
-            int wallGetId8{};
-            if (wall->getId(wallGetId8) !=
+            int registeredWallId{};
+            if (wall->getId(registeredWallId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1816,10 +1828,9 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById4 =
-                nullptr;
-            if (p_atlas->getRoomWallPlaneById(wallGetId8,
-                                              p_atlasRoomWallPlaneById4) !=
+            vs_graphs::core::geometric::Plane *p_registeredRoomWall = nullptr;
+            if (p_atlas->getRoomWallPlaneById(registeredWallId,
+                                              p_registeredRoomWall) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -1828,7 +1839,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            if (p_atlasRoomWallPlaneById4 == nullptr)
+            if (p_registeredRoomWall == nullptr)
             {
                 if (p_atlas->addRoomWallPlane(wall) !=
                     atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -1843,8 +1854,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
         }
 
         /* Find all the walls in a room */
-        std::vector<geometric::Plane *> roomWalls3{};
-        if (p_room->getWalls(roomWalls3) !=
+        std::vector<geometric::Plane *> wallsBeforeConsolidation{};
+        if (p_room->getWalls(wallsBeforeConsolidation) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1852,7 +1863,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        roomWalls = roomWalls3;
+        roomWalls = wallsBeforeConsolidation;
 
         /*!
          * Consolidate provisional single-wall structural elements whose wall
@@ -1881,8 +1892,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        std::vector<geometric::Plane *> roomWalls4{};
-        if (p_room->getWalls(roomWalls4) !=
+        std::vector<geometric::Plane *> wallsAfterInvalidRemoval{};
+        if (p_room->getWalls(wallsAfterInvalidRemoval) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1890,7 +1901,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        roomWalls = roomWalls4;
+        roomWalls = wallsAfterInvalidRemoval;
 
         /*!
          * The semantic room centre is the mean of each wall's centroid
@@ -2121,8 +2132,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                int roomId5{};
-                if (p_room->getId(roomId5) !=
+                int confirmedRoomId{};
+                if (p_room->getId(confirmedRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -2130,7 +2141,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                if (p_room->setName("Room#" + std::to_string(roomId5)) !=
+                if (p_room->setName("Room#" +
+                                    std::to_string(confirmedRoomId)) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -2139,8 +2151,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                int roomId6{};
-                if (p_room->getId(roomId6) !=
+                int confirmedCycleRoomId{};
+                if (p_room->getId(confirmedCycleRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -2148,7 +2160,7 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                prospectiveRoomCycles.erase(roomId6);
+                prospectiveRoomCycles.erase(confirmedCycleRoomId);
 
                 if (p_room->setDoorways(p_clusterPassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -2169,8 +2181,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         __func__);
                 }
 
-                int roomId7{};
-                if (p_room->getId(roomId7) !=
+                int promotedRoomId{};
+                if (p_room->getId(promotedRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -2178,7 +2190,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Promoted prospective Room#" << roomId7
+                std::cout << "[SemMgr] Promoted prospective Room#"
+                          << promotedRoomId
                           << " to ROOM from far-side cluster evidence."
                           << std::endl;
             }
@@ -2216,8 +2229,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                int roomId8{};
-                if (p_room->getId(roomId8) !=
+                int prospectiveRoomId{};
+                if (p_room->getId(prospectiveRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -2225,7 +2238,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                if (p_room->setName("Room#" + std::to_string(roomId8)) !=
+                if (p_room->setName("Room#" +
+                                    std::to_string(prospectiveRoomId)) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -2235,8 +2249,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                         __func__);
                 }
 
-                int roomId9{};
-                if (p_room->getId(roomId9) !=
+                int structuralElementId{};
+                if (p_room->getId(structuralElementId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -2244,7 +2258,8 @@ SemanticsManagerStatus SemanticsManager::associateWallsToRoomsFromFreeSpaceClust
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Structural Element #" << roomId9
+                std::cout << "[SemMgr] Structural Element #"
+                          << structuralElementId
                           << " classified as a Room from free-space "
                              "cluster "
                           << clusterId << "." << std::endl;
