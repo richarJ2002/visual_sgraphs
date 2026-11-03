@@ -222,7 +222,8 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
 
 /*!
  * @brief           Runs the semantic merge gate on a merge candidate and prints
- *                  its decision record (committed=0).
+ *                  its decision record (committed=0) and, on a second line, the
+ *                  element pairs and problems behind the decision.
  *
  * @param[in]       p_currentMap_in
  *                  Surviving map.

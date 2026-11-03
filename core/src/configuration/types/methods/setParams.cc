@@ -406,14 +406,22 @@ SystemParamsStatus
             config["room_seg"]["see_through_gate"]["enabled"].as<bool>();
 
         /* Map-merge and axiom thresholds. */
-        mapMerge.passageMatchTolerance_m =
-            config["map_merge"]["passage_match_tolerance_m"].as<float>();
         mapMerge.wallCoplanarAngle_deg =
             config["map_merge"]["wall_coplanar_angle_deg"].as<float>();
+        mapMerge.wallCoplanarOffset_m =
+            config["map_merge"]["wall_coplanar_offset_m"].as<float>();
         mapMerge.wallEdgeOverlap_m =
             config["map_merge"]["wall_edge_overlap_m"].as<float>();
         mapMerge.floorMatchTolerance_m =
             config["map_merge"]["floor_match_tolerance_m"].as<float>();
+        mapMerge.roomPairWallFraction =
+            config["map_merge"]["room_pair_wall_fraction"].as<float>();
+        mapMerge.roomPairMinWalls =
+            config["map_merge"]["room_pair_min_walls"].as<unsigned int>();
+        mapMerge.anchorMinWallPairs =
+            config["map_merge"]["anchor_min_wall_pairs"].as<unsigned int>();
+        mapMerge.anchorMinNormalSpread_deg =
+            config["map_merge"]["anchor_min_normal_spread_deg"].as<float>();
 
         /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =

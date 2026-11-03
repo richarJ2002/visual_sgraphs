@@ -58,24 +58,31 @@ struct SemanticMergeGateResult
      */
     std::string floorDecision;
     /*!
-     * @brief           Number of rooms found on both sides of the merge.
+     * @brief           Number of anchor room pairs: rooms on both sides of
+     *                  the merge that carry the same room tag.
      */
     std::size_t sharedRoomCount{0U};
     /*!
-     * @brief           Number of shared rooms whose walls and passages agree
-     *                  under the proposed transform.
+     * @brief           Number of anchor room pairs whose floor and walls
+     *                  agree under the proposed transform.
      */
     std::size_t alignedRoomCount{0U};
     /*!
-     * @brief           Total number of wall pairs matched across the shared
-     *                  rooms.
+     * @brief           Total number of wall pairs found between paired
+     *                  rooms, anchor rooms included.
      */
     std::size_t matchedWallCount{0U};
     /*!
-     * @brief           Total number of passage pairs matched across the shared
-     *                  rooms.
+     * @brief           Total number of passage pairs found across the
+     *                  overlap of the two maps.
      */
     std::size_t matchedPassageCount{0U};
+    /*!
+     * @brief           Element pairs and problems behind the decision, as
+     *                  space separated key=value fields for the pairs log
+     *                  line.
+     */
+    std::string pairDetail;
 };
 
 } /* namespace semantic */

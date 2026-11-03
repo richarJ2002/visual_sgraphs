@@ -412,12 +412,25 @@ factor:
 
 # Map-merge & axiom thresholds
 map_merge:
-  # Fixed spherical tolerance for passage association across maps (metres)
-  passage_match_tolerance_m: 0.20
-  # Wall coplanarity angle threshold (degrees); planes within this angle are
-  # considered coplanar and merge-eligible.
+  # Largest angle between two normals for their planes (walls, floors and
+  # passage planes) to count as coplanar after the merge transform (degrees).
   wall_coplanar_angle_deg: 5.0
-  # Edges within this distance count as overlapping / the same wall.
+  # Largest distance between two coplanar wall planes, measured at the wall
+  # centroid (metres).
+  wall_coplanar_offset_m: 0.20
+  # Two wall patches pair only when their in-plane extents overlap or are no
+  # further apart than this along either in-plane axis (metres).
   wall_edge_overlap_m: 0.50
-  # Floor match tolerance for through-doorway wall axiom (metres).
+  # Largest vertical offset between two floors for them to count as coplanar
+  # (metres).
   floor_match_tolerance_m: 0.10
+  # Two rooms pair when at least this fraction of the smaller room's walls
+  # pair with walls of the other room (dimensionless, 0 to 1).
+  room_pair_wall_fraction: 0.6
+  # Two rooms pair only when at least this many wall pairs exist.
+  room_pair_min_walls: 2
+  # Fewest wall pairs the anchor rooms must show for the merge to be accepted.
+  anchor_min_wall_pairs: 3
+  # The paired anchor walls must contain two normals at least this far apart
+  # (degrees); parallel walls alone do not fix the in-plane translation.
+  anchor_min_normal_spread_deg: 30.0

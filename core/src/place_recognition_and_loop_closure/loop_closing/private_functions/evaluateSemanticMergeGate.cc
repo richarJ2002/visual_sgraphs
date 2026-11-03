@@ -121,6 +121,10 @@ void evaluateSemanticMergeGate(
               << " committed=0"
               << formatMergeTransform(mapTransform_mergeWorldToCurrentWorld_in)
               << std::endl;
+    std::cout << "[SemanticMergePairs] surviving_map=" << currentMapId
+              << " absorbed_map=" << mergeMapId << " decision=" << p_name
+              << " reason=" << p_name2 << " " << gateResult_out.pairDetail
+              << std::endl;
 }
 
 } /* namespace core */

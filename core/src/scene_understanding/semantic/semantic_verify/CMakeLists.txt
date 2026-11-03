@@ -11,13 +11,26 @@ set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/verify.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/verifyRejectReasonName.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/angleBetween_rad.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkFixedTransformWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkPassageTopology.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/classifyWallRelation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectUniquePassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/copyMergeRoomEvidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/findAnchorRoomPairs.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findByWallId.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/fitRotationFromNormals.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/fitTranslation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/formatMergePairs.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasRepeatedElement.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFiniteVector.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stableRoomIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measurePlaneGap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallExtentGap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallNormalSpread.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairFloors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairPassages.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/symmetricSupportDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transformPassageBetweenMaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transformPlaneBetweenMaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transformRoomEvidenceBetweenMaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transformWallBetweenMaps.cc
 )

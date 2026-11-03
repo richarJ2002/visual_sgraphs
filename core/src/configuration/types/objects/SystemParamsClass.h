@@ -1286,34 +1286,54 @@ class SystemParams
     Factor factor;
 
     /*!
-     * @brief           Map-merge and axiom configuration thresholds.
-     *
-     *                  Currently wired as YAML params; merge/axiom
-     *                  logic adopts them as it is connected.
+     * @brief           Map-merge and axiom configuration thresholds; the
+     *                  merge gate pairs semantic elements across maps with
+     *                  them.
      */
     struct MapMerge
     {
         /*!
-         * @brief           Fixed spherical tolerance for passage association
-         *                  across maps (metres).
+         * @brief           Largest angle between two normals for their planes
+         *                  (walls, floors and passage planes) to count as
+         *                  coplanar after the merge transform (degrees).
          */
-        float passageMatchTolerance_m = 0.20f;
+        float        wallCoplanarAngle_deg = 5.0f;
         /*!
-         * @brief           Wall coplanarity angle threshold (degrees); planes
-         *                  within this angle are considered coplanar and
-         *                  merge-eligible.
+         * @brief           Largest distance between two coplanar wall planes,
+         *                  measured at the wall centroid (metres).
          */
-        float wallCoplanarAngle_deg = 5.0f;
+        float        wallCoplanarOffset_m = 0.20f;
         /*!
-         * @brief           Edges within this distance count as overlapping /
-         *                  the same wall (metres).
+         * @brief           Two wall patches pair only when their in-plane
+         *                  extents overlap or are no further apart than this
+         *                  along either in-plane axis (metres).
          */
-        float wallEdgeOverlap_m = 0.50f;
+        float        wallEdgeOverlap_m = 0.50f;
         /*!
-         * @brief           Floor match tolerance for through-doorway wall axiom
-         *                  (metres).
+         * @brief           Largest vertical offset between two floors for them
+         *                  to count as coplanar (metres).
          */
-        float floorMatchTolerance_m = 0.10f;
+        float        floorMatchTolerance_m = 0.10f;
+        /*!
+         * @brief           Fraction of the smaller room's walls that must pair
+         *                  with walls of the other room for the two rooms to
+         *                  pair (dimensionless, 0 to 1).
+         */
+        float        roomPairWallFraction = 0.6f;
+        /*!
+         * @brief           Fewest wall pairs two rooms need to pair.
+         */
+        unsigned int roomPairMinWalls = 2U;
+        /*!
+         * @brief           Fewest wall pairs the anchor rooms must show for a
+         *                  merge to be accepted.
+         */
+        unsigned int anchorMinWallPairs = 3U;
+        /*!
+         * @brief           Smallest angle between two paired anchor wall
+         *                  normals that must exist among the pairs (degrees).
+         */
+        float        anchorMinNormalSpread_deg = 30.0f;
     };
     /*!
      * @brief           Map-merge and axiom thresholds.

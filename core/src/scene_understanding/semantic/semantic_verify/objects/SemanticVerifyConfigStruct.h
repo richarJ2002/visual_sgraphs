@@ -112,6 +112,47 @@ struct SemanticVerifyConfig
      * @brief           Number of refinement iterations the optimizer runs.
      */
     unsigned int optimizerIterations{20U};
+    /*!
+     * @brief           Largest angle between two normals for their planes
+     *                  (walls, floors and passage planes) to count as coplanar
+     *                  after the merge transform, degrees.
+     */
+    double       coplanarAngle_deg{5.0};
+    /*!
+     * @brief           Largest distance between two coplanar wall planes,
+     *                  measured at the wall centroid, metres.
+     */
+    double       wallCoplanarOffset_m{0.20};
+    /*!
+     * @brief           Largest in-plane gap between two wall patches that still
+     *                  count as touching, along either in-plane axis, metres.
+     */
+    double       wallEdgeOverlap_m{0.50};
+    /*!
+     * @brief           Largest vertical offset between two floors that still
+     *                  count as coplanar, metres.
+     */
+    double       floorMatchTolerance_m{0.10};
+    /*!
+     * @brief           Fraction of the smaller room's walls that must pair with
+     *                  walls of the other room for the rooms to pair,
+     *                  dimensionless in [0, 1].
+     */
+    double       roomPairWallFraction{0.6};
+    /*!
+     * @brief           Fewest wall pairs two rooms need to pair.
+     */
+    std::size_t  roomPairMinWalls{2U};
+    /*!
+     * @brief           Fewest wall pairs the anchor rooms must show for a merge
+     *                  to be accepted.
+     */
+    std::size_t  anchorMinWallPairs{3U};
+    /*!
+     * @brief           Smallest angle that must exist between two paired anchor
+     *                  wall normals, degrees.
+     */
+    double       anchorMinNormalSpread_deg{30.0};
 };
 
 } /* namespace semantic */

@@ -37,17 +37,24 @@ namespace semantic
  */
 enum class SemanticMergeReason
 {
+    /*! The anchor rooms agree and nothing contradicts the pairing. */
     ALIGNED,
+    /*! A map is missing or the transform is not a finite similarity. */
     INVALID_INPUT,
+    /*! An anchor room has no floor plane yet: no answer. */
     FLOOR_EVIDENCE_MISSING,
+    /*! The anchor rooms' floors are not coplanar under the transform. */
     FLOOR_CONTRADICTION,
+    /*! No room carries the same room tag on both sides: no anchor pair. */
     SHARED_ROOM_IDENTITY_MISSING,
+    /*! Too few anchor walls pair, or they do not fix the translation. */
     WALL_EVIDENCE_MISSING,
+    /*! Anchor walls overlap at a different offset and no wall agrees. */
     WALL_ALIGNMENT_CONTRADICTION,
-    PASSAGE_EVIDENCE_MISSING,
-    PASSAGE_IDENTITY_CONTRADICTION,
-    PASSAGE_ENDPOINT_CONTRADICTION,
-    PASSAGE_DIRECTION_CONTRADICTION
+    /*! One wall, room or passage pairs with two counterparts. */
+    PAIRING_CONTRADICTION,
+    /*! Two paired passages disagree on whether they are passable. */
+    PASSAGE_STATE_CONTRADICTION
 };
 
 } /* namespace semantic */

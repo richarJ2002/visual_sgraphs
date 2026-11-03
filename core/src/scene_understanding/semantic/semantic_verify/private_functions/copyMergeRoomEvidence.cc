@@ -5,7 +5,6 @@
  *                  Semantic/SemanticVerify/private_functions.h.
  */
 
-#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/semantic/passage/objects/KnownSideProvenanceStatusEnum.h"
@@ -13,19 +12,20 @@
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
@@ -96,6 +96,15 @@ SemanticVerifyStatus
                      __func__);
     }
     evidence.context.floorId = p_floor != nullptr ? floorId2 : -1;
+    if (SemanticVerify::collectFloorObservation(p_room_in,
+                                                evidence.floorPlane_world) !=
+        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectFloorObservation returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<VerifyWallObservation> observations{};
     if (SemanticVerify::collectWallObservations(p_room_in,
                                                 configuration_in,
@@ -184,6 +193,22 @@ SemanticVerifyStatus
                          __func__);
         }
         context.height_m = passageHeight;
+        g2o::Plane3D passageEquation{};
+        if (p_passage->getGlobalEquation(passageEquation) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector4d passagePlane      = passageEquation.coeffs();
+        const double    passageNormalNorm = passagePlane.head<3>().norm();
+        if (passagePlane.allFinite() && passageNormalNorm > 1e-8)
+        {
+            context.hasPlane            = true;
+            context.planeEquation_world = passagePlane / passageNormalNorm;
+        }
         bool passageIsRecoveryProxy{};
         if (p_passage->isRecoveryProxy(passageIsRecoveryProxy) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)

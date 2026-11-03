@@ -20,7 +20,6 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 
-#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 #include "scene_understanding/semantic/room/objects/RoomContextSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeGateResultStruct.h"
@@ -33,6 +32,7 @@
 #include "scene_understanding/semantic/semantic_verify/objects/VerifyRejectReasonEnum.h"
 #include "scene_understanding/semantic/semantic_verify/objects/VerifyWallObservationStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/WallInlierPairStruct.h"
+#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 
 #include <Eigen/Geometry>
 
@@ -41,7 +41,10 @@
 #include <string>
 #include <vector>
 
-namespace vs_graphs::core::map { class Map; }
+namespace vs_graphs::core::map
+{
+class Map;
+}
 
 namespace vs_graphs
 {
@@ -159,17 +162,25 @@ class SemanticVerify
      */
     [[nodiscard]] static SemanticVerifyStatus runFloorGate(
         SemanticVerifyResult    &result_inout,
-        map::Map                     *p_survivingMap_in,
-        map::Map                     *p_absorbedMap_in,
+        map::Map                *p_survivingMap_in,
+        map::Map                *p_absorbedMap_in,
         const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,
         bool                    &hasPassed_out);
 
     /*!
      * @brief           Evaluates copied room evidence under a proposed
-     *                  absorbed-to-surviving map transform. Contradictory
-     *                  stable topology rejects, incomplete evidence defers, and
-     *                  only mutually consistent walls and passage topology
-     *                  accept.
+     *                  absorbed-to-surviving map transform. Only the anchor
+     *                  rooms (same room tag on both sides) are matched by
+     *                  identity; walls, floors, rooms and passages are paired
+     *                  by geometry in the surviving frame. A contradiction
+     *                  between paired elements (an anchor floor or wall
+     *                  offset, one element paired twice, paired passages that
+     *                  disagree on being passable) rejects. Too little
+     *                  evidence (no anchor pair, no anchor floor, too few
+     *                  anchor wall pairs or directions) defers. Elements seen
+     *                  in one map only neither accept nor reject. The pairs
+     *                  and problems behind the decision are written to
+     *                  result_out.pairDetail.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMergeAlignment(
         const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
@@ -184,8 +195,8 @@ class SemanticVerify
      *                  mutation for both maps.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
-        map::Map                        *p_survivingMap_in,
-        map::Map                        *p_absorbedMap_in,
+        map::Map                   *p_survivingMap_in,
+        map::Map                   *p_absorbedMap_in,
         const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());

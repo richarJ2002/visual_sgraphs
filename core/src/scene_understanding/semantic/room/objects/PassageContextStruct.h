@@ -41,8 +41,6 @@ namespace core
 namespace semantic
 {
 
-
-
 /*!
  * @brief           Saved description of one passage (door or opening) of a
  *                  room: its aperture, which rooms it joins and how often it
@@ -87,6 +85,17 @@ struct PassageContext
      * @brief           Centre of the passage in the world frame, metres.
      */
     Eigen::Vector3d passageCentroid_world{Eigen::Vector3d::Zero()};
+    /*!
+     * @brief           True when planeEquation_world holds the passage's
+     *                  plane; false for snapshots that do not record it.
+     */
+    bool            hasPlane{false};
+    /*!
+     * @brief           Plane of the wall the passage lies in (n^T x + d = 0,
+     *                  unit normal, orientation arbitrary) in the world frame;
+     *                  valid when hasPlane is true.
+     */
+    Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
     /*!
      * @brief           True when knownSideDirection_world holds a finite unit
      *                  direction.

@@ -5,24 +5,24 @@
  *                  in Semantic/SemanticVerify.h.
  */
 
-#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
@@ -41,8 +41,8 @@ namespace semantic
 {
 
 SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
-    map::Map                  *p_survivingMap_in,
-    map::Map                  *p_absorbedMap_in,
+    map::Map                   *p_survivingMap_in,
+    map::Map                   *p_absorbedMap_in,
     const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
@@ -51,9 +51,10 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     if (p_survivingMap_in == nullptr || p_absorbedMap_in == nullptr ||
         p_survivingMap_in == p_absorbedMap_in)
     {
-        result.decision = SemanticMergeDecision::REJECT;
-        result.reason   = SemanticMergeReason::INVALID_INPUT;
-        result_out      = result;
+        result.decision   = SemanticMergeDecision::REJECT;
+        result.reason     = SemanticMergeReason::INVALID_INPUT;
+        result.pairDetail = "input=invalid";
+        result_out        = result;
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
@@ -72,13 +73,14 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     }
     if (!isVerified)
     {
-        result.decision = result.floorDecision == "REJECTED"
-                              ? SemanticMergeDecision::REJECT
-                              : SemanticMergeDecision::DEFER;
-        result.reason   = result.decision == SemanticMergeDecision::REJECT
-                              ? SemanticMergeReason::FLOOR_CONTRADICTION
-                              : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
-        result_out      = result;
+        result.decision   = result.floorDecision == "REJECTED"
+                                ? SemanticMergeDecision::REJECT
+                                : SemanticMergeDecision::DEFER;
+        result.reason     = result.decision == SemanticMergeDecision::REJECT
+                                ? SemanticMergeReason::FLOOR_CONTRADICTION
+                                : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
+        result.pairDetail = "floor_gate=" + result.floorDecision;
+        result_out        = result;
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
