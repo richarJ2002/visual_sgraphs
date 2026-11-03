@@ -421,15 +421,3 @@ map_merge:
   wall_edge_overlap_m: 0.50
   # Floor match tolerance for through-doorway wall axiom (metres).
   floor_match_tolerance_m: 0.10
-  # Max first-to-latest observation origins checked by the through-doorway
-  # wall axiom.
-  observation_ray_check_cap: 5
-  # Minimum tag-matched anchor rooms required to estimate alignment.
-  min_anchor_rooms: 2
-  # Minimum rooms required in each map before attempting a match.
-  min_rooms_per_map: 1
-  # Minimum walls required in each map before attempting a match.
-  min_walls_per_map: 3
-  # Maximum anchor-room centroid distance after alignment (metres). Rooms
-  # are matched by tag; this only bounds residual centre drift.
-  room_centroid_tolerance_m: 0.50

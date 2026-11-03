@@ -1297,49 +1297,23 @@ class SystemParams
          * @brief           Fixed spherical tolerance for passage association
          *                  across maps (metres).
          */
-        float        passageMatchTolerance_m = 0.20f;
+        float passageMatchTolerance_m = 0.20f;
         /*!
          * @brief           Wall coplanarity angle threshold (degrees); planes
          *                  within this angle are considered coplanar and
          *                  merge-eligible.
          */
-        float        wallCoplanarAngle_deg = 5.0f;
+        float wallCoplanarAngle_deg = 5.0f;
         /*!
          * @brief           Edges within this distance count as overlapping /
          *                  the same wall (metres).
          */
-        float        wallEdgeOverlap_m = 0.50f;
+        float wallEdgeOverlap_m = 0.50f;
         /*!
          * @brief           Floor match tolerance for through-doorway wall axiom
          *                  (metres).
          */
-        float        floorMatchTolerance_m = 0.10f;
-        /*!
-         * @brief           Max first-to-latest observation origins checked by
-         *                  the through-doorway wall axiom.
-         */
-        unsigned int observationRayCheckCap = 5U;
-        /*!
-         * @brief           Minimum tag-matched anchor rooms required to
-         *                  estimate alignment.
-         */
-        unsigned int minAnchorRooms = 2U;
-        /*!
-         * @brief           Minimum rooms required in each map before attempting
-         *                  a match.
-         */
-        unsigned int minRoomsPerMap = 1U;
-        /*!
-         * @brief           Minimum walls required in each map before attempting
-         *                  a match.
-         */
-        unsigned int minWallsPerMap = 3U;
-        /*!
-         * @brief           Maximum anchor-room centroid distance after
-         *                  alignment (metres). Rooms pair by tag; this only
-         *                  bounds residual drift.
-         */
-        float        roomCentroidTolerance_m = 0.50F;
+        float floorMatchTolerance_m = 0.10f;
     };
     /*!
      * @brief           Map-merge and axiom thresholds.

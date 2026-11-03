@@ -414,16 +414,6 @@ SystemParamsStatus
             config["map_merge"]["wall_edge_overlap_m"].as<float>();
         mapMerge.floorMatchTolerance_m =
             config["map_merge"]["floor_match_tolerance_m"].as<float>();
-        mapMerge.observationRayCheckCap =
-            config["map_merge"]["observation_ray_check_cap"].as<unsigned int>();
-        mapMerge.minAnchorRooms =
-            config["map_merge"]["min_anchor_rooms"].as<unsigned int>();
-        mapMerge.minRoomsPerMap =
-            config["map_merge"]["min_rooms_per_map"].as<unsigned int>();
-        mapMerge.minWallsPerMap =
-            config["map_merge"]["min_walls_per_map"].as<unsigned int>();
-        mapMerge.roomCentroidTolerance_m =
-            config["map_merge"]["room_centroid_tolerance_m"].as<float>();
 
         /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =
