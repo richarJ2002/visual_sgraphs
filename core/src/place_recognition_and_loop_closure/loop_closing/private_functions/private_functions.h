@@ -17,6 +17,7 @@
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/MergeMapContentsStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeGateResultStruct.h"
+#include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyConfigStruct.h"
 
 #include <mutex>
 #include <vector>
@@ -673,9 +674,11 @@ void transferMarkers(map::Map                              *p_currentMap_inout,
 
 /*!
  * @brief           Moves the passages of the absorbed map into the surviving
- *                  map. A passage whose id already exists in the surviving map
- *                  is merged into that passage, the rooms are re-pointed to the
- *                  kept passage and the duplicate is marked bad.
+ *                  map. A passage that lies on the same plane as a passage of
+ *                  the surviving map, with its centre close in that plane, is
+ *                  merged into that passage (ids are never compared), the rooms
+ *                  are re-pointed to the kept passage and the duplicate is
+ *                  marked bad.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -692,12 +695,17 @@ void transferMarkers(map::Map                              *p_currentMap_inout,
  * @param[in]       markerBasedRooms_in
  *                  Marker-based rooms whose passage associations are re-
  *                  pointed.
+ *
+ * @param[in]       configuration_in
+ *                  Coplanar angle and wall plane offset for the passage
+ *                  pairing.
  */
 void transferPassages(map::Map *p_currentMap_inout,
                       map::Map *p_mergeMap_inout,
                       const std::vector<semantic::Passage *> &passages_in,
                       const std::vector<semantic::Room *>    &detectedRooms_in,
-                      const std::vector<semantic::Room *> &markerBasedRooms_in);
+                      const std::vector<semantic::Room *>  &markerBasedRooms_in,
+                      const semantic::SemanticVerifyConfig &configuration_in);
 
 /*!
  * @brief           Moves the detected rooms and the marker-based rooms of the
@@ -731,9 +739,10 @@ void transferRooms(map::Map                            *p_currentMap_inout,
 
 /*!
  * @brief           Moves the floors of the absorbed map into the surviving map.
- *                  A floor whose id already exists in the surviving map has its
- *                  evidence and rooms folded into that floor; afterwards
- *                  duplicate floors of the surviving map are collapsed.
+ *                  A floor whose plane is coplanar with a floor of the
+ *                  surviving map (ids are never compared) has its evidence and
+ *                  rooms folded into that floor; afterwards duplicate floors of
+ *                  the surviving map are collapsed.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -743,10 +752,15 @@ void transferRooms(map::Map                            *p_currentMap_inout,
  *
  * @param[in]       floors_in
  *                  Floors of the absorbed map; null ones are skipped.
+ *
+ * @param[in]       configuration_in
+ *                  Coplanar angle and floor height tolerance for the floor
+ *                  pairing.
  */
 void transferFloors(map::Map                             *p_currentMap_inout,
                     map::Map                             *p_mergeMap_inout,
-                    const std::vector<semantic::Floor *> &floors_in);
+                    const std::vector<semantic::Floor *> &floors_in,
+                    const semantic::SemanticVerifyConfig &configuration_in);
 
 /*!
  * @brief           Moves every semantic object of the absorbed map into the
@@ -783,10 +797,12 @@ void rebuildSemanticIndexes(map::Map *p_currentMap_inout);
 
 /*!
  * @brief           Reconciles the semantic graph after a merge: re-associates
- *                  semantic planes, fuses duplicate rooms of the imported
- *                  rooms, then re-associates rooms and passages. Room fusion
- *                  always runs; the re-associations run only when enabled in
- *                  the system parameters.
+ *                  semantic planes, fuses the imported rooms that duplicate a
+ *                  room the surviving map already had (paired by wall
+ *                  geometry; only the anchor rooms by tag), then re-associates
+ *                  rooms and passages. Room fusion always runs; the
+ *                  re-associations run only when enabled in the system
+ *                  parameters.
  *
  * @param[in,out]   p_atlas_inout
  *                  Atlas whose semantic entities are re-associated.

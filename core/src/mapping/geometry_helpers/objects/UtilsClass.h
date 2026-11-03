@@ -484,25 +484,28 @@ class Utils
     [[nodiscard]] static UtilsStatus reAssociateRooms(atlas::Atlas *p_atlas_in);
 
     /*!
-     * @brief           Fuses duplicate confirmed rooms introduced by a
-     *                   map merge.
-     *
-     *                  Only rooms imported from the obsolete submap are
-     *                  considered for retirement. A candidate must agree
-     *                  with a pre-existing room in type, centroid
-     *                  proximity, shared-wall side, and unobstructed
-     *                  free-space geometry. This prevents adjacent rooms
-     *                  on opposite sides of a wall from being collapsed.
+     * @brief           Fuses each duplicate room that a map merge brought in
+     *                  into the room it duplicates. The pairs come from the
+     *                  geometric room pairing (walls coplanar, same facing and
+     *                  overlapping; the anchor rooms by their tag); this
+     *                  function pairs nothing itself. The imported room's walls
+     *                  and passages move to the retained room, a wall behind a
+     *                  passable passage stays with the far-side room, passage
+     *                  and floor references are re-pointed, and the imported
+     *                  room is retired. A pair whose rooms lie on opposite
+     *                  sides of a passable passage opening is left alone.
      *
      * @param[in,out]   p_map_inout
      *                  Surviving map whose room graph is reconciled.
      *
-     * @param[in]       importedRooms_in
-     *                  Rooms transferred from the obsolete submap.
+     * @param[in]       duplicateRoomPairs_in
+     *                  Pairs (imported room, retained room). Borrowed; both
+     *                  rooms belong to p_map_inout.
      */
     [[nodiscard]] static UtilsStatus fuseDuplicateRoomsAfterMerge(
-        map::Map                                 *p_map_inout,
-        const std::vector<semantic::Room *> &importedRooms_in);
+        map::Map *p_map_inout,
+        const std::vector<std::pair<semantic::Room *, semantic::Room *>>
+            &duplicateRoomPairs_in);
 
     /*!
      * @brief           Fuses duplicate passage entities after optimization or

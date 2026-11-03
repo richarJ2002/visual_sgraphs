@@ -208,6 +208,60 @@ inline constexpr double DEGREES_PER_RADIAN = 57.29577951308232;
                           SemanticMergeRoomEvidence  &evidence_out);
 
 /*!
+ * @brief           Copies one passage's measured geometry and sides into plain
+ *                  data.
+ *
+ * @param[in]       p_passage_in
+ *                  Passage to copy; must not be null. Borrowed. The caller
+ *                  holds the merge lock.
+ *
+ * @return          The passage's id, passable flag, centre, aperture size,
+ *                  plane (unit normal; absent when the plane is degenerate),
+ *                  recovery-proxy flag and known-side and far-side
+ *                  information.
+ */
+[[nodiscard]] PassageContext copyPassageContext(const Passage *p_passage_in);
+
+/*!
+ * @brief           Copies the evidence of every confirmed room in a list.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms of one map; null, bad and unconfirmed (prospective)
+ *                  rooms are skipped.
+ *
+ * @param[in]       configuration_in
+ *                  Limits for the wall observations.
+ *
+ * @param[out]      admittedRooms_out
+ *                  The rooms that were copied, in the order of evidence_out.
+ *                  Borrowed.
+ *
+ * @param[out]      evidence_out
+ *                  One evidence copy per admitted room.
+ */
+void collectRoomEvidence(const std::vector<Room *>  &rooms_in,
+                         const SemanticVerifyConfig &configuration_in,
+                         std::vector<Room *>        &admittedRooms_out,
+                         std::vector<SemanticMergeRoomEvidence> &evidence_out);
+
+/*!
+ * @brief           Copies every live passage in a list into plain data.
+ *
+ * @param[in]       passages_in
+ *                  Passages of one map; null and bad passages are skipped.
+ *
+ * @param[out]      admittedPassages_out
+ *                  The passages that were copied, in the order of
+ *                  contexts_out. Borrowed.
+ *
+ * @param[out]      contexts_out
+ *                  One copy per admitted passage.
+ */
+void collectPassageContexts(const std::vector<Passage *> &passages_in,
+                            std::vector<Passage *>       &admittedPassages_out,
+                            std::vector<PassageContext>  &contexts_out);
+
+/*!
  * @brief           Moves a plane from the absorbed map's world frame into the
  *                  surviving map's world frame.
  *

@@ -24,11 +24,14 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/private_functions/private_functions.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/semantic/marker/marker.h"
@@ -36,18 +39,12 @@
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
 
 #include <algorithm>
-#include <cmath>
 #include <iostream>
-#include <limits>
 #include <rclcpp/logging.hpp>
-#include <string>
-#include <unordered_set>
+#include <utility>
 
 namespace vs_graphs
 {
@@ -59,15 +56,10 @@ namespace utils
 {
 
 UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
-    map::Map                                 *p_map_inout,
-    const std::vector<semantic::Room *> &importedRooms_in)
+    map::Map *p_map_inout,
+    const std::vector<std::pair<semantic::Room *, semantic::Room *>>
+        &duplicateRoomPairs_in)
 {
-    /* Reject an invalid lifecycle request. */
-    if (p_map_inout == nullptr || importedRooms_in.empty())
-    {
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
-    }
-
     types::SystemParams *p_systemParameters = nullptr;
     if (types::SystemParams::getParams(p_systemParameters) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -78,226 +70,38 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                      __func__);
     }
 
-    const double maximumRoomCentroidDistance_m =
-        p_systemParameters != nullptr
-            ? static_cast<double>(
-                  p_systemParameters->roomSeg.centerDistanceThresh)
-            : 2.0;
-
-    constexpr double minimumRoomSideDistance_m = 0.20;
-    constexpr double finiteWallBoundsMargin_m  = 0.30;
-
-    const std::unordered_set<semantic::Room *> importedRoomSet(
-        importedRooms_in.begin(),
-        importedRooms_in.end());
-
-    /*
-     * Report whether a finite mapped wall separates two room centres. An
-     * infinite plane alone is insufficient because unrelated coplanar wall
-     * segments are common in office environments.
-     */
-    const auto hasSeparatingFiniteWall =
-        [p_map_inout](const Eigen::Vector3d &firstCentroid_world_m_in,
-                      const Eigen::Vector3d &secondCentroid_world_m_in)
+    /* Fuse each imported room into the retained room it was paired with. */
+    for (const std::pair<semantic::Room *, semantic::Room *> &duplicatePair :
+         duplicateRoomPairs_in)
     {
-        std::vector<geometric::Plane *> mapAllPlanes{};
-        if (p_map_inout->getAllPlanes(mapAllPlanes) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        semantic::Room *p_importedRoom     = duplicatePair.first;
+        semantic::Room *p_bestRetainedRoom = duplicatePair.second;
+        if (p_map_inout == nullptr || p_importedRoom == nullptr ||
+            p_bestRetainedRoom == nullptr ||
+            p_importedRoom == p_bestRetainedRoom)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllPlanes returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (geometric::Plane *p_wall : mapAllPlanes)
-        {
-            bool wallIsBad{};
-            if (!(p_wall == nullptr) &&
-                p_wall->isBad(wallIsBad) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            geometric::Plane::PlaneVariant wallPlaneType{};
-            if (!(p_wall == nullptr || wallIsBad) &&
-                p_wall->getPlaneType(wallPlaneType) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getPlaneType returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_wall == nullptr || wallIsBad ||
-                wallPlaneType != geometric::Plane::PlaneVariant::WALL)
-            {
-                continue;
-            }
-
-            geometric::Plane::GeometrySnapshot wallGeometry{};
-            if (p_wall->getGeometrySnapshot(wallGeometry) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getGeometrySnapshot returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            Eigen::Vector4d wallEquation_world =
-                wallGeometry.planeEquation_world;
-
-            const double wallNormalNorm = wallEquation_world.head<3>().norm();
-
-            if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
-            {
-                continue;
-            }
-
-            wallEquation_world /= wallNormalNorm;
-
-            const double firstSignedDistance_m =
-                wallEquation_world.head<3>().dot(firstCentroid_world_m_in) +
-                wallEquation_world(3);
-
-            const double secondSignedDistance_m =
-                wallEquation_world.head<3>().dot(secondCentroid_world_m_in) +
-                wallEquation_world(3);
-
-            if (firstSignedDistance_m * secondSignedDistance_m >= 0.0 ||
-                std::abs(firstSignedDistance_m) < minimumRoomSideDistance_m ||
-                std::abs(secondSignedDistance_m) < minimumRoomSideDistance_m)
-            {
-                continue;
-            }
-
-            const double interpolation =
-                firstSignedDistance_m /
-                (firstSignedDistance_m - secondSignedDistance_m);
-
-            if (interpolation <= 0.0 || interpolation >= 1.0)
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d lineIntersection_world_m =
-                firstCentroid_world_m_in +
-                interpolation *
-                    (secondCentroid_world_m_in - firstCentroid_world_m_in);
-
-            const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
-                wallGeometry.supportCloud;
-
-            if (p_wallCloud == nullptr || p_wallCloud->empty())
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d wallCentroid_world_m =
-                wallGeometry.planeCentroid_world_m;
-
-            const Eigen::Vector3d wallAxisU_world =
-                wallEquation_world.head<3>().unitOrthogonal().normalized();
-
-            const Eigen::Vector3d wallAxisV_world = wallEquation_world.head<3>()
-                                                        .cross(wallAxisU_world)
-                                                        .normalized();
-
-            double      minimumWallU_m = std::numeric_limits<double>::max();
-            double      maximumWallU_m = std::numeric_limits<double>::lowest();
-            double      minimumWallV_m = std::numeric_limits<double>::max();
-            double      maximumWallV_m = std::numeric_limits<double>::lowest();
-            std::size_t validWallPointCount = 0U;
-
-            for (const pcl::PointXYZRGBA &wallPoint : p_wallCloud->points)
-            {
-                if (!pcl::isFinite(wallPoint))
-                {
-                    continue;
-                }
-
-                const Eigen::Vector3d wallPoint_world_m(
-                    static_cast<double>(wallPoint.x),
-                    static_cast<double>(wallPoint.y),
-                    static_cast<double>(wallPoint.z));
-
-                const Eigen::Vector3d wallPointRelToCentroid_world_m =
-                    wallPoint_world_m - wallCentroid_world_m;
-
-                const double wallPointU_m =
-                    wallPointRelToCentroid_world_m.dot(wallAxisU_world);
-
-                const double wallPointV_m =
-                    wallPointRelToCentroid_world_m.dot(wallAxisV_world);
-
-                minimumWallU_m = std::min(minimumWallU_m, wallPointU_m);
-                maximumWallU_m = std::max(maximumWallU_m, wallPointU_m);
-                minimumWallV_m = std::min(minimumWallV_m, wallPointV_m);
-                maximumWallV_m = std::max(maximumWallV_m, wallPointV_m);
-                validWallPointCount++;
-            }
-
-            if (validWallPointCount == 0U)
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d intersectionRelToWallCentroid_world_m =
-                lineIntersection_world_m - wallCentroid_world_m;
-
-            const double intersectionU_m =
-                intersectionRelToWallCentroid_world_m.dot(wallAxisU_world);
-
-            const double intersectionV_m =
-                intersectionRelToWallCentroid_world_m.dot(wallAxisV_world);
-
-            const bool intersectionInsideFiniteWall =
-                intersectionU_m >= minimumWallU_m - finiteWallBoundsMargin_m &&
-                intersectionU_m <= maximumWallU_m + finiteWallBoundsMargin_m &&
-                intersectionV_m >= minimumWallV_m - finiteWallBoundsMargin_m &&
-                intersectionV_m <= maximumWallV_m + finiteWallBoundsMargin_m;
-
-            if (intersectionInsideFiniteWall)
-            {
-                return true;
-            }
+            continue;
         }
 
-        return false;
-    };
-
-    /* Evaluate each imported hypothesis against rooms that already existed. */
-    for (semantic::Room *p_importedRoom : importedRooms_in)
-    {
         bool importedRoomIsBad{};
-        if (!(p_importedRoom == nullptr) &&
-            p_importedRoom->isBad(importedRoomIsBad) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        if (p_importedRoom->isBad(importedRoomIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: isBad returned a failure status although it "
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_importedRoom == nullptr || importedRoomIsBad)
-        {
-            continue;
-        }
-
-        semantic::Room::RoomVariant importedRoomType{};
-        if (p_importedRoom->getRoomVariant(importedRoomType) !=
+        bool retainedRoomIsBad{};
+        if (p_bestRetainedRoom->isBad(retainedRoomIsBad) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
                          __func__);
         }
-
-        if (importedRoomType == semantic::Room::RoomVariant::UNDEFINED)
+        if (importedRoomIsBad || retainedRoomIsBad)
         {
             continue;
         }
@@ -311,7 +115,6 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-
         if (!importedCentroid_world_m.allFinite())
         {
             continue;
@@ -325,319 +128,6 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "%s: getWalls returned a failure status although it "
                          "cannot fail; continuing as before.",
                          __func__);
-        }
-
-        semantic::Room *p_bestRetainedRoom = nullptr;
-        double bestCentroidDistance_m = std::numeric_limits<double>::infinity();
-
-        std::vector<semantic::Room *> mapAllRooms{};
-        if (p_map_inout->getAllRooms(mapAllRooms) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllRooms returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (semantic::Room *p_candidateRoom : mapAllRooms)
-        {
-            bool candidateRoomIsBad{};
-            if (!(p_candidateRoom == nullptr ||
-                  p_candidateRoom == p_importedRoom) &&
-                p_candidateRoom->isBad(candidateRoomIsBad) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Room::RoomVariant candidateRoomRoomVariant{};
-            if (!(p_candidateRoom == nullptr ||
-                  p_candidateRoom == p_importedRoom || candidateRoomIsBad ||
-                  importedRoomSet.count(p_candidateRoom) > 0U) &&
-                p_candidateRoom->getRoomVariant(candidateRoomRoomVariant) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomVariant returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_candidateRoom == nullptr ||
-                p_candidateRoom == p_importedRoom || candidateRoomIsBad ||
-                importedRoomSet.count(p_candidateRoom) > 0U ||
-                candidateRoomRoomVariant != importedRoomType)
-            {
-                continue;
-            }
-
-            /* Rooms across a passage or a wall's twin faces never fuse. */
-            bool areRoomsSeparated{};
-            if (p_importedRoom->getIsSeparatedFrom(p_candidateRoom,
-                                                   areRoomsSeparated) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getIsSeparatedFrom returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (areRoomsSeparated)
-            {
-                continue;
-            }
-
-            std::string importedIdentity{};
-            if (p_importedRoom->getRoomTag(importedIdentity) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomTag returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            std::string candidateIdentity{};
-            if (p_candidateRoom->getRoomTag(candidateIdentity) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomTag returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int importedRoomId{};
-            if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
-                p_importedRoom->getId(importedRoomId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int candidateRoomId{};
-            if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
-                p_candidateRoom->getId(candidateRoomId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            const bool identitiesMatch =
-                !importedIdentity.empty() && !candidateIdentity.empty()
-                    ? importedIdentity == candidateIdentity
-                    : importedRoomId == candidateRoomId;
-            if (identitiesMatch)
-            {
-                p_bestRetainedRoom = p_candidateRoom;
-                Eigen::Vector3d candidateRoomCentroid{};
-                if (p_candidateRoom->getCentroid(candidateRoomCentroid) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                bestCentroidDistance_m =
-                    (candidateRoomCentroid - importedCentroid_world_m).norm();
-                break;
-            }
-
-            /* Geometry-only fusion remains a compatibility fallback solely
-             * for legacy unnumbered rooms. Mission rooms always carry a
-             * non-negative stable ID and must never cross identities. */
-            int importedRoomId2{};
-            if (p_importedRoom->getId(importedRoomId2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int candidateRoomId2{};
-            if (!(importedRoomId2 >= 0) &&
-                p_candidateRoom->getId(candidateRoomId2) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (importedRoomId2 >= 0 || candidateRoomId2 >= 0)
-            {
-                continue;
-            }
-
-            bool importedRoomHasKnownLabel{};
-            if (p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getHasKnownLabel returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            bool candidateRoomHasKnownLabel{};
-            if ((importedRoomHasKnownLabel) &&
-                p_candidateRoom->getHasKnownLabel(candidateRoomHasKnownLabel) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getHasKnownLabel returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int importedRoomMetaMarkerId{};
-            if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
-                p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarkerId returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int candidateRoomMetaMarkerId{};
-            if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
-                p_candidateRoom->getMetaMarkerId(candidateRoomMetaMarkerId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarkerId returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (importedRoomHasKnownLabel && candidateRoomHasKnownLabel &&
-                importedRoomMetaMarkerId != candidateRoomMetaMarkerId)
-            {
-                continue;
-            }
-
-            Eigen::Vector3d candidateCentroid_world_m{};
-            if (p_candidateRoom->getCentroid(candidateCentroid_world_m) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-
-            const double centroidDistance_m =
-                (candidateCentroid_world_m - importedCentroid_world_m).norm();
-
-            if (!candidateCentroid_world_m.allFinite() ||
-                !std::isfinite(centroidDistance_m) ||
-                centroidDistance_m > maximumRoomCentroidDistance_m ||
-                centroidDistance_m >= bestCentroidDistance_m)
-            {
-                continue;
-            }
-
-            std::vector<geometric::Plane *> candidateWalls{};
-            if (p_candidateRoom->getWalls(candidateWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-
-            std::size_t sameSideSharedWallCount   = 0U;
-            bool        hasOppositeSideSharedWall = false;
-
-            for (geometric::Plane *p_importedWall : importedWalls)
-            {
-                bool importedWallIsBad{};
-                if (!(p_importedWall == nullptr) &&
-                    p_importedWall->isBad(importedWallIsBad) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_importedWall == nullptr || importedWallIsBad)
-                {
-                    continue;
-                }
-
-                const bool wallIsShared =
-                    std::find(candidateWalls.begin(),
-                              candidateWalls.end(),
-                              p_importedWall) != candidateWalls.end();
-
-                if (!wallIsShared)
-                {
-                    continue;
-                }
-
-                g2o::Plane3D importedWallGetGlobalEquation{};
-                if (p_importedWall->getGlobalEquation(
-                        importedWallGetGlobalEquation) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getGlobalEquation returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                Eigen::Vector4d wallEquation_world =
-                    importedWallGetGlobalEquation.coeffs();
-
-                const double wallNormalNorm =
-                    wallEquation_world.head<3>().norm();
-
-                if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
-                {
-                    continue;
-                }
-
-                wallEquation_world /= wallNormalNorm;
-
-                const double importedSide_m =
-                    wallEquation_world.head<3>().dot(importedCentroid_world_m) +
-                    wallEquation_world(3);
-
-                const double candidateSide_m = wallEquation_world.head<3>().dot(
-                                                   candidateCentroid_world_m) +
-                                               wallEquation_world(3);
-
-                if (importedSide_m * candidateSide_m < 0.0 &&
-                    std::abs(importedSide_m) >= minimumRoomSideDistance_m &&
-                    std::abs(candidateSide_m) >= minimumRoomSideDistance_m)
-                {
-                    hasOppositeSideSharedWall = true;
-                    break;
-                }
-
-                sameSideSharedWallCount++;
-            }
-
-            if (hasOppositeSideSharedWall || sameSideSharedWallCount == 0U ||
-                hasSeparatingFiniteWall(importedCentroid_world_m,
-                                        candidateCentroid_world_m))
-            {
-                continue;
-            }
-
-            p_bestRetainedRoom     = p_candidateRoom;
-            bestCentroidDistance_m = centroidDistance_m;
-        }
-
-        if (p_bestRetainedRoom == nullptr)
-        {
-            continue;
         }
 
         std::vector<geometric::Plane *> retainedWalls{};
@@ -820,7 +310,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
         std::vector<semantic::Room *> mapRooms{};
-        if (p_map_inout->getAllRooms(mapRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_map_inout->getAllRooms(mapRooms) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getAllRooms returned a failure status although "
@@ -1368,10 +859,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[SemanticMerge] Fused duplicate Room#" << importedRoomId4
-                  << " into Room#" << bestRetainedRoomId2
-                  << " (centroid distance " << bestCentroidDistance_m << " m)."
-                  << std::endl;
+        std::cout
+            << "[SemanticMerge] Fused duplicate Room#" << importedRoomId4
+            << " into Room#" << bestRetainedRoomId2 << " (centroid distance "
+            << (retainedCentroid_world_m - importedCentroid_world_m).norm()
+            << " m)." << std::endl;
     }
 
     return UtilsStatus::UTILS_STATUS_SUCCESS;

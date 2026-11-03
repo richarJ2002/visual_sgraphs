@@ -34,6 +34,10 @@
 
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,6 +50,17 @@ void transferSemanticEntities(
     const loop_closing::MergeMapContents &mergeMapContents_in,
     bool                                  skipBadMarkerBasedRooms_in)
 {
+    /* Passages and floors are paired by geometry with the merge thresholds. */
+    semantic::SemanticVerifyConfig configuration{};
+    if (semantic::SemanticVerify::configFromSystemParams(configuration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: configFromSystemParams returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     transferPlanes(p_currentMap_inout,
                    p_mergeMap_inout,
                    mergeMapContents_in.planes);
@@ -56,7 +71,8 @@ void transferSemanticEntities(
                      p_mergeMap_inout,
                      mergeMapContents_in.passages,
                      mergeMapContents_in.detectedRooms,
-                     mergeMapContents_in.markerBasedRooms);
+                     mergeMapContents_in.markerBasedRooms,
+                     configuration);
     transferRooms(p_currentMap_inout,
                   p_mergeMap_inout,
                   mergeMapContents_in.detectedRooms,
@@ -64,7 +80,8 @@ void transferSemanticEntities(
                   skipBadMarkerBasedRooms_in);
     transferFloors(p_currentMap_inout,
                    p_mergeMap_inout,
-                   mergeMapContents_in.floors);
+                   mergeMapContents_in.floors,
+                   configuration);
 }
 
 } /* namespace core */

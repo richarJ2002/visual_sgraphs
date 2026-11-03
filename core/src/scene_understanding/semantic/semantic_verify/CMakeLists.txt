@@ -6,14 +6,19 @@ set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateMapMergeGate.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateMergeAlignment.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/mergeDecisionName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/pairPassagesInSharedFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/pairRoomsInSharedFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/mergeReasonName.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/runFloorGate.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/verify.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/verifyRejectReasonName.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/angleBetween_rad.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/classifyWallRelation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectPassageContexts.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectRoomEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectUniquePassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/copyMergeRoomEvidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/copyPassageContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findAnchorRoomPairs.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findByWallId.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/fitRotationFromNormals.cc

@@ -84,8 +84,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    std::vector<SemanticMergeRoomEvidence> survivingRooms;
-    std::vector<semantic::Room *>          survivingMapAllRooms{};
+    std::vector<Room *> survivingMapAllRooms{};
     if (p_survivingMap_in->getAllRooms(survivingMapAllRooms) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
     {
@@ -94,45 +93,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (Room *p_room : survivingMapAllRooms)
-    {
-        bool roomIsBad{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        Room::RoomVariant roomVariant{};
-        if ((p_room != nullptr && !roomIsBad) &&
-            p_room->getRoomVariant(roomVariant) !=
-                RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad &&
-            roomVariant == Room::RoomVariant::ROOM)
-        {
-            SemanticMergeRoomEvidence evidence{};
-            if (copyMergeRoomEvidence(p_room, configuration_in, evidence) !=
-                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyMergeRoomEvidence returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            survivingRooms.push_back(evidence);
-        }
-    }
-    std::vector<SemanticMergeRoomEvidence> absorbedRooms;
-    std::vector<semantic::Room *>          absorbedMapAllRooms{};
+    std::vector<Room *> absorbedMapAllRooms{};
     if (p_absorbedMap_in->getAllRooms(absorbedMapAllRooms) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
     {
@@ -141,43 +102,18 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (Room *p_room : absorbedMapAllRooms)
-    {
-        bool roomIsBad2{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        Room::RoomVariant roomVariant2{};
-        if ((p_room != nullptr && !roomIsBad2) &&
-            p_room->getRoomVariant(roomVariant2) !=
-                RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad2 &&
-            roomVariant2 == Room::RoomVariant::ROOM)
-        {
-            SemanticMergeRoomEvidence evidence2{};
-            if (copyMergeRoomEvidence(p_room, configuration_in, evidence2) !=
-                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyMergeRoomEvidence returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            absorbedRooms.push_back(evidence2);
-        }
-    }
+    std::vector<Room *>                    survivingAdmittedRooms{};
+    std::vector<Room *>                    absorbedAdmittedRooms{};
+    std::vector<SemanticMergeRoomEvidence> survivingRooms;
+    std::vector<SemanticMergeRoomEvidence> absorbedRooms;
+    collectRoomEvidence(survivingMapAllRooms,
+                        configuration_in,
+                        survivingAdmittedRooms,
+                        survivingRooms);
+    collectRoomEvidence(absorbedMapAllRooms,
+                        configuration_in,
+                        absorbedAdmittedRooms,
+                        absorbedRooms);
     SemanticMergeGateResult result2{};
     if (evaluateMergeAlignment(survivingRooms,
                                absorbedRooms,

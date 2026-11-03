@@ -39,6 +39,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace vs_graphs::core::map
@@ -53,6 +54,7 @@ namespace core
 
 namespace semantic
 {
+class Passage;
 class Room;
 
 /*!
@@ -200,6 +202,65 @@ class SemanticVerify
         const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
+
+    /*!
+     * @brief           Pairs rooms of one map that were imported by a merge
+     *                  with the rooms that were already there, to find the
+     *                  duplicates. Both lists must already be in one world
+     *                  frame. Only the anchor rooms (same room tag) are paired
+     *                  by identity; every other room pairs through its walls
+     *                  (coplanar, same facing, overlapping), never by id.
+     *
+     * @param[in]       importedRooms_in
+     *                  Rooms brought in by the merge; null, bad and
+     *                  prospective rooms are skipped. Borrowed.
+     *
+     * @param[in]       retainedRooms_in
+     *                  Rooms the surviving map already had; same filtering.
+     *                  Borrowed.
+     *
+     * @param[in]       configuration_in
+     *                  Wall pairing thresholds, room pair wall fraction and
+     *                  minimum wall pairs.
+     *
+     * @return          One pair (imported room, retained room) per imported
+     *                  room that duplicates a retained room. An imported room
+     *                  whose best walls-paired rooms tie, or that pairs with no
+     *                  room, is not listed: it gives no answer.
+     */
+    [[nodiscard]] static std::vector<std::pair<Room *, Room *>>
+        pairRoomsInSharedFrame(const std::vector<Room *>  &importedRooms_in,
+                               const std::vector<Room *>  &retainedRooms_in,
+                               const SemanticVerifyConfig &configuration_in);
+
+    /*!
+     * @brief           Pairs passages of one map that were imported by a merge
+     *                  with the passages that were already there, to find the
+     *                  duplicates. Both lists must already be in one world
+     *                  frame. Two passages pair when they lie on the same plane
+     *                  and their centres are close in that plane; ids are
+     *                  never compared.
+     *
+     * @param[in]       importedPassages_in
+     *                  Passages brought in by the merge; null and bad passages
+     *                  are skipped. Borrowed.
+     *
+     * @param[in]       retainedPassages_in
+     *                  Passages the surviving map already had; same filtering.
+     *                  Borrowed.
+     *
+     * @param[in]       configuration_in
+     *                  Coplanar angle and wall plane offset.
+     *
+     * @return          One pair (imported passage, retained passage) per
+     *                  imported passage that duplicates a retained passage;
+     *                  the retained passage with the nearest centre is chosen.
+     */
+    [[nodiscard]] static std::vector<std::pair<Passage *, Passage *>>
+        pairPassagesInSharedFrame(
+            const std::vector<Passage *> &importedPassages_in,
+            const std::vector<Passage *> &retainedPassages_in,
+            const SemanticVerifyConfig   &configuration_in);
 
     /*!
      * @brief           Returns a stable parseable name for a merge decision.

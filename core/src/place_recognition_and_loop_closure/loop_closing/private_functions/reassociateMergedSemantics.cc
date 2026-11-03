@@ -42,7 +42,14 @@
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 
+#include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+
+#include <algorithm>
+#include <iostream>
 #include <rclcpp/logging.hpp>
+#include <utility>
+#include <vector>
 
 namespace vs_graphs
 {
@@ -75,10 +82,49 @@ void reassociateMergedSemantics(
                          mergeMapContents_in.markerBasedRooms.begin(),
                          mergeMapContents_in.markerBasedRooms.end());
 
-    /* Stable semantic identity reconciliation is a merge invariant, not
-     * an optional geometry-reassociation feature. */
+    /* Rooms the surviving map had before the merge are the fusion targets. */
+    std::vector<semantic::Room *> mapAllRooms{};
+    if (p_currentMap_inout->getAllRooms(mapAllRooms) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> retainedRooms{};
+    for (semantic::Room *p_room : mapAllRooms)
+    {
+        if (std::find(importedRooms.begin(), importedRooms.end(), p_room) ==
+            importedRooms.end())
+        {
+            retainedRooms.push_back(p_room);
+        }
+    }
+
+    /* Room fusion is a merge invariant, not an optional geometry
+     * re-association feature. Walls, floors and rooms are paired by geometry;
+     * only the anchor rooms are paired by their tag. */
+    semantic::SemanticVerifyConfig configuration{};
+    if (semantic::SemanticVerify::configFromSystemParams(configuration) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: configFromSystemParams returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const std::vector<std::pair<semantic::Room *, semantic::Room *>>
+        duplicateRoomPairs =
+            semantic::SemanticVerify::pairRoomsInSharedFrame(importedRooms,
+                                                             retainedRooms,
+                                                             configuration);
+    std::cout << "[SemanticMergeFusion] imported_rooms=" << importedRooms.size()
+              << " retained_rooms=" << retainedRooms.size()
+              << " duplicate_room_pairs=" << duplicateRoomPairs.size()
+              << std::endl;
     if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_inout,
-                                                          importedRooms) !=
+                                                          duplicateRoomPairs) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(

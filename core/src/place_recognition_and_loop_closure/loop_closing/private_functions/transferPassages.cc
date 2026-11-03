@@ -39,7 +39,10 @@
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+
 #include <rclcpp/logging.hpp>
+#include <utility>
 
 namespace vs_graphs
 {
@@ -50,8 +53,28 @@ void transferPassages(map::Map *p_currentMap_inout,
                       map::Map *p_mergeMap_inout,
                       const std::vector<semantic::Passage *> &passages_in,
                       const std::vector<semantic::Room *>    &detectedRooms_in,
-                      const std::vector<semantic::Room *> &markerBasedRooms_in)
+                      const std::vector<semantic::Room *>  &markerBasedRooms_in,
+                      const semantic::SemanticVerifyConfig &configuration_in)
 {
+    /*
+     * Pair before anything moves: the surviving map's own passages are the
+     * only candidates for a duplicate.
+     */
+    std::vector<semantic::Passage *> currentMapAllPassages{};
+    if (p_currentMap_inout->getAllPassages(currentMapAllPassages) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const std::vector<std::pair<semantic::Passage *, semantic::Passage *>>
+        duplicatePairs = semantic::SemanticVerify::pairPassagesInSharedFrame(
+            passages_in,
+            currentMapAllPassages,
+            configuration_in);
+
     for (vs_graphs::core::semantic::Passage *p_passage : passages_in)
     {
         /* Skip invalid rooms */
@@ -60,42 +83,14 @@ void transferPassages(map::Map *p_currentMap_inout,
             continue;
         }
 
+        /* A retained passage is the one found by geometry, never by id. */
         semantic::Passage *p_retainedPassage = nullptr;
-        std::vector<vs_graphs::core::semantic::Passage *>
-            currentMapAllPassages{};
-        if (p_currentMap_inout->getAllPassages(currentMapAllPassages) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        for (const std::pair<semantic::Passage *, semantic::Passage *>
+                 &duplicatePair : duplicatePairs)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllPassages returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (semantic::Passage *p_existingPassage : currentMapAllPassages)
-        {
-            int existingPassageId{};
-            if ((p_existingPassage != nullptr) &&
-                p_existingPassage->getId(existingPassageId) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            if (duplicatePair.first == p_passage)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int passageId{};
-            if ((p_existingPassage != nullptr) &&
-                p_passage->getId(passageId) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_existingPassage != nullptr && existingPassageId == passageId)
-            {
-                p_retainedPassage = p_existingPassage;
+                p_retainedPassage = duplicatePair.second;
                 break;
             }
         }

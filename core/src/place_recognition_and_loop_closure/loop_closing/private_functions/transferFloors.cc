@@ -37,6 +37,9 @@
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
 
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+
+#include <optional>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -46,7 +49,8 @@ namespace core
 
 void transferFloors(map::Map                             *p_currentMap_inout,
                     map::Map                             *p_mergeMap_inout,
-                    const std::vector<semantic::Floor *> &floors_in)
+                    const std::vector<semantic::Floor *> &floors_in,
+                    const semantic::SemanticVerifyConfig &configuration_in)
 {
     for (semantic::Floor *p_floor : floors_in)
     {
@@ -73,29 +77,51 @@ void transferFloors(map::Map                             *p_currentMap_inout,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        /* A retained floor is a coplanar one, never one with the same id. */
+        std::optional<semantic::Floor::PlaneIdentity> floorIdentity{};
+        if (p_floor->getPlaneIdentity(floorIdentity) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (semantic::Floor *p_existingFloor : currentMapAllFloors)
         {
-            int existingFloorId{};
-            if ((p_existingFloor != nullptr) &&
-                p_existingFloor->getId(existingFloorId) !=
-                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            if (p_existingFloor == nullptr || !floorIdentity.has_value())
+            {
+                continue;
+            }
+            std::optional<semantic::Floor::PlaneIdentity> existingIdentity{};
+            if (p_existingFloor->getPlaneIdentity(existingIdentity) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although "
-                             "it cannot fail; continuing as before.",
+                             "%s: getPlaneIdentity returned a failure status "
+                             "although it cannot fail; continuing as before.",
                              __func__);
             }
-            int floorId{};
-            if ((p_existingFloor != nullptr) &&
-                p_floor->getId(floorId) !=
-                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            double normalAngle_deg{};
+            double planeOffset_m{};
+            bool   isCoplanar{};
+            if (existingIdentity.has_value() &&
+                semantic::Floor::planeIdentitiesMatch(
+                    *existingIdentity,
+                    *floorIdentity,
+                    configuration_in.coplanarAngle_deg,
+                    configuration_in.floorMatchTolerance_m,
+                    normalAngle_deg,
+                    planeOffset_m,
+                    isCoplanar) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although "
-                             "it cannot fail; continuing as before.",
+                             "%s: planeIdentitiesMatch returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
                              __func__);
             }
-            if (p_existingFloor != nullptr && existingFloorId == floorId)
+            if (existingIdentity.has_value() && isCoplanar)
             {
                 p_retainedFloor = p_existingFloor;
                 break;
