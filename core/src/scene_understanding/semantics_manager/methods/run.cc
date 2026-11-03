@@ -812,31 +812,27 @@ void SemanticsManager::run(void)
         }
         if (p_candidateMap != nullptr)
         {
-            atlas::Atlas::SnapshotCopyResult currentSnapshot{};
-            if (p_atlas->copyRoomContextForMapChecked(p_candidateMap,
-                                                      true,
-                                                      currentSnapshot) !=
+            std::vector<semantic::RoomContextSnapshot> currentSnapshots{};
+            if (p_atlas->copyRoomContextForMap(p_candidateMap,
+                                               currentSnapshots) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyRoomContextForMapChecked returned a failure "
-                    "status although it cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: copyRoomContextForMap returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
             }
-            if (currentSnapshot.status == atlas::Atlas::SnapshotCopyStatus::COMPLETE)
+            unsigned long candidateMapId{};
+            if (p_candidateMap->getId(candidateMapId) !=
+                map::MapStatus::MAP_STATUS_SUCCESS)
             {
-                unsigned long candidateMapId{};
-                if (p_candidateMap->getId(candidateMapId) !=
-                    map::MapStatus::MAP_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                copiedContext[candidateMapId] = currentSnapshot.snapshots;
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
+            copiedContext[candidateMapId] = currentSnapshots;
         }
         semantic::SemanticCandidateConfig candidateConfiguration;
         candidateConfiguration.topK = p_sysParams->candidateGen.topK;

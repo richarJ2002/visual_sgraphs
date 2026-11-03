@@ -174,42 +174,6 @@ class Atlas
     void serialize(Archive &ar, const unsigned int version);
 
   public:
-    /*!
-     * @brief           Whether copyRoomContextForMapChecked could copy the room
-     *                  snapshots: COMPLETE, or UNAVAILABLE_LIVE_GENERATION when
-     *                  the caller did not own the semantic update lock.
-     *
-     * TODO             SHOULD BE MOVED INTO THE 'objects' directory to be a
-     *                  standalone object.
-     */
-    enum class SnapshotCopyStatus
-    {
-        COMPLETE,
-        UNAVAILABLE_LIVE_GENERATION
-    };
-
-    /*!
-     * @brief           Outcome of copyRoomContextForMapChecked: a status plus
-     *                  the snapshots it copied.
-     *
-     * TODO             SHOULD BE MOVED INTO THE 'objects' directory to be a
-     *                  standalone object.
-     */
-    struct SnapshotCopyResult
-    {
-        /*!
-         * @brief           COMPLETE once snapshots is filled;
-         *                  UNAVAILABLE_LIVE_GENERATION (the default) when the
-         *                  copy was refused.
-         */
-        SnapshotCopyStatus status{
-            SnapshotCopyStatus::UNAVAILABLE_LIVE_GENERATION};
-        /*!
-         * @brief           Room snapshots copied from a live map; empty unless
-         *                  status is COMPLETE.
-         */
-        std::vector<semantic::RoomContextSnapshot> snapshots;
-    };
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /*!
@@ -298,18 +262,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus changeMap(map::Map *p_map_in);
 
-    /*!
-     * @brief           Returns the key frame id at which the newest map was
-     *                  initialised. createNewMap and preSave move it past the
-     *                  active map's highest key frame id.
-     *
-     * @param[out]      lastInitKeyFrameId_out
-     *                  Initial key frame id of the newest map.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getLastInitKeyFrameId(unsigned long &lastInitKeyFrameId_out);
 
     /*!
      * @brief           Remembers the viewer and records that one is attached.
@@ -941,14 +893,6 @@ class Atlas
         int                                           roomId_in,
         std::optional<semantic::RoomContextSnapshot> &roomContext_out) const;
 
-    /*!
-     * @brief           Copies live entities only when the caller owns the
-     *                  semantic transaction.
-     */
-    [[nodiscard]] AtlasStatus
-        copyRoomContextForMapChecked(map::Map *p_map_inout,
-                                     bool      callerOwnsSemanticLock_in,
-                                     Atlas::SnapshotCopyResult &copyResult_out);
 
     /*!
      * @brief           Returns and clears the map-created lifecycle event.
@@ -956,26 +900,8 @@ class Atlas
     [[nodiscard]] AtlasStatus
         consumeNewMapCreatedEvent(bool &wasEventPending_out);
 
-    /*!
-     * @brief           Reads the lifecycle event without acknowledging it.
-     */
-    [[nodiscard]] AtlasStatus
-        peekNewMapCreatedEvent(bool &isEventPending_out) const;
 
-    /*!
-     * @brief           Acknowledges the pending lifecycle event after verified
-     *                  handling.
-     */
-    [[nodiscard]] AtlasStatus acknowledgeNewMapCreatedEvent();
 
-    /*!
-     * @brief           Returns the vector of context snapshots stored for
-     *                  \p mapId.
-     */
-    [[nodiscard]] AtlasStatus
-        getRoomContextForMap(long unsigned int mapId_in,
-                             const std::vector<semantic::RoomContextSnapshot> *
-                                 &p_roomContextForMap_out) const;
 
     /*!
      * @brief           Moves invalid maps out of the transient retirement
@@ -1045,18 +971,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus postLoad();
 
-    /*!
-     * @brief           Returns the key frames of every map in backupMaps, keyed
-     *                  by key frame id. backupMaps is only filled between
-     *                  preSave and postLoad.
-     *
-     * @param[out]      atlasKeyFrames_out
-     *                  Borrowed key frame pointers keyed by key frame id.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus getAtlasKeyFrames(
-        std::map<unsigned long, keyframe::KeyFrame *> &atlasKeyFrames_out);
 
     /* Functions for getting the entities */
     /*!
@@ -1154,18 +1068,6 @@ class Atlas
         vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out);
 
     /*!
-     * @brief           Returns the key frame database that postLoad uses to
-     *                  re-link key frames.
-     *
-     * @param[out]      p_keyFrameDatabase_out
-     *                  Borrowed pointer; whatever setKeyFrameDatabase stored,
-     *                  nullptr before that.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus getKeyFrameDatabase(
-        keyframe_database::KeyFrameDatabase *&p_keyFrameDatabase_out);
-    /*!
      * @brief           Stores the key frame database that postLoad uses to
      *                  re-link key frames.
      *
@@ -1179,18 +1081,6 @@ class Atlas
         keyframe_database::KeyFrameDatabase *p_keyFrameDatabase_in);
 
     /*!
-     * @brief           Returns the ORB vocabulary that postLoad uses to re-link
-     *                  key frames.
-     *
-     * @param[out]      p_oRBVocabulary_out
-     *                  Borrowed pointer; whatever setORBVocabulary stored,
-     *                  nullptr before that.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getORBVocabulary(ORBVocabulary *&p_oRBVocabulary_out);
-    /*!
      * @brief           Stores the ORB vocabulary that postLoad uses to re-link
      *                  key frames.
      *
@@ -1203,28 +1093,6 @@ class Atlas
     [[nodiscard]] AtlasStatus
         setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
-    /*!
-     * @brief           Counts the key frames of every active map, not only the
-     *                  current one. Takes atlasMutex.
-     *
-     * @param[out]      livedKeyFrameCount_out
-     *                  Total key frame count over all active maps.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getLivedKeyFrameCount(unsigned long &livedKeyFrameCount_out);
-    /*!
-     * @brief           Counts the map points of every active map, not only the
-     *                  current one. Takes atlasMutex.
-     *
-     * @param[out]      livedMapPointCount_out
-     *                  Total map point count over all active maps.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getLivedMapPointCount(unsigned long &livedMapPointCount_out);
 
   protected:
     /*!

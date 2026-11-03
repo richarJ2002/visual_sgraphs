@@ -1,6 +1,5 @@
 # Atlas object sources: exactly this object's translation units.
 set(VS_GRAPHS_ATLAS_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/acknowledgeNewMapCreatedEvent.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/acquireSemanticUpdateLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addCamera.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateMapRoom.cc
@@ -18,7 +17,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/consumeNewMapCreatedEvent.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/copyLatestRoomContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/copyRoomContextForMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/copyRoomContextForMapChecked.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/copyRoomContextHistory.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/countMaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewMap.cc
@@ -36,7 +34,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAtlasKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBiggestGroundPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCoherentMapView.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentMap.cc
@@ -44,19 +41,13 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameDatabase.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastBigChangeIndex.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getLastInitKeyFrameId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getLivedKeyFrameCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getLivedMapPointCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getORBVocabulary.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomContextForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc
@@ -67,7 +58,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/observeFloorIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/observePassageIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/observeRoomIdentity.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/peekNewMapCreatedEvent.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeBadMaps.cc
@@ -85,5 +75,5 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/advanceIdentityAllocator.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/resurfaceProxyFromTransferred.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/captureRoomContext.cc
 )
