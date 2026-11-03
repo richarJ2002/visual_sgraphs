@@ -54,7 +54,6 @@
 #include "mapping/local_mapping/local_mapping.h"
 #include "execution/system/system.h"
 
-#include <algorithm>
 #include <chrono>
 #include <vector>
 #include <iostream>
@@ -880,23 +879,6 @@ TrackingStatus Tracking::track()
             }
         }
 
-        int stepMatches = -1;
-        if (TRACKING_DIAGNOSTICS_ENABLED)
-        {
-            /*!
-             * Motion-model or reference-key-frame step: only the normal
-             * tracking path (state OK) runs it.
-             */
-            if (!isTrackingOnlyMode && lastProcessedState == OK)
-            {
-                stepMatches = static_cast<int>(
-                    currentFrame.keyPointCount -
-                    std::count(currentFrame.mapPoints.begin(),
-                               currentFrame.mapPoints.end(),
-                               static_cast<map_point::MapPoint *>(nullptr)));
-            }
-        }
-
         if (!currentFrame.p_referenceKeyFrame)
             currentFrame.p_referenceKeyFrame = p_referenceKF;
 
@@ -948,73 +930,6 @@ TrackingStatus Tracking::track()
                 }
                 isOk = isTracked8;
             }
-        }
-
-        if (TRACKING_DIAGNOSTICS_ENABLED)
-        {
-            std::vector<float> validDepths{};
-            for (const float depth : currentFrame.depths)
-            {
-                if (depth > 0.0F)
-                    validDepths.push_back(depth);
-            }
-            float medianDepth = 0.0F;
-            if (!validDepths.empty())
-            {
-                const auto middle =
-                    validDepths.begin() + validDepths.size() / 2;
-                std::nth_element(validDepths.begin(),
-                                 middle,
-                                 validDepths.end());
-                medianDepth = *middle;
-            }
-            unsigned long diagKeyFrameCount{};
-            if (p_currentMap->getKeyFrameCount(diagKeyFrameCount) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getKeyFrameCount returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const char *stateName = "UNKNOWN";
-            switch (lastProcessedState)
-            {
-                case SYSTEM_NOT_READY:
-                stateName = "SYSTEM_NOT_READY";
-                break;
-                case NO_IMAGES_YET:
-                stateName = "NO_IMAGES_YET";
-                break;
-                case NOT_INITIALIZED:
-                stateName = "NOT_INITIALIZED";
-                break;
-                case OK:
-                stateName = "OK";
-                break;
-                case RECENTLY_LOST:
-                stateName = "RECENTLY_LOST";
-                break;
-                case LOST:
-                stateName = "LOST";
-                break;
-                case OK_KLT:
-                stateName = "OK_KLT";
-                break;
-            }
-            RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
-                        "[TrackDiag] stamp=%.3f state=%s keypoints=%d "
-                        "depthKeypoints=%zu medianDepth=%.3f stepMatches=%d "
-                        "trackedMapPoints=%d keyFrames=%lu velocity=%d",
-                        currentFrame.timeStamp,
-                        stateName,
-                        currentFrame.keyPointCount,
-                        validDepths.size(),
-                        medianDepth,
-                        stepMatches,
-                        matchesInliers,
-                        diagKeyFrameCount,
-                        static_cast<int>(isVelocityAvailable));
         }
 
         if (isOk)
