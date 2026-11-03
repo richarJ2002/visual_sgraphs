@@ -44,12 +44,14 @@ namespace vs_graphs
 namespace core
 {
 
-void recordAcceptedMerge(map::Map          *p_currentMap_in,
+void recordAcceptedMerge(map::Map          *p_currentMap_inout,
                          map::Map          *p_mergeMap_in,
-                         const std::string &floorDecision_in)
+                         const std::string &floorDecision_in,
+                         const g2o::Sim3 &mergeTransform_absorbedToSurviving_in,
+                         double           mergeTime_s_in)
 {
     unsigned long currentMapId2{};
-    if (p_currentMap_in->getId(currentMapId2) !=
+    if (p_currentMap_inout->getId(currentMapId2) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -65,10 +67,24 @@ void recordAcceptedMerge(map::Map          *p_currentMap_in,
                      "fail; continuing as before.",
                      __func__);
     }
+    map::MapMergeRecord mergeRecord{};
+    mergeRecord.absorbedMapId  = mergeMapId2;
+    mergeRecord.survivingMapId = currentMapId2;
+    mergeRecord.mergeTime_s    = mergeTime_s_in;
+    mergeRecord.mergeRotation_absorbedToSurviving =
+        mergeTransform_absorbedToSurviving_in.rotation();
+    mergeRecord.mergeTranslation_absorbedToSurviving_m =
+        mergeTransform_absorbedToSurviving_in.translation();
+    mergeRecord.mergeScale_absorbedToSurviving =
+        mergeTransform_absorbedToSurviving_in.scale();
+    p_currentMap_inout->addMergeRecord(mergeRecord);
+
     std::cout << "[SemanticMergeGate] surviving_map=" << currentMapId2
               << " absorbed_map=" << mergeMapId2
               << " decision=ACCEPT reason=ALIGNED"
-              << " floor=" << floorDecision_in << " committed=1" << std::endl;
+              << " floor=" << floorDecision_in << " committed=1"
+              << formatMergeTransform(mergeTransform_absorbedToSurviving_in)
+              << std::endl;
 }
 
 } /* namespace core */

@@ -8,6 +8,7 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeEdge.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCaptureTime.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeParent.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearClsClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearPointCloud.cc

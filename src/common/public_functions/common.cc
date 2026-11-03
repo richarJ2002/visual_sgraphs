@@ -4128,6 +4128,32 @@ void maybeArchiveSGraph(
         mapJson["keyframe_count"]    = keyFrameCount;
         mapJson["map_point_count"]   = mapPointCount;
 
+        /* Merges this map survived; transforms map absorbed-map world points
+         * into this map's world as p = scale * R(qxyzw) * p_absorbed + t. */
+        mapJson["merge_records"] = Json::array();
+        if (mapInput.p_map != nullptr)
+        {
+            for (const vs_graphs::core::map::MapMergeRecord &mergeRecord :
+                 mapInput.p_map->getMergeRecords())
+            {
+                Json recordJson;
+                recordJson["absorbed_map_id"]  = mergeRecord.absorbedMapId;
+                recordJson["surviving_map_id"] = mergeRecord.survivingMapId;
+                recordJson["time_s"]           = mergeRecord.mergeTime_s;
+                recordJson["translation_absorbed_to_surviving_m"] =
+                    archiveVector3(
+                        mergeRecord.mergeTranslation_absorbedToSurviving_m);
+                recordJson["rotation_absorbed_to_surviving_qxyzw"] = {
+                    mergeRecord.mergeRotation_absorbedToSurviving.x(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.y(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.z(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.w()};
+                recordJson["scale_absorbed_to_surviving"] =
+                    mergeRecord.mergeScale_absorbedToSurviving;
+                mapJson["merge_records"].push_back(recordJson);
+            }
+        }
+
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
             Json                              floorJson;

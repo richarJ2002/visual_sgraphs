@@ -240,7 +240,9 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                    p_mergeMap);
     recordAcceptedMerge(p_currentMap,
                         p_mergeMap,
-                        semanticMergeGate.floorDecision);
+                        semanticMergeGate.floorDecision,
+                        oldCorrectedPose.inverse(),
+                        p_currentKF->getCaptureTime());
 
     /* The semantic graph and atlas::Atlas ownership are now stable for other
      * workers.

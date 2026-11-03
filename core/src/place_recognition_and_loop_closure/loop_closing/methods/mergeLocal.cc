@@ -394,7 +394,9 @@ LoopClosingStatus
                    p_mergeMap);
     recordAcceptedMerge(p_currentMap,
                         p_mergeMap,
-                        semanticMergeGate.floorDecision);
+                        semanticMergeGate.floorDecision,
+                        g2oSwCurrentWMerge,
+                        p_currentKF->getCaptureTime());
 
     resumeMergeWorkers(semanticUpdateLock, p_localMapper);
 

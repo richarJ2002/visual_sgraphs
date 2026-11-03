@@ -118,7 +118,9 @@ void evaluateSemanticMergeGate(
               << " aligned_rooms=" << gateResult_out.alignedRoomCount
               << " matched_walls=" << gateResult_out.matchedWallCount
               << " matched_passages=" << gateResult_out.matchedPassageCount
-              << " committed=0" << std::endl;
+              << " committed=0"
+              << formatMergeTransform(mapTransform_mergeWorldToCurrentWorld_in)
+              << std::endl;
 }
 
 } /* namespace core */

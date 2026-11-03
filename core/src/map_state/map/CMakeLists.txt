@@ -8,6 +8,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeRecord.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addRoomWallPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyScaledRotation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeId.cc
@@ -50,6 +51,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxKeyFrameId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMergeRecords.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc

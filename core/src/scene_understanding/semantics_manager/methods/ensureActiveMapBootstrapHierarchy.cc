@@ -873,8 +873,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                   << ",\"reason\":\"RECOVERY_RESTORED\",\"room_id\":"
                   << bootstrapRoomId10 << ",\"floor_id\":" << canonicalFloorId2
                   << ",\"restored_passages\":" << restoredPassageCount
-                  << ",\"link_verified\":false,\"semantic_cycle\":"
-                  << pipelineSemanticCycle << "}" << std::endl;
+                  << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
+                  << std::endl;
         bootstrapResult_out = ActiveMapBootstrapResult::RECOVERED;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }

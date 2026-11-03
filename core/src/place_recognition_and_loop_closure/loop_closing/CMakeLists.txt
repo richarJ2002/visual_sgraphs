@@ -44,6 +44,7 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/correctMergeMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateSemanticMergeGate.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/expandWindowByCovisibility.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/formatMergeTransform.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/gatherInertialFusionCandidates.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasMergeMapKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/initializeInertialMap.cc

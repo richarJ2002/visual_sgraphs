@@ -408,6 +408,13 @@ class KeyFrame
         originMapId = mapId;
     }
 
+    /*!
+     * @brief           Returns the capture time of the frame this key frame was
+     *                  created from, seconds on the clock of the input stamps
+     *                  (simulated time when use_sim_time is set).
+     */
+    [[nodiscard]] double getCaptureTime() const;
+
     /* Pose functions */
     /*!
      * @brief           Stores the camera pose and refreshes everything derived

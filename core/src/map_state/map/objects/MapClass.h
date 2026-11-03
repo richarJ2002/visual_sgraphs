@@ -38,6 +38,7 @@
 
 #include "views_io/archive_support/objects/SerializationUtils.h"
 #include "dependency_lineage/sophus/objects/se3.hpp"
+#include "map_state/map/objects/MapMergeRecordStruct.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include <Eigen/Core>
 #include <atomic>
@@ -971,6 +972,22 @@ class Map
      */
     [[nodiscard]] MapStatus
         getWorldFrameEpoch(std::uint64_t &worldFrameEpoch_out);
+
+    /*!
+     * @brief           Appends the record of a merge this map survived. Takes
+     *                  mapMutex. Merge records are not serialized: a saved and
+     *                  reloaded map starts with none.
+     *
+     * @param[in]       mergeRecord_in
+     *                  Record of the committed merge.
+     */
+    void addMergeRecord(const MapMergeRecord &mergeRecord_in);
+    /*!
+     * @brief           Returns a copy of every merge record of this map, oldest
+     *                  first. Takes mapMutex.
+     */
+    [[nodiscard]] std::vector<MapMergeRecord> getMergeRecords();
+
     /*!
      * @brief           Counts one more map change. Takes mapMutex.
      *
@@ -1358,6 +1375,12 @@ class Map
      * and content updates do not increment it; whole-map rebases do.
      */
     std::uint64_t worldFrameEpoch;
+
+    /*!
+     * @brief           Merges this map survived, oldest first; guarded by
+     *                  mapMutex and deliberately left out of serialize().
+     */
+    std::vector<MapMergeRecord> mergeRecords;
 
     /*!
      * @brief           Id of the first key frame of this map.

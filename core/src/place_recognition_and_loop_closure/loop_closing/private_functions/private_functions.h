@@ -205,6 +205,22 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
     const g2o::Sim3    &mergeSimilarity_mergeWorldToCurrentCamera_in);
 
 /*!
+ * @brief           Formats a merge similarity as the log fields appended to
+ *                  every [SemanticMergeGate] line: translation in metres,
+ *                  rotation quaternion (x, y, z, w) and scale, each starting
+ *                  with a space.
+ *
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity from the absorbed map's world frame to the
+ *                  surviving map's world frame; maps a point as
+ *                  p_surviving = scale * R * p_absorbed + t.
+ *
+ * @return          The formatted fields.
+ */
+[[nodiscard]] std::string formatMergeTransform(
+    const g2o::Sim3 &mergeTransform_absorbedToSurviving_in);
+
+/*!
  * @brief           Runs the semantic merge gate on a merge candidate and prints
  *                  its decision record (committed=0).
  *
@@ -819,20 +835,30 @@ void commitMapMerge(atlas::Atlas       *p_atlas_inout,
 
 /*!
  * @brief           Prints the decision record of a committed merge
- *                  (committed=1).
+ *                  (committed=1) and stores a MapMergeRecord on the surviving
+ *                  map.
  *
- * @param[in]       p_currentMap_in
- *                  Surviving map.
+ * @param[in,out]   p_currentMap_inout
+ *                  Surviving map; receives the record.
  *
  * @param[in]       p_mergeMap_in
  *                  Absorbed map.
  *
  * @param[in]       floorDecision_in
  *                  Floor check outcome text reported by the gate.
+ *
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity from the absorbed map's world frame to the
+ *                  surviving map's world frame.
+ *
+ * @param[in]       mergeTime_s_in
+ *                  Merge time on the ROS node clock, seconds.
  */
-void recordAcceptedMerge(map::Map          *p_currentMap_in,
+void recordAcceptedMerge(map::Map          *p_currentMap_inout,
                          map::Map          *p_mergeMap_in,
-                         const std::string &floorDecision_in);
+                         const std::string &floorDecision_in,
+                         const g2o::Sim3 &mergeTransform_absorbedToSurviving_in,
+                         double           mergeTime_s_in);
 
 /*!
  * @brief           Decides whether the global bundle adjustment that was
