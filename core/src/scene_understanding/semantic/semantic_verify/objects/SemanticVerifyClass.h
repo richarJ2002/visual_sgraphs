@@ -176,8 +176,7 @@ class SemanticVerify
      *                  identity; walls, floors, rooms and passages are paired
      *                  by geometry in the surviving frame. A contradiction
      *                  between paired elements (an anchor floor or wall
-     *                  offset, one element paired twice, paired passages that
-     *                  disagree on being passable) rejects. Too little
+     *                  offset, one element paired twice) rejects. Too little
      *                  evidence (no anchor pair, no anchor floor, too few
      *                  anchor wall pairs or directions) defers. Elements seen
      *                  in one map only neither accept nor reject. The pairs

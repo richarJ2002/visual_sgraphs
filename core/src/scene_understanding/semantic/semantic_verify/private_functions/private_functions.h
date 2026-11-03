@@ -502,8 +502,9 @@ void collectPassageContexts(const std::vector<Passage *> &passages_in,
  *                  aperture and are not recovery proxies, lie on the same plane
  *                  (normal angle and offset, orientation ignored) and their
  *                  centres are no further apart, measured in that plane, than
- *                  half the narrower passage's width. A contradiction is a
- *                  pair that disagrees on being passable.
+ *                  half the narrower passage's width. Passages never
+ *                  contradict: a difference in the passable flag is only
+ *                  a partial view, so it gives no answer.
  */
 [[nodiscard]] MergePairing pairPassages(
     const std::vector<PassageContext> &absorbedPassages_survivingWorld_in,

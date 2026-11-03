@@ -52,9 +52,7 @@ enum class SemanticMergeReason
     /*! Anchor walls overlap at a different offset and no wall agrees. */
     WALL_ALIGNMENT_CONTRADICTION,
     /*! One wall, room or passage pairs with two counterparts. */
-    PAIRING_CONTRADICTION,
-    /*! Two paired passages disagree on whether they are passable. */
-    PASSAGE_STATE_CONTRADICTION
+    PAIRING_CONTRADICTION
 };
 
 } /* namespace semantic */

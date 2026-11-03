@@ -78,11 +78,6 @@ SemanticVerifyStatus
         p_name_out = "PAIRING_CONTRADICTION";
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    case SemanticMergeReason::PASSAGE_STATE_CONTRADICTION:
-    {
-        p_name_out = "PASSAGE_STATE_CONTRADICTION";
-        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
-    }
     }
     p_name_out = "UNKNOWN";
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;

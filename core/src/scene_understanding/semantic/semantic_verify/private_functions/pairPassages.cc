@@ -78,11 +78,6 @@ MergePairing pairPassages(
             }
 
             pairing.pairs.push_back({absorbedIndex, survivingIndex});
-            if (absorbedPassage.isPassable != survivingPassage.isPassable)
-            {
-                pairing.contradictions.push_back(
-                    {absorbedIndex, survivingIndex});
-            }
         }
     }
     return pairing;

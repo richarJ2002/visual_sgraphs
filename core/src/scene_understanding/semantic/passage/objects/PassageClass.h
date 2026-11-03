@@ -817,8 +817,8 @@ class Passage
         mergeKnownSideProvenance(const KnownSideProvenance &provenance_in);
 
     /*!
-     * @brief           Reconciles a same-identity duplicate into this canonical
-     *                  passage.
+     * @brief           Reconciles a geometrically paired duplicate into this
+     *                  canonical passage.
      *
      *                  A real observed duplicate replaces recovery-proxy
      *                  geometry and current passability while preserving this
@@ -828,7 +828,8 @@ class Passage
      *                  passages.
      *
      * @param[in,out]   p_duplicate_inout
-     *                  Duplicate passage with the same stable ID.
+     *                  Duplicate passage the caller paired with this one by
+     *                  geometry; its identifier is not compared.
      *
      * @param[out]      wasGeometryReplaced_out
      *                  True when valid real geometry replaced recovery-proxy

@@ -277,14 +277,6 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         recordContradiction(SemanticMergeReason::PAIRING_CONTRADICTION,
                             "passage_paired_twice");
     }
-    if (!passagePairing.contradictions.empty())
-    {
-        recordContradiction(SemanticMergeReason::PASSAGE_STATE_CONTRADICTION,
-                            "passage_state=" +
-                                formatMergePairs(passagePairing.contradictions,
-                                                 absorbedPassageIds,
-                                                 survivingPassageIds));
-    }
 
     std::ostringstream detail;
     detail << "anchors=" << anchorText.str()

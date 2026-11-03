@@ -41,27 +41,9 @@ namespace semantic
 PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
                                           bool    &wasGeometryReplaced_out)
 {
-    int duplicate_inoutId{};
-    if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
-        p_duplicate_inout->getId(duplicate_inoutId) !=
-            PassageStatus::PASSAGE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
-    }
-    int duplicateId{};
-    if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
-        getId(duplicateId) != PassageStatus::PASSAGE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
-    }
-    if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
-        duplicate_inoutId != duplicateId)
+    /* The caller pairs duplicates by geometry; identifiers differ across
+     * maps, so they are never compared here. */
+    if (p_duplicate_inout == nullptr || p_duplicate_inout == this)
     {
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }

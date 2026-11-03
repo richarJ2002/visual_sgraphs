@@ -428,6 +428,27 @@ SemanticsManagerStatus
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
+
+                    /*
+                     * The centre lies on the mid-plane, like the single-face
+                     * case lies on its face. The face normal is a unit vector,
+                     * so midPlaneDistance_m is the signed distance from the
+                     * centre to the mid-plane. Moving the centre by that
+                     * distance makes it follow the optimised wall planes
+                     * instead of staying where an earlier cycle left it.
+                     */
+                    const Eigen::Vector3d midPlaneCentroid_world_m =
+                        passageCentroid_world_m -
+                        midPlaneDistance_m * firstFace.head<3>();
+                    if (passage->setCentroid(midPlaneCentroid_world_m) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
                 else
                 {
