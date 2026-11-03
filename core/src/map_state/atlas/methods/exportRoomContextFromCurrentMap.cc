@@ -465,7 +465,7 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
         }
 
         /* Assign persistent tag to old map rooms for merge trigger.
-         * Tag format: "room_<id>" matches what matchRoomsToContext() assigns.
+         * Tag format: "room_<id>".
          */
         int roomId3{};
         if (p_room->getId(roomId3) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)

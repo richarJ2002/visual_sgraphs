@@ -158,6 +158,14 @@ class Settings;
 namespace tracking
 {
 
+/*!
+ * @brief           Temporary diagnostic switch. When true, track() logs one
+ *                  "[TrackDiag]" line per tracked frame to find why tracking
+ *                  is lost near walls. Remove it, and every use, once the
+ *                  tracking loss is understood.
+ */
+inline constexpr bool TRACKING_DIAGNOSTICS_ENABLED = true;
+
 class Tracking
 {
   public:

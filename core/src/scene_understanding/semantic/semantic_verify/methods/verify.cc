@@ -43,14 +43,23 @@ SemanticVerifyStatus
     SemanticVerify::verify(const std::vector<VerifyWallObservation> &wallsA_in,
                            const std::vector<VerifyWallObservation> &wallsB_in,
                            SemanticVerifyResult                     &result_out,
-                           const SemanticVerifyConfig &configuration_in)
+                           const SemanticVerifyConfig &configuration_in,
+                           const std::optional<Eigen::Vector4d> &floorPlaneA_in,
+                           const std::optional<Eigen::Vector4d> &floorPlaneB_in)
 {
     SemanticVerifyResult result;
     result.candidateWallPairCount = wallsA_in.size() * wallsB_in.size();
 
-    /* Minimal sample: 3 planes for full SE(3). Fewer than
-     * 3 walls on either side can never form a full-rank hypothesis. */
-    if (wallsA_in.size() < 3U || wallsB_in.size() < 3U)
+    /* Minimal sample for full SE(3): three planes spanning three directions.
+     * Walls are vertical, so wall normals alone span only the horizontal
+     * plane; the floor pair supplies the vertical direction, and then two
+     * wall pairs complete the sample. Without a floor pair, three wall pairs
+     * are needed (and only noise tilt makes them full rank). */
+    const bool hasFloorPair =
+        floorPlaneA_in.has_value() && floorPlaneB_in.has_value();
+    const std::size_t sampleWallCount = hasFloorPair ? 2U : 3U;
+    if (wallsA_in.size() < sampleWallCount ||
+        wallsB_in.size() < sampleWallCount)
     {
         result.status       = VerificationStatus::REJECTED;
         result.rejectReason = VerifyRejectReason::TOO_FEW_WALLS;
@@ -62,7 +71,8 @@ SemanticVerifyStatus
      * similarity here: the two rooms are in different, as-yet-unrelated map
      * frames, so a candidate pair's normals cannot be compared directly
      * before a hypothesis rotation exists. Robustness to wrong candidate
-     * pairs comes from the 3-subset hypothesis + inlier-count step below. */
+     * pairs comes from the minimal-sample hypothesis + inlier-count step
+     * below. */
     std::vector<CandidatePair> candidatePairs;
     candidatePairs.reserve(wallsA_in.size() * wallsB_in.size());
     for (std::size_t indexA = 0U; indexA < wallsA_in.size(); ++indexA)
@@ -86,8 +96,8 @@ SemanticVerifyStatus
         configuration_in.maxNormalAngle_deg * M_PI / 180.0;
 
     /* All hypotheses passing the rank/condition-number gates. Deduplicated
-     * by inlier-set signature after enumeration: distinct minimal (3-wall)
-     * samples routinely rediscover the exact same correct solution on
+     * by inlier-set signature after enumeration: distinct minimal samples
+     * routinely rediscover the exact same correct solution on
      * well-conditioned, noise-free data, and that must not look like two
      * competing hypotheses to the ambiguity-rejection step below. */
     std::vector<Hypothesis> allHypotheses;
@@ -104,40 +114,67 @@ SemanticVerifyStatus
              hypothesesEvaluated < configuration_in.maxHypotheses;
              ++secondIndex)
         {
+            /* With a floor pair the sample is complete after two wall pairs:
+             * the innermost loop then runs once and its index is unused. */
+            const std::size_t thirdIndexEnd =
+                hasFloorPair ? secondIndex + 2U : pairCount;
             for (std::size_t thirdIndex = secondIndex + 1U;
-                 thirdIndex < pairCount &&
+                 thirdIndex < thirdIndexEnd &&
                  hypothesesEvaluated < configuration_in.maxHypotheses;
                  ++thirdIndex)
             {
-                const CandidatePair &pair0 = candidatePairs[firstIndex];
-                const CandidatePair &pair1 = candidatePairs[secondIndex];
-                const CandidatePair &pair2 = candidatePairs[thirdIndex];
-
-                /* One-to-one constraint: 3 distinct A-walls, 3 distinct
-                 * B-walls (an injective partial matching of size 3). */
-                if (pair0.indexA == pair1.indexA ||
-                    pair0.indexA == pair2.indexA ||
-                    pair1.indexA == pair2.indexA)
+                std::vector<CandidatePair> samplePairs = {
+                    candidatePairs[firstIndex],
+                    candidatePairs[secondIndex]};
+                if (!hasFloorPair)
                 {
-                    continue;
+                    samplePairs.push_back(candidatePairs[thirdIndex]);
                 }
-                if (pair0.indexB == pair1.indexB ||
-                    pair0.indexB == pair2.indexB ||
-                    pair1.indexB == pair2.indexB)
+
+                /* One-to-one constraint: distinct A-walls and distinct
+                 * B-walls (an injective partial matching). */
+                bool isInjective = true;
+                for (std::size_t leftIndex = 0U; leftIndex < samplePairs.size();
+                     leftIndex++)
+                {
+                    for (std::size_t rightIndex = leftIndex + 1U;
+                         rightIndex < samplePairs.size();
+                         rightIndex++)
+                    {
+                        isInjective = isInjective &&
+                                      samplePairs[leftIndex].indexA !=
+                                          samplePairs[rightIndex].indexA &&
+                                      samplePairs[leftIndex].indexB !=
+                                          samplePairs[rightIndex].indexB;
+                    }
+                }
+                if (!isInjective)
                 {
                     continue;
                 }
 
                 ++hypothesesEvaluated;
 
-                const std::vector<Eigen::Vector3d> normalsA = {
-                    wallsA_in[pair0.indexA].wallNormal_world,
-                    wallsA_in[pair1.indexA].wallNormal_world,
-                    wallsA_in[pair2.indexA].wallNormal_world};
-                const std::vector<Eigen::Vector3d> normalsB = {
-                    wallsB_in[pair0.indexB].wallNormal_world,
-                    wallsB_in[pair1.indexB].wallNormal_world,
-                    wallsB_in[pair2.indexB].wallNormal_world};
+                std::vector<Eigen::Vector3d> normalsA;
+                std::vector<Eigen::Vector3d> normalsB;
+                std::vector<double>          offsetsA;
+                std::vector<double>          offsetsB;
+                for (const CandidatePair &samplePair : samplePairs)
+                {
+                    normalsA.push_back(
+                        wallsA_in[samplePair.indexA].wallNormal_world);
+                    normalsB.push_back(
+                        wallsB_in[samplePair.indexB].wallNormal_world);
+                    offsetsA.push_back(wallsA_in[samplePair.indexA].d);
+                    offsetsB.push_back(wallsB_in[samplePair.indexB].d);
+                }
+                if (hasFloorPair)
+                {
+                    normalsA.push_back(floorPlaneA_in->head<3>());
+                    normalsB.push_back(floorPlaneB_in->head<3>());
+                    offsetsA.push_back((*floorPlaneA_in)[3]);
+                    offsetsB.push_back((*floorPlaneB_in)[3]);
+                }
 
                 RotationFit rotationFit{};
                 if (fitRotationFromNormals(normalsA, normalsB, rotationFit) !=
@@ -155,19 +192,11 @@ SemanticVerifyStatus
                 }
 
                 std::vector<Eigen::Vector3d> rotatedNormalsA;
-                rotatedNormalsA.reserve(3U);
+                rotatedNormalsA.reserve(normalsA.size());
                 for (const Eigen::Vector3d &normal : normalsA)
                 {
                     rotatedNormalsA.push_back(rotationFit.rotation * normal);
                 }
-                const std::vector<double> offsetsA = {
-                    wallsA_in[pair0.indexA].d,
-                    wallsA_in[pair1.indexA].d,
-                    wallsA_in[pair2.indexA].d};
-                const std::vector<double> offsetsB = {
-                    wallsB_in[pair0.indexB].d,
-                    wallsB_in[pair1.indexB].d,
-                    wallsB_in[pair2.indexB].d};
 
                 TranslationFit translationFit{};
                 if (fitTranslation(rotationFit.rotation,
@@ -184,14 +213,12 @@ SemanticVerifyStatus
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                if (!translationFit.valid || translationFit.rank < 3U)
-                {
-                    continue;
-                }
-                if (!std::isfinite(translationFit.conditionNumber) ||
+                if (!translationFit.valid || translationFit.rank < 3U ||
+                    !std::isfinite(translationFit.conditionNumber) ||
                     translationFit.conditionNumber >
                         configuration_in.maxConditionNumber)
                 {
+                    ++result.unobservableHypothesisCount;
                     continue;
                 }
 
@@ -470,6 +497,24 @@ SemanticVerifyStatus
         p_edge->setRobustKernel(p_kernel);
         optimizer.addEdge(p_edge);
     }
+    if (hasFloorPair)
+    {
+        /* The floor pair holds the vertical offset the walls cannot. */
+        optimizable_types::plane_pair_measurement::PlanePairMeasurement
+            floorMeasurement;
+        floorMeasurement.n_A   = floorPlaneA_in->head<3>();
+        floorMeasurement.d_A   = (*floorPlaneA_in)[3];
+        floorMeasurement.n_B   = floorPlaneB_in->head<3>();
+        floorMeasurement.d_B   = (*floorPlaneB_in)[3];
+        floorMeasurement.sigma = 1;
+        optimizable_types::edge_plane_transform_se3::EdgePlaneTransformSE3
+            *p_floorEdge = new optimizable_types::edge_plane_transform_se3::
+                EdgePlaneTransformSE3();
+        p_floorEdge->setVertex(0, p_vertex);
+        p_floorEdge->setMeasurement(floorMeasurement);
+        p_floorEdge->setInformation(information);
+        optimizer.addEdge(p_floorEdge);
+    }
 
     optimizer.initializeOptimization();
     optimizer.optimize(static_cast<int>(configuration_in.optimizerIterations));
@@ -522,6 +567,14 @@ SemanticVerifyStatus
         inlierOffsetsB.push_back(p_observationB->d);
         angularResiduals.push_back(inlier.normalAngleResidual_rad);
     }
+    if (hasFloorPair)
+    {
+        inlierRotatedNormalsA.push_back(refinedRotation *
+                                        floorPlaneA_in->head<3>());
+        inlierOffsetsA.push_back((*floorPlaneA_in)[3]);
+        inlierNormalsB.push_back(floorPlaneB_in->head<3>());
+        inlierOffsetsB.push_back((*floorPlaneB_in)[3]);
+    }
 
     TranslationFit refinedFit{};
     if (fitTranslation(refinedRotation,
@@ -555,7 +608,11 @@ SemanticVerifyStatus
         }
     }
 
-    if (refinedFit.rank < 3U || !rotationObservable)
+    /* Same conditioning bound as the hypothesis gate: near-parallel
+     * normals give rank 3 numerically while leaving a direction to noise. */
+    if (refinedFit.rank < 3U || !rotationObservable ||
+        !std::isfinite(refinedFit.conditionNumber) ||
+        refinedFit.conditionNumber > configuration_in.maxConditionNumber)
     {
         result.status          = VerificationStatus::REJECTED;
         result.rejectReason    = VerifyRejectReason::REFINED_FIT_NOT_OBSERVABLE;

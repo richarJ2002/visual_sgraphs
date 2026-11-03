@@ -253,8 +253,6 @@ SystemStatus System::trackRGBD(
                 std::cout << "[System] map::Map restart detected (mapId: "
                           << previousMapId << " -> " << mapId << ")"
                           << std::endl;
-                /* NOTE: matchRoomsToContext() is now called from
-                 * SemanticsManager::Run() after room detection, not here. */
             }
         }
     }

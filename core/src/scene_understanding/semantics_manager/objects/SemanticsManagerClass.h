@@ -1098,6 +1098,17 @@ class SemanticsManager
         detectDoorsAndDoorways(atlas::Atlas *p_atlas_in);
 
     /*!
+     * @brief           Resets the semantics of ground planes whose normal is
+     *                  horizontal and of wall planes whose normal is vertical.
+     *                  Judged against the fixed world vertical axis (Y), not
+     *                  against the main ground plane, so that a misclassified
+     *                  plane cannot become the ground reference. Uses the
+     *                  sem_seg.max_tilt_ground and sem_seg.max_tilt_wall
+     *                  parameters set in System Params.
+     */
+    [[nodiscard]] SemanticsManagerStatus rejectMisorientedPlanes(void);
+
+    /*!
      * @brief           Filters the wall planes to remove heavily tilted walls.
      *                  Does this by comparing the transpose to the ground
      *                  plane. If the plane normal is horizontal to the ground

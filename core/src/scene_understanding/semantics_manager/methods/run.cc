@@ -149,6 +149,18 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
+        /* Reject wrongly oriented ground and wall planes first, so one can
+           never become the ground reference below */
+        if (rejectMisorientedPlanes() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: rejectMisorientedPlanes returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
         /* Validate the low-level semantic planes */
         geometric::Plane *p_mainGroundPlane = nullptr;
         if (p_atlas->getBiggestGroundPlane(p_mainGroundPlane) !=
@@ -778,7 +790,7 @@ void SemanticsManager::run(void)
         }
 
         /* Verification-gated merge is not enabled here. In particular, a tag
-         * match must never activate MergeMapPair(). */
+         * match must never activate a merge. */
         std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
             copiedContext{};
         if (p_atlas->copyRoomContextHistory(copiedContext) !=
@@ -892,7 +904,7 @@ void SemanticsManager::run(void)
         /* Run the geometric verifier on the single best candidate and feed
          * the resulting VerificationVerdict to roomTracker via
          * submitVerificationVerdict(). This still only makes the *verdict*
-         * real -- it must not call Atlas::MergeMapPair() or otherwise mutate
+         * real -- it must not trigger a merge or otherwise mutate
          * the Atlas; that trigger is a separate, deliberately gated step. */
         if (evaluateTopCandidateVerification(candidates) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -1311,18 +1323,6 @@ void SemanticsManager::run(void)
         /* Unlock before any evaluation/serialization/caching/logging work --
          * the monitor must never hold the semantic-update lock while doing
          * read-only diagnostic work. */
-        /* Continuous consecutive-map matching, old into current, inside
-         * this transaction: at most one merge per cycle; attempts and
-         * commits log via SG_PIPELINE. */
-        if (p_atlas->attemptConsecutiveMergeIfGated() !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: attemptConsecutiveMergeIfGated returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
         semanticUpdateLock.unlock();
 
         const std::chrono::steady_clock::time_point evaluationStart =

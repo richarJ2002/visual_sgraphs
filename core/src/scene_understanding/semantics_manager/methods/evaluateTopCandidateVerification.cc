@@ -133,11 +133,29 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
                      __func__);
     }
 
+    /* The floors fix the vertical offset that vertical walls cannot. */
+    std::optional<Eigen::Vector4d> floorPlaneA_world{};
+    std::optional<Eigen::Vector4d> floorPlaneB_world{};
+    if (semantic::SemanticVerify::collectFloorObservation(p_roomA,
+                                                          floorPlaneA_world) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS ||
+        semantic::SemanticVerify::collectFloorObservation(p_roomB,
+                                                          floorPlaneB_world) !=
+            semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectFloorObservation returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     semantic::SemanticVerifyResult result{};
     if (semantic::SemanticVerify::verify(wallsA,
                                          wallsB,
                                          result,
-                                         verifyConfiguration) !=
+                                         verifyConfiguration,
+                                         floorPlaneA_world,
+                                         floorPlaneB_world) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -232,36 +250,29 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
         }
     }
 
-    const auto rejectReasonName = [](semantic::VerifyRejectReason reason)
+    const char *p_rejectReasonName = nullptr;
+    if (semantic::SemanticVerify::verifyRejectReasonName(result.rejectReason,
+                                                         p_rejectReasonName) !=
+        semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        switch (reason)
-        {
-        case semantic::VerifyRejectReason::NONE:
-            return "NONE";
-        case semantic::VerifyRejectReason::TOO_FEW_WALLS:
-            return "TOO_FEW_WALLS";
-        case semantic::VerifyRejectReason::NO_VALID_HYPOTHESIS:
-            return "NO_VALID_HYPOTHESIS";
-        case semantic::VerifyRejectReason::AMBIGUOUS_TOP_HYPOTHESES:
-            return "AMBIGUOUS_TOP_HYPOTHESES";
-        case semantic::VerifyRejectReason::BELOW_MIN_INLIER_RATIO:
-            return "BELOW_MIN_INLIER_RATIO";
-        case semantic::VerifyRejectReason::REFINED_FIT_NOT_OBSERVABLE:
-            return "REFINED_FIT_NOT_OBSERVABLE";
-        }
-        return "unknown";
-    };
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: verifyRejectReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::cout << "[SemMgr] verification_evaluated mapA=" << topCandidate.mapAId
               << " roomA=" << topCandidate.roomAId
               << " mapB=" << topCandidate.mapBId
               << " roomB=" << topCandidate.roomBId
               << " status=" << static_cast<int>(result.status)
-              << " rejectReason=" << rejectReasonName(result.rejectReason)
+              << " rejectReason=" << p_rejectReasonName
               << " wallCountA=" << wallsA.size()
               << " wallCountB=" << wallsB.size()
               << " topInlierCount=" << result.topInlierCount
               << " runnerUpInlierCount=" << result.runnerUpInlierCount
+              << " unobservableHypotheses="
+              << result.unobservableHypothesisCount
               << " inlierRatio=" << result.inlierRatio
               << " floorGateRan=" << result.hasFloorGateRun
               << " floorGateResult=\""

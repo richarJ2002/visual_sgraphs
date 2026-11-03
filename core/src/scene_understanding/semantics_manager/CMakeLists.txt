@@ -59,6 +59,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanesForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileWallFacePairs.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileWallFacePairsForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/rejectMisorientedPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc

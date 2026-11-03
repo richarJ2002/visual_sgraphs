@@ -12,7 +12,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addRoomWallPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/attemptConsecutiveMergeIfGated.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearMap.cc
@@ -65,8 +64,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isActiveMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuInitialized.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isInertial.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/matchRoomsToContext.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeMapPair.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/observeFloorIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/observePassageIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/observeRoomIdentity.cc
@@ -88,12 +85,5 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/advanceIdentityAllocator.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectAnchorTags.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/consecutiveContentHash.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/consecutiveSeedTagsMatch.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/countLiveFloors.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/countLivePassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/countLiveRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/countLiveWallPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/resurfaceProxyFromTransferred.cc
 )

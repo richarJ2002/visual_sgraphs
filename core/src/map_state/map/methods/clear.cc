@@ -88,6 +88,10 @@ MapStatus Map::clear()
     hasImuInitialization = false;
     detectedRooms.clear();
     markerBasedRooms.clear();
+    /* The rooms are gone, so are the mission-chain ends that point at them;
+     * the next bootstrap sets the starting room again. */
+    p_startingRoom = nullptr;
+    p_finalRoom    = nullptr;
     referenceMapPoints.clear();
     keyFrameOrigins.clear();
     hasInertialBA1 = false;

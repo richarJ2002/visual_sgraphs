@@ -10,9 +10,7 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateDistancePointToPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateEuclideanDistance.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clusterPlaneClouds.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/collectCorrespondingWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/computeCentroidFromPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/computeMapTransform_Horn.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/computePlaneWidthHeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateProvisionalRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/correctPlaneDirection.cc
@@ -21,7 +19,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFacingPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneTypeFromClassId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/lineIntersectsPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/matchWallsBetweenRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointOnPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDistanceFilter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDownsample.cc

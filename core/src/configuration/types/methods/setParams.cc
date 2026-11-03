@@ -416,8 +416,6 @@ SystemParamsStatus
             config["map_merge"]["floor_match_tolerance_m"].as<float>();
         mapMerge.observationRayCheckCap =
             config["map_merge"]["observation_ray_check_cap"].as<unsigned int>();
-        mapMerge.mergeCooldown_s =
-            config["map_merge"]["merge_cooldown_s"].as<unsigned int>();
         mapMerge.minAnchorRooms =
             config["map_merge"]["min_anchor_rooms"].as<unsigned int>();
         mapMerge.minRoomsPerMap =

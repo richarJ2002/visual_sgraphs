@@ -38,11 +38,8 @@ namespace semantic
 
 /*!
  * @brief           Horn-style SVD rotation fit on signed normal correspondences
- *                  (same closed-form pattern as
- *                  Utils::computeMapTransform_Horn's covariance/SVD step,
- *                  applied to plane normals instead of point positions --
- *                  Horn's function itself is not called; it is point-based and
- *                  unsuitable here).
+ *                  (Horn's covariance/SVD step applied to plane normals
+ *                  instead of point positions).
  */
 SemanticVerifyStatus
     fitRotationFromNormals(const std::vector<Eigen::Vector3d> &normalsA_in,

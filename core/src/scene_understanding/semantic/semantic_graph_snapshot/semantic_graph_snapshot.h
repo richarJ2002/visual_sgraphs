@@ -69,15 +69,6 @@ namespace vs_graphs::core::semantic
  *                    codebase (RViz publishers, common.cc) treats it: a
  *                    captured centroid is best-effort/point-in-time, not
  *                    jointly atomic with the topology fields above.
- *                  - Atlas::matchRoomsToContext() calls Room::setWalls() while
- *                    holding only Atlas::roomContextMutex, a different mutex
- *                    from the semantic-update lock. It currently has **no
- *                    production caller** (verified by full-tree grep; its only
- *                    caller is test_atlas_lock_order.cpp, invoked directly and
- *                    single-threaded), despite a stale comment in System.cc
- *                    claiming otherwise. If this function is ever wired to a
- *                    live caller, this precondition must be re-verified before
- *                    relying on it again.
  *
  * @param[in]       p_atlas_in
  *                  Atlas to read from. Non-const because the

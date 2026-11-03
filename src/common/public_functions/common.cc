@@ -54,6 +54,7 @@
 #include <limits>
 #include <mutex>
 #include <rclcpp/logging.hpp>
+#include <set>
 #include <sstream>
 #include <system_error>
 #include <unordered_map>
@@ -3576,10 +3577,14 @@ void maybeArchiveSGraph(
         mapInputs.push_back(std::move(fallbackInput));
     }
 
-    Json        archive;
-    std::size_t totalFloors   = 0U;
-    std::size_t totalRooms    = 0U;
-    std::size_t totalPassages = 0U;
+    /* Floor, room and passage ids are global across the Atlas: a recovery
+     * map re-creates the lost map's last floor and room under the same ids
+     * (an unverified label link), so totals count distinct ids, not
+     * per-map objects. */
+    Json          archive;
+    std::set<int> floorIds_all{};
+    std::set<int> roomIds_all{};
+    std::set<int> passageIds_all{};
 
     /* The two CSVs of this snapshot are filled in the same map loop as the
      * S-Graph, so the Atlas is traversed once. */
@@ -4141,6 +4146,7 @@ void maybeArchiveSGraph(
                                  __func__);
                 }
                 floorJson["floor_id"] = floorId;
+                floorIds_all.insert(floorId);
                 std::string floorName{};
                 if (p_floor->getName(floorName) !=
                     vs_graphs::core::semantic::FloorStatus::
@@ -4216,6 +4222,18 @@ void maybeArchiveSGraph(
                                  __func__);
                 }
                 roomJson["room_id"] = roomId2;
+                roomIds_all.insert(roomId2);
+                bool roomIsRecoveryProxy{};
+                if (p_room->isRecoveryProxy(roomIsRecoveryProxy) !=
+                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isRecoveryProxy returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                roomJson["recovery_proxy"] = roomIsRecoveryProxy;
                 std::string roomName{};
                 if (p_room->getName(roomName) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -4486,6 +4504,7 @@ void maybeArchiveSGraph(
                                  __func__);
                 }
                 passageJson["passage_id"] = passageId;
+                passageIds_all.insert(passageId);
                 Eigen::Vector3d passageCentroid{};
                 if (p_passage->getCentroid(passageCentroid) !=
                     vs_graphs::core::semantic::PassageStatus::
@@ -4644,9 +4663,6 @@ void maybeArchiveSGraph(
         }
 
         archive["map" + std::to_string(mapOrdinal)] = std::move(mapJson);
-        totalFloors += floors.size();
-        totalRooms += rooms.size();
-        totalPassages += passages.size();
     }
 
     Json metadata;
@@ -4657,9 +4673,9 @@ void maybeArchiveSGraph(
     metadata["capture_cycle"]         = captureCycle;
     metadata["sensor_mode"]           = sensorModeName();
     metadata["map_count"]             = mapInputs.size();
-    metadata["floor_count_total"]     = totalFloors;
-    metadata["room_count_total"]      = totalRooms;
-    metadata["passage_count_total"]   = totalPassages;
+    metadata["floor_count_total"]     = floorIds_all.size();
+    metadata["room_count_total"]      = roomIds_all.size();
+    metadata["passage_count_total"]   = passageIds_all.size();
     archive["metadata"]               = std::move(metadata);
 
     namespace filesystem = std::filesystem;
@@ -4700,9 +4716,9 @@ void maybeArchiveSGraph(
                 static_cast<unsigned long long>(captureCycle),
                 archiveFile.string().c_str(),
                 mapInputs.size(),
-                totalFloors,
-                totalRooms,
-                totalPassages);
+                floorIds_all.size(),
+                roomIds_all.size(),
+                passageIds_all.size());
 
     if (sgraphArchiveMaxFiles > 0)
     {

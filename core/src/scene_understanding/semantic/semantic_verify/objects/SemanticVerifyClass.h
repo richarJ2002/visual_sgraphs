@@ -37,6 +37,7 @@
 #include <Eigen/Geometry>
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -86,16 +87,59 @@ class SemanticVerify
         std::vector<VerifyWallObservation> &observations_out);
 
     /*!
+     * @brief           Reads the floor plane of a room's floor, oriented so the
+     *                  room centroid lies on its positive side.
+     *
+     * @param[in]       p_room_in
+     *                  Room whose floor is read; may be nullptr.
+     *
+     * @param[out]      floorPlane_world_out
+     *                  Unit normal and offset (n^T x + d = 0) in the room's
+     *                  map world frame, or empty when the room has no floor
+     *                  with a plane identity.
+     *
+     * @return          SEMANTIC_VERIFY_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] static SemanticVerifyStatus collectFloorObservation(
+        const Room                     *p_room_in,
+        std::optional<Eigen::Vector4d> &floorPlane_world_out);
+
+    /*!
      * @brief           Core verifier. Rooms are already resolved to wall
      *                  observations by the caller; no Atlas/Map lookups happen
      *                  here. Deterministic: no locks held, no randomness,
-     *                  stable hypothesis enumeration order.
+     *                  stable hypothesis enumeration order. With both floor
+     *                  planes given, a hypothesis needs two wall pairs plus the
+     *                  floor pair, which fixes the vertical offset that
+     *                  vertical walls cannot; without it, three wall pairs.
+     *
+     * @param[in]       wallsA_in
+     *                  Walls of room A in room A's map world frame.
+     *
+     * @param[in]       wallsB_in
+     *                  Walls of room B in room B's map world frame.
+     *
+     * @param[out]      result_out
+     *                  Verdict, transform (A into B) and diagnostics.
+     *
+     * @param[in]       configuration_in
+     *                  Thresholds.
+     *
+     * @param[in]       floorPlaneA_in
+     *                  Floor plane of room A in its map world frame, or empty.
+     *
+     * @param[in]       floorPlaneB_in
+     *                  Floor plane of room B in its map world frame, or empty.
+     *
+     * @return          SEMANTIC_VERIFY_STATUS_SUCCESS always.
      */
-    [[nodiscard]] static SemanticVerifyStatus verify(
-        const std::vector<VerifyWallObservation> &wallsA_in,
-        const std::vector<VerifyWallObservation> &wallsB_in,
-        SemanticVerifyResult                     &result_out,
-        const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
+    [[nodiscard]] static SemanticVerifyStatus
+        verify(const std::vector<VerifyWallObservation> &wallsA_in,
+               const std::vector<VerifyWallObservation> &wallsB_in,
+               SemanticVerifyResult                     &result_out,
+               const SemanticVerifyConfig               &configuration_in,
+               const std::optional<Eigen::Vector4d>     &floorPlaneA_in,
+               const std::optional<Eigen::Vector4d>     &floorPlaneB_in);
 
     /*!
      * @brief           Floor gate wrapper: caller supplies the live Maps
@@ -147,76 +191,6 @@ class SemanticVerify
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
     /*!
-     * @brief           Tolerances for consecutive-map (post-reset) merge
-     *                  validation. Sourced from the mapMerge SystemParams
-     *                  section via mapMergeConfigFromSystemParams(); defaults
-     *                  mirror the YAML.
-     *
-     *                  Companion checks intentionally reuse shared constants so
-     *                  the consecutive path cannot drift from loop closure:
-     *                  wall offset prefilter (0.35 m), passage direction
-     *                  agreement (0.85) and the wall core inlier rules come
-     *                  from the verification defaults, and the floor normal
-     *                  gate is shared. Rooms pair by non-empty tag only;
-     *                  untagged rooms contribute no passage constraints (defer,
-     *                  never guess).
-     */
-    struct MapMergeConfig
-    {
-        /*!
-         * @brief           Largest distance between a mapped absorbed passage
-         *                  centroid and its surviving partner, metres.
-         */
-        double passage_match_tolerance_m{0.20};
-        /*!
-         * @brief           Largest angle between a mapped absorbed wall normal
-         *                  and a surviving wall normal for the walls to be
-         *                  coplanar, degrees.
-         */
-        double wall_coplanar_angle_deg{5.0};
-        /*!
-         * @brief           Smallest overlap along the wall direction that
-         *                  paired walls must have, metres.
-         */
-        double wall_edge_overlap_m{0.50};
-        /*!
-         * @brief           Largest floor plane offset difference after the
-         *                  transform, metres.
-         */
-        double floor_match_tolerance_m{0.10};
-        /*!
-         * @brief           Largest distance between a mapped absorbed anchor
-         *                  room centroid and its tag-matched surviving partner,
-         *                  metres.
-         */
-        double room_centroid_tolerance_m{0.50};
-    };
-
-    /*!
-     * @brief           Builds a MapMergeConfig from the live SystemParams
-     *                  mapMerge section. Falls back to the struct defaults when
-     *                  SystemParams is unavailable.
-     */
-    [[nodiscard]] static SemanticVerifyStatus mapMergeConfigFromSystemParams(
-        SemanticVerify::MapMergeConfig &configuration_out);
-
-    /*!
-     * @brief           Consecutive-map variant of evaluateMapMergeGate: same
-     *                  decision vocabulary, but wall/passage/floor/anchor-room
-     *                  tolerances come from MapMergeConfig (mapMerge params)
-     *                  instead of SemanticVerifyConfig, rooms pair by non-empty
-     *                  room tag only (never by map-local ID), and wall pairs
-     *                  must additionally overlap along the wall direction.
-     *                  Verification only: mutates nothing.
-     */
-    [[nodiscard]] static SemanticVerifyStatus evaluateConsecutiveMergeGate(
-        map::Map                     *p_survivingMap_in,
-        map::Map                     *p_absorbedMap_in,
-        const g2o::Sim3         &mergeTransform_absorbedToSurviving_in,
-        SemanticMergeGateResult &result_out,
-        const MapMergeConfig    &configuration_in);
-
-    /*!
      * @brief           Returns a stable parseable name for a merge decision.
      */
     [[nodiscard]] static SemanticVerifyStatus
@@ -228,6 +202,22 @@ class SemanticVerify
      */
     [[nodiscard]] static SemanticVerifyStatus
         mergeReasonName(SemanticMergeReason reason_in, const char *&p_name_out);
+
+    /*!
+     * @brief           Returns a stable parseable name for a verify() reject
+     *                  reason.
+     *
+     * @param[in]       reason_in
+     *                  Reject reason.
+     *
+     * @param[out]      p_name_out
+     *                  Static name, never nullptr.
+     *
+     * @return          SEMANTIC_VERIFY_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] static SemanticVerifyStatus
+        verifyRejectReasonName(VerifyRejectReason reason_in,
+                               const char       *&p_name_out);
 };
 
 } /* namespace semantic */

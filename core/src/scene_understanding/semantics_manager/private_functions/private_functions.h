@@ -605,9 +605,8 @@ Eigen::Quaterniond
  *                  map only when at least one non-empty room tag collected from
  *                  the other map's detected and marker-based rooms also appears
  *                  among the current map's tagged rooms. Room tags originate
- *                  from context snapshots and are propagated by
- *                  matchRoomsToContext, so they are a stable correspondences
- *                  key between maps.
+ *                  from context snapshots, so they are a stable
+ *                  correspondences key between maps.
  *
  * @param[in]       p_firstMap_in
  *                  Map whose detected and marker-based room tags are collected.

@@ -35,7 +35,6 @@
 
 #include "map_state/atlas/objects/AtlasCurrentMapStatusEnum.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "map_state/atlas/objects/MergeAttemptStateStruct.h"
 #include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
 #include "sensor_models/camera_models/kannala_brandt8/kannala_brandt8.h"
 #include "sensor_models/camera_models/pinhole/pinhole.h"
@@ -907,52 +906,6 @@ class Atlas
     [[nodiscard]] AtlasStatus setMapBad(map::Map *p_map_inout);
 
     /*!
-     * @brief           Merges the semantic graph of \p p_otherMap_in into
-     *                  \p p_currentMap_in.
-     *
-     *                  The current map survives and keeps its authoritative
-     *                  frame. The other map's keyframes, map points, planes,
-     *                  markers, passages, detected rooms, marker-based rooms,
-     *                  and floors are transformed into the current map's frame
-     *                  using Horn's closed-form solution on corresponding wall
-     *                  normals and centroids, transferred into the current map,
-     *                  fused, and re-associated. The other map is then marked
-     *                  bad.
-     *
-     *                  Deterministic: Horn's closed-form method, no iteration.
-     *
-     *                  The caller must already hold the semantic-update lock
-     *                  (see \ref acquireSemanticUpdateLock); this method does
-     *                  not acquire it.
-     *
-     * @param[in,out]   p_currentMap_inout
-     *                  map::Map that survives the merge and remains active.
-     *
-     * @param[in,out]   p_otherMap_inout
-     *                  map::Map to be transformed, absorbed, then marked bad.
-     */
-    [[nodiscard]] AtlasStatus mergeMapPair(map::Map *p_currentMap_inout,
-                                           map::Map *p_otherMap_inout);
-
-    /*!
-     * @brief           Attempts validated consecutive-map merges, old into
-     *                  current.
-     *
-     *                  Runs the continuous shape-matching scheduler over every
-     *                  non-bad, non-current map: room-prior seed gate,
-     *                  minimum-shape gate, cooldown/change gate, shared-Horn
-     *                  transform estimation, then the consecutive merge gate.
-     *                  On ACCEPT the old map is fused via MergeMapPair (which
-     *                  retires it); on anything else nothing mutates. At most
-     *                  one merge commits per call.
-     *
-     *                  The caller must already hold the semantic-update lock
-     *                  (see \ref acquireSemanticUpdateLock); this method does
-     *                  not acquire it.
-     */
-    [[nodiscard]] AtlasStatus attemptConsecutiveMergeIfGated(void);
-
-    /*!
      * @brief           Captures the room geometry of the current map before it
      *                  is
      *                         stranded by a restart.
@@ -963,22 +916,6 @@ class Atlas
      *                  transitions.
      */
     [[nodiscard]] AtlasStatus exportRoomContextFromCurrentMap();
-
-    /*!
-     * @brief           Transfers room identity tags from accumulated context
-     *                  snapshots
-     *                         to untagged rooms in \p pNewMap.
-     *
-     *                  Uses a best-match strategy: the room whose centroid is
-     *                  closest to a snapshot centroid — provided the distance
-     *                  is below \ref kRoomContextMatchThreshold_m and wall
-     *                  normals agree — inherits that snapshot's room identity
-     *                  tag.
-     *
-     * @param[in]       p_newMap_in
-     *                  map::Map whose rooms should be examined/tagged.
-     */
-    [[nodiscard]] AtlasStatus matchRoomsToContext(map::Map *p_newMap_in);
 
     /*!
      * @brief           Copies room history without exposing references beyond
@@ -1386,31 +1323,11 @@ class Atlas
     std::mutex semanticUpdateMutex;
 
     /*!
-     * @brief           Best-match centroid distance (m) below which a room in a
-     *                  new map is considered the same physical room as a
-     *                  prior-map snapshot.
-     */
-    static constexpr double kRoomContextMatchThreshold_m = 2.0;
-
-    /*!
-     * @brief           Minimum |cos θ| between wall normals for two wall
-     *                  hypotheses to be considered the same physical surface
-     *                  during context matching.
-     */
-    static constexpr double kWallNormalAlignmentCosTheta = 0.85;
-
-    /*!
      * @brief           Snapshots of departed maps' room geometry, keyed by
      *                  map::Map::GetId().
      */
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
         roomContextHistory;
-
-    /*!
-     * @brief           Continuous-match bookkeeping per old map ID. Guarded by
-     *                  atlasMutex like the other Atlas-owned indexes.
-     */
-    std::map<long unsigned int, MergeAttemptState> consecutiveMergeState;
 
     /*!
      * @brief           Protects roomContextHistory against concurrent access

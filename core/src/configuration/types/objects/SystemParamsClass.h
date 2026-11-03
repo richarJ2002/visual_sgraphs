@@ -1320,11 +1320,6 @@ class SystemParams
          */
         unsigned int observationRayCheckCap = 5U;
         /*!
-         * @brief           Cooldown between consecutive-map merge attempts for
-         *                  the same old map (seconds).
-         */
-        unsigned int mergeCooldown_s = 30U;
-        /*!
          * @brief           Minimum tag-matched anchor rooms required to
          *                  estimate alignment.
          */

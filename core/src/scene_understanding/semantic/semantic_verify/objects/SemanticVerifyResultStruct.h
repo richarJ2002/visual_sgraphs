@@ -129,6 +129,12 @@ struct SemanticVerifyResult
     std::size_t        runnerUpInlierCount{0U};
 
     /*!
+     * @brief           Hypotheses discarded because their translation system
+     *                  was rank deficient or ill-conditioned.
+     */
+    std::size_t unobservableHypothesisCount{0U};
+
+    /*!
      * @brief           True once runFloorGate() has been called on this result.
      */
     bool        hasFloorGateRun{false};
