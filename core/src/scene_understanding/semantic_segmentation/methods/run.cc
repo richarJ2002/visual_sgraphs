@@ -413,6 +413,20 @@ void SemanticSegmentation::run()
                 __func__);
         }
 
+        /*!
+         * Drop failed patches (points, fit, orientation, wall size) before
+         * the semantic lock, so they can neither match a mapped plane nor
+         * vote.
+         */
+        if (applyPlaneCheckpoint(p_thisKeyFrame, p_clsPlanes) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyPlaneCheckpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
         /* Set the class specific point clouds to the keyframe */
         if (p_thisKeyFrame->setCurrentClsCloudPtrs(p_clsCloudPtrs) !=
             keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)

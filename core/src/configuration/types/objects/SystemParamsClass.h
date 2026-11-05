@@ -422,31 +422,103 @@ class SystemParams
     Seg seg;
 
     /*!
-     * @brief           Geometric segmentation settings.
+     * @brief           Plane checkpoint between the segmenter and the map:
+     *                  every candidate plane patch of a keyframe passes these
+     *                  tests before it may match a mapped plane or vote.
      */
-    struct GeoSeg
+    struct PlaneCheckpoint
     {
         /*!
-         * @brief           Point-cloud settings of geometric segmentation.
+         * @brief           Minimum points in one candidate plane patch.
          */
-        struct Pointcloud
+        unsigned int minimumPointCount = 50U;
+        /*!
+         * @brief           Largest root-mean-square distance, in metres, of
+         *                  the patch points from the patch's plane equation.
+         */
+        float        maximumFitRms_m = 0.05f;
+        /*!
+         * @brief           Largest sine of the angle between a ground patch's
+         *                  normal and the map up direction. Unitless; 0 is
+         *                  perfectly horizontal.
+         */
+        float        maxTiltGround = 0.2f;
+        /*!
+         * @brief           Largest absolute cosine of the angle between a
+         *                  wall, door or window patch's normal and the map up
+         *                  direction. Unitless; 0 is perfectly upright.
+         */
+        float        maxTiltWall = 0.3f;
+
+        /*!
+         * @brief           Size and connectivity every wall patch needs.
+         */
+        struct WallSize
         {
             /*!
-             * @brief           Voxel filter intended for the geometric point
-             *                  cloud. Loaded from YAML but not read anywhere
-             *                  yet.
+             * @brief           Minimum finite points in a wall patch.
              */
-            Downsample downsample;
+            unsigned int minimumPointCount = 350U;
+            /*!
+             * @brief           Minimum largest in-plane dimension, in metres.
+             */
+            float        minimumMajorExtent_m = 0.80f;
+            /*!
+             * @brief           Minimum smallest in-plane dimension, in metres.
+             */
+            float        minimumMinorExtent_m = 0.30f;
+            /*!
+             * @brief           Minimum finite observed wall area, in square
+             *                  metres.
+             */
+            float        minimumArea_m2 = 0.40f;
+
+            /*!
+             * @brief           Requires most wall evidence to form one
+             *                  spatially connected component.
+             */
+            struct Connectivity
+            {
+                /*!
+                 * @brief           Enables connected-component validation.
+                 */
+                bool         enabled = true;
+                /*!
+                 * @brief           Maximum neighbour separation, in metres.
+                 */
+                float        clusterTolerance_m = 0.15f;
+                /*!
+                 * @brief           Minimum points in the largest component.
+                 */
+                unsigned int minimumComponentPointCount = 300U;
+                /*!
+                 * @brief           Minimum fraction belonging to that
+                 *                  component.
+                 *
+                 *                  A wall's own doorway/window cuts its
+                 *                  single-frame mask into two large,
+                 *                  independently-valid fragments of near equal
+                 *                  size (ratio ~0.50), not one dominant blob --
+                 *                  so the gate must clear ~0.50 with margin
+                 *                  while still catching genuinely
+                 *                  scattered/sparse noise below it.
+                 */
+                float        minimumComponentRatio = 0.40f;
+            };
+            /*!
+             * @brief           Connected-component validation of a wall patch.
+             */
+            Connectivity connectivity;
         };
         /*!
-         * @brief           Point-cloud settings of geometric segmentation.
+         * @brief           Size and connectivity every wall patch needs.
          */
-        Pointcloud pointcloud;
+        WallSize wallSize;
     };
     /*!
-     * @brief           Geometric segmentation settings.
+     * @brief           Plane checkpoint between the segmenter and the map.
      */
-    GeoSeg geoSeg;
+    PlaneCheckpoint planeCheckpoint;
 
     /*!
      * @brief           Semantic segmentation settings.
@@ -469,20 +541,6 @@ class SystemParams
          *                  confidence values.
          */
         float confThresh = 0.5f;
-        /*!
-         * @brief           Largest absolute value of coefficient 1 of a wall
-         *                  plane's equation, expressed in the ground-reference
-         *                  frame, for the plane to stay a wall. Unitless; 0 is
-         *                  perfectly vertical.
-         */
-        float maxTiltWall = 0.3f;
-        /*!
-         * @brief           Largest absolute value of coefficient 0 of a ground
-         *                  plane's equation, expressed in the ground-reference
-         *                  frame, for the plane to stay ground. Unitless; 0 is
-         *                  perfectly horizontal.
-         */
-        float maxTiltGround = 0.2f;
         /*!
          * @brief           Depth, metres, below the main ground plane's median
          *                  height that other ground planes may reach before
@@ -666,75 +724,6 @@ class SystemParams
          * @brief           Point-cloud settings of semantic segmentation.
          */
         Pointcloud pointcloud;
-
-        /*!
-         * @brief           Controls whether a semantic wall observation is
-         *                  substantial enough to create a persistent mapped
-         *                  plane.
-         */
-        struct WallCreation
-        {
-            /*!
-             * @brief           Minimum finite points in a new wall observation.
-             */
-            unsigned int minimumPointCount = 350U;
-            /*!
-             * @brief           Minimum largest in-plane dimension, in metres.
-             */
-            float        minimumMajorExtent_m = 0.80f;
-            /*!
-             * @brief           Minimum smallest in-plane dimension, in metres.
-             */
-            float        minimumMinorExtent_m = 0.30f;
-            /*!
-             * @brief           Minimum finite observed wall area, in square
-             *                  metres.
-             */
-            float        minimumArea_m2 = 0.40f;
-
-            /*!
-             * @brief           Requires most wall evidence to form one
-             *                  spatially connected component.
-             */
-            struct Connectivity
-            {
-                /*!
-                 * @brief           Enables connected-component validation.
-                 */
-                bool         enabled = true;
-                /*!
-                 * @brief           Maximum neighbour separation, in metres.
-                 */
-                float        clusterTolerance_m = 0.15f;
-                /*!
-                 * @brief           Minimum points in the largest component.
-                 */
-                unsigned int minimumComponentPointCount = 300U;
-                /*!
-                 * @brief           Minimum fraction belonging to that
-                 *                  component.
-                 *
-                 *                  A wall's own doorway/window cuts its
-                 *                  single-frame mask into two large,
-                 *                  independently-valid fragments of near equal
-                 *                  size (ratio ~0.50), not one dominant blob --
-                 *                  so the gate must clear ~0.50 with margin
-                 *                  while still catching genuinely
-                 *                  scattered/sparse noise below it.
-                 */
-                float        minimumComponentRatio = 0.40f;
-            };
-            /*!
-             * @brief           Connected-component validation of a new wall
-             *                  observation.
-             */
-            Connectivity connectivity;
-        };
-        /*!
-         * @brief           Admission thresholds for creating a persistent wall
-         *                  plane.
-         */
-        WallCreation wallCreation;
 
         /*!
          * @brief           Thresholds deciding when two WALL Planes are

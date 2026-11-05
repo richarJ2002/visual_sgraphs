@@ -116,8 +116,10 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
         const double groundTilt =
             (planeNormal_world - upComponent * upDirection_world).norm();
         const double wallTilt = std::abs(upComponent);
-        if ((planeIsGround && groundTilt > p_sysParams->semSeg.maxTiltGround) ||
-            (planeIsWall && wallTilt > p_sysParams->semSeg.maxTiltWall))
+        if ((planeIsGround &&
+             groundTilt > p_sysParams->planeCheckpoint.maxTiltGround) ||
+            (planeIsWall &&
+             wallTilt > p_sysParams->planeCheckpoint.maxTiltWall))
         {
             if (plane->resetPlaneSemantics() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)

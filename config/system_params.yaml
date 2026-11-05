@@ -7,7 +7,7 @@
 # refine_map_points:            Refining map points using semantics            #
 # plane_based_covisibility:     Plane-based covisibility graph config        #
 # seg:                          Common segmentation parameters               #
-# geo_seg:                      Geometric segmentation parameters              #
+# plane_checkpoint:             Per-patch checks before matching and voting    #
 # sem_seg:                      Semantic segmentation parameters               #
 # room_seg:                     Room segmentation parameters                 #
 # room_tracking:                Room-tracking state machine                    #
@@ -105,13 +105,38 @@ seg:
     # The maximum number of iterations for the RANSAC algorithm
     max_iterations: 800
 
-############################ Geometric Segmentation Parameters ####################################
-geo_seg:
-  pointcloud:
-    # pointcloud downsampling parmeters
-    downsample:
-      leaf_size: 0.08
-      min_points_per_voxel: 10
+################################ Plane Checkpoint Parameters ######################################
+# Every candidate plane patch of a keyframe must pass these tests before it
+# may match a mapped plane or vote. A failed patch is dropped.
+plane_checkpoint:
+  # Minimum points in any patch (all labels)
+  minimum_point_count: 50
+  # Largest RMS distance of the patch points from its plane (metres); equal to
+  # seg.ransac.distance_thresh, so it only drops fits RANSAC itself would not give
+  maximum_fit_rms: 0.05
+
+  # Orientation against the map up direction (sine of the tilt angle):
+  # ground normal parallel to up; wall, door and window normal perpendicular.
+  # The map-level re-check after bundle adjustment or a merge uses the same values.
+  max_tilt_ground: 0.2
+  max_tilt_wall: 0.2
+
+  # Size and connectivity every wall patch needs, new or matching a mapped wall
+  wall_size:
+    minimum_point_count: 350
+    minimum_major_extent: 0.80 # metres
+    minimum_minor_extent: 0.30 # metres
+    minimum_area: 0.40 # square metres
+    connectivity:
+      enabled: true
+      cluster_tolerance: 0.15 # metres
+      minimum_component_point_count: 300
+      # A wall's own doorway/window splits its single-frame mask into two
+      # large, independently-valid fragments of near-equal size (ratio
+      # ~0.50), not one dominant blob -- 0.70 rejected every such wall
+      # outright. 0.40 clears that case with margin while still catching
+      # genuinely scattered/sparse candidates.
+      minimum_component_ratio: 0.40
 
 ############################## Semantic Segmentation Parameters ####################################
 sem_seg:
@@ -133,10 +158,6 @@ sem_seg:
 
   # The maximum height above the main ground to be a valid stepped ground plane (in meters)
   max_step_elevation: 0.5
-
-  # The maximum tilt heuristic for a wall/ground plane (checks respective component of plane equation)
-  max_tilt_wall: 0.2
-  max_tilt_ground: 0.2
 
   # ------------------ Door/Passage Parameters ------------------
   enable_passage_detection: true
@@ -202,24 +223,6 @@ sem_seg:
 
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
   min_votes: 1.0
-
-  # Admission policy for a new persistent wall plane. Small observations may
-  # still update an existing wall, but cannot independently become a wall.
-  wall_creation:
-    minimum_point_count: 350
-    minimum_major_extent: 0.80 # metres
-    minimum_minor_extent: 0.30 # metres
-    minimum_area: 0.40 # square metres
-    connectivity:
-      enabled: true
-      cluster_tolerance: 0.15 # metres
-      minimum_component_point_count: 300
-      # A wall's own doorway/window splits its single-frame mask into two
-      # large, independently-valid fragments of near-equal size (ratio
-      # ~0.50), not one dominant blob -- 0.70 rejected every such wall
-      # outright. 0.40 clears that case with margin while still catching
-      # genuinely scattered/sparse candidates.
-      minimum_component_ratio: 0.40
 
   # Twin-face reconciliation: a physical wall can produce two independent
   # WALL Planes, one per face, distinguished by observationOrigin_World_m.

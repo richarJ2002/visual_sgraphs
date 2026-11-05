@@ -67,16 +67,24 @@ These parameters are grouped under the `seg` category and define common settings
 | `seg`    | `ransac`                   | `distance_thresh` | Maximum distance from a point to a plane to be considered an inlier      |
 | `seg`    | `ransac`                   | `max_iterations`  | Maximum number of RANSAC iterations during plane fitting                 |
 
-## 📐 Geometric Segmentation Parameters
+## ✅ Plane Checkpoint Parameters
 
-These parameters fall under the `geo_seg` category and configure the behavior of the Geometric Segmentation (GeoSeg) module:
+These parameters belong to the `plane_checkpoint` category. Every candidate plane patch of a keyframe must pass them before it may match a mapped plane or vote; a failed patch is dropped. The orientation tolerances are also used by the map-level re-check after bundle adjustment or a merge.
 
-| Category  | Component    | Process           | Parameter              | Description                                                          |
-| --------- | ------------ | ----------------- | ---------------------- | -------------------------------------------------------------------- |
-| `geo_seg` | `pointcloud` | `downsample`      | `leaf_size`            | Leaf size (uniform across all axes) used for voxel grid downsampling |
-| `geo_seg` | `pointcloud` | `downsample`      | `min_points_per_voxel` | Minimum number of points required per voxel to retain it             |
-| `geo_seg` | `pointcloud` | `outlier_removal` | `std_threshold`        | Standard deviation threshold for statistical outlier removal         |
-| `geo_seg` | `pointcloud` | `outlier_removal` | `mean_threshold`       | Minimum number of neighboring points for a point to be retained      |
+| Category           | Component   | Parameter                       | Description                                                                                  |
+| ------------------ | ----------- | ------------------------------- | -------------------------------------------------------------------------------------------- |
+| `plane_checkpoint` | —           | `minimum_point_count`           | Minimum points in any patch                                                                  |
+| `plane_checkpoint` | —           | `maximum_fit_rms`               | Largest RMS distance of the patch points from its plane (metres)                             |
+| `plane_checkpoint` | —           | `max_tilt_ground`               | Largest sine of the angle between a ground normal and the map up direction                   |
+| `plane_checkpoint` | —           | `max_tilt_wall`                 | Largest absolute cosine of the angle between a wall, door or window normal and up            |
+| `plane_checkpoint` | `wall_size` | `minimum_point_count`           | Minimum points in a wall patch's connected support                                           |
+| `plane_checkpoint` | `wall_size` | `minimum_major_extent`          | Minimum largest in-plane dimension of a wall patch (metres)                                  |
+| `plane_checkpoint` | `wall_size` | `minimum_minor_extent`          | Minimum smallest in-plane dimension of a wall patch (metres)                                 |
+| `plane_checkpoint` | `wall_size` | `minimum_area`                  | Minimum wall patch area (square metres)                                                      |
+| `plane_checkpoint` | `wall_size` | `connectivity.enabled`          | Keep only the largest connected part of a wall patch and check it                            |
+| `plane_checkpoint` | `wall_size` | `connectivity.cluster_tolerance` | Maximum neighbour gap within one connected part (metres)                                    |
+| `plane_checkpoint` | `wall_size` | `connectivity.minimum_component_point_count` | Minimum points in the largest connected part                                    |
+| `plane_checkpoint` | `wall_size` | `connectivity.minimum_component_ratio` | Minimum fraction of the patch in the largest connected part                           |
 
 ## 🧠 Semantic Segmentation Parameters
 
@@ -91,8 +99,6 @@ These parameters belong to the `sem_seg` category and configure the Semantic Seg
 | `sem_seg` | —             | —                 | `prob_thresh`                      | Minimum class probability threshold (e.g., > 0.5)                  |
 | `sem_seg` | —             | —                 | `conf_thresh`                      | Minimum confidence threshold for class probabilities               |
 | `sem_seg` | —             | —                 | `max_step_elevation`               | Maximum step height over the ground plane                          |
-| `sem_seg` | —             | —                 | `max_tilt_wall`                    | Maximum tilt angle for wall classification                         |
-| `sem_seg` | —             | —                 | `max_tilt_ground`                  | Maximum tilt angle for ground classification                       |
 | `sem_seg` | —             | —                 | `enable_passage_detection`         | Enables detection of passages (doorways)                           |
 | `sem_seg` | —             | —                 | `max_wall_door_distance`           | Maximum distance from wall to door for association                 |
 | `sem_seg` | —             | —                 | `max_door_width`                   | Maximum width for a door to be valid                               |

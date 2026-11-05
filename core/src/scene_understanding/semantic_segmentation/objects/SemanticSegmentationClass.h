@@ -434,12 +434,12 @@ class SemanticSegmentation
      *                  filtering is overwritten with its filtered copy.
      *
      * @param[out]      planesFromClassClouds_out
-     *                  For each class whose filtered cloud is not empty, the
-     *                  extracted planes as pairs of the plane's points and its
-     *                  equation (a, b, c, d); classes with an empty cloud get
-     *                  no entry, so the index need not match
-     *                  p_classCloudPtrs_in. Planes are searched only in clouds
-     *                  with more than seg.pointcloudsThresh points.
+     *                  One entry per class, at the same index as
+     *                  p_classCloudPtrs_in: the extracted planes as pairs of
+     *                  the plane's points and its equation (a, b, c, d) in the
+     *                  camera frame; a class with an empty cloud gets an empty
+     *                  entry. Planes are searched only in clouds with more
+     *                  than seg.pointcloudsThresh points.
      *
      * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
      */
@@ -450,6 +450,40 @@ class SemanticSegmentation
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>>
             &planesFromClassClouds_out);
+
+    /*!
+     * @brief           Plane checkpoint between the segmenter and the map.
+     *                  Drops every candidate plane patch that has too few
+     *                  points, a poor plane fit, an orientation that does not
+     *                  match its label against the map up direction (ground
+     *                  normal parallel to up; wall, door and window normal
+     *                  perpendicular), or, for a wall, too little connected
+     *                  size. Runs before matching and voting, so a dropped
+     *                  patch can neither match a mapped plane nor vote.
+     *
+     * @param[in]       p_keyFrame_in
+     *                  Borrowed keyframe the patches were observed in; shall
+     *                  be non-null. Its pose turns the map up direction into
+     *                  the camera frame.
+     *
+     * @param[in,out]   p_clsPlanes_inout
+     *                  One entry per class id, each a list of camera-frame
+     *                  patches (points, plane equation). Failed patches are
+     *                  removed; a kept wall patch keeps only its largest
+     *                  connected part when connectivity is enabled. Class
+     *                  indices are unchanged.
+     *
+     * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
+     *
+     * @note            Uses the plane_checkpoint parameters. The same size
+     *                  check applies to every wall patch, new or matching a
+     *                  mapped wall.
+     */
+    [[nodiscard]] SemanticSegmentationStatus applyPlaneCheckpoint(
+        keyframe::KeyFrame *p_keyFrame_in,
+        std::vector<
+            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
+                                  Eigen::Vector4d>>> &p_clsPlanes_inout);
 
     /*!
      * @brief           Adds the planes to the Atlas

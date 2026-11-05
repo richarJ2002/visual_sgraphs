@@ -32,14 +32,11 @@
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
-#include "scene_understanding/semantic_segmentation/private_functions/private_functions.h"
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "mapping/geometry_helpers/utils.h"
 
-#include <algorithm>
-#include <cmath>
 #include <numeric>
 #include <rclcpp/logging.hpp>
 
@@ -218,194 +215,14 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
             }
 
             /*!
-             * If no mapped plane is associated with current plane
-             *
-             * TODO:       The cognitive complexity breaches the 3 indentation
-             *              rule. Hence, a method/function should be introduced
-             *              to help break this section of code down and make it
-             *              more readable.
+             * If no mapped plane is associated with current plane, create one.
+             * Size and connectivity were already checked by
+             * applyPlaneCheckpoint(), for new and matching patches alike.
              */
             if (matchedPlaneId == -1)
             {
-                /*!
-                 * If semantic segmentation is running independetly, determine
-                 * whether the observation is sufficiently large to become a
-                 * new mapped plane.
-                 */
                 if (!isGeometricSegmentationRunning)
                 {
-                    /*!
-                     * Apply an additional geometry check before creating a new
-                     * wall.
-                     *
-                     * @note            Small wall observations may be produced
-                     *                  by doorframes, furniture edges and
-                     *                  segmentation noise. Small patches are
-                     *                  still permited to udpate an existing
-                     *                  wall because this check is only applied
-                     *                  when a matchPlaneId is -1.
-                     */
-                    if (semanticType ==
-                        vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
-                    {
-                        const types::SystemParams::SemSeg::WallCreation
-                            &wallCreationParams =
-                                p_sysParams->semSeg.wallCreation;
-
-                        WallComponentSupport connectedSupport;
-
-                        if (wallCreationParams.connectivity.enabled)
-                        {
-                            WallComponentSupport largestWallComponent{};
-                            if (findLargestWallComponent(
-                                    p_globalPlaneCloud,
-                                    wallCreationParams.connectivity
-                                        .clusterTolerance_m,
-                                    largestWallComponent) !=
-                                SemanticSegmentationStatus::
-                                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-                            {
-                                RCLCPP_ERROR(
-                                    rclcpp::get_logger("vs_graphs"),
-                                    "%s: findLargestWallComponent returned a "
-                                    "failure status although it cannot fail; "
-                                    "continuing as before.",
-                                    __func__);
-                            }
-                            connectedSupport = largestWallComponent;
-                        }
-                        else if (p_globalPlaneCloud != nullptr)
-                        {
-                            connectedSupport.finitePointCount =
-                                p_globalPlaneCloud->size();
-                            connectedSupport.componentRatio = 1.0;
-                            connectedSupport.pointIndices.resize(
-                                p_globalPlaneCloud->size());
-                            std::iota(connectedSupport.pointIndices.begin(),
-                                      connectedSupport.pointIndices.end(),
-                                      0);
-                        }
-
-                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-                            p_connectedGlobalWallCloud(
-                                new pcl::PointCloud<pcl::PointXYZRGBA>);
-
-                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-                            p_connectedCameraWallCloud(
-                                new pcl::PointCloud<pcl::PointXYZRGBA>);
-
-                        if (p_globalPlaneCloud != nullptr &&
-                            p_planeCloud != nullptr)
-                        {
-                            p_connectedGlobalWallCloud->reserve(
-                                connectedSupport.pointIndices.size());
-                            p_connectedCameraWallCloud->reserve(
-                                connectedSupport.pointIndices.size());
-
-                            for (const int sourcePointIndex :
-                                 connectedSupport.pointIndices)
-                            {
-                                if (sourcePointIndex < 0 ||
-                                    static_cast<std::size_t>(
-                                        sourcePointIndex) >=
-                                        p_globalPlaneCloud->size() ||
-                                    static_cast<std::size_t>(
-                                        sourcePointIndex) >=
-                                        p_planeCloud->size())
-                                {
-                                    continue;
-                                }
-
-                                p_connectedGlobalWallCloud->push_back(
-                                    p_globalPlaneCloud
-                                        ->points[static_cast<std::size_t>(
-                                            sourcePointIndex)]);
-                                p_connectedCameraWallCloud->push_back(
-                                    p_planeCloud
-                                        ->points[static_cast<std::size_t>(
-                                            sourcePointIndex)]);
-                            }
-                        }
-
-                        /* Compute finite dimensions from connected support. */
-                        std::pair<double, double> wallDimensions{};
-                        if (utils::utils::Utils::computePlaneWidthHeight(
-                                p_connectedGlobalWallCloud,
-                                wallDimensions) !=
-                            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-                        {
-                            /*!
-                             * computePlaneWidthHeight cannot fail; continue as
-                             * before.
-                             */
-                        }
-
-                        /* Extract the larger planar dimension */
-                        const double majorExtent =
-                            std::max(wallDimensions.first,
-                                     wallDimensions.second);
-
-                        /* Extract the smaller planar dimension */
-                        const double minorExtent =
-                            std::min(wallDimensions.first,
-                                     wallDimensions.second);
-
-                        /* Compute the approximate observed planar area. */
-                        const double observedArea = majorExtent * minorExtent;
-
-                        /*!
-                         * Reject unsupported and doorframe-sized wall planes.
-                         *
-                         * @note            These thresholds apply only to the
-                         *                  creation of new wall planes.
-                         *                  Subsequent smaller observations may
-                         *                  still update a mapped wall.
-                         */
-                        const bool validConnectivity =
-                            !wallCreationParams.connectivity.enabled ||
-                            (connectedSupport.pointIndices.size() >=
-                                 wallCreationParams.connectivity
-                                     .minimumComponentPointCount &&
-                             connectedSupport.componentRatio >=
-                                 wallCreationParams.connectivity
-                                     .minimumComponentRatio);
-
-                        /* Perform all configured new-wall admission checks. */
-                        const bool validNewWallGeometry =
-                            p_connectedGlobalWallCloud != nullptr &&
-                            p_connectedGlobalWallCloud->size() >=
-                                wallCreationParams.minimumPointCount &&
-                            validConnectivity && std::isfinite(majorExtent) &&
-                            std::isfinite(minorExtent) &&
-                            std::isfinite(observedArea) &&
-                            majorExtent >=
-                                wallCreationParams.minimumMajorExtent_m &&
-                            minorExtent >=
-                                wallCreationParams.minimumMinorExtent_m &&
-                            observedArea >= wallCreationParams.minimumArea_m2;
-
-                        /* Reject narrow or small wall fragments */
-                        if (!validNewWallGeometry)
-                        {
-                            std::cout
-                                << "[SemSeg] Rejecting new wall "
-                                   "candidate: points="
-                                << connectedSupport.pointIndices.size() << '/'
-                                << connectedSupport.finitePointCount
-                                << " connected (ratio "
-                                << connectedSupport.componentRatio << ')'
-                                << ", dimensions=" << majorExtent << "x"
-                                << minorExtent << " m, area=" << observedArea
-                                << " m^2." << std::endl;
-
-                            continue;
-                        }
-
-                        /* Persist only the validated connected wall support. */
-                        p_globalPlaneCloud = p_connectedGlobalWallCloud;
-                        p_planeCloud       = p_connectedCameraWallCloud;
-                    }
-
                     /* Create a new mapped plane */
                     vs_graphs::core::geometric::Plane *p_newMapPlane = nullptr;
                     if (utils::geo_sem_helpers::GeoSemHelpers::createMapPlane(p_atlas,

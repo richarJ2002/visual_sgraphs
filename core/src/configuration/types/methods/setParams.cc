@@ -152,23 +152,49 @@ SystemParamsStatus
             config["optimization"]["wall_thickness"]["information_gain"]
                 .as<float>();
 
-        /* Geometric Segmentation Parameters */
-        geoSeg.pointcloud.downsample.leafSize =
-            config["geo_seg"]["pointcloud"]["downsample"]["leaf_size"]
+        /* Plane Checkpoint Parameters */
+        planeCheckpoint.minimumPointCount =
+            config["plane_checkpoint"]["minimum_point_count"]
+                .as<unsigned int>();
+        planeCheckpoint.maximumFitRms_m =
+            config["plane_checkpoint"]["maximum_fit_rms"].as<float>();
+        planeCheckpoint.maxTiltGround =
+            config["plane_checkpoint"]["max_tilt_ground"].as<float>();
+        planeCheckpoint.maxTiltWall =
+            config["plane_checkpoint"]["max_tilt_wall"].as<float>();
+        planeCheckpoint.wallSize.minimumPointCount =
+            config["plane_checkpoint"]["wall_size"]["minimum_point_count"]
+                .as<unsigned int>();
+        planeCheckpoint.wallSize.minimumMajorExtent_m =
+            config["plane_checkpoint"]["wall_size"]["minimum_major_extent"]
                 .as<float>();
-        geoSeg.pointcloud.downsample.minPointsPerVoxel =
-            config["geo_seg"]["pointcloud"]["downsample"]
-                  ["min_points_per_voxel"]
+        planeCheckpoint.wallSize.minimumMinorExtent_m =
+            config["plane_checkpoint"]["wall_size"]["minimum_minor_extent"]
+                .as<float>();
+        planeCheckpoint.wallSize.minimumArea_m2 =
+            config["plane_checkpoint"]["wall_size"]["minimum_area"].as<float>();
+        planeCheckpoint.wallSize.connectivity.enabled =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]["enabled"]
+                .as<bool>();
+        planeCheckpoint.wallSize.connectivity.clusterTolerance_m =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["cluster_tolerance"]
+                      .as<float>();
+        planeCheckpoint.wallSize.connectivity.minimumComponentPointCount =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["minimum_component_point_count"]
                       .as<unsigned int>();
+        planeCheckpoint.wallSize.connectivity.minimumComponentRatio =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["minimum_component_ratio"]
+                      .as<float>();
 
         /* Semantic Segmentation Parameters */
         semSeg.minVotes      = config["sem_seg"]["min_votes"].as<float>();
         semSeg.probThresh    = config["sem_seg"]["prob_thresh"].as<float>();
         semSeg.confThresh    = config["sem_seg"]["conf_thresh"].as<float>();
-        semSeg.maxTiltWall   = config["sem_seg"]["max_tilt_wall"].as<float>();
         semSeg.maxDoorWidth  = config["sem_seg"]["max_door_width"].as<float>();
         semSeg.maxDoorHeight = config["sem_seg"]["max_door_height"].as<float>();
-        semSeg.maxTiltGround = config["sem_seg"]["max_tilt_ground"].as<float>();
         semSeg.passageKfWindow =
             config["sem_seg"]["passage_kf_window"].as<int>();
         semSeg.maxStepElevation =
@@ -258,32 +284,6 @@ SystemParamsStatus
             config["sem_seg"]["pointcloud"]["downsample"]
                   ["min_points_per_voxel"]
                       .as<unsigned int>();
-        semSeg.wallCreation.minimumPointCount =
-            config["sem_seg"]["wall_creation"]["minimum_point_count"]
-                .as<unsigned int>();
-        semSeg.wallCreation.minimumMajorExtent_m =
-            config["sem_seg"]["wall_creation"]["minimum_major_extent"]
-                .as<float>();
-        semSeg.wallCreation.minimumMinorExtent_m =
-            config["sem_seg"]["wall_creation"]["minimum_minor_extent"]
-                .as<float>();
-        semSeg.wallCreation.minimumArea_m2 =
-            config["sem_seg"]["wall_creation"]["minimum_area"].as<float>();
-        semSeg.wallCreation.connectivity.enabled =
-            config["sem_seg"]["wall_creation"]["connectivity"]["enabled"]
-                .as<bool>();
-        semSeg.wallCreation.connectivity.clusterTolerance_m =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["cluster_tolerance"]
-                      .as<float>();
-        semSeg.wallCreation.connectivity.minimumComponentPointCount =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["minimum_component_point_count"]
-                      .as<unsigned int>();
-        semSeg.wallCreation.connectivity.minimumComponentRatio =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["minimum_component_ratio"]
-                      .as<float>();
         semSeg.wallPairing.maximumThickness_m =
             config["sem_seg"]["wall_pairing"]["maximum_thickness"].as<float>();
         semSeg.wallPairing.minimumOverlapRatio =

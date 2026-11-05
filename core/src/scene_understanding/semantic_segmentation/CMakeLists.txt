@@ -1,6 +1,7 @@
 # SemanticSegmentation object sources: exactly this object's translation units.
 set(VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addSegmentedFrameToBuffer.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyPlaneCheckpoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlanesFromClassClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getProcessingStats.cc
@@ -11,5 +12,7 @@ set(VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/threshSeparatePointCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneData.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkWallPatchSize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computePlaneFitRms.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findLargestWallComponent.cc
 )

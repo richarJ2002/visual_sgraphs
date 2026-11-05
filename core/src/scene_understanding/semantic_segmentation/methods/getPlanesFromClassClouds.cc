@@ -117,10 +117,16 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
         p_filteredCloud->width = static_cast<uint32_t>(p_filteredCloud->size());
         p_filteredCloud->height = 1;
 
-        /* Skip point clouds which are empty or have incalid width/height */
+        /*!
+         * Skip point clouds which are empty or have invalid width/height. The
+         * class still gets an empty entry: the output index is the class id,
+         * and a missing entry would shift every later class down by one (for
+         * example, walls read as ground in a frame with no floor in view).
+         */
         if (p_filteredCloud->width == 0 || p_filteredCloud->height == 0 ||
             p_filteredCloud->empty())
         {
+            p_clsPlanes.emplace_back();
             continue;
         }
 

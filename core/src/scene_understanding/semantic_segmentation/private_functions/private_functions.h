@@ -13,10 +13,12 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEGMENTATION_PRIVATE_FUNCTIONS_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEGMENTATION_PRIVATE_FUNCTIONS_PRIVATE_FUNCTIONS_H
 
+#include "configuration/types/types.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
 #include <cstddef>
 #include <vector>
 
+#include <Eigen/Core>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -51,6 +53,50 @@ struct WallComponentSupport
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,
     const double                                        clusterTolerance_m_in,
     WallComponentSupport &largestWallComponent_out);
+
+/*!
+ * @brief           Computes how well a plane patch fits its plane equation.
+ *
+ * @param[in]       p_planeCloud_in
+ *                  Patch points, in the same frame as the equation.
+ *
+ * @param[in]       planeEquation_in
+ *                  Plane (a, b, c, d) with a x + b y + c z + d = 0.
+ *
+ * @param[out]      fitRms_m_out
+ *                  Root-mean-square point-to-plane distance in metres;
+ *                  infinity for a null or empty cloud, a non-finite equation
+ *                  or a zero normal.
+ *
+ * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticSegmentationStatus computePlaneFitRms(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
+    const Eigen::Vector4d                              &planeEquation_in,
+    double                                             &fitRms_m_out);
+
+/*!
+ * @brief           Checks that a wall patch is connected and large enough to
+ *                  be a wall, and keeps only its connected support.
+ *
+ * @param[in]       wallSize_in
+ *                  Size and connectivity thresholds.
+ *
+ * @param[in,out]   p_wallCloud_inout
+ *                  Wall patch points (any frame: the check uses distances
+ *                  only). On success, replaced by its largest connected
+ *                  part when connectivity is enabled; unchanged otherwise.
+ *
+ * @param[out]      isLargeEnough_out
+ *                  True when the patch passes every size and connectivity
+ *                  threshold.
+ *
+ * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticSegmentationStatus checkWallPatchSize(
+    const types::SystemParams::PlaneCheckpoint::WallSize &wallSize_in,
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr              &p_wallCloud_inout,
+    bool                                                 &isLargeEnough_out);
 
 } /* namespace semantic_segmentation */
 } /* namespace core */
