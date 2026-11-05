@@ -203,6 +203,9 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     /* Store the aggregatede confidence of the plane */
     observation.confidence = confidence_in;
 
+    /* Store this keyframe's label vote; the plane type is derived from it */
+    observation.semanticEvidence[semanticType_in] = confidence_in;
+
     /* Store the equation of the plane with respect to the camera */
     observation.localPlane = estimatedPlane_in;
 
@@ -216,16 +219,6 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: addObservation returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    /* Set the plane type */
-    if (p_newMapPlane->setPlaneType(semanticType_in) !=
-        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setPlaneType returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }

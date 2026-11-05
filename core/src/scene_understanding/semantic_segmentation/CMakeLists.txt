@@ -11,6 +11,5 @@ set(VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/threshSeparatePointCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneData.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneSemantics.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findLargestWallComponent.cc
 )

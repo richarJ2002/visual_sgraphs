@@ -468,23 +468,6 @@ class SemanticSegmentation
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>> &p_clsPlanes_in);
 
-    /*!
-     * @brief           Updates the map plane
-     *
-     * @param[in]       planeId_in
-     *                  the plane id
-     *
-     * @param[in]       clsId_in
-     *                  the class id
-     *
-     * @param[in]       confidence_in
-     *                  the confidence of the class predictions
-     */
-    [[nodiscard]] SemanticSegmentationStatus
-        updatePlaneSemantics(int    planeId_in,
-                             int    clsId_in,
-                             double confidence_in);
-
     /* Shutdown control */
     /*!
      * @brief           Asks run() to leave its loop.

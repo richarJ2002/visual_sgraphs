@@ -4,7 +4,6 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/alignGeometryToEquation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/beginMapCloudRefit.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/castWeightedVote.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearTwinFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/completeMapCloudRefit.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseObservation.cc
@@ -45,7 +44,6 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setObservationOrigin_world.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setPlaneType.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setTwinFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/transformPlaneEquation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneBoundsWithoutLock.cc

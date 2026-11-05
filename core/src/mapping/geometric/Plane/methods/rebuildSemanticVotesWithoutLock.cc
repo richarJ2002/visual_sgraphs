@@ -44,26 +44,21 @@ namespace geometric
 
 PlaneStatus Plane::rebuildSemanticVotesWithoutLock(void)
 {
+    /*!
+     * The per-keyframe records are the only label store; the tally is
+     * rebuilt from them alone, one record per keyframe.
+     */
     semanticVotes.clear();
     for (const auto &[p_keyFrame, observation] : observations)
     {
         static_cast<void>(p_keyFrame);
-        if (!observation.semanticEvidence.empty())
+        for (const auto &[semanticType, weight] : observation.semanticEvidence)
         {
-            for (const auto &[semanticType, weight] :
-                 observation.semanticEvidence)
+            if (semanticType != PlaneVariant::UNDEFINED &&
+                std::isfinite(weight))
             {
-                if (semanticType != PlaneVariant::UNDEFINED &&
-                    std::isfinite(weight))
-                {
-                    semanticVotes[semanticType] += weight;
-                }
+                semanticVotes[semanticType] += weight;
             }
-        }
-        else if (observation.semanticType != PlaneVariant::UNDEFINED &&
-                 std::isfinite(observation.confidence))
-        {
-            semanticVotes[observation.semanticType] += observation.confidence;
         }
     }
 

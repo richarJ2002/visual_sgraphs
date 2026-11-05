@@ -149,6 +149,8 @@ class Plane
 
         /*!
          * @brief           Confidence associated with this plane observation.
+         *                  Used only as the optimiser edge weight, never as a
+         *                  label vote.
          */
         double confidence;
 
@@ -159,8 +161,9 @@ class Plane
         PlaneVariant semanticType = PlaneVariant::UNDEFINED;
 
         /*!
-         * @brief           Semantic evidence retained when observations are
-         *                  fused.
+         * @brief           Label evidence of this keyframe, summed per class
+         *                  over every patch and fused record of the keyframe.
+         *                  The only store from which the plane type is derived.
          */
         std::map<PlaneVariant, double> semanticEvidence;
     };
@@ -440,7 +443,10 @@ class Plane
     std::set<map_point::MapPoint *> mapPoints;
 
     /*!
-     * @brief           The votes for the semantic type of the plane
+     * @brief           Per-class tally of the observations' label evidence.
+     *                  Rebuilt from observations under featuresMutex and
+     *                  typeMutex whenever they change; never written
+     *                  otherwise.
      */
     std::map<PlaneVariant, double> semanticVotes;
 
@@ -650,11 +656,6 @@ class Plane
         getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out);
 
     /*!
-     * @brief           Sets the accepted semantic classification.
-     */
-    [[nodiscard]] PlaneStatus setPlaneType(PlaneVariant planeType_in);
-
-    /*!
      * @brief           Associates a non-owning map point with the plane.
      */
     [[nodiscard]] PlaneStatus setMapPoints(map_point::MapPoint *p_mapPoint_in);
@@ -743,7 +744,10 @@ class Plane
         setGlobalEquation(const g2o::Plane3D &globalEquation_in);
 
     /*!
-     * @brief           Records or replaces an observation from a keyframe.
+     * @brief           Records an observation from a keyframe and rebuilds
+     *                  semantics. A second patch from the same keyframe adds
+     *                  its label evidence to that keyframe's record; the
+     *                  first patch's geometry and confidence are kept.
      */
     [[nodiscard]] PlaneStatus addObservation(keyframe::KeyFrame *p_keyFrame_inout,
                                              const Observation &observation_in);
@@ -872,17 +876,14 @@ class Plane
                             bool                  &isPointinPlaneCloud_out);
 
     /*!
-     * @brief           Adds weighted evidence for a semantic classification.
-     */
-    [[nodiscard]] PlaneStatus castWeightedVote(PlaneVariant semanticType_in,
-                                               double       voteWeight_in);
-
-    /*!
-     * @brief           Clears semantic votes and restores undefined semantics.
+     * @brief           Clears semantic votes, including the label evidence of
+     *                  every keyframe record, and restores undefined
+     *                  semantics.
      *
      * @note            Geometric support and observation constraints are
      *                  preserved so that a temporarily rejected classification
-     *                  can recover on later observations.
+     *                  can recover on later observations. Because the records
+     *                  are cleared, no later rebuild can revive the old label.
      */
     [[nodiscard]] PlaneStatus resetPlaneSemantics(void);
 

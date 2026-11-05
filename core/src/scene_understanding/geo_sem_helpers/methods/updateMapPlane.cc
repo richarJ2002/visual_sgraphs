@@ -98,6 +98,9 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
 
     /* the aggregated confidence of the plane */
     observation.confidence = confidence_in;
+
+    /* this keyframe's label vote; the plane type is derived from it */
+    observation.semanticEvidence[semanticType_in] = confidence_in;
     if (p_currentPlane->addObservation(p_keyFrame_inout, observation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {

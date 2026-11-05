@@ -42,8 +42,17 @@ namespace geometric
 
 PlaneStatus Plane::resetPlaneSemantics(void)
 {
-    std::unique_lock<std::mutex> lock(typeMutex);
+    std::scoped_lock lock(featuresMutex, typeMutex);
 
+    /*!
+     * Clear the per-keyframe records too, so a later rebuild (fusion or
+     * keyframe erase) cannot bring the rejected label back.
+     */
+    for (auto &[p_keyFrame, observation] : observations)
+    {
+        static_cast<void>(p_keyFrame);
+        observation.semanticEvidence.clear();
+    }
     semanticVotes.clear();
     planeType = PlaneVariant::UNDEFINED;
 

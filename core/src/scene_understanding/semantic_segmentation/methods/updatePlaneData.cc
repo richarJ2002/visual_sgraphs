@@ -423,36 +423,6 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-
-                    /* Confirm that plane creation succeeded */
-                    if (p_newMapPlane == nullptr)
-                    {
-                        continue;
-                    }
-
-                    /* Update the semantic votes of the new plane */
-                    int newMapPlaneGetId{};
-                    if (p_newMapPlane->getId(newMapPlaneGetId) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (updatePlaneSemantics(newMapPlaneGetId,
-                                             static_cast<int>(clsId),
-                                             confidence) !=
-                        SemanticSegmentationStatus::
-                            SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: updatePlaneSemantics returned a "
-                                     "failure status although it cannot fail; "
-                                     "continuing as before.",
-                                     __func__);
-                    }
                 }
             }
             else
@@ -484,6 +454,11 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                      * Transform the current observation into the global
                      * frame
                      * and append it to the matched mapped plane.
+                     *
+                     * @note            No keyframe observation is recorded
+                     *                  here, so this branch adds no label
+                     *                  evidence: a plane's label comes only
+                     *                  from its keyframe observations.
                      */
                     Sophus::SE3f keyFramePoseInverse3{};
                     if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse3) !=
@@ -547,23 +522,6 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                              */
                         }
                     }
-                }
-
-                /*!
-                 * Cast the current semantic observation vote for the matched
-                 * plane.
-                 */
-                if (updatePlaneSemantics(matchedPlaneId,
-                                         static_cast<int>(clsId),
-                                         confidence) !=
-                    SemanticSegmentationStatus::
-                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: updatePlaneSemantics returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
                 }
             }
         }
