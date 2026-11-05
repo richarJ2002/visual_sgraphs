@@ -45,14 +45,6 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    if (setRecoveryProxy(false) != RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setRecoveryProxy returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     bool isPassageFaceRefused{};
     if (getIsPassageFaceRefused(p_wall_in, isPassageFaceRefused) !=
         RoomStatus::ROOM_STATUS_SUCCESS)

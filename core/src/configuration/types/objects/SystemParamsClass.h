@@ -1294,16 +1294,6 @@ class SystemParams
          * @brief           Fewest wall pairs two rooms need to pair.
          */
         unsigned int roomPairMinWalls = 2U;
-        /*!
-         * @brief           Fewest wall pairs the anchor rooms must show for a
-         *                  merge to be accepted.
-         */
-        unsigned int anchorMinWallPairs = 3U;
-        /*!
-         * @brief           Smallest angle between two paired anchor wall
-         *                  normals that must exist among the pairs (degrees).
-         */
-        float        anchorMinNormalSpread_deg = 30.0f;
     };
     /*!
      * @brief           Map-merge and axiom thresholds.

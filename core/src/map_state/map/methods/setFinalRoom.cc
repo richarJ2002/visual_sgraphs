@@ -44,10 +44,13 @@ namespace core
 namespace map
 {
 
-MapStatus Map::setFinalRoom(semantic::Room *p_room_in)
+MapStatus Map::setFinalRoom(semantic::Room *p_room_in,
+                            semantic::Room *p_roomBeyondPassage_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
     p_finalRoom = p_room_in;
+    p_finalRoomBeyondPassage =
+        p_roomBeyondPassage_in == p_room_in ? nullptr : p_roomBeyondPassage_in;
 
     return MapStatus::MAP_STATUS_SUCCESS;
 }

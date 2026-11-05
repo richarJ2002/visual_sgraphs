@@ -37,6 +37,8 @@ namespace core
 {
 namespace semantic
 {
+class Room;
+
 /*!
  * @brief           Complete, reason-coded result of the physical map-merge
  *                  semantic gate.
@@ -58,8 +60,9 @@ struct SemanticMergeGateResult
      */
     std::string floorDecision;
     /*!
-     * @brief           Number of anchor room pairs: rooms on both sides of
-     *                  the merge that carry the same room tag.
+     * @brief           Number of anchor room pairs: the two rooms that link
+     *                  the merged maps in the map chain (Map::getLinkedRooms),
+     *                  of the candidate the decision rests on.
      */
     std::size_t sharedRoomCount{0U};
     /*!
@@ -83,6 +86,17 @@ struct SemanticMergeGateResult
      *                  line.
      */
     std::string pairDetail;
+    /*!
+     * @brief           Surviving map's room of the anchor pair the decision
+     *                  rests on; nullptr when no anchor pair was tried.
+     *                  Borrowed from the surviving map.
+     */
+    Room       *p_survivingAnchorRoom{nullptr};
+    /*!
+     * @brief           Absorbed map's room of that anchor pair; nullptr
+     *                  likewise. Borrowed from the absorbed map.
+     */
+    Room       *p_absorbedAnchorRoom{nullptr};
 };
 
 } /* namespace semantic */

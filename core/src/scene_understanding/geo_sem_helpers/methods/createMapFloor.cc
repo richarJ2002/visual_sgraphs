@@ -36,9 +36,7 @@
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
 
-GeoSemHelpersStatus
-    GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout,
-                                  std::optional<int>      stableFloorId_in)
+GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
 {
     map::Map *p_currentMap = nullptr;
     if (p_atlas_inout->getCurrentMap(p_currentMap) !=
@@ -61,23 +59,12 @@ GeoSemHelpersStatus
         new vs_graphs::core::semantic::Floor();
 
     /* Variables */
-    int atlasFloorId{};
-    if (!(stableFloorId_in.has_value()) &&
-        p_atlas_inout->reserveFloorIdentity(atlasFloorId) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: reserveFloorIdentity returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    const int floorId =
-        stableFloorId_in.has_value() ? *stableFloorId_in : atlasFloorId;
-    if (p_atlas_inout->observeFloorIdentity(floorId) !=
+    int floorId{};
+    if (p_atlas_inout->reserveFloorIdentity(floorId) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: observeFloorIdentity returned a failure status "
+                     "%s: reserveFloorIdentity returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }

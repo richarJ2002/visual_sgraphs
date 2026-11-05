@@ -25,6 +25,7 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
+    const std::vector<MergePair>                 &anchorPairs_in,
     const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
@@ -59,11 +60,9 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
             mergeTransform_absorbedToSurviving_in));
     }
 
-    /* The anchor rooms are the only rooms matched by identity (their tag). */
-    const std::vector<MergePair> anchorPairs =
-        findAnchorRoomPairs(survivingRooms_in, absorbedRooms);
-    result.sharedRoomCount = anchorPairs.size();
-    if (anchorPairs.empty())
+    /* The anchor rooms are the only rooms matched by identity. */
+    result.sharedRoomCount = anchorPairs_in.size();
+    if (anchorPairs_in.empty())
     {
         result.decision   = SemanticMergeDecision::DEFER;
         result.reason     = SemanticMergeReason::SHARED_ROOM_IDENTITY_MISSING;
@@ -119,7 +118,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     std::ostringstream     anchorText;
     std::ostringstream     anchorWallText;
     std::vector<MergePair> allRoomPairs;
-    for (const MergePair &anchorPair : anchorPairs)
+    for (const MergePair &anchorPair : anchorPairs_in)
     {
         const SemanticMergeRoomEvidence &survivingRoom =
             survivingRooms_in[anchorPair.survivingIndex];
@@ -127,8 +126,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
             absorbedRooms[anchorPair.absorbedIndex];
         bool isAnchorAligned = true;
         allRoomPairs.push_back(anchorPair);
-        anchorText << (anchorText.tellp() == 0 ? "" : ",")
-                   << survivingRoom.context.roomTag << ":a"
+        anchorText << (anchorText.tellp() == 0 ? "" : ",") << "a"
                    << absorbedRoom.context.roomId << "~s"
                    << survivingRoom.context.roomId;
 
@@ -155,9 +153,9 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
             isAnchorAligned = false;
         }
 
-        /* Walls: they must pair, without contradiction, in enough directions
-         * to fix the translation. Walls seen on one side only give no
-         * answer and are not counted against the pairing. */
+        /* Walls: those that pair must agree. Walls seen on one side only
+         * give no answer; how many pair, or in how many directions, does
+         * not decide. */
         const MergePairing wallPairing = pairWalls(absorbedRoom.walls,
                                                    survivingRoom.walls,
                                                    configuration_in);
@@ -191,19 +189,6 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
                                 "wall_paired_twice");
             isAnchorAligned = false;
         }
-        const double wallSpread_deg =
-            measureWallNormalSpread(survivingRoom.walls, wallPairing.pairs);
-        if (wallPairing.pairs.size() < configuration_in.anchorMinWallPairs ||
-            wallSpread_deg < configuration_in.anchorMinNormalSpread_deg)
-        {
-            std::ostringstream shortage;
-            shortage << "anchor_walls=" << wallPairing.pairs.size() << "/"
-                     << configuration_in.anchorMinWallPairs
-                     << " spread_deg=" << wallSpread_deg;
-            recordMissingEvidence(SemanticMergeReason::WALL_EVIDENCE_MISSING,
-                                  shortage.str());
-            isAnchorAligned = false;
-        }
         if (isAnchorAligned)
         {
             result.alignedRoomCount++;
@@ -216,8 +201,8 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     for (const RoomPair &roomPair : roomPairs)
     {
         const bool isAnchor = std::any_of(
-            anchorPairs.begin(),
-            anchorPairs.end(),
+            anchorPairs_in.begin(),
+            anchorPairs_in.end(),
             [&roomPair](const MergePair &anchorPair)
             {
                 return anchorPair.absorbedIndex == roomPair.absorbedIndex &&

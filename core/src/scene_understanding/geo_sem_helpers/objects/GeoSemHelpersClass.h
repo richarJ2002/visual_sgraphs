@@ -27,7 +27,6 @@
 #ifndef VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 #define VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 
-#include <optional>
 #include <string>
 #include <vector>
 #include <utility>
@@ -233,16 +232,16 @@ class GeoSemHelpers
      * @param[in]       centroid_in
      *                  The centroid of the room (optional)
      *
-     * @param[in]       stableRoomId_in
-     *                  Identity to restore after a tracking-loss reset (not
-     *                  limited by the passage count); when absent a new
-     *                  identity is reserved from the Atlas
+     * @param[in]       isRecoveryRoom_in
+     *                  True when the room is recreated after a tracking-loss
+     *                  reset; it is then not limited by the passage count. The
+     *                  identity is always reserved fresh from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus createBlankRoomCandidate(
         atlas::Atlas                            *p_atlas_inout,
         vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
         Eigen::Vector3d                   centroid_in = Eigen::Vector3d::Zero(),
-        std::optional<int>                stableRoomId_in = std::nullopt);
+        bool                              isRecoveryRoom_in = false);
 
     /*!
      * @brief           Chooses a ground plane from the Atlas to be associated
@@ -277,18 +276,14 @@ class GeoSemHelpers
         size_t &groundPlanePoints_out);
 
     /*!
-     * @brief           Creates a new floor object to be added to the map
+     * @brief           Creates a new floor object to be added to the map; its
+     *                  identity is reserved fresh from the Atlas
      *
      * @param[in,out]   p_atlas_inout
      *                  The current map in Atlas
-     *
-     * @param[in]       stableFloorId_in
-     *                  Identity to restore after a tracking-loss reset; when
-     *                  absent a new identity is reserved from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus
-        createMapFloor(atlas::Atlas *p_atlas_inout,
-                       std::optional<int>      stableFloorId_in = std::nullopt);
+        createMapFloor(atlas::Atlas *p_atlas_inout);
 
     /*!
      * @brief           Refits a mapped plane equation from its accumulated

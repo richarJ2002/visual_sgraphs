@@ -1002,7 +1002,7 @@ SemanticsManagerStatus
 
             /* Reset transient: the active map was just cleared (no live ROOM)
              * but a last-known hierarchy exists. Bootstrap owns first-room
-             * creation with the stable ID; free-space must not conjure a
+             * creation from that hierarchy; free-space must not conjure a
              * fresh SE# from stale cross-map walls/clusters in this cycle. */
             int atlasGetCurrentSemanticRoomIdentity{};
             if ((p_atlas != nullptr) &&

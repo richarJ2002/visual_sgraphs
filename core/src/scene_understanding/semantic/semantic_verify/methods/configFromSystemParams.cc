@@ -96,11 +96,8 @@ SemanticVerifyStatus SemanticVerify::configFromSystemParams(
         static_cast<double>(loadedMapMerge.floorMatchTolerance_m);
     configuration.roomPairWallFraction =
         static_cast<double>(loadedMapMerge.roomPairWallFraction);
-    configuration.roomPairMinWalls   = loadedMapMerge.roomPairMinWalls;
-    configuration.anchorMinWallPairs = loadedMapMerge.anchorMinWallPairs;
-    configuration.anchorMinNormalSpread_deg =
-        static_cast<double>(loadedMapMerge.anchorMinNormalSpread_deg);
-    configuration_out = configuration;
+    configuration.roomPairMinWalls = loadedMapMerge.roomPairMinWalls;
+    configuration_out              = configuration;
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 

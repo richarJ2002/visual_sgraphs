@@ -224,8 +224,11 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     }
     reassociateMergedSemantics(p_atlas,
                                p_currentMap,
+                               p_mergeMap,
                                p_params,
-                               mergeMapContents);
+                               mergeMapContents,
+                               semanticMergeGate.p_survivingAnchorRoom,
+                               semanticMergeGate.p_absorbedAnchorRoom);
 
     /*!
      * Inertial welding changes the same derived-map coordinate contract as a

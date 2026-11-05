@@ -14,13 +14,13 @@
  *                  verified Room/Plane getters) and either produces a
  *                  verified inter-map SE(3) transform with an inlier
  *                  wall set, or rejects. This is verification only: it
- *                  mutates nothing, assigns no room tag, and triggers
- *                  no map merge.
+ *                  mutates nothing and triggers no map merge.
  */
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 
 #include "scene_understanding/semantic/room/objects/RoomContextSnapshotStruct.h"
+#include "scene_understanding/semantic/semantic_verify/objects/MergePairStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeGateResultStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeReasonEnum.h"
@@ -172,20 +172,22 @@ class SemanticVerify
     /*!
      * @brief           Evaluates copied room evidence under a proposed
      *                  absorbed-to-surviving map transform. Only the anchor
-     *                  rooms (same room tag on both sides) are matched by
-     *                  identity; walls, floors, rooms and passages are paired
-     *                  by geometry in the surviving frame. A contradiction
-     *                  between paired elements (an anchor floor or wall
-     *                  offset, one element paired twice) rejects. Too little
-     *                  evidence (no anchor pair, no anchor floor, too few
-     *                  anchor wall pairs or directions) defers. Elements seen
-     *                  in one map only neither accept nor reject. The pairs
+     *                  rooms (the map chain link, anchorPairs_in) are matched
+     *                  by identity; walls, floors, rooms and passages are
+     *                  paired by geometry in the surviving frame. A
+     *                  contradiction between paired elements (an anchor floor
+     *                  or wall offset, one element paired twice) rejects. A
+     *                  missing element (no anchor pair, no anchor floor)
+     *                  defers. Elements seen in one map only neither accept
+     *                  nor reject; the number of anchor wall pairs and their
+     *                  directions do not decide. The pairs
      *                  and problems behind the decision are written to
      *                  result_out.pairDetail.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMergeAlignment(
         const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
         const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
+        const std::vector<MergePair>                 &anchorPairs_in,
         const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
@@ -194,6 +196,17 @@ class SemanticVerify
      * @brief           Runs the complete floor and semantic gate against two
      *                  live maps. Caller must prevent concurrent semantic
      *                  mutation for both maps.
+     *
+     * @note            The map chain link can hold two anchor candidates (the
+     *                  final room and the room beyond the passage that was in
+     *                  view at departure). Each candidate pair is checked on
+     *                  its own and logged as one [SemanticMergePairs] line.
+     *                  The merge is accepted only when exactly one candidate
+     *                  is accepted; when both are, they are checked together
+     *                  and the starting room paired twice rejects; when none
+     *                  is, the first deferred candidate (else the final
+     *                  room's) gives the decision. result_out names the
+     *                  anchor rooms of the candidate the decision rests on.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
         map::Map                   *p_survivingMap_in,
@@ -206,9 +219,10 @@ class SemanticVerify
      * @brief           Pairs rooms of one map that were imported by a merge
      *                  with the rooms that were already there, to find the
      *                  duplicates. Both lists must already be in one world
-     *                  frame. Only the anchor rooms (same room tag) are paired
-     *                  by identity; every other room pairs through its walls
-     *                  (coplanar, same facing, overlapping), never by id.
+     *                  frame. Only the anchor rooms (the map chain link the
+     *                  merge consumed) are paired by identity; every other
+     *                  room pairs through its walls (coplanar, same facing,
+     *                  overlapping), never by id.
      *
      * @param[in]       importedRooms_in
      *                  Rooms brought in by the merge; null, bad and
@@ -217,6 +231,12 @@ class SemanticVerify
      * @param[in]       retainedRooms_in
      *                  Rooms the surviving map already had; same filtering.
      *                  Borrowed.
+     *
+     * @param[in]       p_importedAnchorRoom_in
+     *                  Imported room of the map chain link; may be null.
+     *
+     * @param[in]       p_retainedAnchorRoom_in
+     *                  Retained room of that link; may be null.
      *
      * @param[in]       configuration_in
      *                  Wall pairing thresholds, room pair wall fraction and
@@ -228,8 +248,10 @@ class SemanticVerify
      *                  room, is not listed: it gives no answer.
      */
     [[nodiscard]] static std::vector<std::pair<Room *, Room *>>
-        pairRoomsInSharedFrame(const std::vector<Room *>  &importedRooms_in,
-                               const std::vector<Room *>  &retainedRooms_in,
+        pairRoomsInSharedFrame(const std::vector<Room *> &importedRooms_in,
+                               const std::vector<Room *> &retainedRooms_in,
+                               const Room *p_importedAnchorRoom_in,
+                               const Room *p_retainedAnchorRoom_in,
                                const SemanticVerifyConfig &configuration_in);
 
     /*!

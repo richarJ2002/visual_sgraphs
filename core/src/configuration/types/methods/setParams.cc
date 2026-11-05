@@ -405,10 +405,6 @@ SystemParamsStatus
             config["map_merge"]["room_pair_wall_fraction"].as<float>();
         mapMerge.roomPairMinWalls =
             config["map_merge"]["room_pair_min_walls"].as<unsigned int>();
-        mapMerge.anchorMinWallPairs =
-            config["map_merge"]["anchor_min_wall_pairs"].as<unsigned int>();
-        mapMerge.anchorMinNormalSpread_deg =
-            config["map_merge"]["anchor_min_normal_spread_deg"].as<float>();
 
         /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =

@@ -840,6 +840,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "cannot fail; continuing as before.",
                          __func__);
         }
+        if (p_map_inout->replaceLinkedRoom(p_importedRoom,
+                                           p_bestRetainedRoom) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: replaceLinkedRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         int importedRoomId4{};
         if (p_importedRoom->getId(importedRoomId4) !=

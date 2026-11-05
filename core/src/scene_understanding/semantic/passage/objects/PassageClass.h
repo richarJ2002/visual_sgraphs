@@ -122,9 +122,9 @@ class Passage
 
   private:
     /*!
-     * @brief           Stable identifier of this passage; two passages with the
-     *                  same id are duplicates of one passage and get merged; -1
-     *                  = not assigned yet.
+     * @brief           Identifier of this passage, unique across the mission:
+     *                  reserved from the Atlas passage counter, never reused;
+     *                  -1 = not assigned yet.
      */
     int id;
 

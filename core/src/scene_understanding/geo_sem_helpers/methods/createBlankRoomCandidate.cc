@@ -43,7 +43,7 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
     atlas::Atlas           *p_atlas_inout,
     vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
     Eigen::Vector3d                   centroid_in,
-    std::optional<int>                stableRoomId_in)
+    bool                              isRecoveryRoom_in)
 {
     /* Confirm that the p_atlas_inout is valid */
     if (p_atlas_inout == nullptr)
@@ -129,11 +129,10 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
             return p_passage != nullptr && !passageIsBad && passageIsPassable;
         });
 
-    /* Recovery (explicit stable ID) restores an already-discovered identity
-     * after a tracking-loss reset; it is not new discovery and must not be
-     * blocked by the passage budget. The budget gates discovery only. */
-    if (!stableRoomId_in.has_value() &&
-        existingRooms.size() > passablePassageCount)
+    /* Recovery recreates an already-discovered room after a tracking-loss
+     * reset; it is not new discovery and must not be blocked by the passage
+     * budget. The budget gates discovery only. */
+    if (!isRecoveryRoom_in && existingRooms.size() > passablePassageCount)
     {
         std::cerr << "[GeoSemHelper] Refusing to create a new room: "
                   << existingRooms.size() << " room(s) already exist against "
@@ -146,23 +145,13 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    int atlasRoomId{};
-    if (!(stableRoomId_in.has_value()) &&
-        p_atlas_inout->reserveRoomIdentity(atlasRoomId) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: reserveRoomIdentity returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    const int roomId =
-        stableRoomId_in.has_value() ? *stableRoomId_in : atlasRoomId;
-    if (p_atlas_inout->observeRoomIdentity(roomId) !=
+    /* Every room, recovered ones included, takes a fresh identity. */
+    int roomId{};
+    if (p_atlas_inout->reserveRoomIdentity(roomId) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: observeRoomIdentity returned a failure status "
+                     "%s: reserveRoomIdentity returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }

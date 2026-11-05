@@ -379,8 +379,11 @@ LoopClosingStatus
         /* Fuse only after every semantic relationship is visible. */
         reassociateMergedSemantics(p_atlas,
                                    p_currentMap,
+                                   p_mergeMap,
                                    p_sysParams,
-                                   mergeMapContents);
+                                   mergeMapContents,
+                                   semanticMergeGate.p_survivingAnchorRoom,
+                                   semanticMergeGate.p_absorbedAnchorRoom);
     }
 
     /*

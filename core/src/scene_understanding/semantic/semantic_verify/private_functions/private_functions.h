@@ -325,8 +325,8 @@ void collectPassageContexts(const std::vector<Passage *> &passages_in,
  * @param[in]       mergeTransform_absorbedToSurviving_in
  *                  Similarity from the absorbed to the surviving world frame.
  *
- * @return          The room evidence in the surviving world frame; ids and the
- *                  room tag are kept.
+ * @return          The room evidence in the surviving world frame; ids are
+ *                  kept.
  */
 [[nodiscard]] SemanticMergeRoomEvidence transformRoomEvidenceBetweenMaps(
     const SemanticMergeRoomEvidence &room_absorbedWorld_in,
@@ -379,22 +379,6 @@ void collectPassageContexts(const std::vector<Passage *> &passages_in,
 [[nodiscard]] double
     measureWallExtentGap(const VerifyWallObservation &firstWall_world_in,
                          const VerifyWallObservation &secondWall_world_in);
-
-/*!
- * @brief           Measures the widest angle between paired wall normals.
- *
- * @param[in]       survivingWalls_in
- *                  Surviving walls the pairs refer to.
- *
- * @param[in]       wallPairs_in
- *                  Wall pairs; only the surviving side is read.
- *
- * @return          Largest angle, degrees in [0, 90], between two normals
- *                  treated as lines; 0 when fewer than two walls are paired.
- */
-[[nodiscard]] double measureWallNormalSpread(
-    const std::vector<VerifyWallObservation> &survivingWalls_in,
-    const std::vector<MergePair>             &wallPairs_in);
 
 /*!
  * @brief           Relates one absorbed wall to one surviving wall.
@@ -516,19 +500,27 @@ void collectPassageContexts(const std::vector<Passage *> &passages_in,
  *                  identity.
  *
  * @param[in]       survivingRooms_in
- *                  Surviving rooms.
+ *                  Surviving rooms, in evidence order; borrowed.
  *
  * @param[in]       absorbedRooms_in
- *                  Absorbed rooms.
+ *                  Absorbed rooms, in evidence order; borrowed.
  *
- * @return          One pair per absorbed and surviving room carrying the same
- *                  non-empty room tag. The new map's first room receives the
- *                  old map's last room's tag at a tracking loss; no other
- *                  room is matched this way.
+ * @param[in]       p_survivingAnchorRoom_in
+ *                  Surviving map's room of the map chain link
+ *                  (Map::getLinkedRooms); may be null.
+ *
+ * @param[in]       p_absorbedAnchorRoom_in
+ *                  Absorbed map's room of that link; may be null.
+ *
+ * @return          The one pair of list indices of the two linked rooms, or
+ *                  no pair when either room is null or not in its list. No
+ *                  other room is matched this way.
  */
-[[nodiscard]] std::vector<MergePair> findAnchorRoomPairs(
-    const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in);
+[[nodiscard]] std::vector<MergePair>
+    findAnchorRoomPairs(const std::vector<Room *> &survivingRooms_in,
+                        const std::vector<Room *> &absorbedRooms_in,
+                        const Room                *p_survivingAnchorRoom_in,
+                        const Room                *p_absorbedAnchorRoom_in);
 
 /*!
  * @brief           Tells whether any element appears in more than one pair on

@@ -471,7 +471,7 @@ class Utils
      * @brief           Fuses each duplicate room that a map merge brought in
      *                  into the room it duplicates. The pairs come from the
      *                  geometric room pairing (walls coplanar, same facing and
-     *                  overlapping; the anchor rooms by their tag); this
+     *                  overlapping; the anchor rooms by the map link); this
      *                  function pairs nothing itself. The imported room's walls
      *                  and passages move to the retained room, a wall behind a
      *                  passable passage stays with the far-side room, passage

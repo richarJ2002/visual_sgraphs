@@ -39,6 +39,8 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 
@@ -48,6 +50,7 @@
 #include <algorithm>
 #include <iostream>
 #include <rclcpp/logging.hpp>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -59,9 +62,54 @@ namespace core
 void reassociateMergedSemantics(
     atlas::Atlas                         *p_atlas_inout,
     map::Map                             *p_currentMap_inout,
+    map::Map                             *p_mergeMap_in,
     const types::SystemParams            *p_systemParams_in,
-    const loop_closing::MergeMapContents &mergeMapContents_in)
+    const loop_closing::MergeMapContents &mergeMapContents_in,
+    semantic::Room                       *p_retainedAnchorRoom_in,
+    semantic::Room                       *p_importedAnchorRoom_in)
 {
+    /* The gate chose the anchor pair from the link before the surviving map
+     * takes the link over; fusing the anchor rooms below then retargets the
+     * taken-over room pointers. */
+    if (p_currentMap_inout->adoptMergedMapLinks(p_mergeMap_in) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: adoptMergedMapLinks returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<map::Map *> atlasAllMaps{};
+    if (p_atlas_inout->getAllMaps(atlasAllMaps) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (map::Map *p_map : atlasAllMaps)
+    {
+        map::Map *p_followingMap = nullptr;
+        if (p_map->getFollowingMap(p_followingMap) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFollowingMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_map != p_currentMap_inout && p_followingMap == p_mergeMap_in &&
+            p_map->setFollowingMap(p_currentMap_inout) !=
+                map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFollowingMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
     /* Fuse only after every semantic relationship is visible. */
     if (p_systemParams_in->semSeg.reassociate.enabled)
     {
@@ -104,7 +152,7 @@ void reassociateMergedSemantics(
 
     /* Room fusion is a merge invariant, not an optional geometry
      * re-association feature. Walls, floors and rooms are paired by geometry;
-     * only the anchor rooms are paired by their tag. */
+     * only the anchor rooms are paired by the map chain link. */
     semantic::SemanticVerifyConfig configuration{};
     if (semantic::SemanticVerify::configFromSystemParams(configuration) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
@@ -115,10 +163,12 @@ void reassociateMergedSemantics(
                      __func__);
     }
     const std::vector<std::pair<semantic::Room *, semantic::Room *>>
-        duplicateRoomPairs =
-            semantic::SemanticVerify::pairRoomsInSharedFrame(importedRooms,
-                                                             retainedRooms,
-                                                             configuration);
+        duplicateRoomPairs = semantic::SemanticVerify::pairRoomsInSharedFrame(
+            importedRooms,
+            retainedRooms,
+            p_importedAnchorRoom_in,
+            p_retainedAnchorRoom_in,
+            configuration);
     std::cout << "[SemanticMergeFusion] imported_rooms=" << importedRooms.size()
               << " retained_rooms=" << retainedRooms.size()
               << " duplicate_room_pairs=" << duplicateRoomPairs.size()
@@ -132,6 +182,115 @@ void reassociateMergedSemantics(
             "%s: fuseDuplicateRoomsAfterMerge returned a failure status "
             "although it cannot fail; continuing as before.",
             __func__);
+    }
+
+    /* Identities are primary keys from the Atlas counters: every imported
+     * room and passage the merge keeps is re-keyed, so no absorbed-map id can
+     * alias a surviving one (RViz markers, axioms and the archive key by id).
+     * Fused duplicates were retired above and keep no id; retained entities,
+     * which the live room tracker refers to, keep theirs. Rooms, floors and
+     * walls hold each other by pointer, so only the ids, the room names and
+     * the passage index change. */
+    for (semantic::Room *p_importedRoom : importedRooms)
+    {
+        bool importedRoomIsBad{};
+        if (!(p_importedRoom == nullptr) &&
+            p_importedRoom->isBad(importedRoomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_importedRoom == nullptr || importedRoomIsBad)
+        {
+            continue;
+        }
+
+        int importedRoomId{};
+        int freshRoomId{};
+        if (p_importedRoom->getId(importedRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            p_atlas_inout->reserveRoomIdentity(freshRoomId) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
+            p_importedRoom->setId(freshRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId/reserveRoomIdentity/setId returned a "
+                         "failure status although they cannot fail; "
+                         "continuing as before.",
+                         __func__);
+        }
+
+        /* Names carry the identity after a kind prefix ("Room#7"). */
+        std::string importedRoomName{};
+        if (p_importedRoom->getName(importedRoomName) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        const std::string::size_type identitySeparatorIndex =
+            importedRoomName.find('#');
+        if (identitySeparatorIndex != std::string::npos &&
+            p_importedRoom->setName(
+                importedRoomName.substr(0, identitySeparatorIndex + 1) +
+                std::to_string(freshRoomId)) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[SemanticMergeFusion] Re-keyed imported Room#"
+                  << importedRoomId << " to Room#" << freshRoomId << "."
+                  << std::endl;
+    }
+
+    for (semantic::Passage *p_importedPassage : mergeMapContents_in.passages)
+    {
+        bool importedPassageIsBad{};
+        if (!(p_importedPassage == nullptr) &&
+            p_importedPassage->isBad(importedPassageIsBad) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_importedPassage == nullptr || importedPassageIsBad)
+        {
+            continue;
+        }
+
+        /* The passage index is keyed by id: re-insert under the new key. */
+        int importedPassageId{};
+        int freshPassageId{};
+        if (p_importedPassage->getId(importedPassageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_currentMap_inout->eraseMapPassage(p_importedPassage) !=
+                map::MapStatus::MAP_STATUS_SUCCESS ||
+            p_atlas_inout->reservePassageIdentity(freshPassageId) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
+            p_importedPassage->setId(freshPassageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+            p_currentMap_inout->addMapPassage(p_importedPassage) !=
+                map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: re-keying a passage returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[SemanticMergeFusion] Re-keyed imported Passage#"
+                  << importedPassageId << " to Passage#" << freshPassageId
+                  << "." << std::endl;
     }
 
     if (p_systemParams_in->semSeg.reassociate.enabled)

@@ -143,16 +143,6 @@ struct SemanticVerifyConfig
      * @brief           Fewest wall pairs two rooms need to pair.
      */
     std::size_t  roomPairMinWalls{2U};
-    /*!
-     * @brief           Fewest wall pairs the anchor rooms must show for a merge
-     *                  to be accepted.
-     */
-    std::size_t  anchorMinWallPairs{3U};
-    /*!
-     * @brief           Smallest angle that must exist between two paired anchor
-     *                  wall normals, degrees.
-     */
-    double       anchorMinNormalSpread_deg{30.0};
 };
 
 } /* namespace semantic */

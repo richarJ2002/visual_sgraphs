@@ -23,6 +23,8 @@ namespace semantic
 std::vector<std::pair<Room *, Room *>> SemanticVerify::pairRoomsInSharedFrame(
     const std::vector<Room *>  &importedRooms_in,
     const std::vector<Room *>  &retainedRooms_in,
+    const Room                 *p_importedAnchorRoom_in,
+    const Room                 *p_retainedAnchorRoom_in,
     const SemanticVerifyConfig &configuration_in)
 {
     std::vector<Room *>                    importedAdmittedRooms{};
@@ -40,7 +42,10 @@ std::vector<std::pair<Room *, Room *>> SemanticVerify::pairRoomsInSharedFrame(
 
     /* Both lists already live in one frame, so no transform is applied. */
     const std::vector<MergePair> anchorPairs =
-        findAnchorRoomPairs(retainedEvidence, importedEvidence);
+        findAnchorRoomPairs(retainedAdmittedRooms,
+                            importedAdmittedRooms,
+                            p_retainedAnchorRoom_in,
+                            p_importedAnchorRoom_in);
     const std::vector<RoomPair> wallPairedRooms =
         pairRooms(importedEvidence, retainedEvidence, configuration_in);
 
@@ -52,7 +57,8 @@ std::vector<std::pair<Room *, Room *>> SemanticVerify::pairRoomsInSharedFrame(
     {
         std::size_t bestRetainedIndex = NO_ROOM;
 
-        /* The anchor tag is the only identity link; it needs no geometry. */
+        /* The map chain link is the only identity link; it needs no
+         * geometry. */
         for (const MergePair &anchorPair : anchorPairs)
         {
             if (anchorPair.absorbedIndex == importedIndex)

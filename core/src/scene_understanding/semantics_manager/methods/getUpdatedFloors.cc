@@ -80,40 +80,9 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
     if (currentMapAllFloors.empty())
     {
         /* A reset can reach this update before the new map has a usable
-         * camera pose. Recover the semantic floor identity from the last
-         * current-room hierarchy instead of consuming a new mission identity.
-         * The newly allocated Floor object deliberately carries no prior-map
-         * geometry; only its semantic ID crosses the reset boundary. */
-        std::optional<int> recoveredFloorId;
-        int                currentSemanticRoomId{};
-        if (p_atlas->getCurrentSemanticRoomIdentity(currentSemanticRoomId) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: getCurrentSemanticRoomIdentity returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-        if (currentSemanticRoomId >= 0)
-        {
-            std::optional<semantic::RoomContextSnapshot> recoveryContext{};
-            if (p_atlas->copyLatestRoomContext(currentSemanticRoomId,
-                                               recoveryContext) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyLatestRoomContext returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            if (recoveryContext.has_value() && recoveryContext->floorId >= 0)
-            {
-                recoveredFloorId = recoveryContext->floorId;
-            }
-        }
-        if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas, recoveredFloorId) !=
+         * camera pose. The new floor takes a fresh identity and carries no
+         * prior-map geometry. */
+        if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas) !=
             utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

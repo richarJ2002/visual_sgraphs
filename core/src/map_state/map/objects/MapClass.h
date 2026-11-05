@@ -456,11 +456,23 @@ class Map
 
     /*!
      * @brief           Records the last current room at departure
-     *                  (reset/export). Set on map transitions; non-owning,
-     *                  owned by this map.
+     *                  (reset/export) and, when the camera saw through a
+     *                  passage of it at that moment, the room beyond that
+     *                  passage as a second anchor candidate. Set on map
+     *                  transitions; non-owning, owned by this map.
+     *
+     * @param[in]       p_room_in
+     *                  Room the robot was in; may be null.
+     *
+     * @param[in]       p_roomBeyondPassage_in
+     *                  Room on the other side of the passage in view; null
+     *                  when no passage was in view.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus
-        setFinalRoom(vs_graphs::core::semantic::Room *p_room_in);
+        setFinalRoom(vs_graphs::core::semantic::Room *p_room_in,
+                     vs_graphs::core::semantic::Room *p_roomBeyondPassage_in);
 
     /*!
      * @brief           Returns the last current room at departure, if any.
@@ -478,6 +490,62 @@ class Map
      * @brief           Returns the next map in the mission chain, if any.
      */
     [[nodiscard]] MapStatus getFollowingMap(Map *&p_followingMap_out);
+
+    /*!
+     * @brief           Returns the rooms that link this map with another map
+     *                  in the mission chain: the earlier map's final room
+     *                  (plus the room beyond the passage that was in view at
+     *                  departure, when one was recorded) and the later map's
+     *                  starting room. This is the only identity link between
+     *                  two maps. Takes each map's mapMutex in turn, never
+     *                  both.
+     *
+     * @param[in]       p_otherMap_in
+     *                  Map to look for a link with; borrowed, may be null.
+     *
+     * @param[out]      ownLinkedRooms_out
+     *                  This map's anchor candidates, final room first; empty
+     *                  when the maps are not neighbours in the chain or no
+     *                  room is set. Borrowed pointers, never null.
+     *
+     * @param[out]      otherLinkedRooms_out
+     *                  The other map's anchor candidates, likewise.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        getLinkedRooms(Map                           *p_otherMap_in,
+                       std::vector<semantic::Room *> &ownLinkedRooms_out,
+                       std::vector<semantic::Room *> &otherLinkedRooms_out);
+
+    /*!
+     * @brief           Takes over the chain links of a map merged into this
+     *                  one: the starting room of an earlier map, or the final
+     *                  room and following map of a later map. Call it after
+     *                  the rooms moved here and before any of them are fused.
+     *
+     * @param[in]       p_absorbedMap_in
+     *                  Map merged into this one; borrowed, read only.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus adoptMergedMapLinks(Map *p_absorbedMap_in);
+
+    /*!
+     * @brief           Points the starting room, the final room and the room
+     *                  beyond the final room's passage at the kept room when
+     *                  the room they named was fused into it.
+     *
+     * @param[in]       p_fusedRoom_in
+     *                  Room that was fused away; borrowed.
+     *
+     * @param[in]       p_keptRoom_in
+     *                  Room it was fused into; borrowed.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus replaceLinkedRoom(semantic::Room *p_fusedRoom_in,
+                                              semantic::Room *p_keptRoom_in);
 
     /*!
      * @brief           Removes a passage from this map and from the passage id
@@ -1360,6 +1428,13 @@ class Map
      *                  until setFinalRoom() is called; borrowed.
      */
     vs_graphs::core::semantic::Room *p_finalRoom{nullptr};
+    /*!
+     * @brief           Room beyond the passage the camera saw through when
+     *                  this map was left, the second anchor candidate; nullptr
+     *                  when no passage was in view; borrowed. Never equal to
+     *                  p_finalRoom.
+     */
+    vs_graphs::core::semantic::Room *p_finalRoomBeyondPassage{nullptr};
     /*!
      * @brief           Next map in the mission chain, or nullptr; borrowed from
      *                  the atlas.

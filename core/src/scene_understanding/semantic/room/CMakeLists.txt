@@ -21,15 +21,12 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOpIdG.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTag.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomVariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWallNormalTowardRoom_world.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasPreviouslyVisited.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/hasRoomTag.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBoundaryComplete.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/isRecoveryProxy.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeInvalidWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removePassageAssociation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeWall.cc
@@ -54,8 +51,6 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setPreviouslyVisited.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setRecoveryProxy.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomTag.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomVariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setWalls.cc
 )

@@ -45,10 +45,8 @@ enum class SemanticMergeReason
     FLOOR_EVIDENCE_MISSING,
     /*! The anchor rooms' floors are not coplanar under the transform. */
     FLOOR_CONTRADICTION,
-    /*! No room carries the same room tag on both sides: no anchor pair. */
+    /*! The maps are not linked in the map chain: no anchor pair. */
     SHARED_ROOM_IDENTITY_MISSING,
-    /*! Too few anchor walls pair, or they do not fix the translation. */
-    WALL_EVIDENCE_MISSING,
     /*! Anchor walls overlap at a different offset and no wall agrees. */
     WALL_ALIGNMENT_CONTRADICTION,
     /*! One wall, room or passage pairs with two counterparts. */

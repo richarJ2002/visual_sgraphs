@@ -4249,17 +4249,6 @@ void maybeArchiveSGraph(
                 }
                 roomJson["room_id"] = roomId2;
                 roomIds_all.insert(roomId2);
-                bool roomIsRecoveryProxy{};
-                if (p_room->isRecoveryProxy(roomIsRecoveryProxy) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: isRecoveryProxy returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomJson["recovery_proxy"] = roomIsRecoveryProxy;
                 std::string roomName{};
                 if (p_room->getName(roomName) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)

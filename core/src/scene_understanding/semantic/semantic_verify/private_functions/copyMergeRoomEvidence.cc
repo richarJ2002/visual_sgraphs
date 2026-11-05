@@ -58,16 +58,6 @@ SemanticVerifyStatus
                      __func__);
     }
     evidence.context.roomId = room_inId;
-    std::string room_inRoomTag{};
-    if (p_room_in->getRoomTag(room_inRoomTag) !=
-        RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getRoomTag returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    evidence.context.roomTag = room_inRoomTag;
     Eigen::Vector3d room_inCentroid{};
     if (p_room_in->getCentroid(room_inCentroid) !=
         RoomStatus::ROOM_STATUS_SUCCESS)

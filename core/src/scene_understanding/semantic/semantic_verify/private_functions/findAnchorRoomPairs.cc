@@ -7,6 +7,9 @@
 
 #include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
 
+#include <algorithm>
+#include <iterator>
+
 namespace vs_graphs
 {
 namespace core
@@ -14,31 +17,34 @@ namespace core
 namespace semantic
 {
 
-std::vector<MergePair> findAnchorRoomPairs(
-    const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in)
+std::vector<MergePair>
+    findAnchorRoomPairs(const std::vector<Room *> &survivingRooms_in,
+                        const std::vector<Room *> &absorbedRooms_in,
+                        const Room                *p_survivingAnchorRoom_in,
+                        const Room                *p_absorbedAnchorRoom_in)
 {
     std::vector<MergePair> anchorPairs;
-    for (std::size_t absorbedIndex = 0U;
-         absorbedIndex < absorbedRooms_in.size();
-         absorbedIndex++)
+    if (p_survivingAnchorRoom_in == nullptr ||
+        p_absorbedAnchorRoom_in == nullptr)
     {
-        const std::string &absorbedTag =
-            absorbedRooms_in[absorbedIndex].context.roomTag;
-        if (absorbedTag.empty())
-        {
-            continue;
-        }
-        for (std::size_t survivingIndex = 0U;
-             survivingIndex < survivingRooms_in.size();
-             survivingIndex++)
-        {
-            if (survivingRooms_in[survivingIndex].context.roomTag ==
-                absorbedTag)
-            {
-                anchorPairs.push_back({absorbedIndex, survivingIndex});
-            }
-        }
+        return anchorPairs;
+    }
+    const std::vector<Room *>::const_iterator survivingRoom =
+        std::find(survivingRooms_in.begin(),
+                  survivingRooms_in.end(),
+                  p_survivingAnchorRoom_in);
+    const std::vector<Room *>::const_iterator absorbedRoom =
+        std::find(absorbedRooms_in.begin(),
+                  absorbedRooms_in.end(),
+                  p_absorbedAnchorRoom_in);
+    if (survivingRoom != survivingRooms_in.end() &&
+        absorbedRoom != absorbedRooms_in.end())
+    {
+        anchorPairs.push_back(
+            {static_cast<std::size_t>(
+                 std::distance(absorbedRooms_in.begin(), absorbedRoom)),
+             static_cast<std::size_t>(
+                 std::distance(survivingRooms_in.begin(), survivingRoom))});
     }
     return anchorPairs;
 }

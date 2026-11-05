@@ -28,7 +28,6 @@ set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFiniteVector.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/measurePlaneGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallExtentGap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallNormalSpread.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairRooms.cc

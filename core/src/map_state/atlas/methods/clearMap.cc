@@ -46,8 +46,8 @@ AtlasStatus Atlas::clearMap()
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
     /* Same-map reset (Tracking::ResetActiveMap) wipes rooms/floors/passages
      * from the live Map object without creating a new Map. Snapshot first so
-     * the bootstrap recovery path can recreate the same stable identities
-     * afterwards; otherwise the next cycle allocates fresh RoomN/FloorM. */
+     * the bootstrap recovery path can recreate the last-known hierarchy
+     * (under fresh identities) afterwards. */
     if (exportRoomContextFromCurrentMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -799,9 +799,15 @@ void rebuildSemanticIndexes(map::Map *p_currentMap_inout);
  * @brief           Reconciles the semantic graph after a merge: re-associates
  *                  semantic planes, fuses the imported rooms that duplicate a
  *                  room the surviving map already had (paired by wall
- *                  geometry; only the anchor rooms by tag), then re-associates
- *                  rooms and passages. Room fusion always runs; the
- *                  re-associations run only when enabled in the system
+ *                  geometry; only the anchor rooms the gate chose from the
+ *                  map chain link),
+ *                  then re-associates rooms and passages. Before fusing, the
+ *                  surviving map takes over the absorbed map's chain links
+ *                  and every map that was followed by the absorbed map is
+ *                  followed by the surviving map. After fusion every kept
+ *                  imported room and passage is re-keyed from the Atlas
+ *                  identity counters. Room fusion and the re-key always run;
+ *                  the re-associations run only when enabled in the system
  *                  parameters.
  *
  * @param[in,out]   p_atlas_inout
@@ -810,18 +816,32 @@ void rebuildSemanticIndexes(map::Map *p_currentMap_inout);
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
  *
+ * @param[in]       p_mergeMap_in
+ *                  Absorbed map, still in the atlas; its chain links are
+ *                  read.
+ *
  * @param[in]       p_systemParams_in
  *                  System parameters holding the re-association switch.
  *
  * @param[in]       mergeMapContents_in
  *                  Object lists of the absorbed map; its rooms are the imported
  *                  rooms.
+ *
+ * @param[in]       p_retainedAnchorRoom_in
+ *                  Surviving map's room of the anchor pair the merge gate
+ *                  accepted (SemanticMergeGateResult); borrowed, may be null.
+ *
+ * @param[in]       p_importedAnchorRoom_in
+ *                  Absorbed map's room of that pair; borrowed, may be null.
  */
 void reassociateMergedSemantics(
     atlas::Atlas                         *p_atlas_inout,
     map::Map                             *p_currentMap_inout,
+    map::Map                             *p_mergeMap_in,
     const types::SystemParams            *p_systemParams_in,
-    const loop_closing::MergeMapContents &mergeMapContents_in);
+    const loop_closing::MergeMapContents &mergeMapContents_in,
+    semantic::Room                       *p_retainedAnchorRoom_in,
+    semantic::Room                       *p_importedAnchorRoom_in);
 
 /*!
  * @brief           Commits a finished merge: links the two keyframes with merge

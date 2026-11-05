@@ -77,4 +77,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/advanceIdentityAllocator.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/captureRoomContext.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/findRoomBeyondPassageInView.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageOpeningInView.cc
 )

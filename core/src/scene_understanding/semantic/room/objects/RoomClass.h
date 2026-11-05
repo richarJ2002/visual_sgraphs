@@ -216,13 +216,6 @@ class Room
     std::string name;
 
     /*!
-     * @brief           Identity tag carried across map restarts
-     *                  (e.g. "room_5"). Empty when the room has not been
-     *                  matched to a prior-map context.
-     */
-    std::string roomTag;
-
-    /*!
      * @brief           Non-owning pointer to the context snapshot from which
      *                  the room identity was inherited.  nullptr when unset.
      */
@@ -233,12 +226,6 @@ class Room
      *                  or not.
      */
     bool hasKnownLabel{false};
-
-    /*!
-     * @brief           True while identity and topology were restored
-     *                  without fresh map geometry.
-     */
-    bool isMarkedRecoveryProxy{false};
 
     /*!
      * @brief           True once the UAV has entered this room.
@@ -639,57 +626,6 @@ class Room
      *                  New room name.
      */
     [[nodiscard]] RoomStatus setName(std::string name_in);
-
-    /*!
-     * @brief           Returns the persistent room identity tag assigned by
-     *                  Atlas room-context matching.
-     *
-     * @param[out]      roomTag_out
-     *                  Tag string (e.g. "room_5") or an empty string when the
-     *                  room has not been matched to a prior-map context.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus getRoomTag(std::string &roomTag_out) const;
-
-    /*!
-     * @brief           Assigns a persistent room identity tag.
-     *
-     * @param[in]       tag_in
-     *                  Tag string (e.g. "room_5") propagated from a prior map.
-     */
-    [[nodiscard]] RoomStatus setRoomTag(const std::string &tag_in);
-
-    /*!
-     * @brief           Reports whether the room carries a persistent
-     *                  identity tag.
-     *
-     * @param[out]      hasRoomTag_out
-     *                  True when a room tag was assigned.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus hasRoomTag(bool &hasRoomTag_out) const;
-
-    /*!
-     * @brief           Marks identity restored after a map reset but
-     *                  not yet re-observed.
-     *
-     * @param[in]       isRecoveryProxy_in
-     *                  New recovery-proxy flag.
-     */
-    [[nodiscard]] RoomStatus setRecoveryProxy(bool isRecoveryProxy_in);
-
-    /*!
-     * @brief           Returns whether this room still lacks fresh
-     *                  active-map observations.
-     *
-     * @param[out]      isRecoveryProxy_out
-     *                  True while the room is a recovery proxy.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus isRecoveryProxy(bool &isRecoveryProxy_out) const;
 
     /*!
      * @brief           Marks that the UAV has entered this room.

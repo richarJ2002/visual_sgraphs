@@ -289,9 +289,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 p_atlas,
                 p_blankRoomCandidate,
                 cameraPosition_world_m,
-                recoveryContext.has_value()
-                    ? std::optional<int>(recoveryContext->roomId)
-                    : std::nullopt) !=
+                recoveryContext.has_value()) !=
             utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -375,36 +373,6 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        int bootstrapRoomId3{};
-        if (!(recoveryContext.has_value() &&
-              !recoveryContext->roomTag.empty()) &&
-            p_bootstrapRoom->getId(bootstrapRoomId3) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_bootstrapRoom->setRoomTag(
-                recoveryContext.has_value() && !recoveryContext->roomTag.empty()
-                    ? recoveryContext->roomTag
-                    : "room_" + std::to_string(bootstrapRoomId3)) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setRoomTag returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_bootstrapRoom->setRecoveryProxy(recoveryContext.has_value()) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setRecoveryProxy returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
         if (recoveryContext.has_value())
         {
             if (p_bootstrapRoom->setPreviouslyVisited(
@@ -441,11 +409,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     }
     if (p_canonicalFloor == nullptr)
     {
-        const std::optional<int> recoveryFloorId =
-            recoveryContext.has_value() && recoveryContext->floorId >= 0
-                ? std::optional<int>(recoveryContext->floorId)
-                : std::nullopt;
-        if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas, recoveryFloorId) !=
+        if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas) !=
             utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -599,18 +563,22 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
             }
             if (p_recoveryPassage == nullptr)
             {
-                /* New object, stable ID: position, orientation, and aperture
+                /* New object, fresh ID: position, orientation, and aperture
                  * dimensions are not knowable across a map break, so only
                  * frame-free state (passable, traversal history, live links
                  * below) is restored. A zero-sized aperture shrinks geometric
                  * tests to their margin sliver, as before this change. */
                 p_recoveryPassage = new semantic::Passage();
-                if (p_recoveryPassage->setId(passageContext.id) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                int recoveryPassageId{};
+                if (p_atlas->reservePassageIdentity(recoveryPassageId) !=
+                        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
+                    p_recoveryPassage->setId(recoveryPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: setId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
+                                 "%s: reservePassageIdentity/setId returned a "
+                                 "failure status although they cannot fail; "
+                                 "continuing as before.",
                                  __func__);
                 }
                 if (p_recoveryPassage->setMap(p_activeMap) !=
@@ -705,18 +673,9 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 }
             }
 
-            int bootstrapRoomId7{};
-            if ((passageContext.hasKnownSideRoom) &&
-                p_bootstrapRoom->getId(bootstrapRoomId7) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
+            /* Context room ids are the recovered room's previous identity. */
             if (passageContext.hasKnownSideRoom &&
-                passageContext.knownSideRoomId == bootstrapRoomId7)
+                passageContext.knownSideRoomId == recoveryContext->roomId)
             {
                 if (p_recoveryPassage->setKnownSideRoom(p_bootstrapRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -728,18 +687,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                         __func__);
                 }
             }
-            int bootstrapRoomId8{};
-            if ((passageContext.hasFarSideRoom) &&
-                p_bootstrapRoom->getId(bootstrapRoomId8) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
             if (passageContext.hasFarSideRoom &&
-                passageContext.secondaryRoomId == bootstrapRoomId8)
+                passageContext.secondaryRoomId == recoveryContext->roomId)
             {
                 if (p_recoveryPassage->setProspectiveRoom(p_bootstrapRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)

@@ -425,8 +425,3 @@ map_merge:
   room_pair_wall_fraction: 0.6
   # Two rooms pair only when at least this many wall pairs exist.
   room_pair_min_walls: 2
-  # Fewest wall pairs the anchor rooms must show for the merge to be accepted.
-  anchor_min_wall_pairs: 3
-  # The paired anchor walls must contain two normals at least this far apart
-  # (degrees); parallel walls alone do not fix the in-plane translation.
-  anchor_min_normal_spread_deg: 30.0

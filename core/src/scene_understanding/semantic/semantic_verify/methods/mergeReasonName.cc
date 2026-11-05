@@ -63,11 +63,6 @@ SemanticVerifyStatus
         p_name_out = "SHARED_ROOM_IDENTITY_MISSING";
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
-    case SemanticMergeReason::WALL_EVIDENCE_MISSING:
-    {
-        p_name_out = "WALL_EVIDENCE_MISSING";
-        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
-    }
     case SemanticMergeReason::WALL_ALIGNMENT_CONTRADICTION:
     {
         p_name_out = "WALL_ALIGNMENT_CONTRADICTION";

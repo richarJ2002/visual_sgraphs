@@ -10,6 +10,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeRecord.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addRoomWallPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/adoptMergedMapLinks.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyScaledRotation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clear.cc
@@ -45,6 +46,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastBigChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastMapChange.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getLinkedRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLowerKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
@@ -71,6 +73,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/promoteCandidateMapRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/replaceLinkedRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reserveFloorId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reservePlaneId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc

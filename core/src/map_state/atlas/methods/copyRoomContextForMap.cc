@@ -97,25 +97,6 @@ AtlasStatus Atlas::copyRoomContextForMap(
             continue;
         semantic::RoomContextSnapshot snapshot;
         captureRoomContext(p_room, snapshot);
-        bool roomHasRoomTag{};
-        if (p_room->hasRoomTag(roomHasRoomTag) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: hasRoomTag returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        std::string roomTag2{};
-        if ((roomHasRoomTag) && p_room->getRoomTag(roomTag2) !=
-                                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomTag returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        snapshot.roomTag = roomHasRoomTag ? roomTag2 : "";
         snapshots.push_back(std::move(snapshot));
     }
     roomContexts_out = snapshots;

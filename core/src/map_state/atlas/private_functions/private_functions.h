@@ -16,6 +16,8 @@
 #include "map_state/atlas/atlas.h"
 #include "scene_understanding/semantic/room/room.h"
 #include <atomic>
+#include <utility>
+#include <vector>
 
 namespace vs_graphs
 {
@@ -44,7 +46,7 @@ namespace core
  *                  confirmed or candidate variant, boundary status, capture
  *                  time (steady clock) and per wall and per passage geometry in
  *                  the world frame. Callers set the fields it does not touch
- *                  (roomTag, wasPreviouslyVisited).
+ *                  (wasPreviouslyVisited).
  *
  * @param[in]       p_room_in
  *                  Live room to read; must not be null.
@@ -54,6 +56,80 @@ namespace core
  */
 void captureRoomContext(semantic::Room                *p_room_in,
                         semantic::RoomContextSnapshot &snapshot_out);
+
+/*!
+ * @brief           Tells whether a key frame's camera sees the whole opening
+ *                  of a passage: both opening edges (centre plus and minus
+ *                  half the width, across the passage plane) and the centre
+ *                  project inside the image columns (the camera's horizontal
+ *                  field of view) at a depth inside the sensor's range. When
+ *                  the camera sees the opening it sees through it, so the
+ *                  next map may build its first room from walls beyond it.
+ *
+ * @param[in]       p_passage_in
+ *                  Passage to test, in the key frame's map; must not be null.
+ *
+ * @param[in]       p_keyFrame_in
+ *                  Key frame whose pose and intrinsics (fx, cx, image column
+ *                  bounds) are used; must not be null.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Unit up direction of the map's world frame.
+ *
+ * @param[in]       depthRange_m_in
+ *                  Near and far depth limits of the sensor along the camera
+ *                  z axis, metres.
+ *
+ * @param[out]      openingDepth_m_out
+ *                  Depth of the passage centre along the camera z axis,
+ *                  metres; 0 when the opening is not in view.
+ *
+ * @return          True when the whole opening is in view.
+ */
+[[nodiscard]] bool
+    isPassageOpeningInView(semantic::Passage             *p_passage_in,
+                           keyframe::KeyFrame            *p_keyFrame_in,
+                           const Eigen::Vector3d         &upDirection_world_in,
+                           const std::pair<float, float> &depthRange_m_in,
+                           double                        &openingDepth_m_out);
+
+/*!
+ * @brief           Finds the room beyond the passage of the final room that
+ *                  the camera saw when the map was left, the second anchor
+ *                  candidate of the map chain link.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms of the map being left; borrowed, bad rooms skipped.
+ *
+ * @param[in]       p_finalRoom_in
+ *                  Room the robot was in; borrowed, may be null.
+ *
+ * @param[in]       p_keyFrame_in
+ *                  Last key frame of the map; borrowed, may be null.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Unit up direction of the map's world frame.
+ *
+ * @param[in]       depthRange_m_in
+ *                  Near and far depth limits of the sensor, metres.
+ *
+ * @param[out]      p_passageInView_out
+ *                  Passage that gave the room; nullptr when none did.
+ *
+ * @return          Among the final room's passages whose whole opening is in
+ *                  view (isPassageOpeningInView), the nearest one's other
+ *                  room: the other room listing that passage, else the
+ *                  passage's far-side room when it is a room of rooms_in.
+ *                  nullptr when no passage is in view or none has a room
+ *                  beyond it. Borrowed.
+ */
+[[nodiscard]] semantic::Room *
+    findRoomBeyondPassageInView(const std::vector<semantic::Room *> &rooms_in,
+                                semantic::Room        *p_finalRoom_in,
+                                keyframe::KeyFrame    *p_keyFrame_in,
+                                const Eigen::Vector3d &upDirection_world_in,
+                                const std::pair<float, float> &depthRange_m_in,
+                                semantic::Passage *&p_passageInView_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

@@ -110,11 +110,6 @@ struct RoomContextSnapshot
      */
     double                       timestamp{0.0};
     /*!
-     * @brief           Persistent room tag, "room_<roomId>", used to match
-     *                  rooms across maps.
-     */
-    std::string                  roomTag;
-    /*!
      * @brief           True when the room had been promoted to a confirmed
      *                  room at snapshot time, false while it was still a
      *                  candidate.
