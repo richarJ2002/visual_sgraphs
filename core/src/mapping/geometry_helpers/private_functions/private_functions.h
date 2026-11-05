@@ -186,6 +186,39 @@ struct ProjectedPlaneBounds
     bool        &areCompatible_out);
 
 /*!
+ * @brief           Applies the OPPOSITE_FACE test of Utils::findMatchingPlane()
+ *                  to one candidate, in this order: candidate valid,
+ *                  normals parallel, equations and observed centroid valid,
+ *                  face separation within the maximum thickness, both
+ *                  stamped observation origins present, each origin at least
+ *                  0.10 m from both planes, origins on opposite sides of both
+ *                  planes, and footprints on ground-anchored axes overlapping
+ *                  by the minimum ratio.
+ *
+ * @param[in]       observedPlane_in
+ *                  Observed plane evidence; its observer side is the stamped
+ *                  observation origin.
+ *
+ * @param[in]       p_mappedPlane_in
+ *                  Candidate plane, non-owning; may be null.
+ *
+ * @param[in]       matchSettings_in
+ *                  Angle, maximum thickness, minimum overlap ratio and
+ *                  ground normal.
+ *
+ * @param[out]      candidateVerdict_out
+ *                  PLAUSIBLE or the first failed check, with its
+ *                  measurement.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus
+    checkOppositeFacePair(const PlaneEvidence      &observedPlane_in,
+                          geometric::Plane         *p_mappedPlane_in,
+                          const PlaneMatchSettings &matchSettings_in,
+                          PlaneMatchVerdict        &candidateVerdict_out);
+
+/*!
  * @brief           Tests whether a segment traverses a passable passage
  *                  aperture.
  *

@@ -19,6 +19,9 @@
 #ifndef VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_UTILSCLASS_H
 #define VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_UTILSCLASS_H
 
+#include "mapping/geometry_helpers/objects/PlaneEvidenceStruct.h"
+#include "mapping/geometry_helpers/objects/PlaneMatchSettingsStruct.h"
+#include "mapping/geometry_helpers/objects/PlaneMatchVerdictStruct.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
 /*!
@@ -383,72 +386,53 @@ class Utils
                               Eigen::Vector4d>> &planes_out);
 
     /*!
-     * @brief           Checks to see if the given point is on the plane or
-     *                  not.
+     * @brief           Finds the mapped plane that best matches an observed
+     *                  plane under one settings bundle. Compare planes of two
+     *                  maps by transforming one into the other's world frame
+     *                  first.
      *
-     * @param[in]       planeEquation_in
-     *                  Plane equation.
+     *                  SAME_FACE rejects a candidate whose type fails the
+     *                  type rule, whose normal or perpendicular offset is too
+     *                  far off, whose support cloud neither lies near nor
+     *                  extends the observed one, or, for a wall, that was
+     *                  observed from the other side. The best remaining
+     *                  candidate has the lowest weighted sum of angle,
+     *                  offset, centroid and cloud distances.
      *
-     * @param[in]       p_mapPoint_in
-     *                  Borrowed point to be checked; shall be non-null.
-     *
-     * @param[out]      isOnPlane_out
-     *                  True when the point lies within the configured distance
-     *                  of the plane.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        pointOnPlane(Eigen::Vector4d planeEquation_in,
-                     map_point::MapPoint       *p_mapPoint_in,
-                     bool           &isOnPlane_out);
-
-    /*!
-     * @brief           Associates given planes with the mapped planes.
+     *                  OPPOSITE_FACE accepts a candidate that is parallel, no
+     *                  more than the maximum thickness away, observed from
+     *                  the opposite side (stamped observation origins) and
+     *                  overlapping in footprint by the minimum ratio. The
+     *                  accepted candidate with the most observations wins;
+     *                  the earliest wins a tie.
      *
      * @param[in]       mappedPlanes_in
-     *                  Mapped planes.
+     *                  Candidate planes, non-owning; null and bad planes are
+     *                  skipped.
      *
      * @param[in]       observedPlane_in
-     *                  Given plane (in the same frame as the
-     *                  keyframePose_in, global if keyframePose_in is
-     *                  identity).
+     *                  Observed plane evidence, in the candidates' world
+     *                  frame.
      *
-     * @param[in]       p_observedCloud_in
-     *                  Given plane's support cloud.
-     *
-     * @param[in]       keyframePose_in
-     *                  Pose of the current keyframe.
-     *
-     * @param[in]       observedPlaneType_in
-     *                  Observed plane variant.
-     *
-     * @param[in]       threshold_in
-     *                  Threshold value for association.
-     *
-     * @param[in]       maximumFiniteCloudDistance_m_in
-     *                  Optional finite-cloud gap override, in metres.
-     *
-     * @param[in]       observationOrigin_world_m_in
-     *                  Optional observing camera origin in the world frame,
-     *                  in metres, used to keep opposite wall faces separate.
+     * @param[in]       matchSettings_in
+     *                  Match mode, type rule and thresholds.
      *
      * @param[out]      matchedPlaneId_out
-     *                  Plane id of the mapped plane.
+     *                  Id of the best matching mapped plane, or -1 when none
+     *                  matches.
+     *
+     * @param[out]      p_candidateVerdicts_out
+     *                  Optional, may be null. OPPOSITE_FACE fills one verdict
+     *                  per mapped plane, in input order; SAME_FACE clears it.
      *
      * @return          UTILS_STATUS_SUCCESS.
      */
-    [[nodiscard]] static UtilsStatus associatePlanes(
-        const std::vector<geometric::Plane *>       &mappedPlanes_in,
-        g2o::Plane3D                                 observedPlane_in,
-        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
-        const Eigen::Matrix4d                       &keyframePose_in,
-        const geometric::Plane::PlaneVariant         observedPlaneType_in,
-        const float                                  threshold_in,
-        int                                         &matchedPlaneId_out,
-        const float maximumFiniteCloudDistance_m_in = -1.0F,
-        const std::optional<Eigen::Vector3d> &observationOrigin_world_m_in =
-            std::nullopt);
+    [[nodiscard]] static UtilsStatus findMatchingPlane(
+        const std::vector<geometric::Plane *> &mappedPlanes_in,
+        const PlaneEvidence                   &observedPlane_in,
+        const PlaneMatchSettings              &matchSettings_in,
+        int                                   &matchedPlaneId_out,
+        std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out);
 
     /*!
      * @brief           Clusters the point cloud into separate clouds based

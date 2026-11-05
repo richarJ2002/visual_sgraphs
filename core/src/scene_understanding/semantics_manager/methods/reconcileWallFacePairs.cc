@@ -28,7 +28,6 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantic/value_order/value_order.h"
@@ -89,10 +88,17 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
         }
     }
 
-    const double maximumThickness_m =
-        static_cast<double>(p_sysParams->semSeg.wallPairing.maximumThickness_m);
-    const double minimumOverlapRatio = static_cast<double>(
-        p_sysParams->semSeg.wallPairing.minimumOverlapRatio);
+    using utils::utils::TwinFaceCheck;
+
+    utils::utils::PlaneMatchSettings matchSettings{};
+    if (buildWallFaceMatchSettings(groundNormal_world, matchSettings) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: buildWallFaceMatchSettings returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::vector<geometric::Plane *>                  wallPlanes;
     std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
@@ -274,28 +280,31 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                 continue;
             }
 
-            bool          arePlausibleTwinWallFaces2{};
-            TwinFaceCheck decidingCheck{};
-            double        decidingValue{};
-            double        separation1{};
-            if (arePlausibleTwinWallFaces(p_wall,
-                                          p_existingTwin,
-                                          maximumThickness_m,
-                                          minimumOverlapRatio,
-                                          groundNormal_world,
-                                          arePlausibleTwinWallFaces2,
-                                          decidingCheck,
-                                          decidingValue,
-                                          separation1) !=
+            utils::utils::PlaneEvidence wallEvidence{};
+            if (buildWallFaceEvidence(p_wall, wallEvidence) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: arePlausibleTwinWallFaces returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: buildWallFaceEvidence returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
             }
-            if (arePlausibleTwinWallFaces2)
+            int                                          twinMatchId{};
+            std::vector<utils::utils::PlaneMatchVerdict> twinVerdicts{};
+            if (utils::utils::Utils::findMatchingPlane({p_existingTwin},
+                                                       wallEvidence,
+                                                       matchSettings,
+                                                       twinMatchId,
+                                                       &twinVerdicts) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: findMatchingPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (twinMatchId >= 0)
             {
                 continue;
             }
@@ -306,9 +315,9 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             logTwinFaceState(p_wall,
                              p_existingTwin,
                              "UNLINKED",
-                             decidingCheck,
-                             decidingValue,
-                             separation1);
+                             twinVerdicts.front().decidingCheck,
+                             twinVerdicts.front().decidingValue,
+                             twinVerdicts.front().faceSeparation_m);
             if (p_existingTwin->clearTwinFace() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
@@ -346,10 +355,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             continue;
         }
 
-        geometric::Plane *p_bestMatch           = nullptr;
-        double            bestOverlapRatio_m2   = -1.0;
-        double            bestMatchSeparation_m = 0.0;
-
+        /* Candidates are the later walls not yet linked to a twin. */
+        std::vector<geometric::Plane *> candidateWalls;
         for (std::size_t secondIndex = firstIndex + 1;
              secondIndex < wallPlanes.size();
              ++secondIndex)
@@ -364,95 +371,96 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_secondGetTwinFace != nullptr)
+            if (p_secondGetTwinFace == nullptr)
             {
-                continue;
+                candidateWalls.push_back(p_second);
             }
+        }
 
-            bool          arePlausibleTwinWallFaces3{};
-            TwinFaceCheck decidingCheck2{};
-            double        decidingValue2{};
-            double        separation2{};
-            if (arePlausibleTwinWallFaces(p_first,
-                                          p_second,
-                                          maximumThickness_m,
-                                          minimumOverlapRatio,
-                                          groundNormal_world,
-                                          arePlausibleTwinWallFaces3,
-                                          decidingCheck2,
-                                          decidingValue2,
-                                          separation2) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: arePlausibleTwinWallFaces returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            if (!arePlausibleTwinWallFaces3)
-            {
-                /* Only pairs that could be one wall's two faces are worth a
-                 * record: parallel planes no thicker than a wall, or a pair
-                 * that was linked or refused before. */
-                int firstGetId2{};
-                if (p_first->getId(firstGetId2) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int secondGetId{};
-                if (p_second->getId(secondGetId) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                const bool isTwinCandidate =
-                    decidingCheck2 != TwinFaceCheck::INVALID_PLANE &&
-                    decidingCheck2 != TwinFaceCheck::NOT_PARALLEL &&
-                    !(decidingCheck2 == TwinFaceCheck::THICKNESS_OUT_OF_RANGE &&
-                      decidingValue2 > maximumThickness_m);
-                if (isTwinCandidate ||
-                    loggedTwinFaceStates.count(
-                        {std::min(firstGetId2, secondGetId),
-                         std::max(firstGetId2, secondGetId)}) > 0U)
-                {
-                    logTwinFaceState(p_first,
-                                     p_second,
-                                     "REFUSED",
-                                     decidingCheck2,
-                                     decidingValue2,
-                                     separation2);
-                }
-                continue;
-            }
+        utils::utils::PlaneEvidence firstEvidence{};
+        if (buildWallFaceEvidence(p_first, firstEvidence) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: buildWallFaceEvidence returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        int                                          bestMatchId{};
+        std::vector<utils::utils::PlaneMatchVerdict> candidateVerdicts{};
+        if (utils::utils::Utils::findMatchingPlane(candidateWalls,
+                                                   firstEvidence,
+                                                   matchSettings,
+                                                   bestMatchId,
+                                                   &candidateVerdicts) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findMatchingPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-            /* Prefer the most-overlapping plausible candidate when more
-             * than one exists, using observation count as a simple,
-             * deterministic tiebreaker proxy for "most overlap". */
-            std::size_t secondGetObservationCount{};
-            if (p_second->getObservationCount(secondGetObservationCount) !=
+        geometric::Plane *p_bestMatch           = nullptr;
+        double            bestMatchSeparation_m = 0.0;
+
+        for (std::size_t candidateIndex = 0;
+             candidateIndex < candidateWalls.size();
+             ++candidateIndex)
+        {
+            geometric::Plane *p_second = candidateWalls[candidateIndex];
+            const utils::utils::PlaneMatchVerdict &candidateVerdict =
+                candidateVerdicts[candidateIndex];
+            int secondGetId{};
+            if (p_second->getId(secondGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getObservationCount returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
-            const double candidateScore =
-                static_cast<double>(secondGetObservationCount);
-            if (p_bestMatch == nullptr || candidateScore > bestOverlapRatio_m2)
+            if (candidateVerdict.decidingCheck == TwinFaceCheck::PLAUSIBLE)
             {
-                p_bestMatch           = p_second;
-                bestOverlapRatio_m2   = candidateScore;
-                bestMatchSeparation_m = separation2;
+                if (secondGetId == bestMatchId)
+                {
+                    p_bestMatch           = p_second;
+                    bestMatchSeparation_m = candidateVerdict.faceSeparation_m;
+                }
+                continue;
+            }
+
+            /* Only pairs that could be one wall's two faces are worth a
+             * record: parallel planes no thicker than a wall, or a pair
+             * that was linked or refused before. */
+            int firstGetId2{};
+            if (p_first->getId(firstGetId2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            const bool isTwinCandidate =
+                candidateVerdict.decidingCheck !=
+                    TwinFaceCheck::INVALID_PLANE &&
+                candidateVerdict.decidingCheck != TwinFaceCheck::NOT_PARALLEL &&
+                !(candidateVerdict.decidingCheck ==
+                      TwinFaceCheck::THICKNESS_OUT_OF_RANGE &&
+                  candidateVerdict.decidingValue >
+                      matchSettings.maximumThickness_m);
+            if (isTwinCandidate ||
+                loggedTwinFaceStates.count(
+                    {std::min(firstGetId2, secondGetId),
+                     std::max(firstGetId2, secondGetId)}) > 0U)
+            {
+                logTwinFaceState(p_first,
+                                 p_second,
+                                 "REFUSED",
+                                 candidateVerdict.decidingCheck,
+                                 candidateVerdict.decidingValue,
+                                 candidateVerdict.faceSeparation_m);
             }
         }
 

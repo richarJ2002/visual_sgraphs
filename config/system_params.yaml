@@ -86,14 +86,7 @@ seg:
     distance_thresh: 0.12 # meters (Checks if planes are too far apart along normal direction)
     centroid_thresh: 2.5 # meters (Checks if planes centroids are too far apart - will enable check for clustring)
     cluster_separation:
-      enabled: true
       tolerance: 0.35 # euclidean distance for cutting planes
-      downsample:
-        leaf_size: 0.08
-        min_points_per_voxel: 2
-
-  # The maximum distance for point to be considered part of a plane
-  plane_point_dist_thresh: 0.02
 
   ransac:
     # The maximum number of planes to be detected in one pointcloud

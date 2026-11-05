@@ -22,9 +22,9 @@
 #include <pcl/point_types.h>
 
 #include "configuration/types/types.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
-#include "scene_understanding/semantics_manager/objects/TwinFaceCheckEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 
@@ -599,89 +599,40 @@ Eigen::Quaterniond
     bool        &crossesForeignWall_out);
 
 /*!
- * @brief           Tests whether two maps observe a common tagged room name.
+ * @brief           Fills the OPPOSITE_FACE match evidence of a WALL Plane from
+ *                  one geometry snapshot: equation, support cloud and
+ *                  centroid, plus the stamped observation origin as the
+ *                  observer side (left empty when the plane has none).
  *
- *                  A new map is a deterministic merge candidate for the current
- *                  map only when at least one non-empty room tag collected from
- *                  the other map's detected and marker-based rooms also appears
- *                  among the current map's tagged rooms. Room tags originate
- *                  from context snapshots, so they are a stable
- *                  correspondences key between maps.
+ * @param[in]       p_wall_in
+ *                  Wall plane, non-owning and non-null.
  *
- * @param[in]       p_firstMap_in
- *                  Map whose detected and marker-based room tags are collected.
- *
- * @param[in]       p_secondMap_in
- *                  Map whose tagged rooms are tested against the collected
- *                  tags.
- *
- * @param[out]      sharesRoomNameTag_out
- *                  True when both maps observe at least one shared room tag.
+ * @param[out]      wallEvidence_out
+ *                  Evidence for utils::utils::Utils::findMatchingPlane().
  *
  * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticsManagerStatus
-    sharesRoomNameTag(map::Map *p_firstMap_in,
-                      map::Map *p_secondMap_in,
-                      bool     &sharesRoomNameTag_out);
+    buildWallFaceEvidence(geometric::Plane            *p_wall_in,
+                          utils::utils::PlaneEvidence &wallEvidence_out);
 
 /*!
- * @brief           Projects a WALL Plane's finite support cloud onto a shared
- *                  in-plane tangent frame, returning the resulting axis-aligned
- *                  interval.
+ * @brief           Fills the OPPOSITE_FACE settings bundle of the wall-face
+ *                  pairing: room_seg.walls_parallelism_thresh as the angle
+ *                  and sem_seg.wall_pairing.maximum_thickness and
+ *                  minimum_overlap_ratio.
  *
- * @return          false when the plane has no usable geometry (null/empty
- *                  cloud, or a degenerate equation); the caller must treat that
- *                  as "cannot claim overlap" rather than as a zero-size
- *                  interval.
- */
-[[nodiscard]] SemanticsManagerStatus
-    projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
-                                        const Eigen::Vector3d &axisU_world_in,
-                                        const Eigen::Vector3d &axisV_world_in,
-                                        double                &minimumU_m_out,
-                                        double                &maximumU_m_out,
-                                        double                &minimumV_m_out,
-                                        double                &maximumV_m_out,
-                                        bool                  &isProjected_out);
-
-/*!
- * @brief           Decides whether two WALL Planes are plausibly the two
- *                  opposite faces of the same physical wall (axiom (e)):
- *                  parallel, no thicker than the maximum plausible wall
- *                  thickness, observed from opposite exterior sides, and
- *                  overlapping in-plane footprint.
+ * @param[in]       groundNormal_world_in
+ *                  Ground normal in the world frame; zero when unknown.
  *
- * @param[out]      arePlausibleTwinWallFaces_out
- *                  True when every check passes.
- *
- * @param[out]      decidingCheck_out
- *                  PLAUSIBLE, or the first check that failed.
- *
- * @param[out]      decidingValue_out
- *                  Measurement behind decidingCheck_out: the face separation
- *                  in metres for THICKNESS_OUT_OF_RANGE, the smallest
- *                  observation-origin distance from a face plane in metres for
- *                  OBSERVATION_SIDE_UNRESOLVED, the footprint overlap ratio
- *                  for PLAUSIBLE and LOW_OVERLAP; 0 otherwise.
- *
- * @param[out]      separation_m_out
- *                  Measured face separation in metres (the mean distance of
- *                  each face's centroid from the other face's plane), set
- *                  whenever the thickness calculation is reached; 0 otherwise.
+ * @param[out]      matchSettings_out
+ *                  Settings for utils::utils::Utils::findMatchingPlane().
  *
  * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
-[[nodiscard]] SemanticsManagerStatus
-    arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
-                              geometric::Plane      *p_second_in,
-                              double                 maximumThickness_m_in,
-                              double                 minimumOverlapRatio_in,
-                              const Eigen::Vector3d &groundNormal_world_in,
-                              bool          &arePlausibleTwinWallFaces_out,
-                              TwinFaceCheck &decidingCheck_out,
-                              double        &decidingValue_out,
-                              double        &separation_m_out);
+[[nodiscard]] SemanticsManagerStatus buildWallFaceMatchSettings(
+    const Eigen::Vector3d            &groundNormal_world_in,
+    utils::utils::PlaneMatchSettings &matchSettings_out);
 
 /*!
  * @brief           Measures the openings through one wall from its Voxblox

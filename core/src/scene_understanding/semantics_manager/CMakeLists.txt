@@ -78,8 +78,9 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateTraversalEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/validateRoomBoundaries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/validateRoomBoundariesForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/arePlausibleTwinWallFaces.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildFiniteWallSegment2d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceEvidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceMatchSettings.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computePolygonArea_m2.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomObservationGaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRotationBetweenDirections.cc
@@ -91,12 +92,10 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneFootprintOntoSharedAxes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/refineWallGapFromPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/sharesRoomNameTag.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc
 )
 

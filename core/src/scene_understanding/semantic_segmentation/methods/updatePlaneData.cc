@@ -196,20 +196,34 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (utils::utils::Utils::associatePlanes(
-                    atlasAllPlanes,
-                    globalEquation,
-                    p_globalPlaneCloud,
-                    Eigen::Matrix4d::Identity(),
-                    semanticType,
-                    p_sysParams->seg.planeAssociation.ominusThresh,
-                    matchedPlaneId,
-                    -1.0F,
-                    keyFrameCameraCenter.cast<double>()) !=
+            utils::utils::PlaneEvidence observedPlane{};
+            observedPlane.planeEquation_world    = globalEquation.coeffs();
+            observedPlane.p_supportCloud_world_m = p_globalPlaneCloud;
+            observedPlane.planeLabel             = semanticType;
+            observedPlane.observerSide =
+                Eigen::Vector3d(keyFrameCameraCenter.cast<double>());
+
+            utils::utils::PlaneMatchSettings matchSettings{};
+            matchSettings.typeRule =
+                utils::utils::PlaneTypeRule::EXPECTED_TYPE_OR_UNDEFINED;
+            matchSettings.maximumAngle_rad = static_cast<double>(
+                p_sysParams->seg.planeAssociation.ominusThresh);
+            matchSettings.maximumPlaneDistance_m = static_cast<double>(
+                p_sysParams->seg.planeAssociation.distanceThresh);
+            matchSettings.maximumCentroidDistance_m = static_cast<double>(
+                p_sysParams->seg.planeAssociation.centroidThresh);
+            matchSettings.maximumCloudGap_m = static_cast<double>(
+                p_sysParams->seg.planeAssociation.clusterSeparation.tolerance);
+
+            if (utils::utils::Utils::findMatchingPlane(atlasAllPlanes,
+                                                       observedPlane,
+                                                       matchSettings,
+                                                       matchedPlaneId,
+                                                       nullptr) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: associatePlanes returned a failure status "
+                             "%s: findMatchingPlane returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
             }

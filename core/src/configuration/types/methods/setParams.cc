@@ -96,29 +96,16 @@ SystemParamsStatus
         /* Common Segmentation Parameters */
         seg.pointcloudsThresh =
             config["seg"]["pointclouds_thresh"].as<unsigned int>();
-        seg.planePointDistThresh =
-            config["seg"]["plane_point_dist_thresh"].as<float>();
         seg.planeAssociation.ominusThresh =
             config["seg"]["plane_association"]["ominus_thresh"].as<float>();
         seg.planeAssociation.distanceThresh =
             config["seg"]["plane_association"]["distance_thresh"].as<float>();
         seg.planeAssociation.centroidThresh =
             config["seg"]["plane_association"]["centroid_thresh"].as<float>();
-        seg.planeAssociation.clusterSeparation.enabled =
-            config["seg"]["plane_association"]["cluster_separation"]["enabled"]
-                .as<bool>();
         seg.planeAssociation.clusterSeparation.tolerance =
             config["seg"]["plane_association"]["cluster_separation"]
                   ["tolerance"]
                       .as<float>();
-        seg.planeAssociation.clusterSeparation.downsample.leafSize =
-            config["seg"]["plane_association"]["cluster_separation"]
-                  ["downsample"]["leaf_size"]
-                      .as<float>();
-        seg.planeAssociation.clusterSeparation.downsample.minPointsPerVoxel =
-            config["seg"]["plane_association"]["cluster_separation"]
-                  ["downsample"]["min_points_per_voxel"]
-                      .as<unsigned int>();
         seg.ransac.maxPlanes =
             config["seg"]["ransac"]["max_planes"].as<unsigned int>();
         seg.ransac.distanceThresh =

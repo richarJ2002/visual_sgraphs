@@ -19,12 +19,11 @@
 /*!
  * @file            TwinFaceCheckEnum.h
  *
- * @brief           Declares the outcome of the twin-wall-face plausibility
- *                  test.
+ * @brief           Declares which check decided an OPPOSITE_FACE plane match.
  */
 
-#ifndef VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_TWIN_FACE_CHECK_ENUM_H
-#define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_TWIN_FACE_CHECK_ENUM_H
+#ifndef VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_TWINFACECHECKENUM_H
+#define VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_TWINFACECHECKENUM_H
 
 #include <cstdint>
 
@@ -32,9 +31,13 @@ namespace vs_graphs
 {
 namespace core
 {
+namespace utils
+{
+namespace utils
+{
 
 /*!
- * @brief           Which check of arePlausibleTwinWallFaces() decided the
+ * @brief           Which check of an OPPOSITE_FACE match decided the
  *                  result, in the order the checks run. Values are fixed and
  *                  never reordered.
  */
@@ -46,8 +49,8 @@ enum class TwinFaceCheck : std::uint8_t
     PLAUSIBLE = 0U,
 
     /*!
-     * @brief           A plane is null or bad, both are the same plane, or an
-     *                  equation is degenerate.
+     * @brief           The candidate is null or bad, an equation is
+     *                  degenerate, or the observed plane has no centroid.
      */
     INVALID_PLANE = 1U,
 
@@ -91,8 +94,9 @@ enum class TwinFaceCheck : std::uint8_t
     LOW_OVERLAP = 8U
 };
 
+} /* namespace utils */
+} /* namespace utils */
 } /* namespace core */
 } /* namespace vs_graphs */
 
-#endif /* VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_TWIN_FACE_CHECK_ENUM_H  \
-        */
+#endif /* VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_TWINFACECHECKENUM_H */

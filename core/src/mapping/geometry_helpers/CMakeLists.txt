@@ -5,7 +5,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesFacingEachOther.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesParallel.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesPerpendicular.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/associatePlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/calcSoftMin.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateDistancePointToPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateEuclideanDistance.cc
@@ -14,12 +13,12 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/computePlaneWidthHeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateProvisionalRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/correctPlaneDirection.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findMatchingPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/fuseDuplicateRoomsAfterMerge.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getClassIdFromPlaneType.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFacingPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneTypeFromClassId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/lineIntersectsPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/pointOnPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDistanceFilter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDownsample.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/propagateSemanticPoseCorrections.cc
@@ -27,6 +26,7 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/reAssociatePassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reAssociateRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reAssociateSemanticPlanes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkOppositeFacePair.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteWallExtentsAreCompatible.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/observationSide.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/passageOpening.cc

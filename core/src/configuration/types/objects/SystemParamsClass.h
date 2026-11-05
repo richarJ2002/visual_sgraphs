@@ -322,12 +322,6 @@ class SystemParams
          *                  a plane is searched in it.
          */
         unsigned int pointcloudsThresh = 200;
-        /*!
-         * @brief           Largest distance from a map point to a plane,
-         *                  metres, for the point to count as lying on the
-         *                  plane.
-         */
-        float        planePointDistThresh = 0.2f;
 
         /*!
          * @brief           Thresholds that decide whether two plane
@@ -360,23 +354,10 @@ class SystemParams
             struct ClusterSeparation
             {
                 /*!
-                 * @brief           Enables finite point-cloud compatibility
-                 *                  checking.
-                 */
-                bool enabled = true;
-
-                /*!
                  * @brief           Maximum point-cloud gap for neighbouring
                  *                  fragments of one plane.
                  */
                 float tolerance = 0.35f;
-
-                /*!
-                 * @brief           Voxel filter intended for the plane cloud
-                 *                  before fragments are separated. Loaded from
-                 *                  YAML but not read anywhere yet.
-                 */
-                Downsample downsample;
             };
             /*!
              * @brief           Settings for splitting one plane's cloud into
@@ -759,7 +740,7 @@ class SystemParams
              */
             bool  enabled = false;
             /*!
-             * @brief           Association threshold passed to associatePlanes
+             * @brief           Normal-angle threshold, in radians, used
              *                  when a plane is matched against the others
              *                  during re-association.
              */

@@ -131,7 +131,7 @@ SemanticsManagerStatus
     }
 
     /* Matches the resolvable-side floor already used by the association path
-     * (utils::utils::Utils::associatePlanes) and
+     * (utils::utils::Utils::findMatchingPlane) and
      * Plane::getObservationSideSnapshot(): a position essentially ON the plane
      * does not identify a side. */
     constexpr double minimumResolvableSide_m = 0.10;

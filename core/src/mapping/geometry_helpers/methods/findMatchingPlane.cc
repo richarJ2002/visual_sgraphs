@@ -17,10 +17,10 @@
  */
 
 /*!
- * @file            associatePlanes.cc
+ * @file            findMatchingPlane.cc
  *
- * @brief           Implements Utils::associatePlanes(), declared in
- *                  Utils/Utils/objects/Utils.h.
+ * @brief           Implements Utils::findMatchingPlane(), declared in
+ *                  mapping/geometry_helpers/objects/UtilsClass.h.
  */
 
 #include "mapping/geometry_helpers/private_functions/private_functions.h"
@@ -34,6 +34,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <variant>
 
 #include <pcl/common/point_tests.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -48,17 +49,85 @@ namespace utils
 namespace utils
 {
 
-UtilsStatus Utils::associatePlanes(
-    const std::vector<geometric::Plane *>       &mappedPlanes_in,
-    g2o::Plane3D                                 observedPlane_in,
-    pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
-    const Eigen::Matrix4d                       &keyframePose_in,
-    const geometric::Plane::PlaneVariant         observedPlaneType_in,
-    const float                                  threshold_in,
-    int                                         &matchedPlaneId_out,
-    const float                           maximumFiniteCloudDistance_m_in,
-    const std::optional<Eigen::Vector3d> &observationOrigin_world_m_in)
+UtilsStatus Utils::findMatchingPlane(
+    const std::vector<geometric::Plane *> &mappedPlanes_in,
+    const PlaneEvidence                   &observedPlane_in,
+    const PlaneMatchSettings              &matchSettings_in,
+    int                                   &matchedPlaneId_out,
+    std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out)
 {
+    if (p_candidateVerdicts_out != nullptr)
+    {
+        p_candidateVerdicts_out->clear();
+    }
+
+    if (matchSettings_in.matchMode == PlaneMatchMode::OPPOSITE_FACE)
+    {
+        /* Most observations wins; the earliest candidate wins a tie. */
+        matchedPlaneId_out = -1;
+
+        std::size_t bestObservationCount = 0U;
+
+        for (geometric::Plane *p_mappedPlane : mappedPlanes_in)
+        {
+            PlaneMatchVerdict candidateVerdict{};
+            if (checkOppositeFacePair(observedPlane_in,
+                                      p_mappedPlane,
+                                      matchSettings_in,
+                                      candidateVerdict) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: checkOppositeFacePair returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
+            }
+            if (p_candidateVerdicts_out != nullptr)
+            {
+                p_candidateVerdicts_out->push_back(candidateVerdict);
+            }
+            if (candidateVerdict.decidingCheck != TwinFaceCheck::PLAUSIBLE)
+            {
+                continue;
+            }
+
+            std::size_t observationCount{};
+            if (p_mappedPlane->getObservationCount(observationCount) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservationCount returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
+            }
+            if (matchedPlaneId_out < 0 ||
+                observationCount > bestObservationCount)
+            {
+                int mappedPlaneId{};
+                if (p_mappedPlane->getId(mappedPlaneId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                matchedPlaneId_out   = mappedPlaneId;
+                bestObservationCount = observationCount;
+            }
+        }
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
+
+    /* SAME_FACE from here on. */
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_observedCloud =
+        observedPlane_in.p_supportCloud_world_m;
+    const geometric::Plane::PlaneVariant observedLabel =
+        observedPlane_in.planeLabel;
+
     /* Return no association when no mapped planes are available */
     if (mappedPlanes_in.empty())
     {
@@ -67,7 +136,7 @@ UtilsStatus Utils::associatePlanes(
     }
 
     /* Confirm the observed plane point cloud is valid */
-    if (p_observedCloud_in == nullptr || p_observedCloud_in->empty())
+    if (p_observedCloud == nullptr || p_observedCloud->empty())
     {
         matchedPlaneId_out = -1;
         return UtilsStatus::UTILS_STATUS_SUCCESS;
@@ -84,8 +153,11 @@ UtilsStatus Utils::associatePlanes(
                      __func__);
     }
 
-    /* Extract and normalize the observed plane equation */
-    Eigen::Vector4d givenEquation   = observedPlane_in.coeffs();
+    /*!
+     * Normalize the observed equation by its normal length only, keeping its
+     * sign: an observing-camera snapshot is taken against this orientation.
+     */
+    Eigen::Vector4d givenEquation   = observedPlane_in.planeEquation_world;
     const double    givenNormalNorm = givenEquation.head<3>().norm();
 
     /* Confirm norm is valid */
@@ -103,7 +175,7 @@ UtilsStatus Utils::associatePlanes(
 
     std::size_t validGivenPointCount = 0;
 
-    for (const pcl::PointXYZRGBA &point : p_observedCloud_in->points)
+    for (const pcl::PointXYZRGBA &point : p_observedCloud->points)
     {
         if (!pcl::isFinite(point))
         {
@@ -126,38 +198,43 @@ UtilsStatus Utils::associatePlanes(
 
     givenCentroid /= static_cast<double>(validGivenPointCount);
 
-    /*!
-     * Association thresholds.
-     *
-     * @note            The ominus threshold_in is used here as the maximum
-     *                  angular difference in radians.
-     */
+    /* Association thresholds, each raised to a floor. */
     const double maximumAngularDifference =
-        std::max(0.01, static_cast<double>(threshold_in));
+        std::max(0.01, matchSettings_in.maximumAngle_rad);
 
-    const double maximumPlaneDistance = std::max(
-        0.01,
-        static_cast<double>(p_sysParams->seg.planeAssociation.distanceThresh));
+    const double maximumPlaneDistance =
+        std::max(0.01, matchSettings_in.maximumPlaneDistance_m);
 
-    const double maximumCentroidDistance = std::max(
-        0.10,
-        static_cast<double>(p_sysParams->seg.planeAssociation.centroidThresh));
+    const double maximumCentroidDistance =
+        std::max(0.10, matchSettings_in.maximumCentroidDistance_m);
 
     const bool useWallExtension =
-        observedPlaneType_in == geometric::Plane::PlaneVariant::WALL &&
+        observedLabel == geometric::Plane::PlaneVariant::WALL &&
         p_sysParams->semSeg.reassociate.wallExtension.enabled;
 
-    const double configuredFiniteCloudDistance_m =
-        maximumFiniteCloudDistance_m_in > 0.0F
-            ? static_cast<double>(maximumFiniteCloudDistance_m_in)
-        : useWallExtension
+    const double maximumFiniteCloudDistance = std::max(
+        0.05,
+        useWallExtension
             ? static_cast<double>(p_sysParams->semSeg.reassociate.wallExtension
                                       .maximumInPlaneGap_m)
-            : static_cast<double>(p_sysParams->seg.planeAssociation
-                                      .clusterSeparation.tolerance);
+            : matchSettings_in.maximumCloudGap_m);
 
-    const double maximumFiniteCloudDistance =
-        std::max(0.05, configuredFiniteCloudDistance_m);
+    /*!
+     * Observer side of a wall: one camera centre, compared per mapped
+     * equation below, or the observing cameras of a mapped plane.
+     */
+    const Eigen::Vector3d *p_cameraCentre_world_m =
+        std::get_if<Eigen::Vector3d>(&observedPlane_in.observerSide);
+    const geometric::Plane::ObservationSideSnapshot *p_observingCameras =
+        std::get_if<geometric::Plane::ObservationSideSnapshot>(
+            &observedPlane_in.observerSide);
+
+    const bool hasCameraCentre = p_cameraCentre_world_m != nullptr &&
+                                 p_cameraCentre_world_m->allFinite();
+
+    const bool checkObserverSide =
+        observedLabel == geometric::Plane::PlaneVariant::WALL &&
+        (hasCameraCentre || p_observingCameras != nullptr);
 
     /*!
      * Minimum fraction of sampled observation points which must be close to
@@ -169,6 +246,12 @@ UtilsStatus Utils::associatePlanes(
      * Limit the number of nearest-neighbour searches for each candidate.
      */
     constexpr std::size_t maximumSampleCount = 300;
+
+    /*!
+     * A camera centre closer to the plane than this does not identify a
+     * side, in metres.
+     */
+    constexpr double minimumReliableSideDistance_m = 0.10;
 
     /* Track the best mapped-plane candidate */
     int bestPlaneId = -1;
@@ -219,8 +302,8 @@ UtilsStatus Utils::associatePlanes(
          * A mapped UNDEFINED plane is allowed to match a semantically labelled
          * observation so that it can accumulate enough votes for confirmation.
          */
-        geometric::Plane::PlaneVariant mappedPlaneType{};
-        if (p_mappedPlane->getExpectedPlaneType(mappedPlaneType) !=
+        geometric::Plane::PlaneVariant mappedExpectedType{};
+        if (p_mappedPlane->getExpectedPlaneType(mappedExpectedType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -229,38 +312,33 @@ UtilsStatus Utils::associatePlanes(
                          __func__);
         }
 
-        const bool semanticTypesCompatible =
-            observedPlaneType_in == geometric::Plane::PlaneVariant::UNDEFINED ||
-            mappedPlaneType == geometric::Plane::PlaneVariant::UNDEFINED ||
-            mappedPlaneType == observedPlaneType_in;
+        bool semanticTypesCompatible =
+            observedLabel == geometric::Plane::PlaneVariant::UNDEFINED ||
+            mappedExpectedType == geometric::Plane::PlaneVariant::UNDEFINED ||
+            mappedExpectedType == observedLabel;
+
+        if (matchSettings_in.typeRule == PlaneTypeRule::CONFIRMED_TYPE_STRICT)
+        {
+            geometric::Plane::PlaneVariant mappedConfirmedType{};
+            if (p_mappedPlane->getPlaneType(mappedConfirmedType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            semanticTypesCompatible =
+                semanticTypesCompatible && mappedConfirmedType == observedLabel;
+        }
 
         if (!semanticTypesCompatible)
         {
             continue;
         }
 
-        /*!
-         * Transform the mapped equation into the frame used by the supplied
-         * observation.
-         *
-         * @note            SemanticSegmentation now supplies both planes in the
-         *                               global frame, therefore keyframePose_in
-         *                               is normally
-         *                  identity.
-         */
-        g2o::Plane3D mappedPlaneInGivenFrame{};
-        if (Utils::applyPoseToPlane(
-                keyframePose_in,
-                g2o::Plane3D(mappedGeometry.planeEquation_world),
-                mappedPlaneInGivenFrame) != UtilsStatus::UTILS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyPoseToPlane returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
+        /* Normalize the mapped equation; both are in the world frame. */
+        Eigen::Vector4d mappedEquation = mappedGeometry.planeEquation_world;
 
         const double mappedNormalNorm = mappedEquation.head<3>().norm();
 
@@ -280,10 +358,12 @@ UtilsStatus Utils::associatePlanes(
             mappedEquation *= -1.0;
         }
 
-        /* Keep observations from opposite sides as distinct wall faces. */
-        if (observedPlaneType_in == geometric::Plane::PlaneVariant::WALL &&
-            observationOrigin_world_m_in.has_value() &&
-            observationOrigin_world_m_in->allFinite())
+        /*!
+         * Keep wall faces observed from opposite sides apart. Their equations
+         * can be nearly identical when the wall is thinner than the distance
+         * threshold, but they bound different rooms.
+         */
+        if (checkObserverSide)
         {
             ObservationSideEvidence mappedObservationSide{};
             if (getMedianObservationSide_world_m(p_mappedPlane,
@@ -291,29 +371,45 @@ UtilsStatus Utils::associatePlanes(
                                                  mappedObservationSide) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                /*!
-                 * getMedianObservationSide_world_m cannot fail; continue as
-                 * before.
-                 */
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMedianObservationSide_world_m returned a "
+                             "failure status although it cannot fail; "
+                             "continuing as before.",
+                             __func__);
             }
 
-            const double givenObservationSide_m =
-                mappedEquation.head<3>().dot(
-                    observationOrigin_world_m_in.value()) +
-                mappedEquation(3);
+            std::optional<double> givenObservationSide_m{};
+            bool                  givenSideIsAmbiguous = false;
 
-            constexpr double minimumReliableSideDistance_m = 0.10;
+            if (hasCameraCentre)
+            {
+                const double cameraSide_m =
+                    mappedEquation.head<3>().dot(*p_cameraCentre_world_m) +
+                    mappedEquation(3);
 
-            if (mappedObservationSide.isAmbiguous)
+                if (std::abs(cameraSide_m) >= minimumReliableSideDistance_m)
+                {
+                    givenObservationSide_m = cameraSide_m;
+                }
+            }
+            else
+            {
+                givenObservationSide_m =
+                    p_observingCameras->medianSignedDistance_m;
+                givenSideIsAmbiguous =
+                    p_observingCameras->face ==
+                    geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS;
+            }
+
+            if (givenSideIsAmbiguous || mappedObservationSide.isAmbiguous)
             {
                 continue;
             }
 
-            if (mappedObservationSide.medianSignedDistance_m.has_value() &&
-                std::abs(givenObservationSide_m) >=
-                    minimumReliableSideDistance_m &&
-                mappedObservationSide.medianSignedDistance_m.value() *
-                        givenObservationSide_m <
+            if (givenObservationSide_m.has_value() &&
+                mappedObservationSide.medianSignedDistance_m.has_value() &&
+                givenObservationSide_m.value() *
+                        mappedObservationSide.medianSignedDistance_m.value() <
                     0.0)
             {
                 continue;
@@ -348,7 +444,7 @@ UtilsStatus Utils::associatePlanes(
         if ((useWallExtension) &&
             finiteWallExtentsAreCompatible(
                 p_mappedCloud,
-                p_observedCloud_in,
+                p_observedCloud,
                 mappedEquation.head<3>(),
                 p_sysParams->semSeg.reassociate.wallExtension
                     .maximumInPlaneGap_m,
@@ -382,9 +478,9 @@ UtilsStatus Utils::associatePlanes(
 
         mappedCloudSearch.setInputCloud(p_mappedCloud);
 
-        const std::size_t samplingStride = std::max<std::size_t>(
-            1,
-            p_observedCloud_in->size() / maximumSampleCount);
+        const std::size_t samplingStride =
+            std::max<std::size_t>(1,
+                                  p_observedCloud->size() / maximumSampleCount);
 
         std::size_t sampledPointCount     = 0;
         std::size_t overlappingPointCount = 0;
@@ -395,12 +491,11 @@ UtilsStatus Utils::associatePlanes(
 
         std::vector<float> nearestSquaredDistance(1);
 
-        for (std::size_t pointIndex = 0;
-             pointIndex < p_observedCloud_in->size();
+        for (std::size_t pointIndex = 0; pointIndex < p_observedCloud->size();
              pointIndex += samplingStride)
         {
             const pcl::PointXYZRGBA &queryPoint =
-                p_observedCloud_in->points[pointIndex];
+                p_observedCloud->points[pointIndex];
 
             if (!pcl::isFinite(queryPoint))
             {

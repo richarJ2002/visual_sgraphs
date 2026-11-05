@@ -367,31 +367,43 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                 }
 
                 /* Attach the opposite face of the same physical wall. */
-                geometric::Plane *p_anchorWall = passageWalls.front();
-                bool              isTwinFace   = false;
-                TwinFaceCheck     twinFaceCheck{};
-                double            twinFaceValue{};
-                double            twinFaceSeparation{};
-                if (arePlausibleTwinWallFaces(
-                        p_wall,
-                        p_anchorWall,
-                        static_cast<double>(
-                            p_sysParams->semSeg.wallPairing.maximumThickness_m),
-                        static_cast<double>(p_sysParams->semSeg.wallPairing
-                                                .minimumOverlapRatio),
-                        groundNormal_world,
-                        isTwinFace,
-                        twinFaceCheck,
-                        twinFaceValue,
-                        twinFaceSeparation) !=
+                geometric::Plane           *p_anchorWall = passageWalls.front();
+                utils::utils::PlaneEvidence wallEvidence{};
+                if (buildWallFaceEvidence(p_wall, wallEvidence) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: arePlausibleTwinWallFaces returned a "
-                                 "failure status although it "
-                                 "cannot fail; continuing as before.",
+                                 "%s: buildWallFaceEvidence returned a "
+                                 "failure status although it cannot fail; "
+                                 "continuing as before.",
                                  __func__);
                 }
+                utils::utils::PlaneMatchSettings twinMatchSettings{};
+                if (buildWallFaceMatchSettings(groundNormal_world,
+                                               twinMatchSettings) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: buildWallFaceMatchSettings returned a "
+                                 "failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
+                int twinMatchId{};
+                if (utils::utils::Utils::findMatchingPlane({p_anchorWall},
+                                                           wallEvidence,
+                                                           twinMatchSettings,
+                                                           twinMatchId,
+                                                           nullptr) !=
+                    utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: findMatchingPlane returned a failure "
+                                 "status although it cannot fail; continuing "
+                                 "as before.",
+                                 __func__);
+                }
+                const bool   isTwinFace = twinMatchId >= 0;
                 g2o::Plane3D anchorEquation{};
                 if (p_anchorWall->getGlobalEquation(anchorEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)

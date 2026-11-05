@@ -61,7 +61,6 @@ These parameters are grouped under the `seg` category and define common settings
 | -------- | -------------------------- | ----------------- | ------------------------------------------------------------------------ |
 | `seg`    | `pointclouds_thresh`       | —                 | Minimum number of points required to fit a plane                         |
 | `seg`    | `plane_association_thresh` | —                 | Minimum ominus threshold to consider two planes as the same              |
-| `seg`    | `plane_point_dist_thresh`  | —                 | Maximum distance a point can be from a plane to be considered part of it |
 | `seg`    | `plane_cutting_threshold`  | —                 | Maximum spatial separation between two planes to avoid being segmented   |
 | `seg`    | `ransac`                   | `max_planes`      | Maximum number of planes to extract from a single point cloud            |
 | `seg`    | `ransac`                   | `distance_thresh` | Maximum distance from a point to a plane to be considered an inlier      |

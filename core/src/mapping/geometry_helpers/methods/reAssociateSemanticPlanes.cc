@@ -23,7 +23,6 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
@@ -116,200 +115,23 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                 continue;
             }
 
-            std::vector<geometric::Plane *> compatiblePlanes;
-            compatiblePlanes.reserve(mappedPlanes.size());
+            /*!
+             * Every other plane is a candidate; the matcher applies the strict
+             * type rule and keeps wall faces seen from opposite sides apart.
+             */
+            std::vector<geometric::Plane *> otherPlanes;
+            otherPlanes.reserve(mappedPlanes.size());
 
             for (geometric::Plane *p_otherPlane : mappedPlanes)
             {
-                bool otherPlaneIsBad{};
-                if (!(p_otherPlane == nullptr ||
-                      p_otherPlane == p_candidatePlane) &&
-                    p_otherPlane->isBad(otherPlaneIsBad) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                if (p_otherPlane != p_candidatePlane)
                 {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
+                    otherPlanes.push_back(p_otherPlane);
                 }
-                geometric::Plane::PlaneVariant otherPlanePlaneType{};
-                if (!(p_otherPlane == nullptr ||
-                      p_otherPlane == p_candidatePlane || otherPlaneIsBad) &&
-                    p_otherPlane->getPlaneType(otherPlanePlaneType) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneType returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                geometric::Plane::PlaneVariant candidatePlanePlaneType2{};
-                if (!(p_otherPlane == nullptr ||
-                      p_otherPlane == p_candidatePlane || otherPlaneIsBad) &&
-                    p_candidatePlane->getPlaneType(candidatePlanePlaneType2) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneType returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (p_otherPlane == nullptr ||
-                    p_otherPlane == p_candidatePlane || otherPlaneIsBad ||
-                    otherPlanePlaneType != candidatePlanePlaneType2)
-                {
-                    continue;
-                }
-
-                /*
-                 * Never merge wall faces observed from opposite sides. Their
-                 * equations can be nearly identical when wall thickness is
-                 * below the association threshold, but they bound different
-                 * rooms and require independent ownership.
-                 */
-                geometric::Plane::PlaneVariant candidatePlanePlaneType3{};
-                if (p_candidatePlane->getPlaneType(candidatePlanePlaneType3) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneType returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (candidatePlanePlaneType3 ==
-                    geometric::Plane::PlaneVariant::WALL)
-                {
-                    geometric::Plane::GeometrySnapshot candidateGeometry{};
-                    if (p_candidatePlane->getGeometrySnapshot(
-                            candidateGeometry) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getGeometrySnapshot returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    geometric::Plane::GeometrySnapshot otherGeometry{};
-                    if (p_otherPlane->getGeometrySnapshot(otherGeometry) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getGeometrySnapshot returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    Eigen::Vector4d candidateEquation_world =
-                        candidateGeometry.planeEquation_world;
-                    Eigen::Vector4d otherEquation_world =
-                        otherGeometry.planeEquation_world;
-
-                    const double candidateNormalNorm =
-                        candidateEquation_world.head<3>().norm();
-                    const double otherNormalNorm =
-                        otherEquation_world.head<3>().norm();
-
-                    if (candidateEquation_world.allFinite() &&
-                        otherEquation_world.allFinite() &&
-                        candidateNormalNorm >= 1e-8 && otherNormalNorm >= 1e-8)
-                    {
-                        candidateEquation_world /= candidateNormalNorm;
-                        otherEquation_world /= otherNormalNorm;
-
-                        if (candidateEquation_world.head<3>().dot(
-                                otherEquation_world.head<3>()) < 0.0)
-                        {
-                            otherEquation_world *= -1.0;
-                        }
-
-                        ObservationSideEvidence candidateObservationSide{};
-                        if (getMedianObservationSide_world_m(
-                                p_candidatePlane,
-                                candidateEquation_world,
-                                candidateObservationSide) !=
-                            UtilsStatus::UTILS_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getMedianObservationSide_world_m returned "
-                                "a failure status although it cannot fail; "
-                                "continuing as before.",
-                                __func__);
-                        }
-                        ObservationSideEvidence otherObservationSide{};
-                        if (getMedianObservationSide_world_m(
-                                p_otherPlane,
-                                otherEquation_world,
-                                otherObservationSide) !=
-                            UtilsStatus::UTILS_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getMedianObservationSide_world_m returned "
-                                "a failure status although it cannot fail; "
-                                "continuing as before.",
-                                __func__);
-                        }
-
-                        if (candidateObservationSide.isAmbiguous ||
-                            otherObservationSide.isAmbiguous)
-                        {
-                            continue;
-                        }
-
-                        if (candidateObservationSide.medianSignedDistance_m
-                                .has_value() &&
-                            otherObservationSide.medianSignedDistance_m
-                                .has_value() &&
-                            candidateObservationSide.medianSignedDistance_m
-                                        .value() *
-                                    otherObservationSide.medianSignedDistance_m
-                                        .value() <
-                                0.0)
-                        {
-                            continue;
-                        }
-
-                        /* Finite support is checked once by associatePlanes(),
-                         * including nearest-neighbour partial overlap. */
-                    }
-                }
-
-                compatiblePlanes.push_back(p_otherPlane);
             }
 
-            if (compatiblePlanes.empty())
-            {
-                continue;
-            }
-
-            geometric::Plane::PlaneVariant candidatePlanePlaneType4{};
-            if (p_candidatePlane->getPlaneType(candidatePlanePlaneType4) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getPlaneType returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const bool useWallExtensionDistance =
-                candidatePlanePlaneType4 ==
-                    geometric::Plane::PlaneVariant::WALL &&
-                p_systemParams->semSeg.reassociate.wallExtension.enabled;
-
-            const float maximumFiniteCloudDistance_m =
-                useWallExtensionDistance
-                    ? p_systemParams->semSeg.reassociate.wallExtension
-                          .maximumInPlaneGap_m
-                    : -1.0F;
-
-            geometric::Plane::GeometrySnapshot candidateAssociationGeometry{};
-            if (p_candidatePlane->getGeometrySnapshot(
-                    candidateAssociationGeometry) !=
+            geometric::Plane::GeometrySnapshot candidateMatchGeometry{};
+            if (p_candidatePlane->getGeometrySnapshot(candidateMatchGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -318,30 +140,57 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            int                            matchedPlaneId{};
-            geometric::Plane::PlaneVariant candidatePlanePlaneType5{};
-            if (p_candidatePlane->getPlaneType(candidatePlanePlaneType5) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+
+            PlaneEvidence candidatePlaneEvidence{};
+            candidatePlaneEvidence.planeEquation_world =
+                candidateMatchGeometry.planeEquation_world;
+            candidatePlaneEvidence.p_supportCloud_world_m =
+                candidateMatchGeometry.supportCloud;
+            candidatePlaneEvidence.planeLabel = candidatePlanePlaneType;
+
+            if (candidatePlanePlaneType == geometric::Plane::PlaneVariant::WALL)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getPlaneType returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                const Eigen::Vector4d candidateEquation_world =
+                    candidateMatchGeometry.planeEquation_world /
+                    candidateMatchGeometry.planeEquation_world.head<3>().norm();
+
+                geometric::Plane::ObservationSideSnapshot observingCameras{};
+                if (p_candidatePlane->getObservationSideSnapshot(
+                        candidateEquation_world,
+                        observingCameras) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getObservationSideSnapshot returned a "
+                                 "failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
+                candidatePlaneEvidence.observerSide = observingCameras;
             }
-            if (associatePlanes(
-                    compatiblePlanes,
-                    g2o::Plane3D(
-                        candidateAssociationGeometry.planeEquation_world),
-                    candidateAssociationGeometry.supportCloud,
-                    Eigen::Matrix4d::Identity(),
-                    candidatePlanePlaneType5,
-                    p_systemParams->semSeg.reassociate.associationThresh,
-                    matchedPlaneId,
-                    maximumFiniteCloudDistance_m) !=
+
+            PlaneMatchSettings matchSettings{};
+            matchSettings.typeRule = PlaneTypeRule::CONFIRMED_TYPE_STRICT;
+            matchSettings.maximumAngle_rad = static_cast<double>(
+                p_systemParams->semSeg.reassociate.associationThresh);
+            matchSettings.maximumPlaneDistance_m = static_cast<double>(
+                p_systemParams->seg.planeAssociation.distanceThresh);
+            matchSettings.maximumCentroidDistance_m = static_cast<double>(
+                p_systemParams->seg.planeAssociation.centroidThresh);
+            matchSettings.maximumCloudGap_m =
+                static_cast<double>(p_systemParams->seg.planeAssociation
+                                        .clusterSeparation.tolerance);
+
+            int matchedPlaneId{};
+            if (findMatchingPlane(otherPlanes,
+                                  candidatePlaneEvidence,
+                                  matchSettings,
+                                  matchedPlaneId,
+                                  nullptr) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: associatePlanes returned a failure status "
+                             "%s: findMatchingPlane returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
@@ -353,8 +202,8 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
 
             const std::vector<geometric::Plane *>::iterator
                 matchedPlaneIterator = std::find_if(
-                    compatiblePlanes.begin(),
-                    compatiblePlanes.end(),
+                    otherPlanes.begin(),
+                    otherPlanes.end(),
                     [matchedPlaneId](const geometric::Plane *p_plane)
                     {
                         int planeGetId{};
@@ -372,7 +221,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                                planeGetId == matchedPlaneId;
                     });
 
-            if (matchedPlaneIterator == compatiblePlanes.end())
+            if (matchedPlaneIterator == otherPlanes.end())
             {
                 continue;
             }
