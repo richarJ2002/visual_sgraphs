@@ -171,14 +171,16 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
             continue;
         }
 
-        geometric::Plane::GeometrySnapshot roomGroundGeometry{};
-        if (p_roomGroundPlane->getGeometrySnapshot(roomGroundGeometry) !=
+        geometric::PlaneGeometryMetadataSnapshot roomGroundGeometry{};
+        if (p_roomGroundPlane->getGeometryMetadataSnapshot(
+                roomGroundGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGeometrySnapshot returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getGeometryMetadataSnapshot returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
         }
         const double roomGroundNormalNorm =
             roomGroundGeometry.planeEquation_world.head<3>().norm();

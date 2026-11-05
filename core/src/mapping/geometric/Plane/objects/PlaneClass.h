@@ -405,7 +405,10 @@ class Plane
      *                  refit (and its normal re-signed) over the plane's
      *                  lifetime, which would silently invert a stored sign,
      *                  whereas re-deriving the sign from this point against the
-     *                  current equation stays correct.
+     *                  current equation stays correct. Transforms of the plane
+     *                  move it with the cloud; a fusion keeps the survivor's
+     *                  point and takes the retired plane's only when the
+     *                  survivor has none.
      */
     std::optional<Eigen::Vector3d> observationOrigin_world_m;
 
@@ -503,6 +506,18 @@ class Plane
      */
     [[nodiscard]] PlaneStatus rebuildSemanticVotesWithoutLock(void);
 
+    /*!
+     * @brief           Thins the plane cloud to one point per voxel and
+     *                  rebuilds the octree once, with featuresMutex already
+     *                  held by the caller.
+     *
+     * @note            The voxel edge is the octree resolution
+     *                  (refine_map_points.octree.resolution), so the cloud
+     *                  keeps the density its own neighbour search expects
+     *                  and stops growing as observations accumulate.
+     */
+    [[nodiscard]] PlaneStatus thinMapCloudWithoutLock(void);
+
   public:
     Plane(void)
     {
@@ -545,9 +560,9 @@ class Plane
      * @brief           Apply a rigid/similarity transform to the plane
      *                  geometry.
      *
-     *                  Updates the centroid, point cloud and plane equations so
-     *                  that the plane remains consistent with the merged map
-     *                  frame.
+     *                  Updates the centroid, point cloud, observation origin
+     *                  and plane equations so that the plane remains
+     *                  consistent with the merged map frame.
      *
      * @param[in]       alignmentTransform_oldWorldToNewWorld_in
      *                  Transform from the current plane frame to the new map
@@ -561,8 +576,9 @@ class Plane
      *                  optimized
      *                         world-frame equation.
      *
-     *                  A minimal rigid correction is applied to the centroid
-     *                  and supporting cloud before the target equation is
+     *                  A minimal rigid correction is applied to the centroid,
+     *                  supporting cloud and observation origin (so the
+     *                  observed side is kept) before the target equation is
      *                  stored. This keeps all plane representations mutually
      *                  consistent after graph optimization.
      *
@@ -753,12 +769,66 @@ class Plane
                                              const Observation &observation_in);
 
     /*!
-     * @brief           Inserts or fuses a same-keyframe observation and
-     *                  rebuilds semantics.
+     * @brief           Fuses a duplicate plane into this one and refreshes
+     *                  every derived member in one step.
+     *
+     *                  Under the locks of both planes, the retired plane's
+     *                  observations, label evidence, map points and cloud
+     *                  are added to this plane; the cloud is thinned; then
+     *                  the centroid, equation, finite bounds, support counts
+     *                  and labels are recomputed together, so no reader sees
+     *                  a half-merged plane. The earliest reference keyframe
+     *                  is kept, the observer side is taken from the retired
+     *                  plane when this one has none, and twin links to the
+     *                  retired plane are cleared.
+     *
+     * @param[in,out]   p_retiredPlane_inout
+     *                  Non-owning duplicate to absorb; its twin link is
+     *                  cleared, all else is left for the caller to retire.
+     *                  Ignored when null or this plane.
+     *
+     * @return          PLANE_STATUS_SUCCESS.
+     *
+     * @note            Self-locking; the caller must hold no lock of either
+     *                  plane. Bad keyframes and map points are skipped.
      */
-    [[nodiscard]] PlaneStatus
-        mergeObservation(keyframe::KeyFrame          *p_keyFrame_inout,
-                         const Observation &observation_in);
+    [[nodiscard]] PlaneStatus absorb(Plane *p_retiredPlane_inout);
+
+    /*!
+     * @brief           Fits a plane to a cloud by principal component
+     *                  analysis: the normal is the direction of least
+     *                  spread about the centroid of the finite points.
+     *
+     * @param[in]       supportCloud_world_in
+     *                  Points to fit, in the world frame, metres.
+     *
+     * @param[in]       previousEquation_world_in
+     *                  Current equation [a, b, c, d]; the fitted normal is
+     *                  signed to agree with it when it is valid.
+     *
+     * @param[out]      planeCentroid_world_m_out
+     *                  Centroid of the finite points, world frame, metres.
+     *
+     * @param[out]      planeEquation_world_out
+     *                  Fitted unit-normal equation, world frame.
+     *
+     * @param[out]      finitePointCount_out
+     *                  Number of finite points used.
+     *
+     * @param[out]      wasFitFound_out
+     *                  False when fewer than 20 finite points remain or the
+     *                  decomposition fails; the other outputs are then
+     *                  unspecified.
+     *
+     * @return          PLANE_STATUS_SUCCESS.
+     */
+    [[nodiscard]] static PlaneStatus fitEquationToCloud(
+        const pcl::PointCloud<pcl::PointXYZRGBA> &supportCloud_world_in,
+        const Eigen::Vector4d                    &previousEquation_world_in,
+        Eigen::Vector3d                          &planeCentroid_world_m_out,
+        Eigen::Vector4d                          &planeEquation_world_out,
+        std::size_t                              &finitePointCount_out,
+        bool                                     &wasFitFound_out);
 
     /*!
      * @brief           Removes the observation associated with a keyframe.
@@ -833,7 +903,8 @@ class Plane
         Plane::ObservationSideSnapshot &observationSideSnapshot_out) const;
 
     /*!
-     * @brief           Appends points to the accumulated plane cloud.
+     * @brief           Appends points to the accumulated plane cloud, then
+     *                  thins it to one point per octree voxel.
      *
      *                  Use replaceMapClouds() to substitute the whole cloud.
      */
@@ -841,7 +912,8 @@ class Plane
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in);
 
     /*!
-     * @brief           Replaces the accumulated plane cloud contents.
+     * @brief           Replaces the accumulated plane cloud contents, thinned
+     *                  to one point per octree voxel.
      */
     [[nodiscard]] PlaneStatus replaceMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);

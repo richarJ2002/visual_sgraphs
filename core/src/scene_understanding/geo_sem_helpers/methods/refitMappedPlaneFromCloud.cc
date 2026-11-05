@@ -33,7 +33,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Eigen/Eigenvalues>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs::core::utils::geo_sem_helpers
@@ -72,122 +71,41 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
                      __func__);
     }
 
-    /* Require sufficient points for a stable covariance estimate */
     if (!geometrySnapshot.has_value() ||
-        geometrySnapshot->supportCloud == nullptr ||
-        geometrySnapshot->supportCloud->size() < 20)
+        geometrySnapshot->supportCloud == nullptr)
     {
         wasPlaneRefit_out = false;
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
-        geometrySnapshot->supportCloud;
-
-    /* Calculate the centroid from all valid cloud points */
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-
-    /* Init a counter to count the number of valid point clouds */
-    std::size_t validPointCount = 0;
-
-    for (const pcl::PointXYZRGBA &point : p_cloud->points)
+    Eigen::Vector3d fittedCentroid_world_m = Eigen::Vector3d::Zero();
+    Eigen::Vector4d fittedEquation_world   = Eigen::Vector4d::Zero();
+    std::size_t     validPointCount        = 0U;
+    bool            wasFitFound            = false;
+    if (geometric::Plane::fitEquationToCloud(
+            *geometrySnapshot->supportCloud,
+            geometrySnapshot->planeEquation_world,
+            fittedCentroid_world_m,
+            fittedEquation_world,
+            validPointCount,
+            wasFitFound) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        if (!pcl::isFinite(point))
-        {
-            continue;
-        }
-
-        centroid += Eigen::Vector3d(static_cast<double>(point.x),
-                                    static_cast<double>(point.y),
-                                    static_cast<double>(point.z));
-
-        validPointCount++;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: fitEquationToCloud returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
-
-    /* Return when too few valid points remain */
-    if (validPointCount < 20)
+    if (!wasFitFound)
     {
         wasPlaneRefit_out = false;
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
-
-    centroid /= static_cast<double>(validPointCount);
-
-    /* Calculate the covariance matrix of the mapped plane cloud */
-    Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
-
-    for (const pcl::PointXYZRGBA &point : p_cloud->points)
-    {
-        if (!pcl::isFinite(point))
-        {
-            continue;
-        }
-
-        const Eigen::Vector3d pointVector(static_cast<double>(point.x),
-                                          static_cast<double>(point.y),
-                                          static_cast<double>(point.z));
-
-        const Eigen::Vector3d difference = pointVector - centroid;
-
-        covariance += difference * difference.transpose();
-    }
-
-    covariance /= static_cast<double>(validPointCount);
-
-    /*!
-     * The eigenvector belonging to the smallest eigenvalue is the normal of
-     * the best-fitting plane.
-     */
-    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(
-        covariance);
-
-    if (eigenSolver.info() != Eigen::Success)
-    {
-        wasPlaneRefit_out = false;
-        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
-    }
-
-    Eigen::Vector3d fittedNormal = eigenSolver.eigenvectors().col(0);
-
-    if (!fittedNormal.allFinite() || fittedNormal.norm() < 1e-8)
-    {
-        wasPlaneRefit_out = false;
-        return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
-    }
-
-    fittedNormal.normalize();
-
-    /*!
-     * Preserve the previous normal direction to prevent the plane equation
-     * from changing sign between updates.
-     */
-    Eigen::Vector4d previousEquation = geometrySnapshot->planeEquation_world;
-
-    const double previousNormalNorm = previousEquation.head<3>().norm();
-
-    if (std::isfinite(previousNormalNorm) && previousNormalNorm > 1e-8)
-    {
-        const Eigen::Vector3d previousNormal =
-            previousEquation.head<3>() / previousNormalNorm;
-
-        if (fittedNormal.dot(previousNormal) < 0.0)
-        {
-            fittedNormal *= -1.0;
-        }
-    }
-
-    /* Construct the fitted global plane equation */
-    Eigen::Vector4d fittedEquation;
-
-    fittedEquation.head<3>() = fittedNormal;
-
-    fittedEquation(3) = -fittedNormal.dot(centroid);
 
     /* Publish the complete fitted geometry and recompute finite bounds once. */
     bool planeWasRefitPublished{};
     if (p_plane_inout->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
-                                             centroid,
-                                             g2o::Plane3D(fittedEquation),
+                                             fittedCentroid_world_m,
+                                             g2o::Plane3D(fittedEquation_world),
                                              validPointCount,
                                              planeWasRefitPublished) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)

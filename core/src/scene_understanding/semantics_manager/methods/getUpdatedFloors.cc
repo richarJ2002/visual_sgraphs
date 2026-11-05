@@ -182,14 +182,15 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
     bool groundIdentityUpdated = false;
     if (p_groundPlane != nullptr)
     {
-        geometric::Plane::GeometrySnapshot groundGeometry{};
-        if (p_groundPlane->getGeometrySnapshot(groundGeometry) !=
+        geometric::PlaneGeometryMetadataSnapshot groundGeometry{};
+        if (p_groundPlane->getGeometryMetadataSnapshot(groundGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGeometrySnapshot returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getGeometryMetadataSnapshot returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
         }
         const double groundNormalNorm =
             groundGeometry.planeEquation_world.head<3>().norm();

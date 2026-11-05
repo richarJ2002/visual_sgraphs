@@ -32,24 +32,18 @@
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "map_state/map_point/map_point.h"
-#include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
-#include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 
 #include <algorithm>
 #include <iostream>
-#include <map>
 #include <rclcpp/logging.hpp>
 #include <tuple>
-
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 
 namespace vs_graphs
 {
@@ -469,117 +463,14 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                 p_retainedPlane == p_candidatePlane ? p_matchedPlane
                                                     : p_candidatePlane;
 
-            geometric::Plane::GeometrySnapshot retiredGeometry{};
-            if (p_retiredPlane->getGeometrySnapshot(retiredGeometry) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getGeometrySnapshot returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_retiredCloudCopy(
-                new pcl::PointCloud<pcl::PointXYZRGBA>);
-            if (retiredGeometry.supportCloud != nullptr)
-            {
-                *p_retiredCloudCopy = *retiredGeometry.supportCloud;
-                if (p_retainedPlane->setMapClouds(p_retiredCloudCopy) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setMapClouds returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-            }
-
-            std::set<map_point::MapPoint *> retiredPlaneMapPoints{};
-            if (p_retiredPlane->getMapPoints(retiredPlaneMapPoints) !=
+            /* One locked step combines and refreshes every plane member. */
+            if (p_retainedPlane->absorb(p_retiredPlane) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMapPoints returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: absorb returned a failure status although "
+                             "it cannot fail; continuing as before.",
                              __func__);
-            }
-            for (map_point::MapPoint *p_mapPoint : retiredPlaneMapPoints)
-            {
-                bool mapPointIsBad{};
-                if ((p_mapPoint != nullptr) &&
-                    p_mapPoint->isBad(mapPointIsBad) !=
-                        map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_mapPoint != nullptr && !mapPointIsBad)
-                {
-                    if (p_retainedPlane->setMapPoints(p_mapPoint) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: setMapPoints returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                }
-            }
-
-            std::map<keyframe::KeyFrame *, geometric::Plane::Observation>
-                retiredObservations{};
-            if (p_retiredPlane->getObservations(retiredObservations) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getObservations returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-
-            for (const auto &[p_keyFrame, observation] : retiredObservations)
-            {
-                bool keyFrameIsBad{};
-                if (!(p_keyFrame == nullptr) &&
-                    p_keyFrame->isBad(keyFrameIsBad) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_keyFrame == nullptr || keyFrameIsBad)
-                {
-                    continue;
-                }
-
-                if (p_retainedPlane->mergeObservation(p_keyFrame,
-                                                      observation) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: mergeObservation returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-            }
-
-            bool wasPlaneRefit{};
-            if (geo_sem_helpers::GeoSemHelpers::refitMappedPlaneFromCloud(p_retainedPlane,
-                                                         wasPlaneRefit) !=
-                geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: refitMappedPlaneFromCloud returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
             }
             geometric::Plane::PlaneVariant retainedPlaneType{};
             if (p_retainedPlane->getPlaneType(retainedPlaneType) !=

@@ -46,6 +46,12 @@ PlaneStatus Plane::applyTransform(
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
+    if (observationOrigin_world_m.has_value())
+    {
+        observationOrigin_world_m =
+            alignmentTransform_oldWorldToNewWorld_in.map(
+                observationOrigin_world_m.value());
+    }
 
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {

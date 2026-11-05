@@ -90,14 +90,15 @@ MapStatus
             continue;
         }
 
-        geometric::Plane::GeometrySnapshot geometry{};
-        if (p_plane->getGeometrySnapshot(geometry) !=
+        geometric::PlaneGeometryMetadataSnapshot geometry{};
+        if (p_plane->getGeometryMetadataSnapshot(geometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGeometrySnapshot returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getGeometryMetadataSnapshot returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
         }
         const double normalNorm = geometry.planeEquation_world.head<3>().norm();
         if (!geometry.planeEquation_world.allFinite() ||

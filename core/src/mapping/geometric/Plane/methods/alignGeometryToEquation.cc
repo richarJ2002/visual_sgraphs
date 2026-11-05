@@ -135,6 +135,14 @@ PlaneStatus Plane::alignGeometryToEquation(
     centroid =
         rotationMatrix * centroid + planeTranslation_oldPlaneToOptimizedPlane_m;
 
+    /* The camera position moves with the face so its side is unchanged. */
+    if (observationOrigin_world_m.has_value())
+    {
+        observationOrigin_world_m =
+            rotationMatrix * observationOrigin_world_m.value() +
+            planeTranslation_oldPlaneToOptimizedPlane_m;
+    }
+
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
         Eigen::Vector3d cloudPoint_newWorld_m(point.x, point.y, point.z);
