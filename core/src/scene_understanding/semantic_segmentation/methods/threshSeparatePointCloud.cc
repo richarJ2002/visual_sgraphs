@@ -26,6 +26,11 @@
 
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+
 #include "execution/profiling/profiling.h"
 
 namespace vs_graphs
@@ -156,27 +161,37 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 point.b = origPoint.b;
 
                 /*!
-                 * Confidence as the squared inverse depth - interpolated
-                 * between near and far thresholds confidence = 255 for near, 45
-                 * for far, and interpolated according to squared distance
+                 * Depth weight as the squared inverse depth - interpolated
+                 * between near and far thresholds: 255 for near, 45 for far,
+                 * and interpolated according to squared distance
                  */
+                uint8_t depthWeight = 0;
                 if (point.z < distanceThresholdNear)
                 {
-                    point.a = 255;
+                    depthWeight = 255;
                 }
                 else if (point.z > distanceThresholdFar)
                 {
-                    point.a = 45;
+                    depthWeight = 45;
                 }
                 else
                 {
-                    point.a = static_cast<uint8_t>(
+                    depthWeight = static_cast<uint8_t>(
                         255 -
                         static_cast<int>(
                             210 * std::sqrt((point.z - distanceThresholdNear) /
                                             (distanceThresholdFar -
                                              distanceThresholdNear))));
                 }
+
+                /*!
+                 * The vote weight is the class probability (0..1) times the
+                 * depth weight, so a vote says how sure the segmenter is as
+                 * well as how close the point is.
+                 */
+                point.a =
+                    static_cast<uint8_t>(std::clamp(probability, 0.0F, 1.0F) *
+                                         static_cast<float>(depthWeight));
 
                 /* Add the point to the respective class specific point cloud */
                 p_clsCloudPtrs_out[j]->push_back(point);
