@@ -529,7 +529,21 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          __func__);
         }
         if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
+        {
+            /*!
+             * A skipped plane gets no vertex in this pass, so clear the id
+             * from an earlier pass; a stale id could name another vertex.
+             */
+            if (plane->setOpIdG(-1) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
+        }
         /* Adding a vertex for each plane */
         g2o::VertexPlane *p_planeVertex = new g2o::VertexPlane();
         int globalOptimizationId        = maxGlobalOptimizationId + planeCount;
@@ -863,7 +877,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                              __func__);
                             }
 
-                            if (optimizer.vertex(globalOptimizationId) &&
+                            if (firstWallOptimizationId >= 0 &&
+                                secondWallOptimizationId >= 0 &&
+                                optimizer.vertex(globalOptimizationId) &&
                                 optimizer.vertex(firstWallOptimizationId) &&
                                 optimizer.vertex(secondWallOptimizationId))
                             {
@@ -939,7 +955,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                          __func__);
                         }
 
-                        if (optimizer.vertex(globalOptimizationId) &&
+                        if (firstWallOptimizationId >= 0 &&
+                            secondWallOptimizationId >= 0 &&
+                            optimizer.vertex(globalOptimizationId) &&
                             optimizer.vertex(firstWallOptimizationId) &&
                             optimizer.vertex(secondWallOptimizationId))
                         {
@@ -1337,7 +1355,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (optimizer.vertex(planeGetOpIdG))
+        if (planeGetOpIdG >= 0 && optimizer.vertex(planeGetOpIdG))
         {
             int planeGetOpIdG2{};
             if (plane->getOpIdG(planeGetOpIdG2) !=
