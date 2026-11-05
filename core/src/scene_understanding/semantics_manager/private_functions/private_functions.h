@@ -227,6 +227,11 @@ Eigen::Quaterniond
  * @param[in]       finiteBoundsMargin_m_in
  *                  Margin applied around the observed wall-cloud bounds.
  *
+ * @param[in]       isLeadingWallVoteAccepted_in
+ *                  When true, a plane whose type is not yet WALL but whose
+ *                  leading semantic vote is WALL also counts as a wall;
+ *                  when false, only planes of confirmed type WALL count.
+ *
  * @param[out]      hasSeparatingFiniteWall_out
  *                  True when the segment crosses an observed finite wall patch.
  *
@@ -237,6 +242,7 @@ Eigen::Quaterniond
     const Eigen::Vector3d                 &firstPoint_world_m_in,
     const Eigen::Vector3d                 &secondPoint_world_m_in,
     const double                           finiteBoundsMargin_m_in,
+    const bool                             isLeadingWallVoteAccepted_in,
     bool                                  &hasSeparatingFiniteWall_out);
 
 /*!

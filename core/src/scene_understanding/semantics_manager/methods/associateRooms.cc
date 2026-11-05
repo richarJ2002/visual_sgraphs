@@ -142,6 +142,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
                 clusterCentroid_world_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.finiteWallBoundsMargin_m),
+                false,
                 roomSeparatedFromCluster) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {

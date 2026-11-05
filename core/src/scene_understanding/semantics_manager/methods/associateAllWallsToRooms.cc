@@ -338,6 +338,50 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
+            /*!
+             * Room membership follows the confirmed label: a plane that is
+             * no longer a WALL leaves every room owning it, in this cycle.
+             * It returns through the normal admission paths once it is a
+             * wall again; those re-check the label for every wall not
+             * already in the room.
+             */
+            if (wallPlaneType != geometric::Plane::PlaneVariant::WALL)
+            {
+                for (semantic::Room *p_owningRoom : allRooms)
+                {
+                    bool wasWallRemoved{};
+                    if (p_owningRoom != nullptr &&
+                        p_owningRoom->removeWall(p_wall, wasWallRemoved) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        wasWallRemoved = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: removeWall rejected its input; "
+                                    "continuing as before.",
+                                    __func__);
+                    }
+                    if (!wasWallRemoved)
+                    {
+                        continue;
+                    }
+                    int owningRoomId{};
+                    if (p_owningRoom->getId(owningRoomId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getId returned a failure status "
+                                     "although it cannot fail; continuing as "
+                                     "before.",
+                                     __func__);
+                    }
+                    RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                                "[SemMgr] roomwall remove wall=%d room=%d: "
+                                "label is %s, not WALL.",
+                                wallGetId,
+                                owningRoomId,
+                                planeClassName(wallPlaneType));
+                }
+            }
             if (loggedWallRejectionReasons[wallGetId] != reason)
             {
                 int wallGetId2{};

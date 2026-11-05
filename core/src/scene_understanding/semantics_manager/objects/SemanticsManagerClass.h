@@ -808,7 +808,10 @@ class SemanticsManager
      *                  weaker wall hypotheses. A weaker or ambiguous candidate
      *                  remains unassigned so the orphan-wall hierarchy can
      *                  retain it for another room and later observations can
-     *                  retry the association.
+     *                  retry the association. A candidate seen through a
+     *                  nearer wall from the camera (room the camera is in),
+     *                  or beyond a passage wall from the room centre (any
+     *                  other room), is refused.
      *
      * @param[in,out]   p_room_inout
      *                  Room whose wall set may be updated.

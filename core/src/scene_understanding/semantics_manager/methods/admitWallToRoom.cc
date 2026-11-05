@@ -39,6 +39,7 @@
 #include "scene_understanding/semantic/value_order/value_order.h"
 
 #include <algorithm>
+#include <iterator>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -241,21 +242,6 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    /*!
-     * See-through gate, only for the room the camera is in: a candidate whose
-     * centroid the camera sees through a nearer wall N of this room (through
-     * N's doorway) lies beyond N, so it is held pending. The condition is
-     * re-evaluated on every attempt, so the hold ends by itself when
-     *  - the opening in N becomes a confirmed passage (N is then associated
-     *    with a passage and no longer blocks; the far-side backstop above
-     *    routes the candidate to the room beyond), or
-     *  - the camera crosses N's plane (camera and candidate are then on the
-     *    same side of N).
-     * hasSeparatingFiniteWall() requires both points at least 0.10 m (equal
-     * to passage_partition.minimum_side_distance) from N's plane and the
-     * crossing inside N's observed in-plane extent and height, widened by
-     * wall_extension.maximum_in_plane_gap so a doorway at N's end counts.
-     */
     Eigen::Vector3d roomCentroid_world_m{};
     Eigen::Vector3d roomViewpoint_world_m{};
     bool            isCameraViewpoint{};
@@ -271,51 +257,168 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_sysParams->roomSeg.isSeeThroughGateEnabled && isCameraViewpoint)
+    Eigen::Vector3d   candidateCentroid_world_m{};
+    geometric::Plane *p_candidateTwinWall = nullptr;
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
+        (p_candidateWall_in->getCentroid(candidateCentroid_world_m) !=
+             geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+         p_candidateWall_in->getTwinFace(p_candidateTwinWall) !=
+             geometric::PlaneStatus::PLANE_STATUS_SUCCESS))
     {
-        Eigen::Vector3d candidateCentroid_world_m{};
-        if (p_candidateWall_in->getCentroid(candidateCentroid_world_m) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid or getTwinFace returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /*!
+     * Passage-wall gate, for a room the camera is not in. Such a room is
+     * judged from its centroid. A wall that carries a passage is a known
+     * boundary between two rooms, so a candidate whose centroid lies beyond
+     * a passage wall, seen from this room's centroid, bounds the room on the
+     * other side and is refused. The aperture backstop above only catches a
+     * line through the passage's opening; this catches a line through the
+     * solid part of the same wall, e.g. the camera room's side wall offered
+     * to the room beyond its door wall by a free-space cluster whose points
+     * lie near that side wall's plane. The separation test and widening are
+     * the see-through gate's below; the candidate and its twin face never
+     * block. A refused wall stays unowned for the camera room's admission.
+     */
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled && !isCameraViewpoint)
+    {
         std::vector<geometric::Plane *> passageWalls{};
         for (semantic::Passage *p_passage : allPassages)
         {
-            bool passageIsBad{};
-            if ((p_passage != nullptr) &&
-                p_passage->isBad(passageIsBad) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
+            bool                            passageIsBad{true};
             std::vector<geometric::Plane *> associateWalls{};
-            if ((p_passage != nullptr && !passageIsBad) &&
+            if (p_passage == nullptr ||
+                p_passage->isBad(passageIsBad) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                passageIsBad ||
                 p_passage->getAssociateWalls(associateWalls) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
+                continue;
+            }
+            std::copy_if(associateWalls.begin(),
+                         associateWalls.end(),
+                         std::back_inserter(passageWalls),
+                         [p_candidateWall_in,
+                          p_candidateTwinWall](geometric::Plane *p_passageWall)
+                         {
+                             return p_passageWall != p_candidateWall_in &&
+                                    p_passageWall != p_candidateTwinWall;
+                         });
+        }
+        bool isBeyondPassageWall{};
+        if (hasSeparatingFiniteWall(
+                passageWalls,
+                roomCentroid_world_m,
+                candidateCentroid_world_m,
+                static_cast<double>(p_sysParams->semSeg.reassociate
+                                        .wallExtension.maximumInPlaneGap_m),
+                true,
+                isBeyondPassageWall) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasSeparatingFiniteWall returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+        if (isBeyondPassageWall)
+        {
+            int candidateWallId{};
+            int roomId{};
+            if (p_candidateWall_in->getId(candidateWallId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                p_room_inout->getId(roomId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAssociateWalls returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
                              __func__);
             }
-            passageWalls.insert(passageWalls.end(),
-                                associateWalls.begin(),
-                                associateWalls.end());
+            /* Not deduplicated through loggedOrphanWallIds: that set also
+             * gates the wall_pending event, which must stay intact. */
+            RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                        "[SemMgr] Wall#%d refused from Room#%d: beyond a "
+                        "passage wall seen from the room centre.",
+                        candidateWallId,
+                        roomId);
+            wasAdmitted_out = false;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
+    }
 
-        for (geometric::Plane *p_nearerWall : existingWalls)
+    /*!
+     * See-through gate, only for the room the camera is in: a candidate whose
+     * centroid the camera sees through a nearer wall N (through N's doorway)
+     * lies beyond N, so it is held pending. N is any wall of this room, or
+     * any mapped plane whose leading vote is WALL before its type is
+     * confirmed: a near wall seen mostly as door-side strips can stay
+     * unconfirmed while the far wall behind it is already confirmed, and
+     * must still block it. A wall with a passage in it keeps blocking; the
+     * far-side backstop above has already routed a candidate seen through
+     * the passage's own opening. The candidate's twin face is the same
+     * physical wall and never blocks. The condition is re-evaluated on every
+     * attempt, so the hold ends by itself when
+     *  - the camera crosses N's plane (camera and candidate are then on the
+     *    same side of N), or
+     *  - N's leading vote or type moves away from WALL.
+     * hasSeparatingFiniteWall() requires both points at least 0.10 m (equal
+     * to passage_partition.minimum_side_distance) from N's plane and the
+     * crossing inside N's observed in-plane extent and height, widened by
+     * wall_extension.maximum_in_plane_gap so a doorway at N's end counts.
+     */
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled && isCameraViewpoint)
+    {
+        std::vector<geometric::Plane *> mappedPlanes{};
+        if (p_atlas->getAllPlanes(mappedPlanes) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<geometric::Plane *> unconfirmedWalls{};
+        for (geometric::Plane *p_mappedPlane : mappedPlanes)
+        {
+            bool                           mappedPlaneIsBad{true};
+            geometric::Plane::PlaneVariant mappedPlaneType{};
+            geometric::Plane::PlaneVariant leadingPlaneType{};
+            if (p_mappedPlane == nullptr ||
+                p_mappedPlane->isBad(mappedPlaneIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                mappedPlaneIsBad ||
+                p_mappedPlane->getPlaneType(mappedPlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+                p_mappedPlane->getExpectedPlaneType(leadingPlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                continue;
+            }
+            if (mappedPlaneType != geometric::Plane::PlaneVariant::WALL &&
+                leadingPlaneType == geometric::Plane::PlaneVariant::WALL &&
+                std::find(existingWalls.begin(),
+                          existingWalls.end(),
+                          p_mappedPlane) == existingWalls.end())
+            {
+                unconfirmedWalls.push_back(p_mappedPlane);
+            }
+        }
+        std::vector<geometric::Plane *> blockerWalls = existingWalls;
+        blockerWalls.insert(blockerWalls.end(),
+                            unconfirmedWalls.begin(),
+                            unconfirmedWalls.end());
+
+        for (geometric::Plane *p_nearerWall : blockerWalls)
         {
             if (p_nearerWall == nullptr || p_nearerWall == p_candidateWall_in ||
-                std::find(passageWalls.begin(),
-                          passageWalls.end(),
-                          p_nearerWall) != passageWalls.end())
+                p_nearerWall == p_candidateTwinWall)
             {
                 continue;
             }
@@ -326,6 +429,7 @@ SemanticsManagerStatus
                     candidateCentroid_world_m,
                     static_cast<double>(p_sysParams->semSeg.reassociate
                                             .wallExtension.maximumInPlaneGap_m),
+                    true,
                     isSeenThroughNearerWall) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
@@ -475,6 +579,7 @@ SemanticsManagerStatus
                     fartherCentroid_world_m,
                     static_cast<double>(p_sysParams->semSeg.reassociate
                                             .wallExtension.maximumInPlaneGap_m),
+                    false,
                     isSeenThroughCandidate) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {

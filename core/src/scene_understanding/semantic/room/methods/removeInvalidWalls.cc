@@ -42,6 +42,7 @@ RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
 
+    const std::size_t wallCountBefore = walls.size();
     walls.erase(std::remove_if(
                     walls.begin(),
                     walls.end(),
@@ -62,7 +63,7 @@ RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
                     }),
                 walls.end());
 
-    removedWallCount_out = walls.size();
+    removedWallCount_out = wallCountBefore - walls.size();
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

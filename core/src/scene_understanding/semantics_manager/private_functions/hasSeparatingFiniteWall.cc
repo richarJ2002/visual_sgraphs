@@ -44,6 +44,7 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
     const Eigen::Vector3d                 &firstPoint_world_m_in,
     const Eigen::Vector3d                 &secondPoint_world_m_in,
     const double                           finiteBoundsMargin_m_in,
+    const bool                             isLeadingWallVoteAccepted_in,
     bool                                  &hasSeparatingFiniteWall_out)
 {
     constexpr double minimumSideDistance_m = 0.10;
@@ -70,8 +71,22 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_wall == nullptr || wallIsBad ||
-            wallPlaneType != geometric::Plane::PlaneVariant::WALL)
+        geometric::Plane::PlaneVariant leadingPlaneType{
+            geometric::Plane::PlaneVariant::UNDEFINED};
+        if (!(p_wall == nullptr || wallIsBad) && isLeadingWallVoteAccepted_in &&
+            p_wall->getExpectedPlaneType(leadingPlaneType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getExpectedPlaneType returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const bool isWall =
+            wallPlaneType == geometric::Plane::PlaneVariant::WALL ||
+            (isLeadingWallVoteAccepted_in &&
+             leadingPlaneType == geometric::Plane::PlaneVariant::WALL);
+        if (p_wall == nullptr || wallIsBad || !isWall)
         {
             continue;
         }

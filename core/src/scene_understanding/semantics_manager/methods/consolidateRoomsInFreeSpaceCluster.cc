@@ -280,6 +280,7 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                                     retainedCentroid_world_m,
                                     duplicateCentroid_world_m,
                                     finiteWallBoundsMargin_m,
+                                    false,
                                     hasSeparatingFiniteWall2) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {

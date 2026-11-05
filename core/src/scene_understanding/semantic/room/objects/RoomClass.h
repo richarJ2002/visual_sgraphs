@@ -936,7 +936,7 @@ class Room
      * @brief           Removes null and invalid wall associations atomically.
      *
      * @param[out]      removedWallCount_out
-     *                  Number of wall associations that remain valid.
+     *                  Number of wall associations removed.
      *
      * @return          ROOM_STATUS_SUCCESS.
      */
