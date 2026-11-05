@@ -1022,6 +1022,35 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus setImuInitialized();
+    /*!
+     * @brief           Returns this map's "up" direction. Takes mapMutex.
+     *
+     * @param[out]      upDirection_world_out
+     *                  Unit vector pointing up, in this map's world frame.
+     *
+     * @param[out]      isFromImuGravity_out
+     *                  True once the direction comes from an IMU gravity
+     *                  estimate, false while it is the map-start camera's -Y.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        getUpDirection(Eigen::Vector3d &upDirection_world_out,
+                       bool            &isFromImuGravity_out);
+    /*!
+     * @brief           Sets "up" from an IMU gravity estimate. Takes mapMutex.
+     *                  Call before the map is rotated into the gravity frame;
+     *                  applyScaledRotation() then carries "up" along.
+     *
+     * @param[in]       gravityRotation_gravityToWorld_in
+     *                  Rotation from the gravity frame, in which gravity is
+     *                  (0, 0, -g), to this map's current world frame, so up is
+     *                  this rotation applied to +Z.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus setUpFromGravity(
+        const Eigen::Matrix3d &gravityRotation_gravityToWorld_in);
 
     /*!
      * @brief           Moves the whole map into a new world frame: key frame
@@ -1358,6 +1387,22 @@ class Map
      * @brief           True once the IMU of this map is initialised.
      */
     bool hasImuInitialization;
+
+    /*!
+     * @brief           Unit "up" direction in this map's world frame. Starts as
+     *                  the map-start camera's -Y (the map frame is that
+     *                  camera's frame and camera Y points down), is rotated
+     *                  with the map by applyScaledRotation() and is set from
+     *                  gravity by setUpFromGravity(). Not serialized: a
+     *                  reloaded map starts again from -Y.
+     */
+    Eigen::Vector3d upDirection_world{0.0, -1.0, 0.0};
+
+    /*!
+     * @brief           True once upDirection_world came from
+     *                  setUpFromGravity().
+     */
+    bool isUpFromImuGravity{false};
 
     /*!
      * @brief           Change counter: grows on increaseChangeIndex() and on

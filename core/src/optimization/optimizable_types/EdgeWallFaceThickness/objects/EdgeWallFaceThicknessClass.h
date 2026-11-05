@@ -11,6 +11,7 @@
 #include <Eigen/Geometry>
 #include <istream>
 #include <ostream>
+#include <vs_graphs_g2o/core/base_binary_edge.h>
 #include <vs_graphs_g2o/types/vertex_plane.h>
 
 namespace vs_graphs

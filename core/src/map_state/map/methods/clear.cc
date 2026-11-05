@@ -86,6 +86,8 @@ MapStatus Map::clear()
 
     maxKeyFrameId        = initKeyFrameId;
     hasImuInitialization = false;
+    upDirection_world    = Eigen::Vector3d(0.0, -1.0, 0.0);
+    isUpFromImuGravity   = false;
     detectedRooms.clear();
     markerBasedRooms.clear();
     /* The rooms are gone, so are the mission-chain ends that point at them;

@@ -60,6 +60,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getStartingRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpDirection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWorldFrameEpoch.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/increaseChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/informNewBigChange.cc
@@ -88,5 +89,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setStartingRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setStoredMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setUpFromGravity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
 )

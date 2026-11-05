@@ -1100,30 +1100,23 @@ class SemanticsManager
     /*!
      * @brief           Resets the semantics of ground planes whose normal is
      *                  horizontal and of wall planes whose normal is vertical.
-     *                  Judged against the fixed world vertical axis (Y), not
+     *                  Judged against Atlas::getUpDirection(), not
      *                  against the main ground plane, so that a misclassified
      *                  plane cannot become the ground reference. Uses the
-     *                  sem_seg.max_tilt_ground and sem_seg.max_tilt_wall
-     *                  parameters set in System Params.
+     *                  plane_checkpoint.max_tilt_ground and
+     *                  plane_checkpoint.max_tilt_wall parameters, the same
+     *                  tolerances the plane checkpoint applies to each new
+     *                  patch; this map-level pass catches planes that turn
+     *                  after bundle adjustment or a map merge.
      */
     [[nodiscard]] SemanticsManagerStatus rejectMisorientedPlanes(void);
 
     /*!
-     * @brief           Filters the wall planes to remove heavily tilted walls.
-     *                  Does this by comparing the transpose to the ground
-     *                  plane. If the plane normal is horizontal to the ground
-     *                  then it is left alone. If the wall plane has a tile
-     *                  greater than the sem_seg.max_tilt_wall parameter set in
-     *                  System Params, its semantics are reset.
-     */
-    [[nodiscard]] SemanticsManagerStatus filterWallPlanes(void);
-
-    /*!
-     * @brief           Filters the planes which are assoicated with ground
-     *                  semantic and resets the planes semantics if it is not
-     *                  horizontal enough or if its height is outside tolerances
-     *                  with the main ground plane. Removes points that are too
-     *                  far from the plane.
+     * @brief           Resets the semantics of every ground plane, other
+     *                  than the main one, whose height passes the
+     *                  sem_seg.max_step_elevation limit from the main ground
+     *                  plane. Orientation is judged by
+     *                  rejectMisorientedPlanes().
      *
      * @param[in]       p_groundPlane_in
      *                  The main ground plane that is the reference
@@ -1216,22 +1209,6 @@ class SemanticsManager
      *                  clearing undelivered events.
      */
     [[nodiscard]] SemanticsManagerStatus onTrackingRecovered(void);
-
-    /*!
-     * @brief           Transforms the plane equation to the ground reference
-     *                  defined by mPlanePoseMat.
-     *
-     * @param[in]       planeEq_in
-     *                  The plane equation
-     *
-     * @param[out]      groundReference_out
-     *                  The transformed plane equation
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        transformPlaneEqToGroundReference(const Eigen::Vector4d &planeEq_in,
-                                          Eigen::Vector3f &groundReference_out);
 
     /*!
      * @brief           Gets the median height of a ground plane after

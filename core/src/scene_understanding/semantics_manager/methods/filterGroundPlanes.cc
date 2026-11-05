@@ -146,50 +146,6 @@ SemanticsManagerStatus
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            continue;
-        }
-
-        /* Find trnsform of the plane */
-        g2o::Plane3D planeGetGlobalEquation{};
-        if (plane->getGlobalEquation(planeGetGlobalEquation) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalEquation returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        Eigen::Vector3f transformedPlaneCoefficients{};
-        if (transformPlaneEqToGroundReference(planeGetGlobalEquation.coeffs(),
-                                              transformedPlaneCoefficients) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: transformPlaneEqToGroundReference returned a failure "
-                "status although it cannot fail; continuing as before.",
-                __func__);
-        }
-
-        /*!
-         * If the transformed plane is horizontal based on absolute value, then
-         * assign semantic.
-         *
-         * Ignore threshold should be lenient. With correct ground plane
-         * reference, this value should be close to 0.00.
-         */
-        if (std::abs(transformedPlaneCoefficients(0)) >
-            p_sysParams->semSeg.maxTiltGround)
-        {
-            if (plane->resetPlaneSemantics() !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: resetPlaneSemantics returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
         }
     }
 

@@ -324,6 +324,10 @@ MapStatus Map::applyScaledRotation(
             skeletonEdge_world.second);
     }
 
+    /* "up" is a direction: it turns with the map, scale and shift aside. */
+    upDirection_world =
+        alignmentRotation_oldWorldToNewWorld.cast<double>() * upDirection_world;
+
     mapChange++;
     worldFrameEpoch++;
 

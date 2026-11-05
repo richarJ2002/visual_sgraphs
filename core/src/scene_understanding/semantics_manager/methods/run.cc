@@ -188,22 +188,12 @@ void SemanticsManager::run(void)
             }
             planePoseMat = plane2;
 
-            /* Filter ground planes */
+            /* Drop ground planes past the step limit from the main floor */
             if (filterGroundPlanes(p_mainGroundPlane) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: filterGroundPlanes returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-
-            /* Filter the wall planes */
-            if (filterWallPlanes() !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: filterWallPlanes returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
             }

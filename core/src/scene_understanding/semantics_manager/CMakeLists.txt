@@ -30,7 +30,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterGroundPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/filterWallPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
@@ -73,7 +72,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/submitVerificationVerdict.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWallsForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/transformPlaneEqToGroundReference.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/tryLockRoomTrackerPendingMutexForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateRoomTrackerState.cc

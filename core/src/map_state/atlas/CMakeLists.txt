@@ -51,6 +51,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpDirection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/informNewBigChange.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isActiveMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuInitialized.cc

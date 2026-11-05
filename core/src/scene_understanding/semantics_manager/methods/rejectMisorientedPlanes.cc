@@ -50,6 +50,16 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+    Eigen::Vector3d upDirection_world{};
+    bool            isFromImuGravity{};
+    if (p_atlas->getUpDirection(upDirection_world, isFromImuGravity) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getUpDirection returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (geometric::Plane *const &plane : atlasAllPlanes)
     {
         /* Only ground and wall planes have an orientation to validate */
@@ -94,18 +104,18 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
         }
 
         /*!
-         * The world vertical axis is Y, the same axis the ground-to-horizontal
-         * transform assumes. Judging against it (and not against the main
+         * Judging against the Atlas up direction (and not against the main
          * ground plane) stops a wall labelled as ground from becoming the
          * reference that is never rejected. The tilt of a ground plane is its
          * normal's horizontal part; the tilt of a wall is its normal's
-         * vertical part.
+         * vertical part. The normal's sign is irrelevant.
          */
         const Eigen::Vector3d planeNormal_world =
             planeEquation_world.head<3>() / planeNormalNorm;
+        const double upComponent = planeNormal_world.dot(upDirection_world);
         const double groundTilt =
-            std::hypot(planeNormal_world.x(), planeNormal_world.z());
-        const double wallTilt = std::abs(planeNormal_world.y());
+            (planeNormal_world - upComponent * upDirection_world).norm();
+        const double wallTilt = std::abs(upComponent);
         if ((planeIsGround && groundTilt > p_sysParams->semSeg.maxTiltGround) ||
             (planeIsWall && wallTilt > p_sysParams->semSeg.maxTiltWall))
         {

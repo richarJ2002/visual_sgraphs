@@ -949,6 +949,36 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus isImuInitialized(bool &isImuInitialized_out);
 
+    /*!
+     * @brief           Returns the world "up" direction of the active map, the
+     *                  one axis every plane orientation test is judged
+     *                  against. Takes atlasMutex.
+     *
+     *                  Plain RGB-D (never reads IMU state): -Y of the camera
+     *                  that started the map, since the map frame is that
+     *                  camera's frame and camera Y points down. This is only
+     *                  vertical if that camera was level. Inertial: the active
+     *                  map's own up (Map::getUpDirection()), which starts as
+     *                  that -Y, follows every whole-map rotation and is set
+     *                  from the IMU gravity estimate at IMU initialisation and
+     *                  scale refinement. The IMU-initialised flag alone is not
+     *                  used: an inertial merge sets it without a gravity
+     *                  rotation.
+     *
+     * @param[out]      upDirection_world_out
+     *                  Unit vector pointing up, in the active map's world
+     *                  frame.
+     *
+     * @param[out]      isFromImuGravity_out
+     *                  True when the direction comes from an IMU gravity
+     *                  estimate, false when it is the map-start camera's -Y.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus
+        getUpDirection(Eigen::Vector3d &upDirection_world_out,
+                       bool            &isFromImuGravity_out);
+
     /* Function for garantee the correction of serialization of this object */
     /*!
      * @brief           Prepares the Atlas for saving: advances

@@ -387,6 +387,15 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          __func__);
         }
         std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+        /* mRwg is the gravity estimate in the frame before the rotation. */
+        if (p_activeMap->setUpFromGravity(mRwg) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setUpFromGravity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if ((fabs(scale - 1.f) > 0.00001) || !isMonocular)
         {
             Sophus::SE3f alignmentPose_worldToGravity(
