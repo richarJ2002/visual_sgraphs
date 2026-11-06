@@ -9,6 +9,7 @@ list(TRANSFORM VS_GRAPHS_FRONTEND_RGBD_GRABBER_SOURCES
   PREPEND "${CMAKE_CURRENT_LIST_DIR}/")
 
 set(VS_GRAPHS_FRONTEND_INERTIAL_GRABBER_SOURCES
+  methods/discardImuContinuity.cc
   methods/getImage.cc
   methods/grabPointCloud.cc
   methods/grabRgbd.cc

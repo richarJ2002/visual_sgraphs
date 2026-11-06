@@ -220,6 +220,16 @@ class ImageGrabber : public rclcpp::Node
     double pendingMaximumImuGap_seconds{0.0};
 
     /*!
+     * @brief           True after grabRgbd() emptied the IMU buffer; the
+     *                  synchronisation thread then discards its IMU continuity
+     *                  state before consuming any later sample, so the flush is
+     *                  not measured as an IMU delivery gap. Guarded by
+     *                  mBufMutex.
+     *
+     */
+    bool shouldDiscardImuContinuity{false};
+
+    /*!
      * @brief           Processes packets once IMU time reaches image time.
      *
      * @note            Runs on the main-owned synchronization worker, not the
@@ -228,6 +238,17 @@ class ImageGrabber : public rclcpp::Node
      *
      */
     void syncWithImu();
+
+    /*!
+     * @brief           Forgets the IMU continuity state: the pending IMU
+     *                  samples, their largest gap and the last consumed sample,
+     *                  so the next consumed sample starts a new run.
+     *
+     * @note            Called by the synchronisation thread only, which owns
+     *                  that state.
+     *
+     */
+    void discardImuContinuity();
 
     /*!
      * @brief           Converts a ROS image message into an OpenCV image.
@@ -281,7 +302,8 @@ class ImageGrabber : public rclcpp::Node
      *                  is not newer than the last one queued, or when it comes
      *                  faster than the tracking rate allows. When the queue is
      *                  full it stops admitting pairs; once the queue has
-     *                  drained it clears the IMU buffer and asks the system to
+     *                  drained it clears the IMU buffer, flags the IMU
+     *                  continuity state for discarding and asks the system to
      *                  reset the active map.
      *
      *                  Runs on an executor thread in the visual callback group

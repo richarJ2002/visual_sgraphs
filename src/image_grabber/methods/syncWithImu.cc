@@ -34,6 +34,29 @@ void ImageGrabber::syncWithImu()
         return;
     }
 
+    /*!
+     * Tolerance on the gap between consecutive IMU samples, in IMU periods.
+     * One dropped sample doubles the gap to exactly 2 periods, and converting
+     * the nanosecond stamps to double seconds can push that a fraction above
+     * 2, so 2.5 periods lets a single drop through with half a period of
+     * margin while two or more consecutive missing samples (3 periods or more)
+     * still reset the active map.
+     */
+    constexpr double IMU_GAP_TOLERANCE_PERIODS = 2.5;
+    double           imuFrequency_hz           = 0.0;
+    if (vs_graphs::common::p_slamSystem->getImuFrequency(imuFrequency_hz) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS ||
+        !std::isfinite(imuFrequency_hz) || imuFrequency_hz <= 0.0)
+    {
+        RCLCPP_ERROR(get_logger(),
+                     "Inertial RGB-D processing stopped: IMU.Frequency is "
+                     "unavailable or not a positive rate (%f Hz).",
+                     imuFrequency_hz);
+        return;
+    }
+    const double maximumImuGapAllowed_seconds =
+        IMU_GAP_TOLERANCE_PERIODS / imuFrequency_hz;
+
     while (!mustStop)
     {
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
@@ -54,6 +77,11 @@ void ImageGrabber::syncWithImu()
          * is reading it. */
         {
             std::scoped_lock bufferLock(mBufMutex, p_imuGrabber->mBufMutex);
+            if (shouldDiscardImuContinuity)
+            {
+                discardImuContinuity();
+                shouldDiscardImuContinuity = false;
+            }
             if (!synchronizedRgbdPacketBuffer.empty() &&
                 !p_imuGrabber->imuBuf.empty())
             {
@@ -107,10 +135,8 @@ void ImageGrabber::syncWithImu()
                         if (pendingImuMeasurements.size() >=
                             maximumPendingImuSamples)
                         {
-                            pendingImuMeasurements.clear();
-                            pendingMaximumImuGap_seconds = 0.0;
-                            hasConsumedImuSample         = false;
-                            imuContinuityOverflow        = true;
+                            discardImuContinuity();
+                            imuContinuityOverflow = true;
                         }
                         pendingImuMeasurements.emplace_back(
                             imuAcceleration_body_mPerSec2,
@@ -154,7 +180,6 @@ void ImageGrabber::syncWithImu()
 
             continue;
         }
-        constexpr double maximumImuGapAllowed_seconds = 0.010;
         if (imuContinuityOverflow ||
             maximumImuGap_seconds > maximumImuGapAllowed_seconds)
         {
@@ -163,12 +188,12 @@ void ImageGrabber::syncWithImu()
                 *get_clock(),
                 5000,
                 "Discarding an inertial RGB-D frame: IMU continuity failed "
-                "(gap %.4f seconds, %zu buffered samples).",
+                "(gap %.6f seconds, tolerance %.6f seconds, %zu buffered "
+                "samples).",
                 maximumImuGap_seconds,
+                maximumImuGapAllowed_seconds,
                 imuMeasurements.size());
-            pendingImuMeasurements.clear();
-            pendingMaximumImuGap_seconds = 0.0;
-            hasConsumedImuSample         = false;
+            discardImuContinuity();
             if (vs_graphs::common::p_slamSystem->requestResetActiveMapWithCause(
                     vs_graphs::core::reset_cause::ResetCause::
                         IMU_DELIVERY_GAP) !=

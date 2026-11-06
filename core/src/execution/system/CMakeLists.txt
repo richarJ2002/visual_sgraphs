@@ -19,6 +19,7 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImageScale.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getImuFrequency.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuTwb.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuVwb.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFramePose.cc

@@ -54,6 +54,7 @@ void ImageGrabber::grabRgbd(
             std::queue<sensor_msgs::msg::Imu::ConstSharedPtr> emptyImuBuffer;
             p_imuGrabber->imuBuf.swap(emptyImuBuffer);
         }
+        shouldDiscardImuContinuity = true;
         if (vs_graphs::common::p_slamSystem->requestResetActiveMapWithCause(
                 vs_graphs::core::reset_cause::ResetCause::
                     SENSOR_PROCESSING_OVERLOAD) !=

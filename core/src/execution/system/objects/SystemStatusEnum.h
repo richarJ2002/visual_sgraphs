@@ -58,7 +58,13 @@ enum class SystemStatus : std::uint8_t
     /*!
      * @brief           The saved map (Atlas) file could not be loaded.
      */
-    SYSTEM_STATUS_ATLAS_UNREADABLE = 3U
+    SYSTEM_STATUS_ATLAS_UNREADABLE = 3U,
+
+    /*!
+     * @brief           The requested setting is not available because the
+     *                  settings file is not in the File.version 1.0 format.
+     */
+    SYSTEM_STATUS_SETTING_UNAVAILABLE = 4U
 };
 
 } /* namespace system */

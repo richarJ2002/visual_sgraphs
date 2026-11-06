@@ -1749,6 +1749,23 @@ class System
     [[nodiscard]] SystemStatus getTimeFromIMUInit(double &timeFromIMUInit_out);
 
     /*!
+     * @brief           Get the configured IMU sample rate (IMU.Frequency in the
+     *                  settings file).
+     *
+     * @param[out]      imuFrequency_hz_out
+     *                  IMU sample rate in hertz; written only on success.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS, or
+     *                  SYSTEM_STATUS_SETTING_UNAVAILABLE when the settings file
+     *                  is not in the File.version 1.0 format.
+     *
+     * @note            Read-only after initialize(); safe to call from any
+     *                  thread once initialize() has returned.
+     */
+    [[nodiscard]] SystemStatus
+        getImuFrequency(double &imuFrequency_hz_out) const;
+
+    /*!
      * @brief           Check whether the system considers its current state as
      *                  finished/initialized. The system is considered finished
      *                  when the IMU has been initialized for a sufficient
