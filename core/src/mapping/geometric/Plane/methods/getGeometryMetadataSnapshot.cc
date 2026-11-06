@@ -43,6 +43,7 @@ PlaneStatus Plane::getGeometryMetadataSnapshot(
     snapshot.maxPlaneU_m               = maxPlaneU;
     snapshot.minPlaneV_m               = minPlaneV;
     snapshot.maxPlaneV_m               = maxPlaneV;
+    snapshot.boundsAxes                = boundsAxes;
     snapshot.finiteSupportCount        = lastSuccessfulRefitFinitePointCount;
     snapshot.observationCount          = observationCount;
     snapshot.cloudGeneration           = cloudGeneration;

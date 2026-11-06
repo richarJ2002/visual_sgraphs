@@ -8,7 +8,6 @@
 #include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
 
 #include <algorithm>
-#include <cmath>
 #include <limits>
 
 namespace vs_graphs
@@ -27,18 +26,12 @@ double measureWallExtentGap(const VerifyWallObservation &firstWall_world_in,
         return std::numeric_limits<double>::infinity();
     }
 
-    /* In-plane axes from the second wall's normal, built the same way as the
-     * plane bounds (a fixed reference axis avoids a degenerate cross
-     * product). */
-    const Eigen::Vector3d normal_world =
-        secondWall_world_in.wallNormal_world.normalized();
-    const Eigen::Vector3d referenceAxis_world =
-        std::abs(normal_world.x()) <= 0.90 ? Eigen::Vector3d::UnitX()
-                                           : Eigen::Vector3d::UnitY();
-    const Eigen::Vector3d axisFirst_world =
-        normal_world.cross(referenceAxis_world).normalized();
-    const Eigen::Vector3d axisSecond_world =
-        normal_world.cross(axisFirst_world).normalized();
+    /* In-plane axes from the second wall's normal, built as the plane
+     * bounds are. */
+    const geometric::InPlaneAxes secondWallAxes = geometric::computeInPlaneAxes(
+        secondWall_world_in.wallNormal_world.normalized());
+    const Eigen::Vector3d &axisFirst_world  = secondWallAxes.planeAxisU_world;
+    const Eigen::Vector3d &axisSecond_world = secondWallAxes.planeAxisV_world;
 
     double firstMin_m[2]  = {std::numeric_limits<double>::infinity(),
                              std::numeric_limits<double>::infinity()};

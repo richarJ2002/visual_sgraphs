@@ -30,6 +30,7 @@
 #include <vs_graphs_g2o/types/plane3d.h>
 #include <vs_graphs_g2o/types/sim3.h>
 #include "configuration/types/types.h"
+#include "mapping/geometric/Plane/objects/InPlaneAxesStruct.h"
 #include "mapping/geometric/Plane/objects/PlaneGeometryMetadataSnapshotStruct.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 
@@ -218,6 +219,12 @@ class Plane
         double maxPlaneV_m{0.0};
 
         /*!
+         * @brief           In-plane axes U and V the bounds above were
+         *                  measured on, world frame.
+         */
+        InPlaneAxes boundsAxes{};
+
+        /*!
          * @brief           Number of finite points in the support cloud at the
          *                  last successful refit; 0 after the clouds were
          *                  replaced.
@@ -314,46 +321,53 @@ class Plane
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Largest projection of the support cloud onto the
+     *                  in-plane axis U of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double maxPlaneU;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Smallest projection of the support cloud onto the
+     *                  in-plane axis U of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double minPlaneU;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Largest projection of the support cloud onto the
+     *                  in-plane axis V of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double maxPlaneV;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Smallest projection of the support cloud onto the
+     *                  in-plane axis V of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double minPlaneV;
 
   private:
+    /*!
+     * @brief           In-plane axes the bounds minPlaneU/V and maxPlaneU/V
+     *                  were measured on; written with them under the same
+     *                  lock, so readers never pair bounds with other axes.
+     */
+    InPlaneAxes boundsAxes;
+
     /*!
      * @brief           The plane's identifier
      */

@@ -24,6 +24,7 @@
  */
 
 #include "mapping/geometric/Plane/objects/PlaneClass.h"
+#include "mapping/geometric/Plane/public_functions/public_functions.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
@@ -88,14 +89,11 @@ PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
     /* Normalize the plane normal in the world frame */
     const Eigen::Vector3d planeNormal = normalVector.normalized();
 
-    /* Match finiteWallExtentsAreCompatible(): deterministic X/Y reference. */
-    const Eigen::Vector3d referenceAxis = std::abs(planeNormal.x()) <= 0.90
-                                              ? Eigen::Vector3d::UnitX()
-                                              : Eigen::Vector3d::UnitY();
-
-    /* Construct orthonormal axes lying inside the plane */
-    const Eigen::Vector3d axisU = planeNormal.cross(referenceAxis).normalized();
-    const Eigen::Vector3d axisV = planeNormal.cross(axisU).normalized();
+    /* The bounds below are measured on these axes; readers take them from
+     * boundsAxes rather than rebuilding them from a later equation. */
+    boundsAxes                         = computeInPlaneAxes(planeNormal);
+    const Eigen::Vector3d &axisU_world = boundsAxes.planeAxisU_world;
+    const Eigen::Vector3d &axisV_world = boundsAxes.planeAxisV_world;
 
     /* Init flag to indicate that a valid point was found */
     bool foundValidPoint = false;
@@ -132,8 +130,8 @@ PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
 
         /* Emit actual canonical world projections, not centroid-relative
          * extents. */
-        projectionsU.push_back(cloudPoint_world.dot(axisU));
-        projectionsV.push_back(cloudPoint_world.dot(axisV));
+        projectionsU.push_back(cloudPoint_world.dot(axisU_world));
+        projectionsV.push_back(cloudPoint_world.dot(axisV_world));
 
         /* Set flag to indicate that a valid point is linked with the plane */
         foundValidPoint = true;

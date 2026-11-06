@@ -50,4 +50,5 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/transformPlaneEquation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneBoundsWithoutLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateSizeOfPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/public_functions/computeInPlaneAxes.cc
 )
