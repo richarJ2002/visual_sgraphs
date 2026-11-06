@@ -263,18 +263,6 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: Passages
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /vs_graphs/passages
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
       Name: Fiducial Markers
       Namespaces:
         {}
