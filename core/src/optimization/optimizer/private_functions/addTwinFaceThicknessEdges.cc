@@ -11,7 +11,6 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 
 #include "configuration/types/types.h"
 #include "mapping/geometric/Plane/objects/PlaneClass.h"
@@ -29,8 +28,7 @@ namespace core
     const std::vector<geometric::Plane *>        &planes_in,
     const std::function<int(geometric::Plane *)> &getVertexId_in,
     const types::SystemParams                    *p_systemParams_in,
-    double                                        huberThreshold1d_in,
-    std::set<int>                                &constrainedPlaneIds_out)
+    double                                        huberThreshold1d_in)
 {
     if (p_systemParams_in == nullptr)
     {
@@ -225,11 +223,6 @@ namespace core
         p_parallelKernel->setDelta(huberThreshold1d_in);
         p_parallelEdge->setRobustKernel(p_parallelKernel);
         optimizer_inout.addEdge(p_parallelEdge);
-
-        /* Record constrained plane ids for write-back: the caller tests these
-         * against the plane's optimiser vertex id, not Plane::getId(). */
-        constrainedPlaneIds_out.insert(vertexIdA);
-        constrainedPlaneIds_out.insert(vertexIdB);
     }
 
     return optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;

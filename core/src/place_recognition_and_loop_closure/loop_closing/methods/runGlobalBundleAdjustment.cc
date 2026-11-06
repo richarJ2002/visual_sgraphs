@@ -725,7 +725,10 @@ LoopClosingStatus
                     continue;
                 }
 
-                if (p_plane->alignGeometryToEquation(p_plane->planeGBA) !=
+                /* Refused target: plane unchanged (logged inside). */
+                bool isEquationApplied{};
+                if (p_plane->alignGeometryToEquation(p_plane->planeGBA,
+                                                     isEquationApplied) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

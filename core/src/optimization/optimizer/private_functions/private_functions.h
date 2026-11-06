@@ -16,7 +16,6 @@
 #include <atomic>
 #include <cstddef>
 #include <functional>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -273,22 +272,29 @@ inline optimizer::OptimizerEdgeLookupStatus
  *                  EdgeVertexPlaneParallelism between each symmetric twin
  *                  plane pair visible to the optimiser.
  *
- * @param[in,out]   optimizer_inout       g2o optimiser owning vertices.
- * @param[in]       planes_in             Planes with vertices in the optimiser.
- * @param[in]       getVertexId_in        Callable plane* -> int vertex id.
- * @param[in]       p_systemParams_in     System parameters (wall_thickness).
- * @param[in]       huberThreshold1d_in   Huber delta for 1-D edges.
- * @param[out]      constrainedPlaneIds_out
- *                 Optimiser vertex ids of the planes that carried an active
- *                 thickness edge, for the alignGeometryToEquation write-back.
+ * @param[in,out]   optimizer_inout
+ *                  g2o optimiser owning the plane vertices.
+ *
+ * @param[in]       planes_in
+ *                  Planes with vertices in the optimiser.
+ *
+ * @param[in]       getVertexId_in
+ *                  Callable returning a plane's optimiser vertex id.
+ *
+ * @param[in]       p_systemParams_in
+ *                  System parameters (optimization.wall_thickness).
+ *
+ * @param[in]       huberThreshold1d_in
+ *                  Huber delta for the one-dimensional edges.
+ *
+ * @return          OPTIMIZER_STATUS_SUCCESS always.
  */
 [[nodiscard]] optimizer::OptimizerStatus addTwinFaceThicknessEdges(
     g2o::SparseOptimizer                         &optimizer_inout,
     const std::vector<geometric::Plane *>        &planes_in,
     const std::function<int(geometric::Plane *)> &getVertexId_in,
     const types::SystemParams                    *p_systemParams_in,
-    double                                        huberThreshold1d_in,
-    std::set<int>                                &constrainedPlaneIds_out);
+    double                                        huberThreshold1d_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

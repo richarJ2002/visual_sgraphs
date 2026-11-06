@@ -1004,8 +1004,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
 
     /* [BA] Twin-face thickness edges + parallel term between twins. C4 */
-    std::set<int> constrainedPlaneIds;
-    auto          getVertexIdG = [](geometric::Plane *p_plane_in) -> int
+    auto getVertexIdG = [](geometric::Plane *p_plane_in) -> int
     {
         int opId{};
         if (p_plane_in->getOpIdG(opId) !=
@@ -1019,8 +1018,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                     planes_in,
                                     getVertexIdG,
                                     p_systemParams,
-                                    huberThreshold1D,
-                                    constrainedPlaneIds);
+                                    huberThreshold1D);
 
     maxGlobalOptimizationId += roomCount;
 
@@ -1384,9 +1382,12 @@ OptimizerStatus Optimizer::bundleAdjustment(
                  * Keep the finite wall cloud, centroid, bounds, octree, and
                  * optimized equation in one frame. Updating only the equation
                  * leaves the displayed wall and every geometric association at
-                 * the pre-BA pose.
+                 * the pre-BA pose. A refused target keeps the plane unchanged
+                 * (logged inside).
                  */
-                if (plane->alignGeometryToEquation(p_planeVertex->estimate()) !=
+                bool isEquationApplied{};
+                if (plane->alignGeometryToEquation(p_planeVertex->estimate(),
+                                                   isEquationApplied) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

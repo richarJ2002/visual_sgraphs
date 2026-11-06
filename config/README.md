@@ -30,6 +30,7 @@ These parameters are grouped under the `optimization` category and define config
 | `optimization` | `plane_kf`           | `information_gain` | Sets the information gain for plane-to-KeyFrame associations       |
 | `optimization` | `plane_point`        | `enabled`          | Enables plane-to-points factors in the optimization graph          |
 | `optimization` | `plane_point`        | `information_gain` | Sets the information gain for plane-to-points associations         |
+| `optimization` | `max_plane_normal_correction` | —         | Largest normal change (degrees) an optimised equation may apply to a mapped plane; larger corrections are refused |
 
 ## 🗺️ Map Point Refinement Parameters
 

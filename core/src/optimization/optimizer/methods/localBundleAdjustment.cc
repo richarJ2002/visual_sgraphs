@@ -1717,7 +1717,6 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     /* [LBA] Twin-face thickness edges + parallel term between twins. C3 */
     std::vector<geometric::Plane *> localPlaneVec(localPlaneList.begin(),
                                                   localPlaneList.end());
-    std::set<int>                   constrainedPlaneIds;
     auto getVertexId = [](geometric::Plane *p_plane_in) -> int
     {
         int opId{};
@@ -1732,8 +1731,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                     localPlaneVec,
                                     getVertexId,
                                     p_sysParams,
-                                    thresholdHuber1d,
-                                    constrainedPlaneIds);
+                                    thresholdHuber1d);
 
     maximumOpId += roomCount;
 
@@ -2121,30 +2119,21 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
                 optimizer.vertex(mapPlaneGetOpId));
-            g2o::Plane3D planePlane = p_planeVertex->estimate();
-            if (constrainedPlaneIds.count(mapPlaneGetOpId) > 0)
+            /*!
+             * Cloud, centroid and bounds move with the equation; updating
+             * only the equation leaves the finite wall behind its plane.
+             * A refused target keeps the plane unchanged (logged inside).
+             */
+            bool isEquationApplied{};
+            if (p_mapPlane->alignGeometryToEquation(p_planeVertex->estimate(),
+                                                    isEquationApplied) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                if (p_mapPlane->alignGeometryToEquation(planePlane) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: alignGeometryToEquation returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-            }
-            else
-            {
-                if (p_mapPlane->setGlobalEquation(planePlane) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setGlobalEquation returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: alignGeometryToEquation returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         catch (std::exception &e)

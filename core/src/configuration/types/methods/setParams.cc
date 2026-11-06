@@ -138,6 +138,8 @@ SystemParamsStatus
         optimization.wallThickness.informationGain =
             config["optimization"]["wall_thickness"]["information_gain"]
                 .as<float>();
+        optimization.maxPlaneNormalCorrection_deg =
+            config["optimization"]["max_plane_normal_correction"].as<float>();
 
         /* Plane Checkpoint Parameters */
         planeCheckpoint.minimumPointCount =
@@ -495,7 +497,9 @@ SystemParamsStatus
         const RoomSeg::PassagePartition &passagePartition =
             roomSeg.passagePartition;
 
-        if (passageDetection.minimumSideDistance_m <= 0.0F ||
+        if (!std::isfinite(optimization.maxPlaneNormalCorrection_deg) ||
+            optimization.maxPlaneNormalCorrection_deg <= 0.0F ||
+            passageDetection.minimumSideDistance_m <= 0.0F ||
             passageDetection.wallBoundsMargin_m < 0.0F ||
             passageDetection.duplicatePassageDistance_m <= 0.0F ||
             passageDetection.duplicateNormalAlignment <= 0.0F ||

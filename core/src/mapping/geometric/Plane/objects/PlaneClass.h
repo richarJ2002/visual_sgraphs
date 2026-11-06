@@ -573,20 +573,32 @@ class Plane
 
     /*!
      * @brief           Aligns the complete finite plane geometry with an
-     *                  optimized
-     *                         world-frame equation.
+     *                  optimized world-frame equation.
      *
      *                  A minimal rigid correction is applied to the centroid,
      *                  supporting cloud and observation origin (so the
      *                  observed side is kept) before the target equation is
-     *                  stored. This keeps all plane representations mutually
-     *                  consistent after graph optimization.
+     *                  stored, and the octree and in-plane bounds are rebuilt.
+     *                  This keeps all plane representations mutually
+     *                  consistent after graph optimization. A target whose
+     *                  normal is more than
+     *                  optimization.max_plane_normal_correction degrees from
+     *                  the current normal, or a non-finite target, is refused
+     *                  with nothing changed; a refused angle is logged as a
+     *                  warning.
      *
      * @param[in]       targetEquation_newWorld_in
      *                  Optimized plane equation in the active map frame.
+     *
+     * @param[out]      wasApplied_out
+     *                  True when the geometry was moved onto the target; false
+     *                  when the target was refused and the plane is unchanged.
+     *
+     * @return          PLANE_STATUS_SUCCESS always.
      */
     [[nodiscard]] PlaneStatus
-        alignGeometryToEquation(const g2o::Plane3D &targetEquation_newWorld_in);
+        alignGeometryToEquation(const g2o::Plane3D &targetEquation_newWorld_in,
+                                bool               &wasApplied_out);
 
     /*!
      * @brief           Tranforms the plane equation from an old world frame to

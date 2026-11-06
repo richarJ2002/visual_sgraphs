@@ -59,6 +59,10 @@ optimization:
     minimum_thickness: 0.08 # metres
     information_gain: 10000.0 # information (sigma = 1 cm)
 
+  # Largest normal change an optimised plane equation may apply to a mapped
+  # plane; a larger change is refused and the plane keeps its geometry.
+  max_plane_normal_correction: 5.0 # degrees
+
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:
   enabled: true

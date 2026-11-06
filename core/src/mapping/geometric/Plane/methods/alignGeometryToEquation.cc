@@ -23,6 +23,7 @@
  *                  Geometric/Plane.h.
  */
 
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "mapping/geometric/Plane/objects/PlaneClass.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>
@@ -41,8 +42,21 @@ namespace geometric
 {
 
 PlaneStatus Plane::alignGeometryToEquation(
-    const g2o::Plane3D &targetEquation_newWorld_in)
+    const g2o::Plane3D &targetEquation_newWorld_in,
+    bool               &wasApplied_out)
 {
+    wasApplied_out = false;
+
+    types::SystemParams *p_systemParams = nullptr;
+    if (types::SystemParams::getParams(p_systemParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     Eigen::Vector4d currentCoefficients = globalEquation.coeffs();
@@ -69,27 +83,37 @@ PlaneStatus Plane::alignGeometryToEquation(
     const Eigen::Vector3d currentNormal = currentCoefficients.head<3>();
     const Eigen::Vector3d targetNormal  = targetCoefficients.head<3>();
 
+    /* Non-negative after the sign choice above, so at most 90 degrees. */
     const double normalDotProduct =
         std::clamp(currentNormal.dot(targetNormal), -1.0, 1.0);
 
-    Eigen::Quaterniond planeRotation_oldPlaneToOptimizedPlane;
-
-    if (normalDotProduct > 1.0 - 1e-12)
+    /*!
+     * An optimiser target that turns the plane further than the limit is
+     * stale or wrong (it would carry the cloud off the observed surface);
+     * the plane keeps its current, self-consistent geometry instead.
+     */
+    const double normalCorrection_deg =
+        std::acos(normalDotProduct) * 180.0 / M_PI;
+    if (normalCorrection_deg >
+        static_cast<double>(
+            p_systemParams->optimization.maxPlaneNormalCorrection_deg))
     {
-        planeRotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond::Identity();
+        RCLCPP_WARN(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: Plane#%d refused an optimised equation %.1f deg "
+            "from its normal (limit %.1f deg); geometry kept.",
+            __func__,
+            id,
+            normalCorrection_deg,
+            static_cast<double>(
+                p_systemParams->optimization.maxPlaneNormalCorrection_deg));
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
-    else if (normalDotProduct < -1.0 + 1e-12)
-    {
-        const Eigen::Vector3d referenceAxis = std::abs(currentNormal.x()) < 0.9
-                                                  ? Eigen::Vector3d::UnitX()
-                                                  : Eigen::Vector3d::UnitY();
-        const Eigen::Vector3d rotationAxis =
-            currentNormal.cross(referenceAxis).normalized();
 
-        planeRotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond(
-            Eigen::AngleAxisd(std::acos(-1.0), rotationAxis));
-    }
-    else
+    Eigen::Quaterniond planeRotation_oldPlaneToOptimizedPlane =
+        Eigen::Quaterniond::Identity();
+
+    if (normalDotProduct <= 1.0 - 1e-12)
     {
         const Eigen::Vector3d rotationAxis = currentNormal.cross(targetNormal);
 
@@ -168,6 +192,7 @@ PlaneStatus Plane::alignGeometryToEquation(
     }
     ++cloudGeneration;
     successfulRefitGeneration = cloudGeneration;
+    wasApplied_out            = true;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

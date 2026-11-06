@@ -225,6 +225,12 @@ class SystemParams
          * @brief           Minimum enforced wall thickness, metres.
          */
         float      minimumThickness_m = 0.08f;
+        /*!
+         * @brief           Largest angle between a mapped plane's normal and
+         *                  an optimised equation that the plane still takes
+         *                  on, degrees. A larger correction is refused.
+         */
+        float      maxPlaneNormalCorrection_deg = 5.0f;
     };
     /*!
      * @brief           Switches and gains of the plane-based optimisation
