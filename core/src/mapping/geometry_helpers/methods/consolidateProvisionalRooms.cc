@@ -26,6 +26,8 @@
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/map/map.h"
+#include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/semantic/floor/floor.h"
@@ -114,6 +116,21 @@ UtilsStatus Utils::consolidateProvisionalRooms(
 
     /* A room without walls cannot absorb another structural element */
     if (selectedWallIds.empty())
+    {
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
+
+    /* The rooms below come from the current map, which owns the room chain */
+    map::Map *p_currentMap = nullptr;
+    if (p_atlas_in->getCurrentMap(p_currentMap) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentMap == nullptr)
     {
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
@@ -434,6 +451,17 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                                 __func__);
                 }
             }
+        }
+
+        /* Repoint the map's room chain before the candidate is retired. */
+        if (p_currentMap->replaceLinkedRoom(p_candidateRoom,
+                                            p_selectedRoom_inout) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: replaceLinkedRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Mark the redundant provisional structural element as invalid */

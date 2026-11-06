@@ -179,7 +179,7 @@ class Room
 
     /*!
      * @brief           Guards the name, tag, matched context, meta-marker, room
-     *                  variant, recovery-proxy flag and visited flag.
+     *                  variant and visited flag.
      */
     mutable std::mutex stateMutex;
 
