@@ -16,6 +16,7 @@ set(VS_GRAPHS_OPTIMIZER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/poseInertialOptimizationLastKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/poseOptimization.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/addPoseOnlyObservationEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/addRoomWallEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/addTwinFaceThicknessEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/sortByVal.cc
 )

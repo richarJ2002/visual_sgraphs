@@ -775,12 +775,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
             optimizer.addVertex(p_roomPoseVertex);
 
             /*
-             * The legacy multi-plane room projection factor averages closest
-             * points from every wall. That estimate is not the center of a
-             * bounded room and can pull otherwise valid wall planes during a
-             * map re-merge. Keep the front-end room centroid fixed and retain
-             * only the well-defined plane parallel/perpendicular constraints
-             * below.
+             * The room centre stays fixed at the front-end estimate; the
+             * room-wall edges (added after this loop) pull its facing wall
+             * pairs towards it along their normals only.
              */
 
             /* Optimizing the parallel walls of the room */
@@ -1019,6 +1016,24 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                     getVertexIdG,
                                     p_systemParams,
                                     huberThreshold1D);
+
+    /* [GBA] Room-wall edges */
+    auto getRoomVertexIdG = [](semantic::Room *p_room_in) -> int
+    {
+        int opId{};
+        if (p_room_in->getOpIdG(opId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            return -1;
+        }
+        return opId;
+    };
+    (void)addRoomWallEdges(optimizer,
+                           rooms_in,
+                           getVertexIdG,
+                           getRoomVertexIdG,
+                           p_systemParams,
+                           huberThreshold3D);
 
     maxGlobalOptimizationId += roomCount;
 

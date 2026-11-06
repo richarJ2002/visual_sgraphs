@@ -1495,8 +1495,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             optimizer.addVertex(p_vertexRoom);
 
             /*
-             * See the global BA path above: the legacy room-centering factor
-             * is deliberately disabled because it can deform wall geometry.
+             * The room centre stays fixed at the front-end estimate; the
+             * room-wall edges (added after this loop) pull its facing wall
+             * pairs towards it along their normals only.
              */
 
             /* Optimizing the parallel walls of the room */
@@ -1732,6 +1733,26 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                     getVertexId,
                                     p_sysParams,
                                     thresholdHuber1d);
+
+    /* [LBA] Room-wall edges */
+    std::vector<semantic::Room *> localRoomVec(localRoomList.begin(),
+                                               localRoomList.end());
+    auto getRoomVertexId = [](semantic::Room *p_room_in) -> int
+    {
+        int opId{};
+        if (p_room_in->getOpId(opId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            return -1;
+        }
+        return opId;
+    };
+    (void)addRoomWallEdges(optimizer,
+                           localRoomVec,
+                           getVertexId,
+                           getRoomVertexId,
+                           p_sysParams,
+                           thresholdHuberStereo);
 
     maximumOpId += roomCount;
 

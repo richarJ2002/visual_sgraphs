@@ -48,6 +48,10 @@ namespace vs_graphs::core::geometric
 {
 class Plane;
 }
+namespace vs_graphs::core::semantic
+{
+class Room;
+}
 namespace vs_graphs::core::types
 {
 class SystemParams;
@@ -295,6 +299,42 @@ inline optimizer::OptimizerEdgeLookupStatus
     const std::function<int(geometric::Plane *)> &getVertexId_in,
     const types::SystemParams                    *p_systemParams_in,
     double                                        huberThreshold1d_in);
+
+/*!
+ * @brief           Adds room-wall edges: one EdgeVertex4PlaneProjectSE3Room
+ *                  for a four-wall room bounded by two perpendicular facing
+ *                  wall pairs, otherwise one EdgeVertexNPlaneProjectSE3Room
+ *                  per facing wall pair. Each edge weighs the room-centre
+ *                  error only along the pair normals. Only rooms with a
+ *                  closed (COMPLETE) boundary get edges.
+ *
+ * @param[in,out]   optimizer_inout
+ *                  g2o optimiser owning the room and plane vertices.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms whose centre vertex is in the optimiser.
+ *
+ * @param[in]       getWallVertexId_in
+ *                  Callable returning a wall's optimiser vertex id.
+ *
+ * @param[in]       getRoomVertexId_in
+ *                  Callable returning a room's optimiser vertex id.
+ *
+ * @param[in]       p_systemParams_in
+ *                  System parameters (optimization.room_wall).
+ *
+ * @param[in]       huberThreshold3d_in
+ *                  Huber delta for the three-dimensional edges.
+ *
+ * @return          OPTIMIZER_STATUS_SUCCESS always.
+ */
+[[nodiscard]] optimizer::OptimizerStatus addRoomWallEdges(
+    g2o::SparseOptimizer                         &optimizer_inout,
+    const std::vector<semantic::Room *>          &rooms_in,
+    const std::function<int(geometric::Plane *)> &getWallVertexId_in,
+    const std::function<int(semantic::Room *)>   &getRoomVertexId_in,
+    const types::SystemParams                    *p_systemParams_in,
+    double                                        huberThreshold3d_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

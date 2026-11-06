@@ -222,6 +222,12 @@ class SystemParams
          */
         Constraint wallThickness;
         /*!
+         * @brief           Factor tying a room centre to the midpoints of its
+         *                  facing wall pairs; the information gain is in
+         *                  1/m^2.
+         */
+        Constraint roomWall;
+        /*!
          * @brief           Minimum enforced wall thickness, metres.
          */
         float      minimumThickness_m = 0.08f;

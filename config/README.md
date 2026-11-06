@@ -30,6 +30,8 @@ These parameters are grouped under the `optimization` category and define config
 | `optimization` | `plane_kf`           | `information_gain` | Sets the information gain for plane-to-KeyFrame associations       |
 | `optimization` | `plane_point`        | `enabled`          | Enables plane-to-points factors in the optimization graph          |
 | `optimization` | `plane_point`        | `information_gain` | Sets the information gain for plane-to-points associations         |
+| `optimization` | `room_wall`          | `enabled`          | Ties each room centre to the midpoints of its facing wall pairs in global and local BA |
+| `optimization` | `room_wall`          | `information_gain` | Information (1/m^2) of the room-wall factor, along the wall normals |
 | `optimization` | `max_plane_normal_correction` | —         | Largest normal change (degrees) an optimised equation may apply to a mapped plane; larger corrections are refused |
 
 ## 🗺️ Map Point Refinement Parameters

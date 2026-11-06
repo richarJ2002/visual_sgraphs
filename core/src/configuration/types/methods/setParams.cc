@@ -138,6 +138,10 @@ SystemParamsStatus
         optimization.wallThickness.informationGain =
             config["optimization"]["wall_thickness"]["information_gain"]
                 .as<float>();
+        optimization.roomWall.enabled =
+            config["optimization"]["room_wall"]["enabled"].as<bool>();
+        optimization.roomWall.informationGain =
+            config["optimization"]["room_wall"]["information_gain"].as<float>();
         optimization.maxPlaneNormalCorrection_deg =
             config["optimization"]["max_plane_normal_correction"].as<float>();
 

@@ -59,6 +59,13 @@ optimization:
     minimum_thickness: 0.08 # metres
     information_gain: 10000.0 # information (sigma = 1 cm)
 
+  # Room centre to facing-wall-pair midpoint factor, in global and local BA.
+  # Weighs the error only along the wall normals; rooms with a closed boundary.
+  # Off: it did not keep the merge bench inside its previous room/wall bands.
+  room_wall:
+    enabled: false
+    information_gain: 25.0 # information, 1/m^2 (sigma = 20 cm)
+
   # Largest normal change an optimised plane equation may apply to a mapped
   # plane; a larger change is refused and the plane keeps its geometry.
   max_plane_normal_correction: 5.0 # degrees
