@@ -563,9 +563,9 @@ class SystemParams
          */
         float maxWallDoorDistance = 0.5f;
         /*!
-         * @brief           Largest key frame to passage distance, metres, meant
-         *                  for detecting a pass through a passage. Loaded from
-         *                  YAML but not read anywhere yet.
+         * @brief           Largest camera to passage distance, metres, at which
+         *                  the UAV counts as at the passage; an uncrossed
+         *                  passage is not retired while the UAV is there.
          */
         float maxKfPassageDistance = 1.0f;
         /*!
