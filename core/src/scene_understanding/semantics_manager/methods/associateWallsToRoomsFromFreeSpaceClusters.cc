@@ -694,10 +694,50 @@ SemanticsManagerStatus
             const double centroidDistance_m =
                 (prospectiveCentroid_world_m - clusterCentroid).norm();
 
+            /*!
+             * The far side is the one opposite the passage's persisted
+             * known-side direction, the same direction the prospective room
+             * was created from. The seed's own position cannot decide it: it
+             * is placed only 0.15 m beyond the passage, inside the 0.20 m
+             * band that does not resolve a side. Only a passage without a
+             * known-side direction falls back to the prospective centroid.
+             */
+            semantic::Passage::KnownSideProvenance knownSide{};
+            if (p_passage->getKnownSideProvenance(knownSide) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getKnownSideProvenance returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
+            }
+            bool hasKnownSideDirection{};
+            if (knownSide.hasDirection(hasKnownSideDirection) !=
+                semantic::KnownSideProvenanceStatus::
+                    KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasDirection returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            const double knownSideAlongNormal =
+                hasKnownSideDirection ? passageEquation_world.head<3>().dot(
+                                            knownSide.knownSideDirection_world)
+                                      : 0.0;
+            double farSideSign = 0.0;
+            if (std::abs(knownSideAlongNormal) > 1e-3)
+            {
+                farSideSign = knownSideAlongNormal < 0.0 ? 1.0 : -1.0;
+            }
+            else if (std::abs(prospectiveSide_m) > 0.20)
+            {
+                farSideSign = prospectiveSide_m > 0.0 ? 1.0 : -1.0;
+            }
+
             if (!prospectiveCentroid_world_m.allFinite() ||
-                prospectiveSide_m * clusterSide_m <= 0.0 ||
-                std::abs(prospectiveSide_m) <= 0.20 ||
-                std::abs(clusterSide_m) <= 0.20 ||
+                farSideSign == 0.0 || farSideSign * clusterSide_m <= 0.20 ||
                 centroidDistance_m > kProspectiveDedupDistance_m)
             {
                 continue;
@@ -736,7 +776,50 @@ SemanticsManagerStatus
                                      p_prospectiveWall) != closestWalls.end();
                 });
 
-            if (!sharesWallEvidence ||
+            /* A wall-less prospective has no wall to share; the cluster's
+             * far-side position above and the absence of a finite wall
+             * between seed and cluster (the associateRooms veto) are its
+             * whole evidence. */
+            const bool hasProspectiveWall = std::any_of(
+                prospectiveWalls.begin(),
+                prospectiveWalls.end(),
+                [](vs_graphs::core::geometric::Plane *p_prospectiveWall)
+                {
+                    bool prospectiveWallIsBad{};
+                    if ((p_prospectiveWall != nullptr) &&
+                        p_prospectiveWall->isBad(prospectiveWallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    return p_prospectiveWall != nullptr &&
+                           !prospectiveWallIsBad;
+                });
+            bool isSeedSeparatedFromCluster{};
+            if (!hasProspectiveWall &&
+                hasSeparatingFiniteWall(
+                    allPlanes,
+                    prospectiveCentroid_world_m,
+                    clusterCentroid,
+                    static_cast<double>(
+                        p_sysParams->roomSeg.finiteWallBoundsMargin_m),
+                    false,
+                    isSeedSeparatedFromCluster) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: hasSeparatingFiniteWall returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+
+            if ((hasProspectiveWall && !sharesWallEvidence) ||
+                isSeedSeparatedFromCluster ||
                 centroidDistance_m >= bestProspectiveDistance_m)
             {
                 continue;
@@ -826,6 +909,26 @@ SemanticsManagerStatus
                                  __func__);
                 }
                 if (p_candidateWall == nullptr || candidateWallIsBad)
+                {
+                    continue;
+                }
+
+                /* The owner of a face bounds the face's observed side; a
+                 * cluster on the other side is not that room. */
+                bool isClusterOnForeignFaceSide{};
+                if (isPointOnForeignSideOfWallFace(
+                        p_candidateWall,
+                        clusterCentroid,
+                        isClusterOnForeignFaceSide) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isPointOnForeignSideOfWallFace returned "
+                                 "a failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
+                if (isClusterOnForeignFaceSide)
                 {
                     continue;
                 }
@@ -1904,134 +2007,65 @@ SemanticsManagerStatus
         roomWalls = wallsAfterInvalidRemoval;
 
         /*!
-         * The semantic room centre is the mean of each wall's centroid
-         * nudged INWARD along that wall's own room-facing normal
-         * (Room::getWallNormalTowardRoom_world(), oriented against the
-         * room's own current centroid before this update replaces it) by
-         * a fixed offset, not the raw wall centroids themselves. A plain
-         * mean of wall centroids is NOT guaranteed to land inside the room:
-         * for a room only partially observed so far (e.g. two adjacent
-         * walls, no opposite pair yet), the raw mean sits near the shared
-         * corner, which can be right on -- or, depending on geometry,
-         * outside -- the room's true interior. Nudging each wall centroid
-         * inward before averaging keeps every contributing point already
-         * inside the room, so their mean is too. Rooms without walls keep
-         * their creation centroid until walls arrive: free-space evidence
-         * places a room once, at creation, and never maintains it.
+         * The semantic room centre comes from computeRoomCentreFromWalls():
+         * the centre of the floor box spanned by the walls' extents, or the
+         * inward-pushed wall-centroid mean for walls that span no box. Rooms
+         * without walls keep their creation centroid until walls arrive:
+         * free-space evidence places a room once, at creation, and never
+         * maintains it.
          */
-        if (!roomWalls.empty())
+        std::optional<Eigen::Vector3d> wallCentre_world_m{};
+        if (computeRoomCentreFromWalls(p_room, roomWalls, wallCentre_world_m) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            constexpr double centroidInwardOffset_m   = 0.10;
-            Eigen::Vector3d  wallMeanCentroid_world_m = Eigen::Vector3d::Zero();
-            std::size_t      validWallCount           = 0U;
-
-            for (vs_graphs::core::geometric::Plane *p_roomWall : roomWalls)
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeRoomCentreFromWalls returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+        if (wallCentre_world_m.has_value())
+        {
+            /*!
+             * Damped update, not a snap. This centroid feeds two decisions
+             * that REMOVE walls -- isWallFaceForeignToRoom's foreign-face
+             * check (enforcePassageSideInvariant) and the passage far-side
+             * router -- which change roomWalls, which changes the centre
+             * computed above. An undamped snap closes an unstable feedback
+             * loop with no damping: remove a wall -> centroid shifts ->
+             * another wall's side test flips -> remove that too -> centroid
+             * shifts further. Live-observed 2026-09-04 crossing Office 6's
+             * passage: the same handful of walls near the doorway repeatedly
+             * removed and re-admitted, tens of times in a row, a previously
+             * COMPLETE room's boundary never settling. Blending in a minority
+             * weight of the fresh centre still lets the centroid track
+             * genuinely new evidence over several cycles, but one cycle's
+             * wall churn can no longer swing it far enough to flip another
+             * wall's side test.
+             */
+            Eigen::Vector3d previousCentroid_world_m{};
+            if (p_room->getCentroid(previousCentroid_world_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                bool roomWallIsBad{};
-                if (!(p_roomWall == nullptr) &&
-                    p_roomWall->isBad(roomWallIsBad) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_roomWall == nullptr || roomWallIsBad)
-                {
-                    continue;
-                }
-
-                Eigen::Vector3d roomWallGetCentroid{};
-                if (p_roomWall->getCentroid(roomWallGetCentroid) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                const Eigen::Vector3d wallCentroid_world_m =
-                    roomWallGetCentroid.cast<double>();
-
-                if (!wallCentroid_world_m.allFinite())
-                {
-                    continue;
-                }
-
-                std::optional<Eigen::Vector3d> inwardNormal_world{};
-                if (p_room->getWallNormalTowardRoom_world(p_roomWall,
-                                                          inwardNormal_world) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    /*!
-                     * getWallNormalTowardRoom_world cannot fail; continue as
-                     * before.
-                     */
-                }
-
-                const Eigen::Vector3d nudgedCentroid_world_m =
-                    inwardNormal_world
-                        ? wallCentroid_world_m +
-                              centroidInwardOffset_m * (*inwardNormal_world)
-                        : wallCentroid_world_m;
-
-                wallMeanCentroid_world_m += nudgedCentroid_world_m;
-                validWallCount++;
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
+            constexpr double      centroidDampingWeight = 0.25;
+            const Eigen::Vector3d dampedCentroid_world_m =
+                previousCentroid_world_m.allFinite()
+                    ? (centroidDampingWeight * (*wallCentre_world_m) +
+                       (1.0 - centroidDampingWeight) * previousCentroid_world_m)
+                    : *wallCentre_world_m;
 
-            if (validWallCount > 0U)
+            if (p_room->setCentroid(dampedCentroid_world_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                const Eigen::Vector3d correctedCentroid_world_m =
-                    wallMeanCentroid_world_m /
-                    static_cast<double>(validWallCount);
-
-                /*!
-                 * Damped update, not a snap. This centroid feeds two
-                 * decisions that REMOVE walls -- isWallFaceForeignToRoom's
-                 * foreign-face check (enforcePassageSideInvariant) and the
-                 * passage far-side router -- which change roomWalls, which
-                 * changes the raw mean computed above. An undamped snap
-                 * closes an unstable feedback loop with no damping: remove
-                 * a wall -> centroid shifts -> another wall's side test
-                 * flips -> remove that too -> centroid shifts further.
-                 * Live-observed 2026-09-04 crossing Office 6's passage: the
-                 * same handful of walls near the doorway repeatedly
-                 * removed and re-admitted, tens of times in a row, a
-                 * previously COMPLETE room's boundary never settling.
-                 * Blending in a minority weight of the fresh mean still
-                 * lets the centroid track genuinely new evidence over
-                 * several cycles, but one cycle's wall churn can no longer
-                 * swing it far enough to flip another wall's side test.
-                 */
-                Eigen::Vector3d previousCentroid_world_m{};
-                if (p_room->getCentroid(previousCentroid_world_m) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                constexpr double      centroidDampingWeight = 0.25;
-                const Eigen::Vector3d dampedCentroid_world_m =
-                    previousCentroid_world_m.allFinite()
-                        ? (centroidDampingWeight * correctedCentroid_world_m +
-                           (1.0 - centroidDampingWeight) *
-                               previousCentroid_world_m)
-                        : correctedCentroid_world_m;
-
-                if (p_room->setCentroid(dampedCentroid_world_m) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 

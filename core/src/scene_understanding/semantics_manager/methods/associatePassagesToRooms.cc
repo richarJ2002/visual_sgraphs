@@ -85,7 +85,6 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
     constexpr double sideEpsilon_m = 0.20;
 
     constexpr double maximumSupportingPlaneDistance_m = 1.00;
-    constexpr double maximumOpeningEdgeDistance_m     = 3.00;
     constexpr double minimumNormalAlignment           = 0.80;
 
     /* Stable room ordering makes equal-distance passage associations
@@ -310,6 +309,28 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
         }
         const Eigen::Vector3d passageCentroid_world_m =
             passageCentroid2.cast<double>();
+
+        /*!
+         * A wall the passage is not linked to borders it only where that
+         * wall's support reaches the opening's own frame: half the opening
+         * width plus the jamb tolerance (passage_partition.opening_margin)
+         * from the opening centre. Along a corridor, doors share one wall
+         * line, so any wider reach lets one room's face claim the doors of
+         * its neighbours.
+         */
+        double passageWidth_m{};
+        if (p_passage->getWidth(passageWidth_m) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWidth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        const double openingFrameReach_m =
+            0.5 * passageWidth_m +
+            static_cast<double>(
+                p_sysParams->roomSeg.passagePartition.openingMargin_m);
 
         semantic::Passage::KnownSideProvenance knownSide{};
         if (p_passage->getKnownSideProvenance(knownSide) !=
@@ -580,8 +601,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                      openingOffset_world_m.norm());
                     }
 
-                    return nearestOpeningEdgeDistance_m <=
-                           maximumOpeningEdgeDistance_m;
+                    /* A non-finite or non-positive width gives no reach. */
+                    return passageWidth_m > 0.0 &&
+                           nearestOpeningEdgeDistance_m <= openingFrameReach_m;
                 });
 
             /* A passage can only belong to a room when the wall it is linked
@@ -1422,8 +1444,23 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        /*!
+         * A sole confirmed room that won the side opposite the known side is
+         * this passage's far-side room, the same state as "resolved to
+         * opposite confirmed" below. A seed fused into that room leaves the
+         * handle on it; clearing it here would create a new seed in the same
+         * space every cycle.
+         */
+        const bool isSoleRoomOnFarSide =
+            confirmedAssociatedRoomCount == 1U &&
+            knownSide.p_room != p_confirmedAssociatedRoom &&
+            ((knownSideSign > 0.0 &&
+              p_confirmedAssociatedRoom == p_negativeSideRoom) ||
+             (knownSideSign < 0.0 &&
+              p_confirmedAssociatedRoom == p_positiveSideRoom));
         if ((confirmedAssociatedRoomCount == 1U &&
-             p_currentFarSideHandle == p_confirmedAssociatedRoom) ||
+             p_currentFarSideHandle == p_confirmedAssociatedRoom &&
+             !isSoleRoomOnFarSide) ||
             (confirmedAssociatedRoomCount == 2U &&
              p_currentFarSideHandle != nullptr &&
              p_currentFarSideHandle != p_negativeSideRoom &&
@@ -2791,10 +2828,31 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         const types::SystemParams::RoomSeg::BoundaryTopology
                             &topologyParameters =
                                 p_sysParams->roomSeg.boundaryTopology;
-                        Eigen::Vector3d prospectiveCentroid{};
-                        if (p_prospectiveRoom->getCentroid(
-                                prospectiveCentroid) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        /* The candidate must lie beyond THIS opening: the
+                         * line to it starts just inside the known side, the
+                         * passage centroid pushed twice the side band along
+                         * the known-side direction (the stand-in
+                         * enforcePassageApertureBackstop() uses). The
+                         * prospective room's own centroid sits on the far
+                         * side, so its line through the opening reached the
+                         * known side instead: across a corridor into the
+                         * office opposite. Without a known side there is no
+                         * start, and the prospective room waits. */
+                        bool knownSideHasDirection4{};
+                        if (passageKnownSideProvenance3.hasDirection(
+                                knownSideHasDirection4) !=
+                            semantic::KnownSideProvenanceStatus::
+                                KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: hasDirection returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Eigen::Vector3d passageCentroid4{};
+                        if (p_passage->getCentroid(passageCentroid4) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: getCentroid returned a failure "
@@ -2802,12 +2860,19 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                          "continuing as before.",
                                          __func__);
                         }
+                        const Eigen::Vector3d knownSideStart_world_m =
+                            passageCentroid4 +
+                            2.0 * minimumSideDistance_m *
+                                passageKnownSideProvenance3
+                                    .knownSideDirection_world;
                         const std::vector<vs_graphs::core::semantic::Room *>
                             excludedRooms = {p_prospectiveRoom,
                                              p_knownSideRoom};
 
                         for (vs_graphs::core::semantic::Room *p_otherRoom :
-                             allRooms)
+                             knownSideHasDirection4
+                                 ? allRooms
+                                 : std::vector<semantic::Room *>{})
                         {
                             bool otherRoomIsBad2{};
                             if (!(p_otherRoom == nullptr) &&
@@ -2856,7 +2921,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             }
                             bool crossesPassageOpening2{};
                             if (segmentCrossesPassageOpening(
-                                    prospectiveCentroid,
+                                    knownSideStart_world_m,
                                     otherRoomCentroid3,
                                     p_passage,
                                     groundNormal_world,
@@ -2902,7 +2967,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             }
                             bool crossesForeignWall2{};
                             if (segmentCrossesForeignWall(
-                                    prospectiveCentroid,
+                                    knownSideStart_world_m,
                                     otherRoomCentroid4,
                                     excludedRooms,
                                     allRooms,

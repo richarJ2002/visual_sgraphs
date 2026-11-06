@@ -254,22 +254,19 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                 apertureEnd_m -
                     apertureShrinkFraction * (apertureEnd_m - apertureStart_m));
             /*
-             * A mostly FREE aperture without wall points is no closure even
-             * when no door-sized gap was measured (the free space ran past
-             * the wall's end or merged with a neighbouring opening).
+             * Only wall points in the aperture close it. Without them and
+             * without a measured gap (the free space ran past the wall's end,
+             * merged with a neighbouring opening, or one side is still
+             * unobserved) the profile says nothing about the door.
              */
-            constexpr double minimumUnboundedFreeFraction = 0.5;
-            const bool       hasNoWallPoints =
+            const bool hasNoWallPoints =
                 apertureWallPoints <
                 passageParameters.maximumApertureWallPoints;
             if (openGap != openGaps_in.end() && hasNoWallPoints)
             {
                 passageVerdict = PassageVerdict::OPEN;
             }
-            else if (hasNoWallPoints &&
-                     static_cast<double>(lastFreeCount) >
-                         minimumUnboundedFreeFraction *
-                             static_cast<double>(lastCellCount))
+            else if (hasNoWallPoints)
             {
                 passageVerdict = PassageVerdict::NO_EVIDENCE;
             }
@@ -355,7 +352,14 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                 passageParameters.closedConfirmationCount)
             {
                 /* A crossed passage stays in the graph, only blocked; an
-                 * uncrossed one was never confirmed and is retired. */
+                 * uncrossed one was never confirmed and is retired, but not
+                 * while the UAV is at it and may be about to cross. */
+                const bool uavIsAtPassage =
+                    hasCameraCenter &&
+                    (currentCameraCenter_world_m - passageCentroid_world_m)
+                            .norm() <
+                        static_cast<double>(
+                            p_sysParams->semSeg.maxKfPassageDistance);
                 if (passageIsTraversed && !passageIsBlocked)
                 {
                     if (p_passage->setBlocked(true) !=
@@ -372,7 +376,7 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                               << consecutiveClosedVerdicts << " profiles."
                               << std::endl;
                 }
-                else if (!passageIsTraversed)
+                else if (!passageIsTraversed && !uavIsAtPassage)
                 {
                     if (p_passage->setBad() !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)

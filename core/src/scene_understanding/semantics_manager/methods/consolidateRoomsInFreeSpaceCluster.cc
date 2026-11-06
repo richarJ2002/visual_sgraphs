@@ -152,30 +152,148 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const bool duplicateIsLiveProspective = std::any_of(
-            activePassages.begin(),
-            activePassages.end(),
-            [p_duplicateRoom](semantic::Passage *p_passage)
-            {
-                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
-                    nullptr;
-                if ((p_passage != nullptr) &&
-                    p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        const std::vector<semantic::Passage *>::const_iterator
+            duplicateSeedPassage = std::find_if(
+                activePassages.begin(),
+                activePassages.end(),
+                [p_duplicateRoom](semantic::Passage *p_passage)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getProspectiveRoom returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                return p_passage != nullptr &&
-                       p_passageProspectiveRoom == p_duplicateRoom;
-            });
+                    vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                        nullptr;
+                    if ((p_passage != nullptr) &&
+                        p_passage->getProspectiveRoom(
+                            p_passageProspectiveRoom) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getProspectiveRoom returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    return p_passage != nullptr &&
+                           p_passageProspectiveRoom == p_duplicateRoom;
+                });
+        const bool duplicateIsLiveProspective =
+            duplicateSeedPassage != activePassages.end();
 
+        /*!
+         * A live prospective room waits for its own cluster validation,
+         * except a wall-less seed standing inside this room's wall
+         * footprint and on this room's side of its own passage plane: it is
+         * the far-side handle of space this room already holds, and nothing
+         * else can ever give it walls. The footprint is padded only by half
+         * the thinnest wall (optimization.wall_thickness.minimum_thickness),
+         * well below the seed's 0.15 m offset beyond its passage, so a seed
+         * beyond the near-side room's wall never counts as inside it.
+         */
         if (duplicateIsLiveProspective)
         {
-            continue;
+            std::vector<geometric::Plane *> duplicateSeedWalls{};
+            if (p_duplicateRoom->getWalls(duplicateSeedWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!duplicateSeedWalls.empty())
+            {
+                continue;
+            }
+
+            std::vector<geometric::Plane *> retainedWalls{};
+            if (p_retainedRoom_inout->getWalls(retainedWalls) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector3d upDirection_world = Eigen::Vector3d::Zero();
+            bool            isUpFromImuGravity{};
+            if (p_currentMap->getUpDirection(upDirection_world,
+                                             isUpFromImuGravity) !=
+                map::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getUpDirection returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            RoomWallFootprint retainedFootprint{};
+            bool              hasRetainedFootprint{};
+            if (computeRoomWallFootprint(retainedWalls,
+                                         upDirection_world,
+                                         retainedFootprint,
+                                         hasRetainedFootprint) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: computeRoomWallFootprint returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
+                             __func__);
+            }
+            Eigen::Vector3d seedCentroid_world_m{};
+            if (p_duplicateRoom->getCentroid(seedCentroid_world_m) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            const double footprintTolerance_m =
+                0.5 * static_cast<double>(
+                          p_sysParams->optimization.minimumThickness_m);
+            const double seedAlongFirst_m =
+                seedCentroid_world_m.dot(retainedFootprint.firstAxis_world);
+            const double seedAlongSecond_m =
+                seedCentroid_world_m.dot(retainedFootprint.secondAxis_world);
+            const bool isSeedInsideFootprint =
+                hasRetainedFootprint && seedCentroid_world_m.allFinite() &&
+                seedAlongFirst_m >=
+                    retainedFootprint.minimumFirst_m - footprintTolerance_m &&
+                seedAlongFirst_m <=
+                    retainedFootprint.maximumFirst_m + footprintTolerance_m &&
+                seedAlongSecond_m >=
+                    retainedFootprint.minimumSecond_m - footprintTolerance_m &&
+                seedAlongSecond_m <=
+                    retainedFootprint.maximumSecond_m + footprintTolerance_m;
+            if (!isSeedInsideFootprint)
+            {
+                continue;
+            }
+
+            g2o::Plane3D seedPassageGlobalEquation{};
+            if ((*duplicateSeedPassage)
+                    ->getGlobalEquation(seedPassageGlobalEquation) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            const Eigen::Vector4d seedPassageEquation_world =
+                seedPassageGlobalEquation.coeffs();
+            const double seedSide_m =
+                seedPassageEquation_world.head<3>().dot(seedCentroid_world_m) +
+                seedPassageEquation_world(3);
+            const double retainedSide_m =
+                seedPassageEquation_world.head<3>().dot(
+                    retainedCentroid_world_m) +
+                seedPassageEquation_world(3);
+            /* Only a strictly same-side pair fuses; an unusable plane or
+             * centre (NaN or zero product) proves no side, so the seed keeps
+             * waiting. */
+            if (!(seedSide_m * retainedSide_m > 0.0))
+            {
+                continue;
+            }
         }
 
         semantic::Room::RoomVariant retainedType{};
@@ -305,7 +423,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          __func__);
         }
 
-        /* Rooms across a passage or a wall's twin faces never fuse. */
+        /* Rooms across a passage (centres on its two sides) or a wall's twin
+         * faces never fuse. */
         bool areRoomsSeparated{};
         if (p_retainedRoom_inout->getIsSeparatedFrom(p_duplicateRoom,
                                                      areRoomsSeparated) !=
@@ -643,6 +762,22 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "%s: replaceLinkedRoom returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
+        }
+        /* A fused seed's passage now leads to the retained room. */
+        for (semantic::Passage *p_passage : activePassages)
+        {
+            bool passageWasRoomReplaced{};
+            if (p_passage != nullptr &&
+                p_passage->replaceProspectiveRoom(p_duplicateRoom,
+                                                  p_retainedRoom_inout,
+                                                  passageWasRoomReplaced) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                            "%s: replaceProspectiveRoom rejected its input; "
+                            "continuing as before.",
+                            __func__);
+            }
         }
 
         int duplicateRoomId{};

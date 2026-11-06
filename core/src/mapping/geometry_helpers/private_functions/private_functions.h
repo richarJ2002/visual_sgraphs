@@ -30,6 +30,7 @@
 
 #include <limits>
 #include <optional>
+#include <vector>
 
 #include <Eigen/Dense>
 
@@ -155,15 +156,29 @@ struct ProjectedPlaneBounds
  * @brief           Tests whether two finite clouds overlap or extend one
  *                  another along the same plane.
  *
+ *                  Fragments that do not overlap are separated when a mapped
+ *                  WALL roughly perpendicular to the face lies between them,
+ *                  reaches the face and runs at least 0.50 m into the
+ *                  observed side: they are faces of neighbouring rooms meeting
+ *                  at a partition, not one surface broken by a door.
+ *
  * @param[in]       p_firstCloud_in
  *                  First finite plane support cloud.
  *
  * @param[in]       p_secondCloud_in
  *                  Second finite plane support cloud.
  *
- * @param[in]       commonNormal_world_in
- *                  Unit normal shared by the already equation-compatible
- *                  planes.
+ * @param[in]       commonEquation_world_in
+ *                  Equation shared by the already equation-compatible planes,
+ *                  in the active map frame.
+ *
+ * @param[in]       observerSide_m_in
+ *                  Signed observer distance from commonEquation_world_in, in
+ *                  metres; 0 when unknown, which skips the separation test.
+ *
+ * @param[in]       mappedPlanes_in
+ *                  Mapped planes searched for a separating wall, non-owning;
+ *                  null, bad and non-WALL entries are ignored.
  *
  * @param[in]       maximumInPlaneGap_m_in
  *                  Maximum permitted extension gap along either tangent.
@@ -171,19 +186,31 @@ struct ProjectedPlaneBounds
  * @param[in]       minimumOrthogonalOverlap_m_in
  *                  Required overlap along the other tangent.
  *
+ * @param[in]       touchingTolerance_m_in
+ *                  Distance, in metres, within which a fragment end or the
+ *                  separating wall still touches.
+ *
  * @param[out]      areCompatible_out
  *                  True when the clouds overlap or form adjacent finite
  *                  extensions.
+ *
+ * @param[out]      isSeparatedByCrossingWall_out
+ *                  True when a mapped wall separates the fragments; the
+ *                  caller shall not join them by any other test.
  *
  * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_secondCloud_in,
-    const Eigen::Vector3d                              &commonNormal_world_in,
+    const Eigen::Vector4d                              &commonEquation_world_in,
+    const double                                        observerSide_m_in,
+    const std::vector<geometric::Plane *>              &mappedPlanes_in,
     const double                                        maximumInPlaneGap_m_in,
     const double minimumOrthogonalOverlap_m_in,
-    bool        &areCompatible_out);
+    const double touchingTolerance_m_in,
+    bool        &areCompatible_out,
+    bool        &isSeparatedByCrossingWall_out);
 
 /*!
  * @brief           Applies the OPPOSITE_FACE test of Utils::findMatchingPlane()

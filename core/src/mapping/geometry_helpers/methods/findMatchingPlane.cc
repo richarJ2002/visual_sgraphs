@@ -359,6 +359,12 @@ UtilsStatus Utils::findMatchingPlane(
         }
 
         /*!
+         * Signed distance of the observer from mappedEquation, in metres;
+         * 0 when no side is known.
+         */
+        double observerSide_m = 0.0;
+
+        /*!
          * Keep wall faces observed from opposite sides apart. Their equations
          * can be nearly identical when the wall is thinner than the distance
          * threshold, but they bound different rooms.
@@ -414,6 +420,10 @@ UtilsStatus Utils::findMatchingPlane(
             {
                 continue;
             }
+
+            observerSide_m =
+                mappedObservationSide.medianSignedDistance_m.value_or(
+                    givenObservationSide_m.value_or(0.0));
         }
 
         /* Calculate the angular difference between the plane normals */
@@ -441,16 +451,21 @@ UtilsStatus Utils::findMatchingPlane(
         }
 
         bool areCompatible{};
+        bool isSeparatedByCrossingWall{};
         if ((useWallExtension) &&
             finiteWallExtentsAreCompatible(
                 p_mappedCloud,
                 p_observedCloud,
-                mappedEquation.head<3>(),
+                mappedEquation,
+                observerSide_m,
+                mappedPlanes_in,
                 p_sysParams->semSeg.reassociate.wallExtension
                     .maximumInPlaneGap_m,
                 p_sysParams->semSeg.reassociate.wallExtension
                     .minimumOrthogonalOverlap_m,
-                areCompatible) != UtilsStatus::UTILS_STATUS_SUCCESS)
+                matchSettings_in.maximumCloudGap_m,
+                areCompatible,
+                isSeparatedByCrossingWall) != UtilsStatus::UTILS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
@@ -458,6 +473,16 @@ UtilsStatus Utils::findMatchingPlane(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
+
+        /*!
+         * A wall standing between the two fragments ends them both: they are
+         * faces of neighbouring rooms, so no other path may join them.
+         */
+        if (useWallExtension && isSeparatedByCrossingWall)
+        {
+            continue;
+        }
+
         const bool finiteWallExtentsCompatible =
             useWallExtension && areCompatible;
 

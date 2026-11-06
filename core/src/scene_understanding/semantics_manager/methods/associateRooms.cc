@@ -290,7 +290,27 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
             const bool sameSide = clusterSide * roomSide > 0.0;
 
-            if (centroidNearWall || sameSide)
+            /*!
+             * The face itself says which side it bounds: the side it was
+             * observed from. A cluster on the other side is not bounded by
+             * it, whatever the room centroid's position in the dead-band
+             * says (a one-wall room's centroid sits only 0.10 m off its
+             * wall). Only tightens the centroid test above.
+             */
+            bool isClusterOnForeignFaceSide{};
+            if (isPointOnForeignSideOfWallFace(p_candidateWall,
+                                               clusterCentroid_world_in,
+                                               isClusterOnForeignFaceSide) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: isPointOnForeignSideOfWallFace returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+
+            if (!isClusterOnForeignFaceSide && (centroidNearWall || sameSide))
             {
                 sameSideMatches++;
             }

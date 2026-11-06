@@ -410,9 +410,12 @@ class SemanticsManager
     /*!
      * @brief           Gives each passage anchored on a wall its verdict from
      *                  the wall's slab profile: NO_EVIDENCE (too little of the
-     *                  aperture observed; counters frozen), OPEN (a measured
-     *                  gap with few wall points inside) or CLOSED; then
-     *                  blocks, unblocks or retires the passage.
+     *                  aperture observed, or no measured gap and few wall
+     *                  points inside; counters frozen), OPEN (a measured gap
+     *                  with few wall points inside) or CLOSED (wall points
+     *                  inside); then blocks, unblocks or retires the passage.
+     *                  An uncrossed passage is not retired while the camera
+     *                  is within max_kf_passage_distance of it.
      *
      * @param[in]       p_wall_in
      *                  Wall the profile belongs to; non-owning.
@@ -865,9 +868,11 @@ class SemanticsManager
      *                  passage's geometry stabilises after the fact.
      *
      *                  When p_room_inout is the passage's far-side room, a
-     *                  crossing wall lies on the known side: a wall the room
-     *                  does not own yet is refused (REMOVED_UNBOUND), one it
-     *                  already owns is kept.
+     *                  crossing wall lies on the known side; when the passage
+     *                  does not join p_room_inout at all, the room cannot
+     *                  tell the passage's sides apart. In both cases a wall
+     *                  the room does not own yet is refused (REMOVED_UNBOUND),
+     *                  one it already owns is kept.
      *
      * @param[in,out]   p_room_inout
      *                  Room the wall is currently (or about to be) bound to. On

@@ -79,6 +79,17 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
+    /* The wall's support points: the part of it actually observed. */
+    geometric::Plane::GeometrySnapshot wallGeometry{};
+    if (p_wall_in->getGeometrySnapshot(wallGeometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometrySnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     for (semantic::Passage *p_passage : allPassages_in)
     {
         bool passageIsBad{};
@@ -116,15 +127,12 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         /* segmentCrossesPassageOpening reports "no crossing" whenever the
          * segment start lies within minimumSideDistance_m of the passage
          * plane, which the centroid of a sparsely observed room often does.
-         * For a room judged from its centroid alone, when the passage's
-         * known-side direction is available, substitute a point pushed off
-         * the plane on the tested room's own side: along the known-side
-         * direction for a known-side room, against it for the far-side room.
-         * Without a known side the residual sign is noise, so the start is
-         * left unchanged. For the room the camera is in, the camera and the
-         * centroid must both see the crossing (getRoomViewpoints()); one too
-         * close to the plane to call is disagreement, so no substitute is
-         * made there. */
+         * When the passage's known-side direction is available, substitute a
+         * point pushed off the plane on the tested room's own side: along the
+         * known-side direction for a known-side room, against it for the
+         * far-side room. Without a known side the residual sign is noise, so
+         * the start is left unchanged. For the room the camera is in, the
+         * camera is the viewpoint instead (see below). */
         Eigen::Vector3d segmentStart_world_m{};
         Eigen::Vector3d cameraCenter_world_m{};
         bool            hasCameraViewpoint{};
@@ -150,12 +158,13 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         }
         Eigen::Vector4d passageEquation_world = passageGlobalEquation.coeffs();
         const double passageNormalNorm = passageEquation_world.head<3>().norm();
-        if (!hasCameraViewpoint && passageEquation_world.allFinite() &&
-            passageNormalNorm > 1e-8)
+        const bool   hasPassagePlane =
+            passageEquation_world.allFinite() && passageNormalNorm > 1e-8;
+        Eigen::Vector3d passageNormal_world = Eigen::Vector3d::Zero();
+        if (hasPassagePlane)
         {
             passageEquation_world /= passageNormalNorm;
-            const Eigen::Vector3d passageNormal_world =
-                passageEquation_world.head<3>();
+            passageNormal_world = passageEquation_world.head<3>();
             const double roomViewpointSide_m =
                 passageNormal_world.dot(segmentStart_world_m) +
                 passageEquation_world(3);
@@ -213,17 +222,15 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        const auto crossesFrom =
-            [this,
-             &wallGetCentroid,
-             p_passage,
-             &groundNormal_world_in,
-             minimumSideDistance_m](const Eigen::Vector3d &segmentStart_in)
+        const auto crossesTo =
+            [this, p_passage, &groundNormal_world_in, minimumSideDistance_m](
+                const Eigen::Vector3d &segmentStart_in,
+                const Eigen::Vector3d &segmentEnd_in)
         {
             bool crossesPassageOpening_out{};
             if (segmentCrossesPassageOpening(
                     segmentStart_in,
-                    wallGetCentroid.cast<double>(),
+                    segmentEnd_in,
                     p_passage,
                     groundNormal_world_in,
                     static_cast<double>(
@@ -240,9 +247,92 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
             }
             return crossesPassageOpening_out;
         };
+        /* The wall is reached through the opening when the line to its
+         * centroid is, or when the lines to most of its observed support
+         * points are: a wall seen through a doorway is often only partly in
+         * view, and its centroid may lie behind the solid part of the door
+         * wall. Support points on the start's side or inside the side band
+         * count against the wall. */
+        const auto crossesFrom = [&crossesTo, &wallGetCentroid, &wallGeometry](
+                                     const Eigen::Vector3d &segmentStart_in)
+        {
+            if (crossesTo(segmentStart_in, wallGetCentroid))
+            {
+                return true;
+            }
+            const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr
+                p_wallSupportCloud = wallGeometry.supportCloud;
+            if (p_wallSupportCloud == nullptr || p_wallSupportCloud->empty())
+            {
+                return false;
+            }
+            /* ponytail: fixed stride to about 200 tested points per wall
+             * and passage; replace with a per-cycle cached decision if the
+             * every-cycle sweep ever shows in the semantic cycle time. */
+            const std::size_t supportPointStride =
+                std::max<std::size_t>(1U, p_wallSupportCloud->size() / 200U);
+            std::size_t testedPointCount   = 0U;
+            std::size_t crossingPointCount = 0U;
+            for (std::size_t pointIndex = 0U;
+                 pointIndex < p_wallSupportCloud->size();
+                 pointIndex += supportPointStride)
+            {
+                const pcl::PointXYZRGBA &supportPoint =
+                    p_wallSupportCloud->points[pointIndex];
+                if (!pcl::isFinite(supportPoint))
+                {
+                    continue;
+                }
+                ++testedPointCount;
+                if (crossesTo(
+                        segmentStart_in,
+                        Eigen::Vector3d(static_cast<double>(supportPoint.x),
+                                        static_cast<double>(supportPoint.y),
+                                        static_cast<double>(supportPoint.z))))
+                {
+                    ++crossingPointCount;
+                }
+            }
+            return 2U * crossingPointCount > testedPointCount;
+        };
+
+        /* For the room the camera is in, the camera is the viewpoint: a wall
+         * it sees through the opening from the room's side lies beyond the
+         * passage, wherever the room centroid's own line to the wall meets
+         * the door wall. The room's side is the start's side, which must be
+         * callable. A camera inside the side band stands in the doorway and
+         * has not traversed it; it is moved along the passage normal onto
+         * the room's side, twice the band off the plane like the start
+         * substitute above. A camera decisively on the far side has crossed
+         * ahead of the current-room estimate and routes nothing, as the
+         * start's line no longer agrees with it. */
+        Eigen::Vector3d viewpoint_world_m     = segmentStart_world_m;
+        bool            isViewpointOnRoomSide = true;
+        if (hasCameraViewpoint)
+        {
+            const double startSide_m =
+                passageNormal_world.dot(segmentStart_world_m) +
+                passageEquation_world(3);
+            const double cameraSide_m =
+                passageNormal_world.dot(cameraCenter_world_m) +
+                passageEquation_world(3);
+            const bool isCameraInSideBand =
+                std::abs(cameraSide_m) < minimumSideDistance_m;
+            isViewpointOnRoomSide =
+                hasPassagePlane &&
+                std::abs(startSide_m) >= minimumSideDistance_m &&
+                (isCameraInSideBand || cameraSide_m * startSide_m > 0.0);
+            viewpoint_world_m = cameraCenter_world_m;
+            if (isViewpointOnRoomSide && isCameraInSideBand)
+            {
+                viewpoint_world_m +=
+                    (std::copysign(2.0 * minimumSideDistance_m, startSide_m) -
+                     cameraSide_m) *
+                    passageNormal_world;
+            }
+        }
         const bool crossesPassageOpening =
-            crossesFrom(segmentStart_world_m) &&
-            (!hasCameraViewpoint || crossesFrom(cameraCenter_world_m));
+            isViewpointOnRoomSide && crossesFrom(viewpoint_world_m);
         if (!crossesPassageOpening)
         {
             continue;
@@ -322,18 +412,36 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
             return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
-        /* Seen from the far-side room, a wall reached through the opening
-         * lies on the known side and cannot bound this room. A wall the room
-         * already owns is kept: the far-side room's viewpoint may be the
-         * camera while the current-room estimate still lags a crossing back
-         * through the opening, and evicting on that alone would strip the
-         * room's own walls. A wall not yet owned is refused and left to
-         * ordinary admission, which applies the full admission checks to the
-         * known-side rooms. */
-        if (isFarSideRoom)
+        /* The opening bounds only the rooms it joins. A room that does not
+         * hold the passage sees it, if at all, through its own walls and
+         * cannot say which side a wall lies on: its line to the corridor's
+         * end wall threads a door on the corridor's far face. */
+        std::vector<semantic::Passage *> roomPassages{};
+        if (p_room_inout->getPassages(roomPassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            std::vector<geometric::Plane *> farSideRoomWalls{};
-            if (p_room_inout->getWalls(farSideRoomWalls) !=
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const bool isKnownSideRoom =
+            std::find(roomPassages.begin(), roomPassages.end(), p_passage) !=
+            roomPassages.end();
+
+        /* Seen from the far-side room, a wall reached through the opening
+         * lies on the known side and cannot bound this room; seen from a
+         * room the opening does not join, it is beyond that room's own
+         * walls. A wall the room already owns is kept: the far-side room's
+         * viewpoint may be the camera while the current-room estimate still
+         * lags a crossing back through the opening, and evicting on that
+         * alone would strip the room's own walls. A wall not yet owned is
+         * refused and left to ordinary admission, which applies the full
+         * admission checks to the known-side rooms. */
+        if (isFarSideRoom || !isKnownSideRoom)
+        {
+            std::vector<geometric::Plane *> testedRoomWalls{};
+            if (p_room_inout->getWalls(testedRoomWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -341,9 +449,9 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            if (std::find(farSideRoomWalls.begin(),
-                          farSideRoomWalls.end(),
-                          p_wall_in) != farSideRoomWalls.end())
+            if (std::find(testedRoomWalls.begin(),
+                          testedRoomWalls.end(),
+                          p_wall_in) != testedRoomWalls.end())
             {
                 continue;
             }

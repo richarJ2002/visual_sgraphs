@@ -23,12 +23,14 @@
  *                  semantic/room/objects/RoomClass.h.
  */
 
+#include "configuration/types/types.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
 #include <algorithm>
+#include <cmath>
 #include <rclcpp/logging.hpp>
 #include <vector>
 
@@ -103,6 +105,95 @@ RoomStatus Room::getIsSeparatedFrom(const Room *p_other_in,
                                                 p_face) != roomWalls_in.end();
                            });
     };
+    /*!
+     * The passage record alone is topology that is never re-checked: a
+     * wall-less seed (the passage's prospective room) and the room that has
+     * since taken its far-side space both stay on the passage. For such a
+     * pair only, the two rooms are separated only when their centres lie on
+     * its two sides; every other pair on one passage stays separated. A
+     * centre within half the thinnest wall
+     * (optimization.wall_thickness.minimum_thickness) of the passage plane
+     * is inside the plane's own thickness and resolves no side, so the veto
+     * stands; so it does for an unusable plane or centre.
+     */
+    types::SystemParams *p_systemParams = nullptr;
+    if (types::SystemParams::getParams(p_systemParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    const double passageSideMargin_m =
+        0.5 *
+        static_cast<double>(p_systemParams->optimization.minimumThickness_m);
+    Eigen::Vector3d ownCentroid_world_m{}, otherCentroid_world_m{};
+    if (getCentroid(ownCentroid_world_m) != RoomStatus::ROOM_STATUS_SUCCESS ||
+        p_other_in->getCentroid(otherCentroid_world_m) !=
+            RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    const auto areCentresAcrossPassage =
+        [this,
+         p_other_in,
+         &ownWalls,
+         &otherWalls,
+         &ownCentroid_world_m,
+         &otherCentroid_world_m,
+         passageSideMargin_m](Passage *p_passage_in)
+    {
+        Room *p_prospectiveRoom = nullptr;
+        if (p_passage_in->getProspectiveRoom(p_prospectiveRoom) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const bool hasWallLessSeed =
+            (p_prospectiveRoom == this && ownWalls.empty()) ||
+            (p_prospectiveRoom == p_other_in && otherWalls.empty());
+        if (!hasWallLessSeed)
+        {
+            return true;
+        }
+        g2o::Plane3D passageGlobalEquation{};
+        if (p_passage_in->getGlobalEquation(passageGlobalEquation) !=
+            PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector4d passageEquation_world = passageGlobalEquation.coeffs();
+        const double    normalNorm = passageEquation_world.head<3>().norm();
+        if (!passageEquation_world.allFinite() || normalNorm < 1e-8)
+        {
+            return true;
+        }
+        passageEquation_world /= normalNorm;
+        const double ownSide_m =
+            passageEquation_world.head<3>().dot(ownCentroid_world_m) +
+            passageEquation_world(3);
+        const double otherSide_m =
+            passageEquation_world.head<3>().dot(otherCentroid_world_m) +
+            passageEquation_world(3);
+        if (!std::isfinite(ownSide_m) || !std::isfinite(otherSide_m) ||
+            std::abs(ownSide_m) < passageSideMargin_m ||
+            std::abs(otherSide_m) < passageSideMargin_m)
+        {
+            return true;
+        }
+        return ownSide_m * otherSide_m < 0.0;
+    };
+
     std::vector<Passage *> candidatePassages = ownPassages;
     candidatePassages.insert(candidatePassages.end(),
                              otherPassages.begin(),
@@ -111,7 +202,8 @@ RoomStatus Room::getIsSeparatedFrom(const Room *p_other_in,
     {
         if (p_passage != nullptr &&
             isOnPassage(p_passage, this, ownPassages, ownWalls) &&
-            isOnPassage(p_passage, p_other_in, otherPassages, otherWalls))
+            isOnPassage(p_passage, p_other_in, otherPassages, otherWalls) &&
+            areCentresAcrossPassage(p_passage))
         {
             isSeparated_out = true;
             return RoomStatus::ROOM_STATUS_SUCCESS;

@@ -34,6 +34,8 @@
 #include "scene_understanding/semantic/room/room.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+
+#include <algorithm>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -285,11 +287,46 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                 continue;
             }
 
+            /* A wall holding one of this room's own passages bounds the
+             * room by construction. While the passage still links the room,
+             * a face check calling that wall foreign means the room's centre
+             * has drifted across it: the centre is the error, not the wall,
+             * so the wall is kept. */
+            std::vector<semantic::Passage *> roomPassages{};
+            if (p_room->getPassages(roomPassages) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            const bool holdsRoomPassage = std::any_of(
+                roomPassages.begin(),
+                roomPassages.end(),
+                [p_wall](semantic::Passage *p_roomPassage)
+                {
+                    bool                            roomPassageIsBad{true};
+                    std::vector<geometric::Plane *> associateWalls{};
+                    return p_roomPassage != nullptr &&
+                           p_roomPassage->isBad(roomPassageIsBad) ==
+                               semantic::PassageStatus::
+                                   PASSAGE_STATUS_SUCCESS &&
+                           !roomPassageIsBad &&
+                           p_roomPassage->getAssociateWalls(associateWalls) ==
+                               semantic::PassageStatus::
+                                   PASSAGE_STATUS_SUCCESS &&
+                           std::find(associateWalls.begin(),
+                                     associateWalls.end(),
+                                     p_wall) != associateWalls.end();
+                });
+
             bool isWallFaceForeignToRoom2{};
-            if (isWallFaceForeignToRoom(p_room,
+            if (!holdsRoomPassage &&
+                isWallFaceForeignToRoom(p_room,
                                         p_wall,
                                         isWallFaceForeignToRoom2) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),

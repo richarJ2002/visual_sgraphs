@@ -30,7 +30,10 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
+#include <optional>
 #include <rclcpp/logging.hpp>
+
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include "execution/profiling/profiling.h"
 
@@ -42,15 +45,10 @@ namespace core
 SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 {
     PROFILE_FUNCTION();
-    /* Same inward-nudge-then-average construction as
-     * associateWallsToRoomsFromFreeSpaceClusters()'s wall-centroid correction
-     * -- see that site's comment for why a plain mean of wall centroids is not
-     * guaranteed to land inside the room. Kept in sync with it rather than
-     * shared, since this function only runs for non-FREE_SPACE
-     * roomSeg.method configurations (the FREE_SPACE path, this project's
-     * configured default, uses the other site directly). */
-    constexpr double centroidInwardOffset_m = 0.10;
-
+    /* Same centre rule as associateWallsToRoomsFromFreeSpaceClusters()
+     * (computeRoomCentreFromWalls()); this function only runs for
+     * non-FREE_SPACE roomSeg.method configurations and, as before, sets the
+     * centre without damping. */
     std::vector<semantic::Room *> atlasAllRooms{};
     if (p_atlas->getAllRooms(atlasAllRooms) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -91,66 +89,24 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
             continue;
         }
 
-        Eigen::Vector3d wallCentroidSum = Eigen::Vector3d::Zero();
-        int             wallCount       = 0;
-
-        for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
+        std::optional<Eigen::Vector3d> wallCentre_world_m{};
+        if (computeRoomCentreFromWalls(p_room, roomWalls, wallCentre_world_m) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            bool wallIsBad{};
-            if (!(p_wall == nullptr) &&
-                p_wall->isBad(wallIsBad) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_wall == nullptr || wallIsBad)
-            {
-                continue;
-            }
-
-            Eigen::Vector3d wallGetCentroid{};
-            if (p_wall->getCentroid(wallGetCentroid) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const Eigen::Vector3d wallCentroid_world_m =
-                wallGetCentroid.cast<double>();
-            std::optional<Eigen::Vector3d> inwardNormal_world{};
-            if (p_room->getWallNormalTowardRoom_world(p_wall,
-                                                      inwardNormal_world) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                /*!
-                 * getWallNormalTowardRoom_world cannot fail; continue as
-                 * before.
-                 */
-            }
-
-            wallCentroidSum +=
-                inwardNormal_world
-                    ? wallCentroid_world_m +
-                          centroidInwardOffset_m * (*inwardNormal_world)
-                    : wallCentroid_world_m;
-            wallCount++;
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeRoomCentreFromWalls returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
         }
-
-        if (wallCount > 0)
-        {
-            if (p_room->setCentroid(wallCentroidSum / wallCount) !=
+        if (wallCentre_world_m.has_value() &&
+            p_room->setCentroid(*wallCentre_world_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

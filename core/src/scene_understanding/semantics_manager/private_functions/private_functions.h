@@ -14,6 +14,7 @@
 #define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_PRIVATE_FUNCTIONS_H
 
 #include <cmath>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
@@ -739,6 +741,105 @@ Eigen::Quaterniond
     const pcl::PointCloud<pcl::PointXYZRGBA>            &wallCloud_in,
     const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
     WallGap                                             &wallGap_inout);
+
+/*!
+ * @brief           Computes the floor-plane box that holds every wall-extent
+ *                  corner of a room. Each wall's corners come from its
+ *                  Plane::getGeometryMetadataSnapshot() min/max U/V extents,
+ *                  the same data the S-Graph archive writes. The box is
+ *                  aligned to the horizontal normal of the longest wall.
+ *
+ * @param[in]       roomWalls_in
+ *                  Walls of the room, non-owning; null, bad and extent-less
+ *                  walls and planes facing up or down are skipped.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Map up direction (Map::getUpDirection()); the floor plane
+ *                  is perpendicular to it. Need not be unit length.
+ *
+ * @param[out]      footprint_out
+ *                  The box; written only when hasFootprint_out is true.
+ *
+ * @param[out]      hasFootprint_out
+ *                  False when the up direction is invalid or the walls do not
+ *                  span a box: no usable wall, or no wall more than 45 degrees
+ *                  from parallel to the longest wall.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the walls' map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus computeRoomWallFootprint(
+    const std::vector<geometric::Plane *> &roomWalls_in,
+    const Eigen::Vector3d                 &upDirection_world_in,
+    RoomWallFootprint                     &footprint_out,
+    bool                                  &hasFootprint_out);
+
+/*!
+ * @brief           Computes the semantic centre of a room from its walls: the
+ *                  centre of computeRoomWallFootprint()'s box on the floor
+ *                  plane of the room's map, at the height of the fallback
+ *                  below. When the walls do not span a box (a single wall,
+ *                  or only parallel walls) the centre is the fallback: the
+ *                  mean of the wall centroids, each pushed 0.10 m inward
+ *                  along Room::getWallNormalTowardRoom_world(). Undamped;
+ *                  callers apply their own damping.
+ *
+ * @param[in]       p_room_in
+ *                  Room the walls belong to, non-owning; its current
+ *                  centroid orients the inward normals and its map gives the
+ *                  up direction (no map: fallback only).
+ *
+ * @param[in]       roomWalls_in
+ *                  Walls of the room, non-owning; null, bad and non-finite
+ *                  walls are skipped.
+ *
+ * @param[out]      roomCentre_world_m_out
+ *                  The centre; empty when the room is null or no wall is
+ *                  usable.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the room's map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus computeRoomCentreFromWalls(
+    semantic::Room                        *p_room_in,
+    const std::vector<geometric::Plane *> &roomWalls_in,
+    std::optional<Eigen::Vector3d>        &roomCentre_world_m_out);
+
+/*!
+ * @brief           Tests whether a point lies on the side of a wall face
+ *                  opposite to where the face was first observed from
+ *                  (Plane::getObservationOrigin_world()). Only the side of a
+ *                  surface turned toward a camera can be seen, so the face
+ *                  bounds the space on its observed side, never the point's.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall face, non-owning; null or bad gives false.
+ *
+ * @param[in]       point_world_m_in
+ *                  Point to test.
+ *
+ * @param[out]      isOnForeignSide_out
+ *                  True only when the face has an observation origin and both
+ *                  the origin and the point lie at least 0.10 m from the
+ *                  plane, on opposite sides; false whenever a side does not
+ *                  resolve.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the wall's map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus
+    isPointOnForeignSideOfWallFace(geometric::Plane      *p_wall_in,
+                                   const Eigen::Vector3d &point_world_m_in,
+                                   bool                  &isOnForeignSide_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

@@ -82,7 +82,9 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceMatchSettings.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computePolygonArea_m2.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomCentreFromWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomObservationGaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomWallFootprint.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRotationBetweenDirections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/crossProduct2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateWallAdmissionEvidence.cc
@@ -90,6 +92,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasSeparatingFiniteWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPointOnForeignSideOfWallFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/refineWallGapFromPoints.cc

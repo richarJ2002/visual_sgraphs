@@ -29,7 +29,8 @@
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 
-#include <cmath>
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -69,52 +70,6 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    /* The face's identity: the camera position it was first observed from.
-     * Only the side of a physical surface turned toward a camera can be
-     * seen, so this fixes which of the wall's two faces this plane is -- and
-     * therefore which room it bounds -- for the plane's whole lifetime. */
-    std::optional<Eigen::Vector3d> observationOrigin_world_m{};
-    if (p_wall_in->getObservationOrigin_world(observationOrigin_world_m) !=
-        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getObservationOrigin_world returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    if (!observationOrigin_world_m.has_value() ||
-        !observationOrigin_world_m->allFinite())
-    {
-        /* Planes created before the stamp existed carry no face identity;
-         * make no claim rather than a wrong one. */
-        isWallFaceForeignToRoom_out = false;
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
-    }
-
-    g2o::Plane3D wallGetGlobalEquation{};
-    if (p_wall_in->getGlobalEquation(wallGetGlobalEquation) !=
-        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getGlobalEquation returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-    Eigen::Vector4d planeEquation_world = wallGetGlobalEquation.coeffs();
-    const double    normalNorm          = planeEquation_world.head<3>().norm();
-
-    if (!planeEquation_world.allFinite() || normalNorm <= 1e-8)
-    {
-        isWallFaceForeignToRoom_out = false;
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
-    }
-
-    planeEquation_world /= normalNorm;
-
-    const double observedSide_m =
-        planeEquation_world.head<3>().dot(observationOrigin_world_m.value()) +
-        planeEquation_world(3);
     Eigen::Vector3d roomCentroid_world_m{};
     Eigen::Vector3d cameraCenter_world_m{};
     bool            hasCameraViewpoint{};
@@ -130,40 +85,34 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    /* Matches the resolvable-side floor already used by the association path
-     * (utils::utils::Utils::findMatchingPlane) and
-     * Plane::getObservationSideSnapshot(): a position essentially ON the plane
-     * does not identify a side. */
-    constexpr double minimumResolvableSide_m = 0.10;
-
-    if (!std::isfinite(observedSide_m) ||
-        std::abs(observedSide_m) < minimumResolvableSide_m)
+    bool isCentroidOnForeignSide{};
+    if (isPointOnForeignSideOfWallFace(p_wall_in,
+                                       roomCentroid_world_m,
+                                       isCentroidOnForeignSide) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        isWallFaceForeignToRoom_out = false;
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isPointOnForeignSideOfWallFace returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
-
-    /* Opposite sides: the camera that produced this face was on the far side
-     * of it from this point, so this is the neighbouring room's face. The
-     * room's own face of the same physical wall is a separate plane, which
-     * it has evidently not observed yet. A point too close to the plane, or
-     * not finite, does not resolve a side and so does not reject. */
-    const auto isOnForeignSide =
-        [&planeEquation_world,
-         observedSide_m](const Eigen::Vector3d &roomPoint_world_m_in) -> bool
+    bool isCameraOnForeignSide{};
+    if (hasCameraViewpoint &&
+        isPointOnForeignSideOfWallFace(p_wall_in,
+                                       cameraCenter_world_m,
+                                       isCameraOnForeignSide) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        const double roomSide_m =
-            planeEquation_world.head<3>().dot(roomPoint_world_m_in) +
-            planeEquation_world(3);
-        return std::isfinite(roomSide_m) &&
-               std::abs(roomSide_m) >= minimumResolvableSide_m &&
-               observedSide_m * roomSide_m < 0.0;
-    };
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isPointOnForeignSideOfWallFace returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* For the room the camera is in, the camera and the centroid must agree. */
     isWallFaceForeignToRoom_out =
-        isOnForeignSide(roomCentroid_world_m) &&
-        (!hasCameraViewpoint || isOnForeignSide(cameraCenter_world_m));
+        isCentroidOnForeignSide &&
+        (!hasCameraViewpoint || isCameraOnForeignSide);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

@@ -696,7 +696,12 @@ class Room
      *                  fused: both are on one passage (a doorway link,
      *                  its prospective room, or the owner of one of its wall
      *                  faces), or they own the two faces of one wall (twin
-     *                  faces).
+     *                  faces). When one of the two is the passage's
+     *                  wall-less prospective room, the passage separates
+     *                  them only when their centroids lie on its two sides
+     *                  (each at least half optimization.wall_thickness.
+     *                  minimum_thickness from its plane, else the veto
+     *                  stands).
      *
      * @param[in]       p_other_in
      *                  Room to test; null or this room is never separated.
