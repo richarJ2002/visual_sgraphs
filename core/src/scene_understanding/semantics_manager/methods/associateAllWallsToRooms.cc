@@ -91,15 +91,6 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      __func__);
     }
     semantic::Room *p_currentRoom = nullptr;
-    int             currentRoomIdSnapshot{};
-    if (getCurrentRoomId(currentRoomIdSnapshot) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCurrentRoomId returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
     const auto planeClassName =
         [](const geometric::Plane::PlaneVariant variant_in)
     {
@@ -118,55 +109,28 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
             return "UNDEFINED";
         }
     };
-    for (semantic::Room *p_room : allRooms)
+    if (getCurrentRoom(p_currentRoom) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        bool roomIsBad{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        map::Map *p_roomMap = nullptr;
-        if ((p_room != nullptr && !roomIsBad) &&
-            p_room->getMap(p_roomMap) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMap returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        int roomId{};
-        if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap) &&
-            p_room->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        semantic::Room::RoomVariant roomVariant{};
-        if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
-             roomId == currentRoomIdSnapshot) &&
-            p_room->getRoomVariant(roomVariant) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
-            roomId == currentRoomIdSnapshot &&
-            roomVariant == semantic::Room::RoomVariant::ROOM)
-        {
-            p_currentRoom = p_room;
-            break;
-        }
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentRoom returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    semantic::Room::RoomVariant currentRoomVariant{};
+    if ((p_currentRoom != nullptr) &&
+        p_currentRoom->getRoomVariant(currentRoomVariant) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomVariant returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentRoom != nullptr &&
+        currentRoomVariant != semantic::Room::RoomVariant::ROOM)
+    {
+        p_currentRoom = nullptr;
     }
 
     /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width

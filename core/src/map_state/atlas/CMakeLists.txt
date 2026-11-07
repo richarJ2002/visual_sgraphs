@@ -48,6 +48,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc

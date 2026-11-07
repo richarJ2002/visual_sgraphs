@@ -1019,6 +1019,21 @@ class Atlas
     [[nodiscard]] AtlasStatus getPlaneById(int                planeId_in,
                                            geometric::Plane *&p_planeById_out);
     /*!
+     * @brief           Looks up a room of the active map by id, skipping bad
+     *                  rooms. Takes atlasMutex.
+     *
+     * @param[in]       roomId_in
+     *                  Id of the room to find.
+     *
+     * @param[out]      p_roomById_out
+     *                  Borrowed pointer; nullptr when there is no active map or
+     *                  no usable room with that id.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus getRoomById(int              roomId_in,
+                                          semantic::Room *&p_roomById_out);
+    /*!
      * @brief           Looks up a floor of the active map by id. Takes
      *                  atlasMutex.
      *

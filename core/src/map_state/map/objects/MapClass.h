@@ -878,6 +878,21 @@ class Map
     [[nodiscard]] MapStatus getPlaneById(int                planeId_in,
                                          geometric::Plane *&p_planeById_out);
     /*!
+     * @brief           Looks up a room by id, skipping bad rooms. Takes
+     *                  mapMutex.
+     *
+     * @param[in]       roomId_in
+     *                  Id of the room.
+     *
+     * @param[out]      p_roomById_out
+     *                  Receives the first usable room with that id, or nullptr
+     *                  when there is none; borrowed.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus getRoomById(int              roomId_in,
+                                        semantic::Room *&p_roomById_out);
+    /*!
      * @brief           Looks up a marker by id. Takes mapMutex.
      *
      * @param[in]       markerId_in

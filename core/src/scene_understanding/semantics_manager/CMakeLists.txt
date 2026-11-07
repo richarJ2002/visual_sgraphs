@@ -31,6 +31,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/filterGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLatestSkeletonCluster.cc

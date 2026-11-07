@@ -1188,6 +1188,18 @@ class SemanticsManager
         getCurrentRoomId(int &getCurrentRoomId_out) const;
 
     /*!
+     * @brief           Returns the usable room of the active map whose id is
+     *                  getCurrentRoomId(); the room variant is not checked.
+     *
+     * @param[out]      p_currentRoom_out
+     *                  Current room, or nullptr when there is none.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getCurrentRoom(semantic::Room *&p_currentRoom_out) const;
+
+    /*!
      * @brief           Returns the id of the room last occupied before tracking
      *                  was lost.
      *
