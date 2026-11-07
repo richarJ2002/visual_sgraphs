@@ -35,6 +35,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -77,12 +78,14 @@ AtlasStatus
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_ownerMap->addMapPassage(p_passage_in) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long ownerMapId{};
+    if ((p_ownerMap->getId(ownerMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (sceneGraph.addPassage(ownerMapId, p_passage_in) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: addMapPassage returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getId/addPassage found no scene map for the "
+                     "passage's map; the passage was not added.",
                      __func__);
     }
 

@@ -36,6 +36,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <algorithm>
 #include <cmath>
@@ -135,13 +136,24 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    /* Extract all rooms and provisional structural elements */
-    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_atlas_in->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Extract all rooms and provisional structural elements */
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for the active map; "
+                     "continuing without its rooms.",
                      __func__);
     }
 
@@ -167,13 +179,14 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         }
 
         std::vector<vs_graphs::core::semantic::Passage *> activePassages{};
-        if (p_atlas_in->getAllPassages(activePassages) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        if (p_sceneGraph->getAllPassagesInIdOrder(activePassages) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllPassages returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the scene graph has no scene map for the active map; "
+                "continuing without its passages.",
+                __func__);
         }
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
@@ -426,13 +439,14 @@ UtilsStatus Utils::consolidateProvisionalRooms(
 
         /* Preserve floor membership before retiring the provisional room. */
         std::vector<semantic::Floor *> atlasAllFloors{};
-        if (p_atlas_in->getAllFloors(atlasAllFloors) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        if (p_sceneGraph->getAllFloorsInIdOrder(atlasAllFloors) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllFloors returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the scene graph has no scene map for the active map; "
+                "continuing without its floors.",
+                __func__);
         }
         for (vs_graphs::core::semantic::Floor *p_floor : atlasAllFloors)
         {

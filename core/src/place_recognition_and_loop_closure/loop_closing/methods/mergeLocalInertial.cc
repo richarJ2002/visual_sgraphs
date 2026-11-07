@@ -103,7 +103,8 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     }
 
     semantic::SemanticMergeGateResult semanticMergeGate{};
-    evaluateSemanticMergeGate(p_currentMap,
+    evaluateSemanticMergeGate(p_atlas,
+                              p_currentMap,
                               p_mergeMap,
                               oldCorrectedPose.inverse(),
                               semanticMergeGate);
@@ -156,18 +157,19 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         std::scoped_lock mapUpdateLocks(p_currentMap->mapUpdateMutex,
                                         p_mergeMap->mapUpdateMutex);
 
-        collectMergeMapContents(p_mergeMap, mergeMapContents);
+        collectMergeMapContents(p_atlas, p_mergeMap, mergeMapContents);
         transferKeyFramesAndMapPoints(p_currentMap,
                                       p_mergeMap,
                                       mergeMapContents.keyFrames,
                                       mergeMapContents.mapPoints);
-        transferSemanticEntities(p_currentMap,
+        transferSemanticEntities(p_atlas,
+                                 p_currentMap,
                                  p_mergeMap,
                                  mergeMapContents,
                                  true);
 
         /* Rebuild derived free-space topology in the corrected map frame. */
-        rebuildSemanticIndexes(p_currentMap);
+        rebuildSemanticIndexes(p_atlas, p_currentMap);
 
         /* Save non corrected poses (already merged maps) */
         collectKeyFramePoses(p_currentMap, NonCorrectedSim3);

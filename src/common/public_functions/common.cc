@@ -3442,6 +3442,15 @@ void maybeArchiveSGraph(
                 }
                 return firstId < secondId;
             });
+        vs_graphs::core::scene_graph::SceneGraph *p_sceneGraph = nullptr;
+        if (p_atlas->getSceneGraph(p_sceneGraph) !=
+            vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSceneGraph returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (vs_graphs::core::map::Map *p_map : atlasMaps)
         {
             bool mapIsBad{};
@@ -3493,33 +3502,39 @@ void maybeArchiveSGraph(
             }
             mapInput.worldFrameEpoch = mapWorldFrameEpoch;
             std::vector<vs_graphs::core::semantic::Floor *> mapAllFloors{};
-            if (p_map->getAllFloors(mapAllFloors) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapFloorsInIdOrder(mapId2, mapAllFloors) !=
+                vs_graphs::core::scene_graph::SceneGraphStatus::
+                    SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllFloors returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                             "%s: getMapFloorsInIdOrder found no scene map "
+                             "for map %lu; archiving it without its floors.",
+                             __func__,
+                             mapId2);
             }
             mapInput.floorsRaw = mapAllFloors;
             std::vector<vs_graphs::core::semantic::Room *> mapAllRooms{};
-            if (p_map->getAllRooms(mapAllRooms) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapRoomsInIdOrder(mapId2, mapAllRooms) !=
+                vs_graphs::core::scene_graph::SceneGraphStatus::
+                    SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllRooms returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                             "%s: getMapRoomsInIdOrder found no scene map "
+                             "for map %lu; archiving it without its rooms.",
+                             __func__,
+                             mapId2);
             }
             mapInput.roomsRaw = mapAllRooms;
             std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-            if (p_map->getAllPassages(mapAllPassages) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapPassagesInIdOrder(mapId2, mapAllPassages) !=
+                vs_graphs::core::scene_graph::SceneGraphStatus::
+                    SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllPassages returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                             "%s: getMapPassagesInIdOrder found no scene map "
+                             "for map %lu; archiving it without its passages.",
+                             __func__,
+                             mapId2);
             }
             mapInput.passagesRaw = mapAllPassages;
             mapInputs.push_back(std::move(mapInput));
@@ -6726,33 +6741,50 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                      __func__);
     }
 
-    std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
-    if (p_slamSystem->getAllRooms(mappedRooms) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    /* Rooms, floors and passages of the active map, from the scene graph */
+    vs_graphs::core::atlas::Atlas            *p_atlas      = nullptr;
+    vs_graphs::core::scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if ((p_slamSystem->getAtlas(p_atlas) !=
+         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS) ||
+        (p_atlas->getSceneGraph(p_sceneGraph) !=
+         vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAtlas/getSceneGraph returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
+    if (p_sceneGraph->getAllRoomsInIdOrder(mappedRooms) !=
+        vs_graphs::core::scene_graph::SceneGraphStatus::
+            SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRoomsInIdOrder found no scene map for the "
+                     "active map; continuing without rooms.",
                      __func__);
     }
 
     std::vector<vs_graphs::core::semantic::Floor *> mappedFloors{};
-    if (p_slamSystem->getAllFloors(mappedFloors) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllFloorsInIdOrder(mappedFloors) !=
+        vs_graphs::core::scene_graph::SceneGraphStatus::
+            SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllFloorsInIdOrder found no scene map for the "
+                     "active map; continuing without floors.",
                      __func__);
     }
 
     std::vector<vs_graphs::core::semantic::Passage *> mappedPassages{};
-    if (p_slamSystem->getAllPassages(mappedPassages) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllPassagesInIdOrder(mappedPassages) !=
+        vs_graphs::core::scene_graph::SceneGraphStatus::
+            SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllPassagesInIdOrder found no scene map for the "
+                     "active map; continuing without passages.",
                      __func__);
     }
 

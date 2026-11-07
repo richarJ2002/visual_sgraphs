@@ -2,8 +2,6 @@
 set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/acquireSemanticUpdateLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addCamera.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateMapRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapFloor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
@@ -22,13 +20,10 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewMapWhileAtlasLocked.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/exportRoomContextFromCurrentMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllCameras.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllCandidateMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllDetectedMapRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkerBasedMapRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
@@ -36,16 +31,13 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCoherentMapView.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentSemanticRoomIdentity.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastBigChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSceneGraph.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc

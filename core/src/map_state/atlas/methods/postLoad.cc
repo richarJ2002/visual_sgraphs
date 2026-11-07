@@ -94,12 +94,15 @@ AtlasStatus Atlas::postLoad()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (sceneGraph.resyncMap(*p_map) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if ((p_map->setSceneGraph(&sceneGraph) !=
+             map::MapStatus::MAP_STATUS_SUCCESS) ||
+            (sceneGraph.resyncMap(*p_map) !=
+             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: resyncMap returned a failure status although it "
-                         "cannot fail; continuing as before.",
+                         "%s: setSceneGraph/resyncMap returned a failure "
+                         "status although they cannot fail; continuing as "
+                         "before.",
                          __func__);
         }
         std::vector<keyframe::KeyFrame *> mapAllKeyFrames{};

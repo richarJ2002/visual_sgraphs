@@ -1513,33 +1513,6 @@ class System
     [[nodiscard]] SystemStatus getCurrentFrame(cv::Mat &currentFrame_out);
 
     /*!
-     * @brief           Get all rooms in the current map. Rooms are semantic
-     *                  elements that group related passages and have associated
-     *                  traversal statistics.
-     *
-     * @param[out]      allRooms_out
-     *                  Vector of pointers to Room objects. May be empty if no
-     *                  rooms have been created yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus
-        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
-
-    /*!
-     * @brief           Get all floors in the current map. Floors are semantic
-     *                  elements that group related rooms.
-     *
-     * @param[out]      allFloors_out
-     *                  Vector of pointers to Floor objects. May be empty if no
-     *                  floors have been created yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus getAllFloors(
-        std::vector<vs_graphs::core::semantic::Floor *> &allFloors_out);
-
-    /*!
      * @brief           Get all planes in the current map. Planes represent
      *                  geometric planes detected in the environment (e.g.,
      *                  walls, floors, ceilings).
@@ -1552,20 +1525,6 @@ class System
      */
     [[nodiscard]] SystemStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
-
-    /*!
-     * @brief           Get all passages in the current map. Passages connect
-     *                  rooms and have traversal statistics tracking how many
-     *                  times they have been crossed.
-     *
-     * @param[out]      allPassages_out
-     *                  Vector of pointers to Passage objects. May be empty if
-     *                  no passages have been detected yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus getAllPassages(
-        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief           Get all keyframes in the current map. Keyframes

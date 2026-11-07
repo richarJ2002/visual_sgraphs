@@ -32,12 +32,15 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -46,7 +49,8 @@ namespace vs_graphs
 namespace core
 {
 
-void rebuildSemanticIndexes(map::Map *p_currentMap_inout)
+void rebuildSemanticIndexes(atlas::Atlas *p_atlas_in,
+                            map::Map     *p_currentMap_inout)
 {
     /*
      * Voxblox topology is derived from a TSDF/ESDF volume and is not an
@@ -73,14 +77,27 @@ void rebuildSemanticIndexes(map::Map *p_currentMap_inout)
     }
 
     /* Rebuild imported room-wall index entries before fusion. */
-    std::vector<semantic::Room *> currentMapAllRooms{};
-    if (p_currentMap_inout->getAllRooms(currentMapAllRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap_inout->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although "
-                     "it cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
+    }
+    std::vector<semantic::Room *> currentMapAllRooms{};
+    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, currentMapAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     currentMapId);
     }
     for (semantic::Room *p_room : currentMapAllRooms)
     {

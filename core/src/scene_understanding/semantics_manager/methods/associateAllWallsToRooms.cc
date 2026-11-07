@@ -38,6 +38,7 @@
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -84,12 +85,21 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
 
     /* Extract all current rooms and provisional structural elements */
-    if (p_atlas->getAllRooms(allRooms) !=
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 
@@ -444,12 +454,12 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
          * than the current one (passage far-side precedence).
          */
         std::vector<semantic::Room *> atlasAllRooms{};
-        if (p_atlas->getAllRooms(atlasAllRooms) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllRooms returned a failure status although "
-                         "it cannot fail; continuing as before.",
+                         "%s: getAllRoomsInIdOrder returned a failure status; "
+                         "continuing as before.",
                          __func__);
         }
         semantic::Room *p_selectedOwner = nullptr;

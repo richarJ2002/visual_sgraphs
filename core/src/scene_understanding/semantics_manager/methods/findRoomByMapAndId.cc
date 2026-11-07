@@ -23,12 +23,13 @@
  *                  in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -65,11 +66,21 @@ SemanticsManagerStatus
             continue;
         }
         std::vector<semantic::Room *> mapAllRooms{};
-        if (p_map->getAllRooms(mapAllRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+        scene_graph::SceneGraph      *p_sceneGraph = nullptr;
+        if (p_atlas->getSceneGraph(p_sceneGraph) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllRooms returned a failure status although "
+                         "%s: getSceneGraph returned a failure status although "
                          "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_sceneGraph->getMapRoomsInIdOrder(mapId, mapAllRooms) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapRoomsInIdOrder returned a failure status; "
+                         "continuing as before.",
                          __func__);
         }
         for (semantic::Room *p_room : mapAllRooms)

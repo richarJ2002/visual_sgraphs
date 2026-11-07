@@ -48,6 +48,7 @@
 #include <unordered_set>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -74,20 +75,38 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
     }
 
     std::vector<semantic::Room *> allRooms{};
-    if (p_currentMap->getAllRooms(allRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<semantic::Passage *> allPassages{};
-    if (p_currentMap->getAllPassages(allPassages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long currentMapId{};
+    if (p_currentMap->getId(currentMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, allRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_sceneGraph->getMapPassagesInIdOrder(currentMapId, allPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     std::vector<geometric::Plane *> allPlanes{};
@@ -372,15 +391,6 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
             if (hasCompatibleLiveCluster && !ownedByLiveRoom &&
                 !associatedWithPassage)
             {
-                unsigned long currentMapId{};
-                if (p_currentMap->getId(currentMapId) !=
-                    map::MapStatus::MAP_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
                 std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                              "\"map_id\":"
                           << currentMapId

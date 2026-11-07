@@ -37,6 +37,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
@@ -58,11 +59,18 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
 {
     PROFILE_FUNCTION();
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_map_in->getAllRooms(allRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph                       *p_sceneGraph = nullptr;
+    unsigned long                                  mapId{};
+    if ((p_map_in->getSceneGraph(p_sceneGraph) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: the scene graph has no scene map for this map; "
+                     "continuing without rooms.",
                      __func__);
     }
     std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};

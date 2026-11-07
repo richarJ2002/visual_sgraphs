@@ -5,10 +5,13 @@
  *                  in Semantic/SemanticVerify.h.
  */
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
 #include "map_state/map/map.h"
@@ -45,6 +48,7 @@ namespace semantic
 {
 
 SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
+    atlas::Atlas               *p_atlas_in,
     map::Map                   *p_survivingMap_in,
     map::Map                   *p_absorbedMap_in,
     const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
@@ -88,23 +92,42 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    std::vector<Room *> survivingMapAllRooms{};
-    if (p_survivingMap_in->getAllRooms(survivingMapAllRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            survivingMapId{};
+    unsigned long            absorbedMapId{};
+    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_survivingMap_in->getId(survivingMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_absorbedMap_in->getId(absorbedMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<Room *> absorbedMapAllRooms{};
-    if (p_absorbedMap_in->getAllRooms(absorbedMapAllRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    std::vector<Room *> survivingMapAllRooms{};
+    if (p_sceneGraph->getMapRoomsInIdOrder(survivingMapId,
+                                           survivingMapAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     survivingMapId);
+    }
+    std::vector<Room *> absorbedMapAllRooms{};
+    if (p_sceneGraph->getMapRoomsInIdOrder(absorbedMapId,
+                                           absorbedMapAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     absorbedMapId);
     }
     std::vector<Room *>                    survivingAdmittedRooms{};
     std::vector<Room *>                    absorbedAdmittedRooms{};
@@ -147,19 +170,6 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     if (anchorCandidates.empty())
     {
         anchorCandidates.emplace_back(nullptr, nullptr);
-    }
-
-    unsigned long survivingMapId{};
-    unsigned long absorbedMapId{};
-    if (p_survivingMap_in->getId(survivingMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS ||
-        p_absorbedMap_in->getId(absorbedMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
     }
 
     std::vector<MergePair>               allCandidatePairs{};

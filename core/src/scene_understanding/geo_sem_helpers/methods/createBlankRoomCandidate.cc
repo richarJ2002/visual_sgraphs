@@ -31,6 +31,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <algorithm>
 #include <iostream>
@@ -55,14 +56,24 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    /* Extract the existing rooms from the map */
-    std::vector<vs_graphs::core::semantic::Room *> existingRooms{};
-    if (p_atlas_inout->getAllRooms(existingRooms) !=
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas_inout->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Extract the existing rooms from the map */
+    std::vector<vs_graphs::core::semantic::Room *> existingRooms{};
+    if (p_sceneGraph->getAllRoomsInIdOrder(existingRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for the active map; "
+                     "continuing without its rooms.",
                      __func__);
     }
 
@@ -93,12 +104,12 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      * passable/blocked state alone.
      */
     std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages{};
-    if (p_atlas_inout->getAllPassages(currentMapPassages) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllPassagesInIdOrder(currentMapPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: the scene graph has no scene map for the active map; "
+                     "continuing without its passages.",
                      __func__);
     }
     const std::size_t passablePassageCount = std::count_if(

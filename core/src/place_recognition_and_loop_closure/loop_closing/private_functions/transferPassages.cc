@@ -32,12 +32,15 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
@@ -49,8 +52,9 @@ namespace vs_graphs
 namespace core
 {
 
-void transferPassages(map::Map *p_currentMap_inout,
-                      map::Map *p_mergeMap_inout,
+void transferPassages(atlas::Atlas *p_atlas_inout,
+                      map::Map     *p_currentMap_inout,
+                      map::Map     *p_mergeMap_inout,
                       const std::vector<semantic::Passage *> &passages_in,
                       const std::vector<semantic::Room *>    &detectedRooms_in,
                       const std::vector<semantic::Room *>  &markerBasedRooms_in,
@@ -60,14 +64,31 @@ void transferPassages(map::Map *p_currentMap_inout,
      * Pair before anything moves: the surviving map's own passages are the
      * only candidates for a duplicate.
      */
-    std::vector<semantic::Passage *> currentMapAllPassages{};
-    if (p_currentMap_inout->getAllPassages(currentMapAllPassages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    unsigned long            mergeMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap_inout->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_mergeMap_inout->getId(mergeMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
+    }
+    std::vector<semantic::Passage *> currentMapAllPassages{};
+    if (p_sceneGraph->getMapPassagesInIdOrder(currentMapId,
+                                              currentMapAllPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its passages.",
+                     __func__,
+                     currentMapId);
     }
     const std::vector<std::pair<semantic::Passage *, semantic::Passage *>>
         duplicatePairs = semantic::SemanticVerify::pairPassagesInSharedFrame(
@@ -95,13 +116,14 @@ void transferPassages(map::Map *p_currentMap_inout,
             }
         }
 
-        if (p_mergeMap_inout->eraseMapPassage(p_passage) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->erasePassage(mergeMapId, p_passage) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseMapPassage returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: erasePassage found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         mergeMapId);
         }
         if (p_retainedPassage != nullptr)
         {
@@ -176,13 +198,14 @@ void transferPassages(map::Map *p_currentMap_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_currentMap_inout->addMapPassage(p_passage) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->addPassage(currentMapId, p_passage) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addMapPassage returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: addPassage found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         currentMapId);
         }
     }
 }

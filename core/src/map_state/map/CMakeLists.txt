@@ -55,6 +55,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getSceneGraph.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getStartingRoom.cc
@@ -84,6 +85,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setInitKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setLastMapChange.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setReferenceMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setSceneGraph.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setStartingRoom.cc

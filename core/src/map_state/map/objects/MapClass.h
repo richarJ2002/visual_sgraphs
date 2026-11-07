@@ -103,6 +103,10 @@ namespace atlas
 {
 class Atlas;
 } /* namespace atlas */
+namespace scene_graph
+{
+class SceneGraph;
+} /* namespace scene_graph */
 namespace map
 {
 
@@ -1044,6 +1048,32 @@ class Map
      */
     [[nodiscard]] MapStatus setImuInitialized();
     /*!
+     * @brief           Records the scene graph that holds this map's rooms,
+     *                  passages and floors; applyScaledRotation() reads them
+     *                  from it. Set by the atlas when it creates or loads the
+     *                  map. Takes mapMutex.
+     *
+     * @param[in]       p_sceneGraph_in
+     *                  Scene graph of the atlas; borrowed, the atlas owns it
+     *                  and outlives the map. Null detaches the map.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        setSceneGraph(scene_graph::SceneGraph *p_sceneGraph_in);
+    /*!
+     * @brief           Returns the scene graph that holds this map's rooms,
+     *                  passages and floors. Takes mapMutex.
+     *
+     * @param[out]      p_sceneGraph_out
+     *                  Scene graph of the atlas, or nullptr when the atlas has
+     *                  not set it; borrowed.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
+    /*!
      * @brief           Returns this map's "up" direction. Takes mapMutex.
      *
      * @param[out]      upDirection_world_out
@@ -1078,8 +1108,11 @@ class Map
      *                  poses, key frame velocities, map points, planes,
      *                  passages, rooms, floors and skeleton data are
      *                  scaled and transformed; bad planes and rooms are
-     *                  skipped. Afterwards the change counter and the world
-     *                  frame epoch each grow by one. Takes mapMutex.
+     *                  skipped. Rooms, passages and floors are the ones the
+     *                  scene graph lists for this map (none when it has not
+     *                  been set). Afterwards the change counter and the world
+     *                  frame epoch each grow by one. Takes the scene graph
+     *                  lock, released, then mapMutex.
      *
      * @param[in]       alignmentPose_oldWorldToNewWorld_in
      *                  Pose mapping points of the old world frame into the new
@@ -1291,6 +1324,13 @@ class Map
      * @brief           Passages of this map; borrowed.
      */
     std::set<vs_graphs::core::semantic::Passage *> passages;
+
+    /*!
+     * @brief           Scene graph holding this map's rooms, passages and
+     *                  floors; borrowed from the atlas, nullptr until the
+     *                  atlas sets it. Guarded by mapMutex.
+     */
+    scene_graph::SceneGraph *p_sceneGraph{nullptr};
 
     /*!
      * @brief           Cluster points of the map set by `voxblox_skeleton`, in

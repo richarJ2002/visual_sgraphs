@@ -45,6 +45,7 @@
 #include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include "execution/system/system.h"
 #include "mapping/geometry_helpers/utils.h"
@@ -112,12 +113,18 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::list<vs_graphs::core::map_point::MapPoint *>  localMapPointList;
     std::vector<vs_graphs::core::keyframe::KeyFrame *> neighborKeyFrameVector;
     std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
-    if (p_currentMap->getAllRooms(allRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph                           *p_sceneGraph = nullptr;
+    unsigned long                                      mapId{};
+    if ((p_currentMap->getSceneGraph(p_sceneGraph) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: the scene graph has no scene map for this map; "
+                     "continuing without rooms.",
                      __func__);
     }
     /* Unorderd maps to keep track of the local entities */

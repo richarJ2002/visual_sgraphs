@@ -44,6 +44,7 @@
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -134,12 +135,21 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
     };
 
     std::vector<semantic::Room *> allRooms{};
-    if (p_atlas->getAllRooms(allRooms) !=
+    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 
@@ -277,14 +287,13 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
         for (const WallGap &wallGap : wallGaps)
         {
             std::vector<semantic::Passage *> allPassages{};
-            if (p_atlas->getAllPassages(allPassages) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+            if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getAllPassages returned a failure status although it "
-                    "cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassagesInIdOrder returned a failure "
+                             "status; continuing as before.",
+                             __func__);
             }
 
             /* The nearest parallel passage at the gap is the same opening. */

@@ -38,6 +38,7 @@
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -66,12 +67,21 @@ SemanticsManagerStatus
      * ground plane
      */
     std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-    if (p_atlas_in->getAllPassages(allPassages) !=
+    scene_graph::SceneGraph                          *p_sceneGraph = nullptr;
+    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 

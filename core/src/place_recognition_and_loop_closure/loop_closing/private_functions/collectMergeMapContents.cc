@@ -32,8 +32,11 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -43,6 +46,7 @@ namespace core
 {
 
 void collectMergeMapContents(
+    atlas::Atlas                   *p_atlas_in,
     map::Map                       *p_mergeMap_in,
     loop_closing::MergeMapContents &mergeMapContents_out)
 {
@@ -78,46 +82,41 @@ void collectMergeMapContents(
                      __func__);
     }
 
-    /* Copy all passages currently owned by the merge map */
-    if (p_mergeMap_in->getAllPassages(mergeMapContents_out.passages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            mergeMapId{};
+    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_mergeMap_in->getId(mergeMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
     }
 
-    /* Copy all detected rooms currently owned by the merge map */
-    if (p_mergeMap_in->getAllDetectedMapRooms(
-            mergeMapContents_out.detectedRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    /* Copy the passages, detected rooms, candidate (marker-based) rooms and
+     * floors the scene graph lists for the merge map. */
+    if ((p_sceneGraph->getMapPassagesInIdOrder(mergeMapId,
+                                               mergeMapContents_out.passages) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_sceneGraph->getMapDetectedRoomsInIdOrder(
+             mergeMapId,
+             mergeMapContents_out.detectedRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_sceneGraph->getMapCandidateRoomsInIdOrder(
+             mergeMapId,
+             mergeMapContents_out.markerBasedRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_sceneGraph->getMapFloorsInIdOrder(mergeMapId,
+                                             mergeMapContents_out.floors) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    /* Copy all marker-based rooms currently owned by the merge map */
-    if (p_mergeMap_in->getAllMarkerBasedMapRooms(
-            mergeMapContents_out.markerBasedRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkerBasedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    /* Copy all floors currently owned by the merge map */
-    if (p_mergeMap_in->getAllFloors(mergeMapContents_out.floors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its semantic objects.",
+                     __func__,
+                     mergeMapId);
     }
 }
 

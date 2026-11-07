@@ -43,6 +43,10 @@ namespace atlas
 
 AtlasStatus Atlas::clearMap()
 {
+    /* The semantic lock first (lock order: semantic lock, then atlasMutex):
+     * the semantics manager and segmentation read and write the semantic
+     * lists under it, and this clear empties them. */
+    std::unique_lock<std::mutex> semanticUpdateLock(semanticUpdateMutex);
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
     /* Same-map reset (Tracking::ResetActiveMap) wipes rooms/floors/passages
      * from the live Map object without creating a new Map. Snapshot first so

@@ -35,6 +35,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
@@ -66,6 +67,16 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
@@ -332,13 +343,14 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
             }
 
             std::vector<semantic::Room *> atlasAllRooms{};
-            if (p_atlas_in->getAllRooms(atlasAllRooms) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+            if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllRooms returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: the scene graph has no scene map for the active map; "
+                    "continuing without its rooms.",
+                    __func__);
             }
             for (semantic::Room *p_room : atlasAllRooms)
             {
@@ -385,13 +397,14 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
 
             std::vector<vs_graphs::core::semantic::Passage *>
                 atlasAllPassages{};
-            if (p_atlas_in->getAllPassages(atlasAllPassages) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+            if (p_sceneGraph->getAllPassagesInIdOrder(atlasAllPassages) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllPassages returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: the scene graph has no scene map for the active map; "
+                    "continuing without its passages.",
+                    __func__);
             }
             for (vs_graphs::core::semantic::Passage *p_passage :
                  atlasAllPassages)

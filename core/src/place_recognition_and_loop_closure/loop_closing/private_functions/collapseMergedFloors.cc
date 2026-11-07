@@ -31,12 +31,15 @@
  */
 
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -44,21 +47,36 @@ namespace vs_graphs
 namespace core
 {
 
-loop_closing::LoopClosingStatus collapseMergedFloors(map::Map *p_survivingMap_inout)
+loop_closing::LoopClosingStatus
+    collapseMergedFloors(atlas::Atlas *p_atlas_inout,
+                         map::Map     *p_survivingMap_inout)
 {
     if (p_survivingMap_inout == nullptr)
     {
         return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    std::vector<semantic::Floor *> allFloors{};
-    if (p_survivingMap_inout->getAllFloors(allFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            survivingMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_survivingMap_inout->getId(survivingMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
+    }
+    std::vector<semantic::Floor *> allFloors{};
+    if (p_sceneGraph->getMapFloorsInIdOrder(survivingMapId, allFloors) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its floors.",
+                     __func__,
+                     survivingMapId);
     }
     if (allFloors.size() <= 1U)
     {
@@ -121,13 +139,14 @@ loop_closing::LoopClosingStatus collapseMergedFloors(map::Map *p_survivingMap_in
             }
         }
 
-        if (p_survivingMap_inout->eraseMapFloor(p_duplicateFloor) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->eraseFloor(survivingMapId, p_duplicateFloor) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseMapFloor returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: eraseFloor found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         survivingMapId);
         }
         int duplicateFloorId{};
         if (p_duplicateFloor->getId(duplicateFloorId) !=
@@ -154,13 +173,16 @@ loop_closing::LoopClosingStatus collapseMergedFloors(map::Map *p_survivingMap_in
     }
 
     std::vector<semantic::Room *> survivingMapAllDetectedMapRooms{};
-    if (p_survivingMap_inout->getAllDetectedMapRooms(
-            survivingMapAllDetectedMapRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_sceneGraph->getMapDetectedRoomsInIdOrder(
+            survivingMapId,
+            survivingMapAllDetectedMapRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its detected rooms.",
+                     __func__,
+                     survivingMapId);
     }
     for (semantic::Room *p_room : survivingMapAllDetectedMapRooms)
     {

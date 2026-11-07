@@ -41,6 +41,7 @@
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -198,12 +199,21 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
     };
 
     std::vector<semantic::Room *> atlasAllRooms{};
-    if (p_atlas->getAllRooms(atlasAllRooms) !=
+    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     for (semantic::Room *p_room : atlasAllRooms)

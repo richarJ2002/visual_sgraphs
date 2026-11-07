@@ -38,6 +38,7 @@
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -62,11 +63,29 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
     }
 
     std::vector<vs_graphs::core::semantic::Floor *> floors{};
-    if (p_currentMap->getAllFloors(floors) != map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph                        *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long currentMapId{};
+    if (p_currentMap->getId(currentMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getMapFloorsInIdOrder(currentMapId, floors) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapFloorsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     semantic::Floor *p_canonicalFloor = nullptr;
@@ -119,12 +138,13 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
     }
 
     std::vector<semantic::Room *> atlasAllDetectedMapRooms{};
-    if (p_atlas->getAllDetectedMapRooms(atlasAllDetectedMapRooms) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_sceneGraph->getMapDetectedRoomsInIdOrder(currentMapId,
+                                                   atlasAllDetectedMapRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: getMapDetectedRoomsInIdOrder returned a failure "
+                     "status; continuing as before.",
                      __func__);
     }
     for (vs_graphs::core::semantic::Room *p_room : atlasAllDetectedMapRooms)

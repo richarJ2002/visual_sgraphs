@@ -6,13 +6,10 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateCheckSum.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeDataset.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/deactivateLocalizationMode.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyframePoses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCamTwc.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFrame.cc

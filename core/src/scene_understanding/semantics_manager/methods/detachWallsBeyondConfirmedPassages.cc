@@ -34,8 +34,9 @@
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "configuration/types/types.h"
 
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <rclcpp/logging.hpp>
@@ -110,12 +111,21 @@ SemanticsManagerStatus
     std::vector<semantic::Passage *> confirmedOpenPassages;
 
     std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
-    if (p_atlas->getAllPassages(atlasAllPassages) !=
+    scene_graph::SceneGraph                          *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllPassagesInIdOrder(atlasAllPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     for (semantic::Passage *p_passage : atlasAllPassages)
@@ -146,11 +156,12 @@ SemanticsManagerStatus
     }
 
     std::vector<semantic::Room *> allRooms{};
-    if (p_atlas->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 

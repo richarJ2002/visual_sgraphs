@@ -30,27 +30,28 @@
  *                  System.h.
  */
 
-#include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "estimation/tracking/tracking.h"
+#include "execution/system/objects/SystemClass.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
+#include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "execution/system/objects/SystemClass.h"
-#include "estimation/tracking/tracking.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -292,13 +293,23 @@ SystemStatus System::getMissionHealthSnapshot(
 
         if (includeSemantics_in)
         {
-            std::vector<semantic::Room *> activeMapAllRooms{};
-            if (p_activeMap->getAllRooms(activeMapAllRooms) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            scene_graph::SceneGraph *p_sceneGraph = nullptr;
+            if (p_atlas->getSceneGraph(p_sceneGraph) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllRooms returned a failure status "
+                             "%s: getSceneGraph returned a failure status "
                              "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::vector<semantic::Room *> activeMapAllRooms{};
+            if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
+                                                   activeMapAllRooms) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapRoomsInIdOrder returned a failure "
+                             "status; continuing as before.",
                              __func__);
             }
             for (semantic::Room *p_room : activeMapAllRooms)
@@ -378,12 +389,13 @@ SystemStatus System::getMissionHealthSnapshot(
             }
 
             std::vector<semantic::Floor *> activeMapAllFloors{};
-            if (p_activeMap->getAllFloors(activeMapAllFloors) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapFloorsInIdOrder(activeMapId,
+                                                    activeMapAllFloors) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllFloors returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: getMapFloorsInIdOrder returned a failure "
+                             "status; continuing as before.",
                              __func__);
             }
             for (semantic::Floor *p_floor : activeMapAllFloors)
@@ -460,12 +472,13 @@ SystemStatus System::getMissionHealthSnapshot(
 
             std::vector<vs_graphs::core::semantic::Passage *>
                 activeMapAllPassages{};
-            if (p_activeMap->getAllPassages(activeMapAllPassages) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId,
+                                                      activeMapAllPassages) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllPassages returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: getMapPassagesInIdOrder returned a failure "
+                             "status; continuing as before.",
                              __func__);
             }
             for (semantic::Passage *p_passage : activeMapAllPassages)

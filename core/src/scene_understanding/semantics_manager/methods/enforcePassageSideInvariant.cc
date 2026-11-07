@@ -33,6 +33,7 @@
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
@@ -102,22 +103,31 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
     }
 
     std::vector<semantic::Passage *> allPassages{};
-    if (p_atlas->getAllPassages(allPassages) !=
+    scene_graph::SceneGraph         *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 
     std::vector<semantic::Room *> atlasAllRooms{};
-    if (p_atlas->getAllRooms(atlasAllRooms) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     for (semantic::Room *p_room : atlasAllRooms)

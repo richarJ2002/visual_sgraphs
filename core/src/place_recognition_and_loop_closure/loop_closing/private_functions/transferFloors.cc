@@ -32,10 +32,13 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
@@ -47,11 +50,28 @@ namespace vs_graphs
 namespace core
 {
 
-void transferFloors(map::Map                             *p_currentMap_inout,
+void transferFloors(atlas::Atlas                         *p_atlas_inout,
+                    map::Map                             *p_currentMap_inout,
                     map::Map                             *p_mergeMap_inout,
                     const std::vector<semantic::Floor *> &floors_in,
                     const semantic::SemanticVerifyConfig &configuration_in)
 {
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    unsigned long            mergeMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap_inout->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_mergeMap_inout->getId(mergeMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
+
     for (semantic::Floor *p_floor : floors_in)
     {
         if (p_floor == nullptr)
@@ -59,23 +79,26 @@ void transferFloors(map::Map                             *p_currentMap_inout,
             continue;
         }
 
-        if (p_mergeMap_inout->eraseMapFloor(p_floor) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->eraseFloor(mergeMapId, p_floor) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseMapFloor returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: eraseFloor found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         mergeMapId);
         }
         semantic::Floor               *p_retainedFloor = nullptr;
         std::vector<semantic::Floor *> currentMapAllFloors{};
-        if (p_currentMap_inout->getAllFloors(currentMapAllFloors) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->getMapFloorsInIdOrder(currentMapId,
+                                                currentMapAllFloors) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllFloors returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: the scene graph has no scene map for map %lu; "
+                         "continuing without its floors.",
+                         __func__,
+                         currentMapId);
         }
         /* A retained floor is a coplanar one, never one with the same id. */
         std::optional<semantic::Floor::PlaneIdentity> floorIdentity{};
@@ -148,17 +171,18 @@ void transferFloors(map::Map                             *p_currentMap_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_currentMap_inout->addMapFloor(p_floor) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->addFloor(currentMapId, p_floor) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addMapFloor returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: addFloor found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         currentMapId);
         }
     }
 
-    if (collapseMergedFloors(p_currentMap_inout) !=
+    if (collapseMergedFloors(p_atlas_inout, p_currentMap_inout) !=
         loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

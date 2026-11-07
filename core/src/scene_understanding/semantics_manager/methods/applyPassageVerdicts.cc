@@ -40,6 +40,7 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -66,12 +67,21 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
     constexpr double apertureShrinkFraction = 0.25;
 
     std::vector<semantic::Passage *> allPassages{};
-    if (p_atlas->getAllPassages(allPassages) !=
+    scene_graph::SceneGraph         *p_sceneGraph = nullptr;
+    if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
     geometric::Plane::GeometrySnapshot wallGeometry{};

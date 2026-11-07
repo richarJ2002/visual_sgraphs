@@ -32,10 +32,13 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -44,12 +47,29 @@ namespace vs_graphs
 namespace core
 {
 
-void transferRooms(map::Map                            *p_currentMap_inout,
+void transferRooms(atlas::Atlas                        *p_atlas_inout,
+                   map::Map                            *p_currentMap_inout,
                    map::Map                            *p_mergeMap_inout,
                    const std::vector<semantic::Room *> &detectedRooms_in,
                    const std::vector<semantic::Room *> &markerBasedRooms_in,
                    bool skipBadMarkerBasedRooms_in)
 {
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    unsigned long            mergeMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap_inout->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_mergeMap_inout->getId(mergeMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
+
     for (vs_graphs::core::semantic::Room *p_currentDetectedRoom :
          detectedRooms_in)
     {
@@ -80,23 +100,26 @@ void transferRooms(map::Map                            *p_currentMap_inout,
         }
 
         /* Add the room to the current map */
-        if (p_currentMap_inout->addDetectedMapRoom(p_currentDetectedRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->addDetectedRoom(currentMapId,
+                                          p_currentDetectedRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addDetectedMapRoom returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: addDetectedRoom found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         currentMapId);
         }
 
         /* Remove the room from the merged map */
-        if (p_mergeMap_inout->eraseDetectedMapRoom(p_currentDetectedRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->eraseRoom(mergeMapId, p_currentDetectedRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseDetectedMapRoom returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: eraseRoom found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         mergeMapId);
         }
     }
 
@@ -129,22 +152,23 @@ void transferRooms(map::Map                            *p_currentMap_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_currentMap_inout->addCandidateMapRoom(pRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->addCandidateRoom(currentMapId, pRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addCandidateMapRoom returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: addCandidateRoom found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         currentMapId);
         }
-        if (p_mergeMap_inout->eraseMarkerBasedMapRoom(pRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->eraseRoom(mergeMapId, pRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: eraseMarkerBasedMapRoom returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseRoom found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         mergeMapId);
         }
     }
 }

@@ -26,6 +26,8 @@
 
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
@@ -38,6 +40,7 @@
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
 
 #include <algorithm>
@@ -55,7 +58,8 @@ namespace utils
 {
 
 UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
-    map::Map *p_map_inout,
+    atlas::Atlas *p_atlas_inout,
+    map::Map     *p_map_inout,
     const std::vector<std::pair<semantic::Room *, semantic::Room *>>
         &duplicateRoomPairs_in)
 {
@@ -66,6 +70,18 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getParams returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            mapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        ((p_map_inout != nullptr) &&
+         (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
     }
 
@@ -237,13 +253,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Passage *> mergePassages{};
-        if (p_map_inout->getAllPassages(mergePassages) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->getMapPassagesInIdOrder(mapId, mergePassages) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllPassages returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: the scene graph has no scene map for map %lu; "
+                         "continuing without its passages.",
+                         __func__,
+                         mapId);
         }
         const bool roomsAreSeparatedByPassage = std::any_of(
             mergePassages.begin(),
@@ -309,13 +326,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
         std::vector<semantic::Room *> mapRooms{};
-        if (p_map_inout->getAllRooms(mapRooms) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->getMapRoomsInIdOrder(mapId, mapRooms) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllRooms returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: the scene graph has no scene map for map %lu; "
+                         "continuing without its rooms.",
+                         __func__,
+                         mapId);
         }
         std::sort(mapRooms.begin(),
                   mapRooms.end(),
@@ -575,13 +593,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-        if (p_map_inout->getAllPassages(mapAllPassages) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->getMapPassagesInIdOrder(mapId, mapAllPassages) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllPassages returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: the scene graph has no scene map for map %lu; "
+                         "continuing without its passages.",
+                         __func__,
+                         mapId);
         }
         for (semantic::Passage *p_passage : mapAllPassages)
         {
@@ -736,13 +755,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Floor *> mapAllFloors{};
-        if (p_map_inout->getAllFloors(mapAllFloors) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllFloors returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
+                         "%s: the scene graph has no scene map for map %lu; "
+                         "continuing without its floors.",
+                         __func__,
+                         mapId);
         }
         for (semantic::Floor *p_floor : mapAllFloors)
         {
@@ -763,22 +783,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        if (p_map_inout->eraseDetectedMapRoom(p_importedRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_sceneGraph->eraseRoom(mapId, p_importedRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseDetectedMapRoom returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_map_inout->eraseMarkerBasedMapRoom(p_importedRoom) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: eraseMarkerBasedMapRoom returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
+                         "%s: eraseRoom found no scene map for map %lu; "
+                         "continuing as before.",
+                         __func__,
+                         mapId);
         }
         if (p_importedRoom->clearWalls() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)

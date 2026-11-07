@@ -42,6 +42,11 @@
 #include <utility>
 #include <vector>
 
+namespace vs_graphs::core::atlas
+{
+class Atlas;
+}
+
 namespace vs_graphs::core::map
 {
 class Map;
@@ -207,8 +212,12 @@ class SemanticVerify
      *                  is, the first deferred candidate (else the final
      *                  room's) gives the decision. result_out names the
      *                  anchor rooms of the candidate the decision rests on.
+     *
+     * @param[in]       p_atlas_in
+     *                  Atlas whose scene graph lists the rooms of both maps.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
+        atlas::Atlas               *p_atlas_in,
         map::Map                   *p_survivingMap_in,
         map::Map                   *p_absorbedMap_in,
         const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,

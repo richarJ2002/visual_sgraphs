@@ -35,6 +35,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <limits>
 #include <rclcpp/logging.hpp>
@@ -52,15 +53,42 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     std::string     &result_out,
     bool            &isVerified_out)
 {
-    semantic::Floor               *p_survivingFloor = nullptr;
-    std::vector<semantic::Floor *> survivingMapAllFloors{};
-    if (p_survivingMap_in->getAllFloors(survivingMapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_survivingSceneGraph = nullptr;
+    unsigned long            survivingMapId{};
+    if ((p_survivingMap_in->getSceneGraph(p_survivingSceneGraph) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_survivingMap_in->getId(survivingMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
+    }
+    scene_graph::SceneGraph *p_absorbedSceneGraph = nullptr;
+    unsigned long            absorbedMapId{};
+    if ((p_absorbedMap_in->getSceneGraph(p_absorbedSceneGraph) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_absorbedMap_in->getId(absorbedMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
+    semantic::Floor               *p_survivingFloor = nullptr;
+    std::vector<semantic::Floor *> survivingMapAllFloors{};
+    if ((p_survivingSceneGraph == nullptr) ||
+        (p_survivingSceneGraph->getMapFloorsInIdOrder(survivingMapId,
+                                                      survivingMapAllFloors) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its floors.",
+                     __func__,
+                     survivingMapId);
     }
     if (semantic::Floor::selectBestObservedFloor(survivingMapAllFloors,
                                                  p_survivingFloor) !=
@@ -73,13 +101,16 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     }
     semantic::Floor               *p_absorbedFloor = nullptr;
     std::vector<semantic::Floor *> absorbedMapAllFloors{};
-    if (p_absorbedMap_in->getAllFloors(absorbedMapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_absorbedSceneGraph == nullptr) ||
+        (p_absorbedSceneGraph->getMapFloorsInIdOrder(absorbedMapId,
+                                                     absorbedMapAllFloors) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its floors.",
+                     __func__,
+                     absorbedMapId);
     }
     if (semantic::Floor::selectBestObservedFloor(absorbedMapAllFloors,
                                                  p_absorbedFloor) !=

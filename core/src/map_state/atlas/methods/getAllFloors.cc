@@ -31,8 +31,8 @@
  */
 
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -46,12 +46,12 @@ AtlasStatus Atlas::getAllFloors(std::vector<semantic::Floor *> &allFloors_out)
 {
     std::unique_lock<std::mutex>   lock(atlasMutex);
     std::vector<semantic::Floor *> activeMapAllFloors{};
-    if (p_activeMap->getAllFloors(activeMapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if (sceneGraph.getAllFloorsInIdOrder(activeMapAllFloors) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllFloorsInIdOrder found no scene map for the "
+                     "active map; continuing without floors.",
                      __func__);
     }
     allFloors_out = activeMapAllFloors;

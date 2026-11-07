@@ -45,6 +45,7 @@ namespace core
 {
 
 void transferSemanticEntities(
+    atlas::Atlas                         *p_atlas_inout,
     map::Map                             *p_currentMap_inout,
     map::Map                             *p_mergeMap_inout,
     const loop_closing::MergeMapContents &mergeMapContents_in,
@@ -64,18 +65,21 @@ void transferSemanticEntities(
     transferPlanes(p_currentMap_inout,
                    p_mergeMap_inout,
                    mergeMapContents_in.planes);
-    transferPassages(p_currentMap_inout,
+    transferPassages(p_atlas_inout,
+                     p_currentMap_inout,
                      p_mergeMap_inout,
                      mergeMapContents_in.passages,
                      mergeMapContents_in.detectedRooms,
                      mergeMapContents_in.markerBasedRooms,
                      configuration);
-    transferRooms(p_currentMap_inout,
+    transferRooms(p_atlas_inout,
+                  p_currentMap_inout,
                   p_mergeMap_inout,
                   mergeMapContents_in.detectedRooms,
                   mergeMapContents_in.markerBasedRooms,
                   skipBadMarkerBasedRooms_in);
-    transferFloors(p_currentMap_inout,
+    transferFloors(p_atlas_inout,
+                   p_currentMap_inout,
                    p_mergeMap_inout,
                    mergeMapContents_in.floors,
                    configuration);

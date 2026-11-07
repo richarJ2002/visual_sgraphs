@@ -46,6 +46,7 @@ namespace core
 {
 
 void evaluateSemanticMergeGate(
+    atlas::Atlas                      *p_atlas_in,
     map::Map                          *p_currentMap_in,
     map::Map                          *p_mergeMap_in,
     const g2o::Sim3                   &mapTransform_mergeWorldToCurrentWorld_in,
@@ -62,6 +63,7 @@ void evaluateSemanticMergeGate(
     }
     gateResult_out = semantic::SemanticMergeGateResult{};
     if (semantic::SemanticVerify::evaluateMapMergeGate(
+            p_atlas_in,
             p_currentMap_in,
             p_mergeMap_in,
             mapTransform_mergeWorldToCurrentWorld_in,

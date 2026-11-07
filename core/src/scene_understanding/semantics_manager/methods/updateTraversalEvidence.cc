@@ -48,6 +48,7 @@
 #include <unordered_map>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -76,6 +77,23 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     if (p_activeMap == nullptr)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+    unsigned long activeMapId{};
+    if (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (resetTemporalStateForMap(p_activeMap) !=
@@ -199,11 +217,12 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     const double minimumSideDistance_m = static_cast<double>(
         p_sysParams->roomSeg.passagePartition.minimumSideDistance_m);
     std::vector<semantic::Passage *> passages{};
-    if (p_activeMap->getAllPassages(passages) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId, passages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getMapPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
                      __func__);
     }
 
@@ -508,14 +527,14 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                     p_reachedRoom = knownSide.p_room;
                 }
                 std::vector<semantic::Room *> activeRooms{};
-                if (p_activeMap->getAllRooms(activeRooms) !=
-                    map::MapStatus::MAP_STATUS_SUCCESS)
+                if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
+                                                       activeRooms) !=
+                    scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getAllRooms returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getMapRoomsInIdOrder returned a failure "
+                                 "status; continuing as before.",
+                                 __func__);
                 }
                 bool reachedRoomIsBad{};
                 if ((p_reachedRoom != nullptr) &&
@@ -559,14 +578,16 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                     if (reachedRoomRoomVariant ==
                         semantic::Room::RoomVariant::UNDEFINED)
                     {
-                        if (p_activeMap->promoteCandidateMapRoom(
-                                p_reachedRoom) != map::MapStatus::MAP_STATUS_SUCCESS)
+                        if (p_sceneGraph->promoteCandidateRoom(activeMapId,
+                                                               p_reachedRoom) !=
+                            scene_graph::SceneGraphStatus::
+                                SCENE_GRAPH_STATUS_SUCCESS)
                         {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: promoteCandidateMapRoom returned "
-                                         "a failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: promoteCandidateRoom returned a failure "
+                                "status; continuing as before.",
+                                __func__);
                         }
                         if (p_reachedRoom->setRoomVariant(
                                 semantic::Room::RoomVariant::ROOM) !=
@@ -621,14 +642,17 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
 
                         semantic::Floor               *p_floor = nullptr;
                         std::vector<semantic::Floor *> activeMapAllFloors{};
-                        if (p_activeMap->getAllFloors(activeMapAllFloors) !=
-                            map::MapStatus::MAP_STATUS_SUCCESS)
+                        if (p_sceneGraph->getMapFloorsInIdOrder(
+                                activeMapId,
+                                activeMapAllFloors) !=
+                            scene_graph::SceneGraphStatus::
+                                SCENE_GRAPH_STATUS_SUCCESS)
                         {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getAllFloors returned a failure "
-                                         "status although it cannot fail; "
-                                         "continuing as before.",
-                                         __func__);
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMapFloorsInIdOrder returned a failure "
+                                "status; continuing as before.",
+                                __func__);
                         }
                         if (semantic::Floor::selectBestObservedFloor(
                                 activeMapAllFloors,
@@ -665,16 +689,6 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                         int passageId{};
                         if (p_passage->getId(passageId) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        unsigned long activeMapId{};
-                        if (p_activeMap->getId(activeMapId) !=
-                            map::MapStatus::MAP_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),

@@ -479,6 +479,10 @@ class Utils
      *                  room is retired. A pair whose rooms lie on opposite
      *                  sides of a passable passage opening is left alone.
      *
+     * @param[in,out]   p_atlas_inout
+     *                  Atlas whose scene graph lists the map's passages,
+     *                  rooms and floors and erases the retired rooms.
+     *
      * @param[in,out]   p_map_inout
      *                  Surviving map whose room graph is reconciled.
      *
@@ -487,7 +491,8 @@ class Utils
      *                  rooms belong to p_map_inout.
      */
     [[nodiscard]] static UtilsStatus fuseDuplicateRoomsAfterMerge(
-        map::Map *p_map_inout,
+        atlas::Atlas *p_atlas_inout,
+        map::Map     *p_map_inout,
         const std::vector<std::pair<semantic::Room *, semantic::Room *>>
             &duplicateRoomPairs_in);
 

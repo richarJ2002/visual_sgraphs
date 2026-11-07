@@ -31,6 +31,7 @@
 #include "map_state/map/map.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
@@ -170,14 +171,24 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    /* Extract all passages */
-    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-    if (p_atlas_inout->getAllPassages(allPassages) !=
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (p_atlas_inout->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Extract all passages */
+    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for the active map; "
+                     "continuing without its passages.",
                      __func__);
     }
 
@@ -844,12 +855,12 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     p_createdPassage_out = p_newMapPassage;
 
     std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
-    if (p_atlas_inout->getAllPassages(atlasAllPassages) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_sceneGraph->getAllPassagesInIdOrder(atlasAllPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: the scene graph has no scene map for the active map; "
+                     "continuing without its passages.",
                      __func__);
     }
     std::cout << "[GeoSemHelper] Atlas now contains " << atlasAllPassages.size()

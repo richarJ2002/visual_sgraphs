@@ -147,7 +147,8 @@ LoopClosingStatus
     const g2o::Sim3 g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
 
     semantic::SemanticMergeGateResult semanticMergeGate{};
-    evaluateSemanticMergeGate(p_currentMap,
+    evaluateSemanticMergeGate(p_atlas,
+                              p_currentMap,
                               p_mergeMap,
                               g2oSwCurrentWMerge,
                               semanticMergeGate);
@@ -285,7 +286,7 @@ LoopClosingStatus
 
     /* Everything that still belongs to the obsolete merge map. */
     MergeMapContents mergeMapContents;
-    collectMergeMapContents(p_mergeMap, mergeMapContents);
+    collectMergeMapContents(p_atlas, p_mergeMap, mergeMapContents);
     const bool hasValidRemainingMergeKeyFrame =
         hasMergeMapKeyFrame(mergeMapContents.keyFrames, p_mergeMap);
 
@@ -370,11 +371,12 @@ LoopClosingStatus
                                       p_mergeMap,
                                       mergeMapContents.keyFrames,
                                       mergeMapContents.mapPoints);
-        transferSemanticEntities(p_currentMap,
+        transferSemanticEntities(p_atlas,
+                                 p_currentMap,
                                  p_mergeMap,
                                  mergeMapContents,
                                  false);
-        rebuildSemanticIndexes(p_currentMap);
+        rebuildSemanticIndexes(p_atlas, p_currentMap);
 
         /* Fuse only after every semantic relationship is visible. */
         reassociateMergedSemantics(p_atlas,

@@ -45,6 +45,7 @@
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -59,36 +60,6 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
     if (!p_activeMap)
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
-    /* Export BOTH confirmed detected rooms AND candidate/marker-based rooms.
-     * Candidate rooms (prospective/provisional) may not have full wall loops
-     * yet but still carry spatial identity needed for cross-restart matching.
-     */
-    std::vector<semantic::Room *> rooms{};
-    if (p_activeMap->getAllDetectedMapRooms(rooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    std::vector<semantic::Room *> candidateRooms{};
-    if (p_activeMap->getAllCandidateMapRooms(candidateRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllCandidateMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
-
-    if (rooms.empty())
-        return AtlasStatus::ATLAS_STATUS_SUCCESS;
-
-    std::vector<semantic::RoomContextSnapshot> snapshots;
-    snapshots.reserve(rooms.size());
-
     unsigned long mapIdValue{};
     if (p_activeMap->getId(mapIdValue) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
@@ -98,6 +69,35 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                      __func__);
     }
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
+    /* Export BOTH confirmed detected rooms AND candidate/marker-based rooms.
+     * Candidate rooms (prospective/provisional) may not have full wall loops
+     * yet but still carry spatial identity needed for cross-restart matching.
+     */
+    std::vector<semantic::Room *> rooms{};
+    if (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapDetectedRoomsInIdOrder found no scene map for "
+                     "the map; continuing without its detected rooms.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> candidateRooms{};
+    if (sceneGraph.getMapCandidateRoomsInIdOrder(mapIdValue, candidateRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapCandidateRoomsInIdOrder found no scene map "
+                     "for the map; continuing without its candidate rooms.",
+                     __func__);
+    }
+    rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
+
+    if (rooms.empty())
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
+
+    std::vector<semantic::RoomContextSnapshot> snapshots;
+    snapshots.reserve(rooms.size());
 
     for (semantic::Room *p_room : rooms)
     {

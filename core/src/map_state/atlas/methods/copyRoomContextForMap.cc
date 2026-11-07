@@ -43,6 +43,7 @@
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -62,22 +63,30 @@ AtlasStatus Atlas::copyRoomContextForMap(
         roomContexts_out = snapshots;
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
-    std::vector<semantic::Room *> rooms{};
-    if (p_map_in->getAllDetectedMapRooms(rooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long mapIdValue{};
+    if (p_map_in->getId(mapIdValue) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> rooms{};
+    if (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapDetectedRoomsInIdOrder found no scene map for "
+                     "the map; continuing without its detected rooms.",
                      __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
-    if (p_map_in->getAllCandidateMapRooms(candidateRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if (sceneGraph.getMapCandidateRoomsInIdOrder(mapIdValue, candidateRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllCandidateMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: getMapCandidateRoomsInIdOrder found no scene map "
+                     "for the map; continuing without its candidate rooms.",
                      __func__);
     }
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());

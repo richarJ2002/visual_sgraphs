@@ -43,6 +43,7 @@
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
@@ -131,14 +132,27 @@ void reassociateMergedSemantics(
                          mergeMapContents_in.markerBasedRooms.end());
 
     /* Rooms the surviving map had before the merge are the fusion targets. */
-    std::vector<semantic::Room *> mapAllRooms{};
-    if (p_currentMap_inout->getAllRooms(mapAllRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap_inout->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
+    }
+    std::vector<semantic::Room *> mapAllRooms{};
+    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, mapAllRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     currentMapId);
     }
     std::vector<semantic::Room *> retainedRooms{};
     for (semantic::Room *p_room : mapAllRooms)
@@ -173,7 +187,8 @@ void reassociateMergedSemantics(
               << " retained_rooms=" << retainedRooms.size()
               << " duplicate_room_pairs=" << duplicateRoomPairs.size()
               << std::endl;
-    if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_currentMap_inout,
+    if (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(p_atlas_inout,
+                                                          p_currentMap_inout,
                                                           duplicateRoomPairs) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
@@ -208,19 +223,32 @@ void reassociateMergedSemantics(
             continue;
         }
 
+        /* The scene graph keys rooms by id: re-insert under the new key,
+         * into the list the room came from. */
+        const bool isDetectedRoom =
+            std::find(mergeMapContents_in.detectedRooms.begin(),
+                      mergeMapContents_in.detectedRooms.end(),
+                      p_importedRoom) !=
+            mergeMapContents_in.detectedRooms.end();
         int importedRoomId{};
         int freshRoomId{};
         if (p_importedRoom->getId(importedRoomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            p_sceneGraph->eraseRoom(currentMapId, p_importedRoom) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
             p_atlas_inout->reserveRoomIdentity(freshRoomId) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedRoom->setId(freshRoomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            (isDetectedRoom
+                 ? p_sceneGraph->addDetectedRoom(currentMapId, p_importedRoom)
+                 : p_sceneGraph->addCandidateRoom(currentMapId,
+                                                  p_importedRoom)) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId/reserveRoomIdentity/setId returned a "
-                         "failure status although they cannot fail; "
-                         "continuing as before.",
+                         "%s: re-keying a room returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
 
@@ -274,14 +302,14 @@ void reassociateMergedSemantics(
         int freshPassageId{};
         if (p_importedPassage->getId(importedPassageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-            p_currentMap_inout->eraseMapPassage(p_importedPassage) !=
-                map::MapStatus::MAP_STATUS_SUCCESS ||
+            p_sceneGraph->erasePassage(currentMapId, p_importedPassage) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
             p_atlas_inout->reservePassageIdentity(freshPassageId) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedPassage->setId(freshPassageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-            p_currentMap_inout->addMapPassage(p_importedPassage) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            p_sceneGraph->addPassage(currentMapId, p_importedPassage) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: re-keying a passage returned a failure status "

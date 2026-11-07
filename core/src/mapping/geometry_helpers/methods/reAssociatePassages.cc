@@ -36,6 +36,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
@@ -77,21 +78,36 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    std::vector<semantic::Passage *> passages{};
-    if (p_activeMap->getAllPassages(passages) != map::MapStatus::MAP_STATUS_SUCCESS)
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            activeMapId{};
+    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<semantic::Room *> activeRooms{};
-    if (p_activeMap->getAllRooms(activeRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
+    std::vector<semantic::Passage *> passages{};
+    if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId, passages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its passages.",
+                     __func__,
+                     activeMapId);
+    }
+    std::vector<semantic::Room *> activeRooms{};
+    if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId, activeRooms) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     activeMapId);
     }
     const std::unordered_set<semantic::Room *> activeRoomSet(
         activeRooms.begin(),
@@ -638,13 +654,16 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
             }
 
             std::vector<semantic::Room *> activeMapAllRooms{};
-            if (p_activeMap->getAllRooms(activeMapAllRooms) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
+                                                   activeMapAllRooms) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllRooms returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: the scene graph has no scene map for map %lu; "
+                    "continuing without its rooms.",
+                    __func__,
+                    activeMapId);
             }
             for (semantic::Room *p_room : activeMapAllRooms)
             {
@@ -714,13 +733,14 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                 }
             }
 
-            if (p_activeMap->eraseMapPassage(p_candidatePassage) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_sceneGraph->erasePassage(activeMapId, p_candidatePassage) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: eraseMapPassage returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                             "%s: erasePassage found no scene map for map %lu; "
+                             "continuing as before.",
+                             __func__,
+                             activeMapId);
             }
             if (p_candidatePassage->setProspectiveRoom(nullptr) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)

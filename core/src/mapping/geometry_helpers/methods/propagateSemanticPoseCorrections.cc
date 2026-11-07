@@ -37,6 +37,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <algorithm>
 #include <cmath>
@@ -63,6 +64,17 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     if (p_map_inout == nullptr)
     {
         return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            mapId{};
+    if ((p_map_inout->getSceneGraph(p_sceneGraph) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
     }
 
     struct PoseCorrectionNode
@@ -305,13 +317,15 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     }
 
     std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-    if (p_map_inout->getAllPassages(mapAllPassages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapPassagesInIdOrder(mapId, mapAllPassages) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its passages.",
+                     __func__,
+                     mapId);
     }
     for (vs_graphs::core::semantic::Passage *p_passage : mapAllPassages)
     {
@@ -419,22 +433,26 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     std::map<semantic::Room *, Eigen::Vector3d> roomCentroids_oldWorld_m;
     std::set<semantic::Room *>                  correctedRooms;
     std::vector<semantic::Room *>               rooms{};
-    if (p_map_inout->getAllDetectedMapRooms(rooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapDetectedRoomsInIdOrder(mapId, rooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its detected rooms.",
+                     __func__,
+                     mapId);
     }
     std::vector<semantic::Room *> markerRooms{};
-    if (p_map_inout->getAllMarkerBasedMapRooms(markerRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapCandidateRoomsInIdOrder(mapId, markerRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkerBasedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its candidate rooms.",
+                     __func__,
+                     mapId);
     }
     rooms.insert(rooms.end(), markerRooms.begin(), markerRooms.end());
 
@@ -529,13 +547,15 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     }
 
     std::vector<semantic::Floor *> mapAllFloors{};
-    if (p_map_inout->getAllFloors(mapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_sceneGraph == nullptr) ||
+        (p_sceneGraph->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+                     "%s: map %lu has no scene graph or no scene map in it; "
+                     "continuing without its floors.",
+                     __func__,
+                     mapId);
     }
     for (semantic::Floor *p_floor : mapAllFloors)
     {

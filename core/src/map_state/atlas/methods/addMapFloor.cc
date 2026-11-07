@@ -35,6 +35,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -75,11 +76,14 @@ AtlasStatus Atlas::addMapFloor(semantic::Floor *p_floor_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_ownerMap->addMapFloor(p_floor_in) != map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long ownerMapId{};
+    if ((p_ownerMap->getId(ownerMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (sceneGraph.addFloor(ownerMapId, p_floor_in) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: addMapFloor returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getId/addFloor found no scene map for the floor's "
+                     "map; the floor was not added.",
                      __func__);
     }
 

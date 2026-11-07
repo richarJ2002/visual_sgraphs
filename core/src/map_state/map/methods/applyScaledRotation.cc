@@ -37,6 +37,7 @@
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map_point/map_point.h"
@@ -66,6 +67,32 @@ MapStatus Map::applyScaledRotation(
     const float         alignmentScale_in,
     const bool          isScaledVelocity_in)
 {
+    /* Rooms, passages and floors come from the scene graph, read before
+     * mapMutex is held for the move (lock order: scene graph lock, then
+     * mapMutex). Callers hold the semantic lock, so the lists stay put. */
+    scene_graph::SceneGraph         *p_mapSceneGraph = nullptr;
+    std::vector<semantic::Passage *> mapPassages{};
+    std::vector<semantic::Room *>    mapDetectedRooms{};
+    std::vector<semantic::Room *>    mapCandidateRooms{};
+    std::vector<semantic::Floor *>   mapFloors{};
+    if ((getSceneGraph(p_mapSceneGraph) != MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_mapSceneGraph == nullptr) ||
+        (p_mapSceneGraph->getMapPassagesInIdOrder(id, mapPassages) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_mapSceneGraph->getMapDetectedRoomsInIdOrder(id, mapDetectedRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_mapSceneGraph->getMapCandidateRoomsInIdOrder(id,
+                                                        mapCandidateRooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (p_mapSceneGraph->getMapFloorsInIdOrder(id, mapFloors) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the scene graph has no scene map for this map; its "
+                     "rooms, passages and floors are not moved.",
+                     __func__);
+    }
+
     std::unique_lock<std::mutex> lock(mapMutex);
 
     /* Body position (IMU) of first keyframe is fixed to (0,0,0) */
@@ -204,7 +231,7 @@ MapStatus Map::applyScaledRotation(
         }
     }
 
-    for (vs_graphs::core::semantic::Passage *p_passage : passages)
+    for (vs_graphs::core::semantic::Passage *p_passage : mapPassages)
     {
         if (p_passage != nullptr)
         {
@@ -220,7 +247,7 @@ MapStatus Map::applyScaledRotation(
         }
     }
 
-    for (semantic::Room *p_room : detectedRooms)
+    for (semantic::Room *p_room : mapDetectedRooms)
     {
         bool roomIsBad{};
         if ((p_room != nullptr) &&
@@ -245,7 +272,7 @@ MapStatus Map::applyScaledRotation(
         }
     }
 
-    for (semantic::Room *p_room : markerBasedRooms)
+    for (semantic::Room *p_room : mapCandidateRooms)
     {
         bool roomIsBad2{};
         if ((p_room != nullptr) &&
@@ -270,7 +297,7 @@ MapStatus Map::applyScaledRotation(
         }
     }
 
-    for (semantic::Floor *p_floor : floors)
+    for (semantic::Floor *p_floor : mapFloors)
     {
         if (p_floor != nullptr)
         {

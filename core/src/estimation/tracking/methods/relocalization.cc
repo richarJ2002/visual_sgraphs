@@ -31,6 +31,7 @@
  */
 
 #include "estimation/tracking/objects/TrackingClass.h"
+#include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/frame/objects/FrameStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
@@ -44,6 +45,7 @@
 #include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "execution/system/objects/VerboseStatusEnum.h"
 
 #include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
@@ -104,12 +106,20 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     if (p_currentMap)
     {
         std::vector<semantic::Room *> rooms{};
-        if (p_currentMap->getAllDetectedMapRooms(rooms) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+        scene_graph::SceneGraph      *p_sceneGraph = nullptr;
+        unsigned long                 currentMapId{};
+        if ((p_atlas->getSceneGraph(p_sceneGraph) !=
+             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+            (p_currentMap->getId(currentMapId) !=
+             map::MapStatus::MAP_STATUS_SUCCESS) ||
+            (p_sceneGraph->getMapDetectedRoomsInIdOrder(currentMapId,
+                                                        rooms) !=
+             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllDetectedMapRooms returned a failure status "
-                         "although it cannot fail; continuing as before.",
+                         "%s: getSceneGraph/getId/getMapDetectedRoomsInIdOrder "
+                         "found no scene map for the current map; continuing "
+                         "without room priors.",
                          __func__);
         }
         for (semantic::Room *p_room : rooms)

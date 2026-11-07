@@ -80,13 +80,17 @@ inline constexpr int MAXIMUM_EXPANSION_ITERATIONS = 5;
 /*!
  * @brief           Collapses duplicate floors in the surviving map.
  *
+ * @param[in,out]   p_atlas_inout
+ *                  Atlas whose scene graph lists and erases the floors.
+ *
  * @param[in,out]   p_survivingMap_inout
  *                  TODO
  *
  * @return          TODO
  */
 [[nodiscard]] loop_closing::LoopClosingStatus
-    collapseMergedFloors(map::Map *p_survivingMap_inout);
+    collapseMergedFloors(atlas::Atlas *p_atlas_inout,
+                         map::Map     *p_survivingMap_inout);
 
 /*!
  * @brief           Resolves the surviving and the absorbed map of a merge
@@ -225,6 +229,9 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
  *                  its decision record (committed=0) and, on a second line, the
  *                  element pairs and problems behind the decision.
  *
+ * @param[in]       p_atlas_in
+ *                  Atlas whose scene graph lists the rooms of both maps.
+ *
  * @param[in]       p_currentMap_in
  *                  Surviving map.
  *
@@ -239,6 +246,7 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
  *                  Decision, reason and evidence counts of the gate.
  */
 void evaluateSemanticMergeGate(
+    atlas::Atlas                      *p_atlas_in,
     map::Map                          *p_currentMap_in,
     map::Map                          *p_mergeMap_in,
     const g2o::Sim3                   &mapTransform_mergeWorldToCurrentWorld_in,
@@ -498,6 +506,9 @@ void optimizeMergeWindow(
  *                  keyframes, map points, passages, detected rooms,
  *                  marker-based rooms and floors.
  *
+ * @param[in]       p_atlas_in
+ *                  Atlas whose scene graph lists the semantic objects.
+ *
  * @param[in]       p_mergeMap_in
  *                  Absorbed map.
  *
@@ -505,6 +516,7 @@ void optimizeMergeWindow(
  *                  Receives the object lists.
  */
 void collectMergeMapContents(
+    atlas::Atlas                   *p_atlas_in,
     map::Map                       *p_mergeMap_in,
     loop_closing::MergeMapContents &mergeMapContents_out);
 
@@ -661,6 +673,9 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
  *                  are re-pointed to the kept passage and the duplicate is
  *                  marked bad.
  *
+ * @param[in,out]   p_atlas_inout
+ *                  Atlas whose scene graph moves the passages.
+ *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
  *
@@ -681,8 +696,9 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
  *                  Coplanar angle and wall plane offset for the passage
  *                  pairing.
  */
-void transferPassages(map::Map *p_currentMap_inout,
-                      map::Map *p_mergeMap_inout,
+void transferPassages(atlas::Atlas *p_atlas_inout,
+                      map::Map     *p_currentMap_inout,
+                      map::Map     *p_mergeMap_inout,
                       const std::vector<semantic::Passage *> &passages_in,
                       const std::vector<semantic::Room *>    &detectedRooms_in,
                       const std::vector<semantic::Room *>  &markerBasedRooms_in,
@@ -693,6 +709,9 @@ void transferPassages(map::Map *p_currentMap_inout,
  *                  absorbed map into the surviving map. The RGB-D merge moves
  *                  every marker-based room; the inertial merge skips bad ones,
  *                  which skipBadMarkerBasedRooms_in preserves.
+ *
+ * @param[in,out]   p_atlas_inout
+ *                  Atlas whose scene graph moves the rooms.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -712,7 +731,8 @@ void transferPassages(map::Map *p_currentMap_inout,
  *                  True to skip marker-based rooms that are bad, false to move
  *                  them too.
  */
-void transferRooms(map::Map                            *p_currentMap_inout,
+void transferRooms(atlas::Atlas                        *p_atlas_inout,
+                   map::Map                            *p_currentMap_inout,
                    map::Map                            *p_mergeMap_inout,
                    const std::vector<semantic::Room *> &detectedRooms_in,
                    const std::vector<semantic::Room *> &markerBasedRooms_in,
@@ -724,6 +744,9 @@ void transferRooms(map::Map                            *p_currentMap_inout,
  *                  surviving map (ids are never compared) has its evidence and
  *                  rooms folded into that floor; afterwards duplicate floors of
  *                  the surviving map are collapsed.
+ *
+ * @param[in,out]   p_atlas_inout
+ *                  Atlas whose scene graph moves the floors.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -738,7 +761,8 @@ void transferRooms(map::Map                            *p_currentMap_inout,
  *                  Coplanar angle and floor height tolerance for the floor
  *                  pairing.
  */
-void transferFloors(map::Map                             *p_currentMap_inout,
+void transferFloors(atlas::Atlas                         *p_atlas_inout,
+                    map::Map                             *p_currentMap_inout,
                     map::Map                             *p_mergeMap_inout,
                     const std::vector<semantic::Floor *> &floors_in,
                     const semantic::SemanticVerifyConfig &configuration_in);
@@ -747,6 +771,9 @@ void transferFloors(map::Map                             *p_currentMap_inout,
  * @brief           Moves every semantic object of the absorbed map into the
  *                  surviving map in a fixed order: planes, passages, rooms,
  *                  floors. The caller holds both map update mutexes.
+ *
+ * @param[in,out]   p_atlas_inout
+ *                  Atlas whose scene graph moves the semantic objects.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -761,6 +788,7 @@ void transferFloors(map::Map                             *p_currentMap_inout,
  *                  Forwarded to transferRooms().
  */
 void transferSemanticEntities(
+    atlas::Atlas                         *p_atlas_inout,
     map::Map                             *p_currentMap_inout,
     map::Map                             *p_mergeMap_inout,
     const loop_closing::MergeMapContents &mergeMapContents_in,
@@ -771,10 +799,14 @@ void transferSemanticEntities(
  *                  which the external Voxblox node rebuilds in the corrected
  *                  frame, and re-indexes the walls of every valid room.
  *
+ * @param[in]       p_atlas_in
+ *                  Atlas whose scene graph lists the rooms.
+ *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
  */
-void rebuildSemanticIndexes(map::Map *p_currentMap_inout);
+void rebuildSemanticIndexes(atlas::Atlas *p_atlas_in,
+                            map::Map     *p_currentMap_inout);
 
 /*!
  * @brief           Reconciles the semantic graph after a merge: re-associates

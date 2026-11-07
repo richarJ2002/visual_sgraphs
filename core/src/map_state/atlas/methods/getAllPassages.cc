@@ -31,8 +31,8 @@
  */
 
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -47,12 +47,12 @@ AtlasStatus Atlas::getAllPassages(
 {
     std::unique_lock<std::mutex>                      lock(atlasMutex);
     std::vector<vs_graphs::core::semantic::Passage *> activeMapAllPassages{};
-    if (p_activeMap->getAllPassages(activeMapAllPassages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if (sceneGraph.getAllPassagesInIdOrder(activeMapAllPassages) !=
+        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getAllPassagesInIdOrder found no scene map for the "
+                     "active map; continuing without passages.",
                      __func__);
     }
     allPassages_out = activeMapAllPassages;
