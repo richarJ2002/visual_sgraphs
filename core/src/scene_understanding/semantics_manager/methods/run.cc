@@ -583,6 +583,22 @@ void SemanticsManager::run(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
+                    int clearedPassageId{};
+                    if (p_passage->getId(clearedPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                                "[SemMgr] Passage#%d far-side handle Room#%d "
+                                "cleared: prospective retired (bad room or "
+                                "invalid passage geometry).",
+                                clearedPassageId,
+                                roomId);
                 }
 
                 bool candidateIsBad3{};

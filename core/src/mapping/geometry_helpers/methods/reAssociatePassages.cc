@@ -376,6 +376,30 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                 if (candidateIsFarSide && !retainedIsFarSide)
                 {
                     p_survivingHandle = p_candidateHandle;
+                    int retainedPassageId{};
+                    int retainedHandleId{};
+                    int candidateHandleId{};
+                    if (p_retainedPassage->getId(retainedPassageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                        p_retainedHandle->getId(retainedHandleId) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                        p_candidateHandle->getId(candidateHandleId) !=
+                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getId returned a failure status "
+                                     "although it cannot fail; continuing as "
+                                     "before.",
+                                     __func__);
+                    }
+                    RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                                "[GeoSemHelper] Passage#%d far-side handle "
+                                "Room#%d replaced by Room#%d: passages merged, "
+                                "only the absorbed passage's room is proven "
+                                "far side.",
+                                retainedPassageId,
+                                retainedHandleId,
+                                candidateHandleId);
                 }
             }
 

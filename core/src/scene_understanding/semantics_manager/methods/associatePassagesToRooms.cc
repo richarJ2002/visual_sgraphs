@@ -1398,6 +1398,23 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
+            int clearedPassageId{};
+            int badHandleId{};
+            if (p_passage->getId(clearedPassageId) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                p_existingProspective->getId(badHandleId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                        "[SemMgr] Passage#%d far-side handle Room#%d cleared: "
+                        "the room is bad (fused or deleted).",
+                        clearedPassageId,
+                        badHandleId);
         }
         else if (p_existingProspective != nullptr &&
                  existingProspectiveRoomVariant !=
@@ -1458,9 +1475,11 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
               p_confirmedAssociatedRoom == p_negativeSideRoom) ||
              (knownSideSign < 0.0 &&
               p_confirmedAssociatedRoom == p_positiveSideRoom));
-        if ((confirmedAssociatedRoomCount == 1U &&
-             p_currentFarSideHandle == p_confirmedAssociatedRoom &&
-             !isSoleRoomOnFarSide) ||
+        const bool isHandleTheKnownSideRoom =
+            confirmedAssociatedRoomCount == 1U &&
+            p_currentFarSideHandle == p_confirmedAssociatedRoom &&
+            !isSoleRoomOnFarSide;
+        if (isHandleTheKnownSideRoom ||
             (confirmedAssociatedRoomCount == 2U &&
              p_currentFarSideHandle != nullptr &&
              p_currentFarSideHandle != p_negativeSideRoom &&
@@ -1474,6 +1493,27 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
+            int clearedPassageId{};
+            int staleHandleId{};
+            if (p_passage->getId(clearedPassageId) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                p_currentFarSideHandle->getId(staleHandleId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                        "[SemMgr] Passage#%d far-side handle Room#%d cleared: "
+                        "%s.",
+                        clearedPassageId,
+                        staleHandleId,
+                        isHandleTheKnownSideRoom
+                            ? "it is the only confirmed room and not on the "
+                              "far side"
+                            : "two other rooms hold both sides");
         }
 
         if (confirmedAssociatedRoomCount == 2U)
@@ -2551,6 +2591,107 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         }
                     }
                 }
+            }
+        }
+
+        /*!
+         * A confirmed room that lists this passage among its doorways and
+         * whose centroid lies on the side opposite the known side is the
+         * passage's far-side room, even after a rule elsewhere cleared the
+         * handle. Without the handle the aperture backstop cannot route walls
+         * seen through the opening, and the camera room takes them while the
+         * camera stands in the doorway. Only a single such room restores it,
+         * and never one the stale-handle rule above clears, so the two rules
+         * cannot alternate.
+         */
+        semantic::Room *p_farSideHandle = nullptr;
+        if (p_passage->getProspectiveRoom(p_farSideHandle) !=
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_farSideHandle == nullptr && std::abs(knownSideSign) >= 1e-8)
+        {
+            semantic::Room *p_doorwayFarSideRoom    = nullptr;
+            std::size_t     doorwayFarSideRoomCount = 0U;
+            for (semantic::Room *p_room : allRooms)
+            {
+                bool                             isCandidateRoomBad{true};
+                semantic::Room::RoomVariant      candidateRoomVariant{};
+                std::vector<semantic::Passage *> candidateRoomPassages{};
+                Eigen::Vector3d                  candidateCentroid_world_m{};
+                const bool                       isClearedByStaleRule =
+                    (confirmedAssociatedRoomCount == 1U &&
+                     p_room == p_confirmedAssociatedRoom &&
+                     !isSoleRoomOnFarSide) ||
+                    (confirmedAssociatedRoomCount == 2U &&
+                     p_room != p_negativeSideRoom &&
+                     p_room != p_positiveSideRoom);
+                if (p_room == nullptr || p_room == knownSide.p_room ||
+                    isClearedByStaleRule ||
+                    p_room->isBad(isCandidateRoomBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                    isCandidateRoomBad ||
+                    p_room->getRoomVariant(candidateRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                    candidateRoomVariant ==
+                        semantic::Room::RoomVariant::UNDEFINED ||
+                    p_room->getPassages(candidateRoomPassages) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                    std::find(candidateRoomPassages.begin(),
+                              candidateRoomPassages.end(),
+                              p_passage) == candidateRoomPassages.end() ||
+                    p_room->getCentroid(candidateCentroid_world_m) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    continue;
+                }
+                const double candidateSide_m =
+                    passageEquation_world.head<3>().dot(
+                        candidateCentroid_world_m) +
+                    passageEquation_world(3);
+                if (candidateSide_m * knownSideSign < 0.0)
+                {
+                    p_doorwayFarSideRoom = p_room;
+                    doorwayFarSideRoomCount++;
+                }
+            }
+            semantic::Room *p_restoredHandle = nullptr;
+            if (doorwayFarSideRoomCount == 1U &&
+                (p_passage->setProspectiveRoom(p_doorwayFarSideRoom) !=
+                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                 p_passage->getProspectiveRoom(p_restoredHandle) !=
+                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS))
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setProspectiveRoom or getProspectiveRoom "
+                             "returned a failure status although it cannot "
+                             "fail; continuing as before.",
+                             __func__);
+            }
+            if (p_restoredHandle != nullptr)
+            {
+                int restoredPassageId{};
+                int restoredRoomId{};
+                if (p_passage->getId(restoredPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                    p_restoredHandle->getId(restoredRoomId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                            "[SemMgr] Passage#%d far-side handle restored to "
+                            "Room#%d: the room lists the passage and lies on "
+                            "the far side.",
+                            restoredPassageId,
+                            restoredRoomId);
             }
         }
 
