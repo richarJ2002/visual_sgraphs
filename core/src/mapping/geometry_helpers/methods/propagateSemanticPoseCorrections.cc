@@ -33,8 +33,6 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
@@ -306,100 +304,6 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             poseCorrection_oldWorldToNewWorld);
     }
 
-    std::map<semantic::Marker *, g2o::Sim3>
-        markerCorrections_oldWorldToNewWorld;
-
-    std::vector<semantic::Marker *> mapAllMarkers{};
-    if (p_map_inout->getAllMarkers(mapAllMarkers) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (semantic::Marker *p_marker : mapAllMarkers)
-    {
-        if (p_marker == nullptr)
-        {
-            continue;
-        }
-
-        Sophus::SE3f markerPose_markerToOldWorld{};
-        if (p_marker->getGlobalPose(markerPose_markerToOldWorld) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        const PoseCorrectionNode *p_selectedNode = nullptr;
-        double                    smallestReconstructionError_m2 =
-            std::numeric_limits<double>::infinity();
-
-        std::map<keyframe::KeyFrame *, Sophus::SE3f> markerObservations{};
-        if (p_marker->getObservations(markerObservations) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getObservations returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (const auto &[p_observingKeyFrame, markerPose_markerToCamera] :
-             markerObservations)
-        {
-            const PoseCorrectionNode *p_observerNode =
-                findNodeForKeyFrame(p_observingKeyFrame);
-
-            if (p_observerNode == nullptr)
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d reconstructedPosition_oldWorld_m =
-                p_observerNode->poseBefore_worldToCamera.inverse().map(
-                    markerPose_markerToCamera.translation().cast<double>());
-
-            const double reconstructionError_m2 =
-                (reconstructedPosition_oldWorld_m -
-                 markerPose_markerToOldWorld.translation().cast<double>())
-                    .squaredNorm();
-
-            if (reconstructionError_m2 < smallestReconstructionError_m2)
-            {
-                smallestReconstructionError_m2 = reconstructionError_m2;
-                p_selectedNode                 = p_observerNode;
-            }
-        }
-
-        const g2o::Sim3 &markerCorrection_oldWorldToNewWorld =
-            p_selectedNode != nullptr
-                ? p_selectedNode->poseCorrection_oldWorldToNewWorld
-                : selectCorrectionForPoint(
-                      markerPose_markerToOldWorld.translation().cast<double>());
-
-        /*
-         * Preserve the fused global marker estimate. Reconstructing it from a
-         * single noisy observation would move the marker even for an identity
-         * pose correction, and repeated GBA/remerge cycles would accumulate
-         * that observation noise.
-         */
-        if (p_marker->applyTransform(markerCorrection_oldWorldToNewWorld) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyTransform returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        markerCorrections_oldWorldToNewWorld.insert_or_assign(
-            p_marker,
-            markerCorrection_oldWorldToNewWorld);
-    }
-
     std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
     if (p_map_inout->getAllPassages(mapAllPassages) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
@@ -564,30 +468,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         roomCentroids_oldWorld_m.insert_or_assign(p_room,
                                                   roomCentroid_oldWorld_m);
 
-        const g2o::Sim3  *p_roomCorrection = nullptr;
-        semantic::Marker *p_metaMarker     = nullptr;
-        if (p_room->getMetaMarker(p_metaMarker) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMetaMarker returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        if (p_metaMarker != nullptr)
-        {
-            const std::map<semantic::Marker *, g2o::Sim3>::iterator
-                markerCorrectionIterator =
-                    markerCorrections_oldWorldToNewWorld.find(p_metaMarker);
-
-            if (markerCorrectionIterator !=
-                markerCorrections_oldWorldToNewWorld.end())
-            {
-                p_roomCorrection = &markerCorrectionIterator->second;
-            }
-        }
-
+        const g2o::Sim3 *p_roomCorrection = nullptr;
         if (p_roomCorrection == nullptr)
         {
             double closestWallSquaredDistance_m2 =

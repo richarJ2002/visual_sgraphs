@@ -34,7 +34,6 @@
 #include "mapping/geometry_helpers/private_functions/private_functions.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
@@ -689,41 +688,6 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: setHasKnownLabel returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Marker *p_importedRoomMetaMarker = nullptr;
-            if (p_importedRoom->getMetaMarker(p_importedRoomMetaMarker) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarker returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_bestRetainedRoom->setMetaMarker(p_importedRoomMetaMarker) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setMetaMarker returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int importedRoomMetaMarkerId2{};
-            if (p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarkerId returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_bestRetainedRoom->setMetaMarkerId(
-                    importedRoomMetaMarkerId2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setMetaMarkerId returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
             }

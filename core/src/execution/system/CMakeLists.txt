@@ -41,7 +41,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isShutDown.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/loadAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/mapChanged.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/parseJsonDatabase.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestResetActiveMapWithCause.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reset.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetActiveMap.cc

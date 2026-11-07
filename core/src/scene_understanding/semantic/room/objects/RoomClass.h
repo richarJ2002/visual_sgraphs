@@ -48,17 +48,6 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace semantic
-{
-class Marker;
-} /* namespace semantic */
-} /* namespace core */
-} /* namespace vs_graphs */
-
-namespace vs_graphs
-{
-namespace core
-{
 namespace geometric
 {
 class Plane;
@@ -178,8 +167,8 @@ class Room
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Guards the name, tag, matched context, meta-marker, room
-     *                  variant and visited flag.
+     * @brief           Guards the name, tag, matched context, room variant and
+     *                  visited flag.
      */
     mutable std::mutex stateMutex;
 
@@ -205,12 +194,6 @@ class Room
     bool isBadFlag{false};
 
     /*!
-     * @brief           The identifier of the room's meta-marker (containing
-     *                  information about the room).
-     */
-    int metaMarkerId{-1};
-
-    /*!
      * @brief           The name devoted for each room (optional).
      */
     std::string name;
@@ -222,8 +205,7 @@ class Room
     RoomContextSnapshot *p_matchedContext{nullptr};
 
     /*!
-     * @brief           Checks if it is a candidate room (meta-marker detected)
-     *                  or not.
+     * @brief           True when the room carries a known label.
      */
     bool hasKnownLabel{false};
 
@@ -233,11 +215,6 @@ class Room
      *                  creation, promotion, retirement, or merge paths.
      */
     bool wasPreviouslyVisited{false};
-
-    /*!
-     * @brief           The meta-marker assigned for the room.
-     */
-    Marker *p_metaMarker{nullptr};
 
     /*!
      * @brief           The ground plane associated with the room.
@@ -568,46 +545,6 @@ class Room
      *                  New known-label flag.
      */
     [[nodiscard]] RoomStatus setHasKnownLabel(bool hasKnownLabel_in);
-
-    /*!
-     * @brief           Returns the identifier of the room's metadata
-     *                  marker.
-     *
-     * @param[out]      metaMarkerId_out
-     *                  Metadata marker identifier.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus getMetaMarkerId(int &metaMarkerId_out) const;
-
-    /*!
-     * @brief           Sets the identifier of the room's metadata
-     *                  marker.
-     *
-     * @param[in]       metaMarkerId_in
-     *                  New metadata marker identifier.
-     */
-    [[nodiscard]] RoomStatus setMetaMarkerId(int metaMarkerId_in);
-
-    /*!
-     * @brief           Returns the non-owning metadata marker
-     *                  associated with the room.
-     *
-     * @param[out]      p_metaMarker_out
-     *                  Associated marker, or nullptr when unset.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus getMetaMarker(Marker *&p_metaMarker_out) const;
-
-    /*!
-     * @brief           Associates a non-owning metadata marker with the
-     *                  room.
-     *
-     * @param[in]       p_metaMarker_in
-     *                  Marker to associate; may be null.
-     */
-    [[nodiscard]] RoomStatus setMetaMarker(Marker *p_metaMarker_in);
 
     /*!
      * @brief           Returns the human-readable room label.

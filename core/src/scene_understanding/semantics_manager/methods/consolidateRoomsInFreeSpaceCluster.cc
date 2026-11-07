@@ -32,7 +32,6 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
@@ -322,53 +321,6 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        bool retainedRoom_inoutHasKnownLabel{};
-        if (p_retainedRoom_inout->getHasKnownLabel(
-                retainedRoom_inoutHasKnownLabel) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHasKnownLabel returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        bool duplicateRoomHasKnownLabel{};
-        if ((retainedRoom_inoutHasKnownLabel) &&
-            p_duplicateRoom->getHasKnownLabel(duplicateRoomHasKnownLabel) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHasKnownLabel returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        int retainedRoom_inoutMetaMarkerId{};
-        if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
-            p_retainedRoom_inout->getMetaMarkerId(
-                retainedRoom_inoutMetaMarkerId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMetaMarkerId returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        int duplicateRoomMetaMarkerId{};
-        if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
-            p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMetaMarkerId returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel &&
-            retainedRoom_inoutMetaMarkerId != duplicateRoomMetaMarkerId)
-        {
-            continue;
-        }
-
         Eigen::Vector3d duplicateCentroid_world_m{};
         if (p_duplicateRoom->getCentroid(duplicateCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -614,42 +566,6 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: setHasKnownLabel returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Marker *p_duplicateRoomMetaMarker = nullptr;
-            if (p_duplicateRoom->getMetaMarker(p_duplicateRoomMetaMarker) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarker returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_retainedRoom_inout->setMetaMarker(
-                    p_duplicateRoomMetaMarker) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setMetaMarker returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int duplicateRoomMetaMarkerId2{};
-            if (p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMetaMarkerId returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_retainedRoom_inout->setMetaMarkerId(
-                    duplicateRoomMetaMarkerId2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setMetaMarkerId returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
             }

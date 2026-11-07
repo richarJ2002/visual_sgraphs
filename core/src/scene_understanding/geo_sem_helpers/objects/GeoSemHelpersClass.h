@@ -20,8 +20,8 @@
  * @file            GeoSemHelpers.h
  *
  * @brief           Declares GeoSemHelpers, helper functions that create and
- *                  update semantic map entities (markers, passages, rooms,
- *                  ground planes) from geometry.
+ *                  update semantic map entities (passages, rooms, ground
+ *                  planes) from geometry.
  */
 
 #ifndef VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
@@ -39,14 +39,13 @@ namespace vs_graphs::core::keyframe { class KeyFrame; }
 namespace vs_graphs::core::semantic
 {
 class Room;
-class Marker;
 class Passage;
 } /* namespace vs_graphs::core::semantic */
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
 /*!
- * @brief           Static helpers that create and update the planes, markers,
+ * @brief           Static helpers that create and update the planes,
  *                  passages, rooms and floors of the semantic map in the atlas.
  */
 class GeoSemHelpers
@@ -121,68 +120,6 @@ class GeoSemHelpers
         vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
             vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
         double confidence_in = 1.0);
-
-    /*!
-     * @brief           Checks to see if the marker is attached to a doorway or
-     *                  not (e.g., a window) and returns the name of it if
-     *                  exists (only valid for doors)
-     *
-     * @param[in]       markerId_in
-     *                  The id of the marker
-     *
-     * @param[in]       envRooms_in
-     *                  Rooms of the environment; each room's meta-marker id is
-     *                  compared with the marker
-     *
-     * @param[out]      doorwayMatch_out
-     *                  Whether a match was found, and the name of the matched
-     *                  room
-     *
-     * @return          GEO_SEM_HELPERS_STATUS_SUCCESS
-     */
-    [[nodiscard]] static GeoSemHelpersStatus checkIfMarkerIsDoorway(
-        const int                                     &markerId_in,
-        std::vector<vs_graphs::core::semantic::Room *> envRooms_in,
-        std::pair<bool, std::string>                  &doorwayMatch_out);
-
-    /*!
-     * @brief           Uses the detected markers to detect and map semantic
-     *                  objects, e.g., planes and doors
-     *
-     * @param[in]       p_atlas_in
-     *                  The current map in Atlas
-     *
-     * @param[in]       p_keyFrame_in
-     *                  The current keyframe in which the detection took place
-     *
-     * @param[in]       envRooms_in
-     *                  The list of rooms in the environment
-     */
-    [[nodiscard]] static GeoSemHelpersStatus markerSemanticAnalysis(
-        atlas::Atlas                                         *p_atlas_in,
-        keyframe::KeyFrame                     *p_keyFrame_in,
-        std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
-
-    /*!
-     * @brief           Creates a new marker object to be added to the map
-     *
-     * @param[in,out]   p_atlas_inout
-     *                  The current map in Atlas
-     *
-     * @param[in,out]   p_keyFrame_inout
-     *                  The address of the current keyframe
-     *
-     * @param[in]       p_visitedMarker_in
-     *                  The address of the visited marker
-     *
-     * @param[out]      p_mapMarker_out
-     *                  The new map marker
-     */
-    [[nodiscard]] static GeoSemHelpersStatus
-        createMapMarker(atlas::Atlas                  *p_atlas_inout,
-                        keyframe::KeyFrame               *p_keyFrame_inout,
-                        const semantic::Marker *p_visitedMarker_in,
-                        semantic::Marker      *&p_mapMarker_out);
 
     /*!
      * @brief           Creates a new passage object to be added to the map

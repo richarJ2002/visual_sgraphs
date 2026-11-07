@@ -49,7 +49,6 @@
 #include "execution/system/objects/SensorTypeEnum.h"
 #include "execution/system/objects/VerboseStatusEnum.h"
 
-#include "views_io/database_parser/database_parser.h"
 #include "sensor_models/imu_types/point/point.h"
 #include "views_io/map_drawer/map_drawer.h"
 #include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
@@ -1831,14 +1830,6 @@ class System
     [[nodiscard]] SystemStatus incrementSegmentationPublishedCount();
 
     /*!
-     * @brief           Parse the JSON file containing the environment data
-     *
-     * @param[in]       jsonFilePath_in
-     *                  The path to the JSON file
-     */
-    [[nodiscard]] SystemStatus parseJsonDatabase(std::string jsonFilePath_in);
-
-    /*!
      * @brief           Add the segmented image to the buffer in the
      *                  SemanticSegmentation
      *
@@ -2316,13 +2307,6 @@ class System
      *                  recognition and feature matching.
      */
     std::string vocabularyFilePath;
-
-    /*!
-     * @brief           Vector of Room pointers from the environment. Maintained
-     *                  for quick access to room objects without traversing the
-     *                  atlas::Atlas.
-     */
-    std::vector<vs_graphs::core::semantic::Room *> envRooms;
 
     /*!
      * @brief           Settings object. Contains all configuration parameters

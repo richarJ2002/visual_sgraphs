@@ -14,8 +14,6 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMatchedContext.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMetaMarker.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMetaMarkerId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getName.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getObservationGaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
@@ -45,8 +43,6 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setMatchedContext.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setMetaMarker.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setMetaMarkerId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setName.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setObservationGaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc

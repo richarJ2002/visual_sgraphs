@@ -281,16 +281,6 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                      __func__);
     }
 
-    /* Parse the environment database, if provided */
-    if (parseJsonDatabase(p_sysParams->general.envDatabase) !=
-        SystemStatus::SYSTEM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: parseJsonDatabase returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     /* If the sensor is integrated with IMU, initialize the IMU first */
     if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
         sensor_in == IMU_RGBD)
