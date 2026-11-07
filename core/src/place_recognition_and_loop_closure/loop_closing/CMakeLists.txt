@@ -64,7 +64,6 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/stopLocalMapping.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferKeyFramesAndMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferMarkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferMergeWindow.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferPlanes.cc

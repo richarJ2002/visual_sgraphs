@@ -49,7 +49,6 @@ class Plane;
 }
 namespace semantic
 {
-class Marker;
 class Room;
 
 /*!

@@ -78,16 +78,6 @@ void collectMergeMapContents(
                      __func__);
     }
 
-    /* Copy all markers currently owned by the merge map */
-    if (p_mergeMap_in->getAllMarkers(mergeMapContents_out.markers) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
     /* Copy all passages currently owned by the merge map */
     if (p_mergeMap_in->getAllPassages(mergeMapContents_out.passages) !=
         map::MapStatus::MAP_STATUS_SUCCESS)

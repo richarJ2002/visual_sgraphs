@@ -43,7 +43,6 @@
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
 #include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/room.h"
 
@@ -100,10 +99,6 @@ namespace semantic
 class Floor;
 }
 class Viewer;
-namespace semantic
-{
-class Marker;
-}
 namespace camera_models
 {
 namespace pinhole
@@ -316,15 +311,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus addMapPoint(map_point::MapPoint *p_mapPoint_in);
     /*!
-     * @brief           Registers a marker with the map the marker belongs to.
-     *
-     * @param[in]       p_marker_in
-     *                  Marker to register; must not be null.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus addMapMarker(semantic::Marker *p_marker_in);
-    /*!
      * @brief           Registers a detected room with the map the room belongs
      *                  to and moves the room identity allocator past its id. A
      *                  null pointer is ignored.
@@ -495,16 +481,6 @@ class Atlas
         const std::vector<map_point::MapPoint *> &mapPoints_in);
 
     /*!
-     * @brief           Returns the number of markers in the active map. Takes
-     *                  atlasMutex.
-     *
-     * @param[out]      markerCount_out
-     *                  Marker count of the active map.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus getMarkerCount(unsigned long &markerCount_out);
-    /*!
      * @brief           Returns the number of key frames in the active map.
      *                  Takes atlasMutex.
      *
@@ -526,11 +502,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getMapPointCount(unsigned long &mapPointCount_out);
-
-    /*!
-     * @brief           Ids of the markers that sit on planes detected so far.
-     */
-    std::vector<int> visitedPlanesMarkerIds;
 
     /* Method for get data in current map */
     /*!
@@ -555,17 +526,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getAllFloors(std::vector<semantic::Floor *> &allFloors_out);
-    /*!
-     * @brief           Returns the markers of the active map. Takes atlasMutex.
-     *
-     * @param[out]      allMarkers_out
-     *                  Copy of the active map's marker pointer list; the
-     *                  pointers are borrowed.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
     /*!
      * @brief           Returns the key frames of the active map. Takes
      *                  atlasMutex.
@@ -1048,21 +1008,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus getFloorById(int               floorId_in,
                                            semantic::Floor *&p_floorById_out);
-    /*!
-     * @brief           Looks up a marker of the active map by id. Takes
-     *                  atlasMutex.
-     *
-     * @param[in]       markerId_in
-     *                  Id of the marker to find.
-     *
-     * @param[out]      p_markerById_out
-     *                  Borrowed pointer; nullptr when there is no active map or
-     *                  no such marker.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getMarkerById(int markerId_in, semantic::Marker *&p_markerById_out);
     /*!
      * @brief           Looks up a key frame of the active map by id. Takes
      *                  atlasMutex.

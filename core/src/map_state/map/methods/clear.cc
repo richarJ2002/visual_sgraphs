@@ -64,14 +64,12 @@ MapStatus Map::clear()
     }
 
     planes.clear();
-    markers.clear();
     passages.clear();
     floors.clear();
     mapPoints.clear();
     keyFrames.clear();
 
     planeIndex.clear();
-    markerIndex.clear();
     passageIndex.clear();
     floorIndex.clear();
     keyFrameIndex.clear();

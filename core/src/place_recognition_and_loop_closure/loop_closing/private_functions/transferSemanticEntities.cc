@@ -64,9 +64,6 @@ void transferSemanticEntities(
     transferPlanes(p_currentMap_inout,
                    p_mergeMap_inout,
                    mergeMapContents_in.planes);
-    transferMarkers(p_currentMap_inout,
-                    p_mergeMap_inout,
-                    mergeMapContents_in.markers);
     transferPassages(p_currentMap_inout,
                      p_mergeMap_inout,
                      mergeMapContents_in.passages,

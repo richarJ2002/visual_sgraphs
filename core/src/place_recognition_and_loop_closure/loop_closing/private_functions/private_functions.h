@@ -40,7 +40,6 @@ class Map;
 namespace semantic
 {
 class Floor;
-class Marker;
 class Passage;
 class Room;
 } /* namespace semantic */
@@ -496,7 +495,7 @@ void optimizeMergeWindow(
 
 /*!
  * @brief           Copies every object list of the absorbed map: planes,
- *                  keyframes, map points, markers, passages, detected rooms,
+ *                  keyframes, map points, passages, detected rooms,
  *                  marker-based rooms and floors.
  *
  * @param[in]       p_mergeMap_in
@@ -655,24 +654,6 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
                     const std::vector<geometric::Plane *> &planes_in);
 
 /*!
- * @brief           Moves the markers of the absorbed map into the surviving
- *                  map. Each marker takes the next free marker id of the
- *                  surviving map.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in,out]   p_mergeMap_inout
- *                  Absorbed map.
- *
- * @param[in]       markers_in
- *                  Markers of the absorbed map; null ones are skipped.
- */
-void transferMarkers(map::Map                              *p_currentMap_inout,
-                     map::Map                              *p_mergeMap_inout,
-                     const std::vector<semantic::Marker *> &markers_in);
-
-/*!
  * @brief           Moves the passages of the absorbed map into the surviving
  *                  map. A passage that lies on the same plane as a passage of
  *                  the surviving map, with its centre close in that plane, is
@@ -764,8 +745,8 @@ void transferFloors(map::Map                             *p_currentMap_inout,
 
 /*!
  * @brief           Moves every semantic object of the absorbed map into the
- *                  surviving map in a fixed order: planes, markers, passages,
- *                  rooms, floors. The caller holds both map update mutexes.
+ *                  surviving map in a fixed order: planes, passages, rooms,
+ *                  floors. The caller holds both map update mutexes.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.

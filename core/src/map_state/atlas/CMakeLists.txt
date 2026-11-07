@@ -6,7 +6,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapMarker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
@@ -30,7 +29,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkerBasedMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
@@ -43,8 +41,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastBigChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc

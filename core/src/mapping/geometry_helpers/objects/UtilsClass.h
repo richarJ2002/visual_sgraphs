@@ -509,8 +509,8 @@ class Utils
      *                  entities are stored independently in the world
      *                  frame. This method applies the corresponding
      *                  old-world to corrected-world deformation exactly
-     *                  once to planes, markers, passages, rooms, floors,
-     *                  and free-space skeleton geometry.
+     *                  once to planes, passages, rooms, floors, and
+     *                  free-space skeleton geometry.
      *
      * @param[in,out]   p_map_inout
      *                  Map whose semantic geometry is updated.

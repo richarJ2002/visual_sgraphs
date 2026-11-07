@@ -64,11 +64,6 @@ namespace vs_graphs
 namespace core
 {
 
-
-namespace semantic
-{
-class Marker;
-}
 namespace geometric
 {
 

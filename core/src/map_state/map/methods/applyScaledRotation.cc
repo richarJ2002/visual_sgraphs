@@ -35,7 +35,6 @@
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
@@ -43,8 +42,6 @@
 #include "map_state/map_point/map_point.h"
 #include "scene_understanding/semantic/floor/floor.h"
 #include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/passage/passage.h"
 #include "scene_understanding/semantic/room/room.h"
@@ -198,22 +195,6 @@ MapStatus Map::applyScaledRotation(
             if (p_plane->applyTransform(
                     alignmentTransform_oldWorldToNewWorld) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: applyTransform returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
-    for (semantic::Marker *p_marker : markers)
-    {
-        if (p_marker != nullptr)
-        {
-            if (p_marker->applyTransform(
-                    alignmentTransform_oldWorldToNewWorld) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: applyTransform returned a failure status "

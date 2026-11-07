@@ -51,7 +51,6 @@ class MapPoint;
 namespace semantic
 {
 class Floor;
-class Marker;
 class Passage;
 class Room;
 } /* namespace semantic */
@@ -81,11 +80,6 @@ struct MergeMapContents
      * @brief           Map points of the absorbed map.
      */
     std::vector<map_point::MapPoint *> mapPoints;
-
-    /*!
-     * @brief           Markers of the absorbed map.
-     */
-    std::vector<semantic::Marker *> markers;
 
     /*!
      * @brief           Passages of the absorbed map.

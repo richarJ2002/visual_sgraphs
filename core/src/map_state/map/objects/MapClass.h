@@ -28,7 +28,7 @@
  *
  * @brief           Declares Map, one map of the atlas: its key frames, map
  *                  points and the semantic entities (planes, walls, rooms,
- *                  floors, passages, markers) built on them.
+ *                  floors, passages) built on them.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_MAP_OBJECTS_MAP_CLASS_H
@@ -85,10 +85,6 @@ class Floor;
 }
 namespace semantic
 {
-class Marker;
-}
-namespace semantic
-{
 class Passage;
 }
 namespace keyframe_database
@@ -112,9 +108,9 @@ namespace map
 
 /*!
  * @brief           One map of the atlas: the key frames, map points and
- *                  semantic entities (planes, rooms, floors, markers,
- *                  passages) that share one world frame. The pointers it holds
- *                  are borrowed: destroying or clearing the map only drops its
+ *                  semantic entities (planes, rooms, floors, passages) that
+ *                  share one world frame. The pointers it holds are
+ *                  borrowed: destroying or clearing the map only drops its
  *                  references. Most methods take mapMutex, as each one says.
  */
 class Map
@@ -209,9 +205,6 @@ class Map
         mapPoints.clear();
         keyFrames.clear();
 
-        /* Erase all markers from memory */
-        markers.clear();
-
         /* Erase all semantic entities from memory */
         floors.clear();
         planes.clear();
@@ -264,16 +257,6 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus addMapPlane(geometric::Plane *p_plane_inout);
-    /*!
-     * @brief           Adds a marker to this map and indexes it by marker id.
-     *                  Takes mapMutex.
-     *
-     * @param[in]       p_marker_in
-     *                  Marker to add; borrowed, must not be null.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus addMapMarker(semantic::Marker *p_marker_in);
     /*!
      * @brief           Adds a room to the detected rooms of this map. Takes
      *                  mapMutex.
@@ -398,16 +381,6 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus eraseMapPlane(geometric::Plane *p_plane_in);
-    /*!
-     * @brief           Removes a marker from this map and from the marker id
-     *                  index. The marker itself is not deleted. Takes mapMutex.
-     *
-     * @param[in]       p_marker_in
-     *                  Marker to remove.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus eraseMapMarker(semantic::Marker *p_marker_in);
     /*!
      * @brief           Removes a room from the detected rooms of this map. The
      *                  room itself is not deleted. Takes mapMutex.
@@ -632,17 +605,6 @@ class Map
     [[nodiscard]] MapStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
     /*!
-     * @brief           Returns a snapshot copy of all markers of this map.
-     *                  Takes mapMutex.
-     *
-     * @param[out]      allMarkers_out
-     *                  Receives the markers; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
-    /*!
      * @brief           Returns a snapshot copy of all key frames of this map.
      *                  Takes mapMutex.
      *
@@ -774,16 +736,6 @@ class Map
      */
     [[nodiscard]] MapStatus getKeyFrameCount(unsigned long &keyFrameCount_out);
     /*!
-     * @brief           Returns the number of markers in this map. Takes
-     *                  mapMutex.
-     *
-     * @param[out]      markerCount_out
-     *                  Number of markers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getMarkerCount(unsigned long &markerCount_out);
-    /*!
      * @brief           Returns the number of map points in this map. Takes
      *                  mapMutex.
      *
@@ -892,20 +844,6 @@ class Map
      */
     [[nodiscard]] MapStatus getRoomById(int              roomId_in,
                                         semantic::Room *&p_roomById_out);
-    /*!
-     * @brief           Looks up a marker by id. Takes mapMutex.
-     *
-     * @param[in]       markerId_in
-     *                  Id of the marker.
-     *
-     * @param[out]      p_markerById_out
-     *                  Receives the marker, or nullptr when no marker has that
-     *                  id; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getMarkerById(int                markerId_in,
-                                          semantic::Marker *&p_markerById_out);
     /*!
      * @brief           Looks up a key frame by id. Takes mapMutex.
      *
@@ -1138,7 +1076,7 @@ class Map
     /*!
      * @brief           Moves the whole map into a new world frame: key frame
      *                  poses, key frame velocities, map points, planes,
-     *                  markers, passages, rooms, floors and skeleton data are
+     *                  passages, rooms, floors and skeleton data are
      *                  scaled and transformed; bad planes and rooms are
      *                  skipped. Afterwards the change counter and the world
      *                  frame epoch each grow by one. Takes mapMutex.
@@ -1333,10 +1271,6 @@ class Map
      */
     std::set<geometric::Plane *>                   planes;
     /*!
-     * @brief           Markers of this map; borrowed.
-     */
-    std::set<semantic::Marker *>                   markers;
-    /*!
      * @brief           Map points of this map; borrowed.
      */
     std::set<map_point::MapPoint *>                mapPoints;
@@ -1379,10 +1313,6 @@ class Map
      * @brief           Planes by plane id.
      */
     std::unordered_map<int, geometric::Plane *>                   planeIndex;
-    /*!
-     * @brief           Markers by marker id.
-     */
-    std::unordered_map<int, semantic::Marker *>                   markerIndex;
     /*!
      * @brief           Key frames by key frame id.
      */

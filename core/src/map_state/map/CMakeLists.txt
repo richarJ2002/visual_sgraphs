@@ -4,7 +4,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapMarker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
@@ -18,7 +17,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapMarker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPoint.cc
@@ -30,7 +28,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkerBasedMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
@@ -50,8 +47,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLowerKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMergeRecords.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginKeyFrame.cc
