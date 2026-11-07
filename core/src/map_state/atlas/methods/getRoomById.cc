@@ -47,11 +47,11 @@ AtlasStatus Atlas::getRoomById(int roomId_in, semantic::Room *&p_room_out)
     std::unique_lock<std::mutex> lock(atlasMutex);
 
     /* Init variable to extract room by the id from the current active map */
-    semantic::Room *p_activeMapRoomById = nullptr;
+    semantic::Room *p_roomInCurrentMap = nullptr;
 
     /* From the current active map, extract the room by ID */
     if ((p_activeMap != nullptr) &&
-        p_activeMap->getRoomById(roomId_in, p_activeMapRoomById) !=
+        p_activeMap->getRoomById(roomId_in, p_roomInCurrentMap) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -59,7 +59,19 @@ AtlasStatus Atlas::getRoomById(int roomId_in, semantic::Room *&p_room_out)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_room_out = p_activeMap != nullptr ? p_activeMapRoomById : nullptr;
+
+    /* Output room, if the room is valid */
+    if ((p_activeMap == nullptr) && p_roomInCurrentMap == nullptr)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: Current active map is nullptr, and current room is nullptr",
+            __func__);
+    }
+
+    /* Output the room, even if it is nullptr */
+    p_room_out = p_roomInCurrentMap;
+
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 

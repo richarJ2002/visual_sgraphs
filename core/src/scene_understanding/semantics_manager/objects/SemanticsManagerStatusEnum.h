@@ -42,7 +42,12 @@ enum class SemanticsManagerStatus : std::uint8_t
     /*!
      * @brief           The operation completed and every output was written.
      */
-    SEMANTICS_MANAGER_STATUS_SUCCESS = 0U
+    SEMANTICS_MANAGER_STATUS_SUCCESS = 0U,
+
+    /*!
+     * @brief           The operation returned an invalid current current room.
+     */
+    SEMANTIC_MANAGER_STATUS_INVALID_CURRENT_ROOM = 1U
 };
 
 } /* namespace core */
