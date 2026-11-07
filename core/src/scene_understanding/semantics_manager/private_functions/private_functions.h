@@ -25,9 +25,12 @@
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/semantics_manager/objects/FiniteWallSegment2dStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/WallAdmissionEvidenceStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
+#include "scene_understanding/semantics_manager/objects/WallLoopClosureStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 
 namespace vs_graphs::core::map
@@ -49,137 +52,6 @@ namespace semantic
 {
 class Passage;
 } /* namespace semantic */
-
-/*!
- * @brief           Finite horizontal representation of one observed room wall.
- */
-struct FiniteWallSegment2d
-{
-    /*!
-     * @brief           Wall the segment was built from; non-owning.
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    geometric::Plane *p_wall = nullptr;
-
-    /*!
-     * @brief           First end of the wall on the ground plane.
-     *
-     * @frame           World, projected onto the two ground axes
-     *
-     * @units           metres
-     */
-    Eigen::Vector2d wallStart_world_m = Eigen::Vector2d::Zero();
-
-    /*!
-     * @brief           Second end of the wall on the ground plane.
-     *
-     * @frame           World, projected onto the two ground axes
-     *
-     * @units           metres
-     */
-    Eigen::Vector2d wallEnd_world_m = Eigen::Vector2d::Zero();
-
-    /*!
-     * @brief           Distance between the two ends.
-     *
-     * @frame           N/A
-     *
-     * @units           metres
-     */
-    double length_m = 0.0;
-
-    /*!
-     * @brief           How well supported the wall is: observation count (at
-     *                  least
-     *                  1) times the square root of the length; larger wins when
-     *                     walls compete.
-     *
-     * @frame           N/A
-     *
-     * @units           square root of metres
-     */
-    double supportScore = 0.0;
-};
-
-/*!
- * @brief           Facts that decide whether a wall plane may join a room;
- *                  filled by evaluateWallAdmissionEvidence().
- */
-struct WallAdmissionEvidence
-{
-    /*!
-     * @brief           True when the wall may join a room: it is a wall by type
-     *                  and by expected type, its finite fit is adequate, and it
-     *                  was seen often enough or strongly enough at first sight.
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    bool isAdmissible = false;
-
-    /*!
-     * @brief           True when at least 20 points fit the plane, enough of
-     *                  the points fit, and the fitted extent is large enough
-     *                  (length, height and area).
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    bool hasAdequateFiniteFit = false;
-
-    /*!
-     * @brief           Points of the support cloud with finite coordinates.
-     *
-     * @frame           N/A
-     *
-     * @units           number of points
-     */
-    std::size_t finitePointCount = 0U;
-
-    /*!
-     * @brief           Finite points within the RANSAC distance of the plane.
-     *
-     * @frame           N/A
-     *
-     * @units           number of points
-     */
-    std::size_t fittedPointCount = 0U;
-    /*!
-     * @brief           Number of times the wall has been observed.
-     *
-     * @frame           N/A
-     *
-     * @units           number of observations
-     */
-    std::size_t observationCount = 0U;
-};
-
-/*!
- * @brief           Result of attempting to close a set of wall segments into
- *                  one ordered, non-open loop.
- */
-struct WallLoopClosure
-{
-    /*!
-     * @brief           True when the walls do not form a closed loop (the
-     *                  default); false when every neighbouring pair of walls
-     *                  meets within the allowed corner gap.
-     */
-    bool hasOpenBoundary = true;
-
-    /*!
-     * @brief           Corners of the closed loop in the order of the walls
-     *                  around the room, in the world frame projected onto the
-     *                  two ground axes, metres; empty when the boundary is
-     *                  open.
-     */
-    std::vector<Eigen::Vector2d> loopCorners_world_m;
-};
 
 /*!
  * @brief           Computes Eigen's rotation between two directions in its
@@ -663,6 +535,23 @@ Eigen::Quaterniond
     const WallSlabProfile                               &wallProfile_in,
     const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
     std::vector<WallGap>                                &wallGaps_out);
+
+/*!
+ * @brief           Names a plane variant for log and pipeline output.
+ *
+ * @param[in]       planeVariant_in
+ *                  Variant to name.
+ *
+ * @param[out]      variantName_out
+ *                  Static, null-terminated name: WALL, GROUND, DOOR, WINDOW or
+ *                  UNDEFINED (also for any unlisted variant); not owned by the
+ *                  caller.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus
+    getPlaneVariantName(const geometric::Plane::PlaneVariant planeVariant_in,
+                        const char                         *&variantName_out);
 
 /*!
  * @brief           Finds the room whose walls include a wall.

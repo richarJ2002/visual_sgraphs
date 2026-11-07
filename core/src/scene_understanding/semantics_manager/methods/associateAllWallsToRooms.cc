@@ -23,14 +23,14 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
@@ -47,22 +47,30 @@ namespace core
 SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
 {
     PROFILE_FUNCTION();
+
     /*!
      * A wall must be observed from several keyframes before it is inserted into
      * the higher-level semantic hierarchy.
      */
-    /* Extract all planes from the current map */
+
+    /* Initialize list to hold all planes from the map */
     std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};
-    if (p_atlas->getAllPlanes(allPlanes) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+
+    /* Extract all planes from the current map */
+    if (p_atlas->getAllPlanes(allPlanes) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPlanes returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    /* The atlas hands planes out in pointer order. Admit nearer walls first
+
+    /*!
+     * The atlas hands planes out in pointer order. Admit nearer walls first
      * so a wall seen through a doorway meets the doorway wall already in
-     * the room (see admitWallToRoom()'s see-through gate). */
+     * the room (see admitWallToRoom()'s see-through gate).
+     */
     if (sortWallsByCameraDistance(allPlanes) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
@@ -72,16 +80,23 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      __func__);
     }
 
-    /* Extract all current rooms and provisional structural elements */
+    /* Initialize list to hold all rooms from the map */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_atlas->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+
+    /* Extract all current rooms and provisional structural elements */
+    if (p_atlas->getAllRooms(allRooms) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRooms returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    /* Init a pointer to track current active map */
     map::Map *p_activeMap = nullptr;
+
+    /* Extract the current active map */
     if (p_atlas->getCurrentMap(p_activeMap) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -90,25 +105,11 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    /* Init a pointer to track the current room the UAV is in */
     semantic::Room *p_currentRoom = nullptr;
-    const auto planeClassName =
-        [](const geometric::Plane::PlaneVariant variant_in)
-    {
-        switch (variant_in)
-        {
-        case geometric::Plane::PlaneVariant::WALL:
-            return "WALL";
-        case geometric::Plane::PlaneVariant::GROUND:
-            return "GROUND";
-        case geometric::Plane::PlaneVariant::DOOR:
-            return "DOOR";
-        case geometric::Plane::PlaneVariant::WINDOW:
-            return "WINDOW";
-        case geometric::Plane::PlaneVariant::UNDEFINED:
-        default:
-            return "UNDEFINED";
-        }
-    };
+
+    /* Extract the room object that the robot is currently in */
     if (getCurrentRoom(p_currentRoom) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
@@ -117,25 +118,11 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    semantic::Room::RoomVariant currentRoomVariant{};
-    if ((p_currentRoom != nullptr) &&
-        p_currentRoom->getRoomVariant(currentRoomVariant) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getRoomVariant returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_currentRoom != nullptr &&
-        currentRoomVariant != semantic::Room::RoomVariant::ROOM)
-    {
-        p_currentRoom = nullptr;
-    }
 
-    /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
-     * gate (see the comment at its definition). */
+    /* Init pointer to hold largest ground plane */
     geometric::Plane *p_groundPlaneForEvidence = nullptr;
+
+    /* Extract the largest ground plane from the map */
     if (p_atlas->getBiggestGroundPlane(p_groundPlaneForEvidence) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -144,8 +131,14 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    /* Init vector for ground plane normal */
     Eigen::Vector3d groundNormalForEvidence_world = Eigen::Vector3d::Zero();
-    bool            groundPlaneForEvidenceIsBad{};
+
+    /* Init flag to indicate if ground plane is bad */
+    bool groundPlaneForEvidenceIsBad{};
+
+    /* Extract ground plane */
     if ((p_groundPlaneForEvidence != nullptr) &&
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -155,9 +148,14 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "fail; continuing as before.",
                      __func__);
     }
+
+    /* Confirm ground plane is good, and if so get global equation */
     if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
     {
+        /* Init variable to hold ground plane equation */
         g2o::Plane3D groundPlaneForEvidenceGetGlobalEquation{};
+
+        /* Extract ground plane global equation */
         if (p_groundPlaneForEvidence->getGlobalEquation(
                 groundPlaneForEvidenceGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -167,9 +165,15 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+
+        /* Extract coefficients of ground plane equation */
         const Eigen::Vector4d groundEquation =
             groundPlaneForEvidenceGetGlobalEquation.coeffs();
+
+        /* Extract ground plane normal */
         const double groundEquationNormalNorm = groundEquation.head<3>().norm();
+
+        /* Normalize the ground plane equation */
         if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
             groundNormalForEvidence_world =
@@ -177,66 +181,15 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         }
     }
 
-    /* Helper which confirms that a room already contains a wall */
-    const auto roomContainsWall =
-        [](vs_graphs::core::semantic::Room   *room,
-           vs_graphs::core::geometric::Plane *p_wall) -> bool
-    {
-        /* Return false if either object is invalid */
-        if (room == nullptr || p_wall == nullptr)
-        {
-            return false;
-        }
-
-        /* Extract the walls currently assigned to the room */
-        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-        if (room->getWalls(roomWalls) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /* Check whether the requested wall is already present */
-        return std::any_of(
-            roomWalls.begin(),
-            roomWalls.end(),
-            [p_wall](vs_graphs::core::geometric::Plane *p_existingWall)
-            {
-                int existingWallGetId{};
-                if ((p_existingWall != nullptr) &&
-                    p_existingWall->getId(existingWallGetId) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int wallGetId{};
-                if ((p_existingWall != nullptr) &&
-                    p_wall->getId(wallGetId) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return p_existingWall != nullptr &&
-                       existingWallGetId == wallGetId;
-            });
-    };
-
     /* Iterate through every mapped plane */
-    for (vs_graphs::core::geometric::Plane *p_wall : allPlanes)
+    for (vs_graphs::core::geometric::Plane *p_plane : allPlanes)
     {
-        /* Skip invalid planes */
-        bool wallIsBad{};
-        if (!(p_wall == nullptr) &&
-            p_wall->isBad(wallIsBad) !=
+        /* Init flag to indicate if wall is bad */
+        bool planeIsBad{};
+
+        /* Check is wall is bad */
+        if (!(p_plane == nullptr) &&
+            p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -244,14 +197,142 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_wall == nullptr || wallIsBad)
+
+        /* Skip invalid planes */
+        if (p_plane == nullptr || planeIsBad)
         {
             continue;
         }
 
-        /* Only fitted walls with semantic and observation evidence enter. */
+        /* Init variable which will track the wall id */
+        int planeId{};
+
+        /* Get the ID number of the plane */
+        if (p_plane->getId(planeId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Init object which will hold the plane variant */
+        geometric::Plane::PlaneVariant planeVariant{};
+
+        /* Extract the variant of the plane */
+        if (p_plane->getPlaneType(planeVariant) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Define a variable to get string output of plane variant type */
+        const char *variantTypeName = "UNDEFINED";
+
+        /* Extract the string which describes the variant type */
+        if (getPlaneVariantName(planeVariant, variantTypeName) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneVariantName returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
+        /*!
+         * Only walls are associated to rooms. A plane that is no longer
+         * labelled WALL leaves the room owning it, in this cycle. It returns
+         * through the normal admission paths once it is a wall again.
+         */
+        if (planeVariant != geometric::Plane::PlaneVariant::WALL)
+        {
+            /* A plane that is no longer a wall has no rejection to remember */
+            loggedWallRejectionReasons.erase(planeId);
+
+            /* Declare variable which will store room holding plane */
+            semantic::Room *p_owningRoom = nullptr;
+
+            /* Find the room which holds the plane */
+            if (findWallRoom(allRooms, p_plane, p_owningRoom) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: findWallRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+
+            /* Remove the plane from that room and log the removal */
+            if (p_owningRoom != nullptr)
+            {
+                /* Init flag which will confirm if the plane was removed */
+                bool wasWallRemoved{};
+
+                if (p_owningRoom->removeWall(p_plane, wasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: removeWall rejected its input; "
+                                "continuing as before.",
+                                __func__);
+                    wasWallRemoved = false;
+                }
+
+                if (wasWallRemoved)
+                {
+                    /* Init integer to hold the id of the room */
+                    int owningRoomId{};
+
+                    if (p_owningRoom->getId(owningRoomId) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getId returned a failure status "
+                                     "although it cannot fail; continuing as "
+                                     "before.",
+                                     __func__);
+                    }
+
+                    RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                                "[SemMgr] roomwall remove wall=%d room=%d: "
+                                "label is %s, not WALL.",
+                                planeId,
+                                owningRoomId,
+                                variantTypeName);
+                }
+            }
+
+            /* Continue onto next plane */
+            continue;
+        }
+
+        /* Declare long integer which will track the id of the active map */
+        unsigned long activeMapId{};
+
+        /* Extract the id of the active map */
+        if ((p_activeMap != nullptr) && p_activeMap->getId(activeMapId) !=
+                                            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Machine-readable records report -1 when there is no active map. */
+        const long long activeMapIdRecord =
+            (p_activeMap != nullptr) ? static_cast<long long>(activeMapId) : -1;
+
+        /* Declare struct which will contain evidence on wall admission */
         WallAdmissionEvidence admissionEvidence{};
-        if (evaluateWallAdmissionEvidence(p_wall,
+
+        /* Assess whether a wall should be admitted to a room */
+        if (evaluateWallAdmissionEvidence(p_plane,
                                           p_sysParams,
                                           groundNormalForEvidence_world,
                                           admissionEvidence) !=
@@ -263,141 +344,54 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
+
+        /* Walls that fail the admission evidence are rejected for now. */
         if (!admissionEvidence.isAdmissible)
         {
-            geometric::Plane::PlaneVariant wallPlaneType{};
-            if (p_wall->getPlaneType(wallPlaneType) !=
+            /* Init variable which will hold the voted variant of the plane */
+            geometric::Plane::PlaneVariant votedPlanVariant{};
+
+            /* Extract the expected plane variation */
+            if (p_plane->getExpectedPlaneType(votedPlanVariant) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getPlaneType returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: getExpectedPlaneType returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
                              __func__);
             }
-            geometric::Plane::PlaneVariant wallExpectedPlaneType{};
-            if (!(wallPlaneType != geometric::Plane::PlaneVariant::WALL) &&
-                p_wall->getExpectedPlaneType(wallExpectedPlaneType) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+
+            /* Init variable which will track reason plane should be rejected */
+            std::string rejectionReason;
+
+            /* The votes outrank the fit, which outranks the observation age */
+            if (votedPlanVariant != geometric::Plane::PlaneVariant::WALL)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getExpectedPlaneType returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                rejectionReason = "CLASS_NOT_WALL";
             }
-            const std::string reason =
-                wallPlaneType != geometric::Plane::PlaneVariant::WALL ||
-                        wallExpectedPlaneType !=
-                            geometric::Plane::PlaneVariant::WALL
-                    ? "CLASS_NOT_WALL"
-                : !admissionEvidence.hasAdequateFiniteFit
-                    ? "INADEQUATE_FINITE_FIT"
-                    : "INSUFFICIENT_OBSERVATIONS";
-            int wallGetId{};
-            if (p_wall->getId(wallGetId) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            else if (!admissionEvidence.hasAdequateFiniteFit)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
+                rejectionReason = "INADEQUATE_FINITE_FIT";
             }
-            /*!
-             * Room membership follows the confirmed label: a plane that is
-             * no longer a WALL leaves every room owning it, in this cycle.
-             * It returns through the normal admission paths once it is a
-             * wall again; those re-check the label for every wall not
-             * already in the room.
-             */
-            if (wallPlaneType != geometric::Plane::PlaneVariant::WALL)
+            else
             {
-                for (semantic::Room *p_owningRoom : allRooms)
-                {
-                    bool wasWallRemoved{};
-                    if (p_owningRoom != nullptr &&
-                        p_owningRoom->removeWall(p_wall, wasWallRemoved) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        wasWallRemoved = false;
-                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                    "%s: removeWall rejected its input; "
-                                    "continuing as before.",
-                                    __func__);
-                    }
-                    if (!wasWallRemoved)
-                    {
-                        continue;
-                    }
-                    int owningRoomId{};
-                    if (p_owningRoom->getId(owningRoomId) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: getId returned a failure status "
-                                     "although it cannot fail; continuing as "
-                                     "before.",
-                                     __func__);
-                    }
-                    RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
-                                "[SemMgr] roomwall remove wall=%d room=%d: "
-                                "label is %s, not WALL.",
-                                wallGetId,
-                                owningRoomId,
-                                planeClassName(wallPlaneType));
-                }
+                rejectionReason = "INSUFFICIENT_OBSERVATIONS";
             }
-            if (loggedWallRejectionReasons[wallGetId] != reason)
+
+            /* Emit the rejection record only when the reason changes. */
+            if (loggedWallRejectionReasons[planeId] != rejectionReason)
             {
-                int wallGetId2{};
-                if (p_wall->getId(wallGetId2) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                loggedWallRejectionReasons[wallGetId2] = reason;
-                int wallGetId3{};
-                if (p_wall->getId(wallGetId3) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                geometric::Plane::PlaneVariant wallPlaneType2{};
-                if (p_wall->getPlaneType(wallPlaneType2) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneType returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                unsigned long activeMapId{};
-                if ((p_activeMap != nullptr) &&
-                    p_activeMap->getId(activeMapId) !=
-                        map::MapStatus::MAP_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
+                loggedWallRejectionReasons[planeId] = rejectionReason;
                 std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
                              "\"map_id\":"
-                          << (p_activeMap != nullptr
-                                  ? static_cast<long long>(activeMapId)
-                                  : -1)
+                          << activeMapIdRecord
                           << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                          << ",\"wall_id\":" << wallGetId3 << ",\"class\":\""
-                          << planeClassName(wallPlaneType2)
+                          << ",\"wall_id\":" << planeId << ",\"class\":\""
+                          << variantTypeName
                           << "\",\"lifecycle\":\"REJECTED\","
                              "\"owner\":\"NONE\",\"reason\":\""
-                          << reason << "\",\"support\":"
+                          << rejectionReason << "\",\"support\":"
                           << admissionEvidence.fittedPointCount
                           << ",\"observations\":"
                           << admissionEvidence.observationCount << "}"
@@ -405,56 +399,35 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
             }
             continue;
         }
-        int wallGetId4{};
-        if (p_wall->getId(wallGetId4) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+
+        /* The wall is admissible again, so forget its earlier rejection. */
+        loggedWallRejectionReasons.erase(planeId);
+
+        /* Init variable which will track the room the wall belongs to */
+        semantic::Room *p_roomContainingWall = nullptr;
+
+        /* Find room containing the current wall */
+        if (findWallRoom(allRooms, p_plane, p_roomContainingWall) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
+                         "%s: findWallRoom returned a failure status although "
+                         "it cannot fail; continuing as before.",
                          __func__);
         }
-        loggedWallRejectionReasons.erase(wallGetId4);
 
-        /* Init flag which confirms whether the wall already has a parent */
-        bool wallHasRoom = false;
-
-        /* Search every valid room for the wall */
-        for (vs_graphs::core::semantic::Room *room : allRooms)
-        {
-            /* Skip invalid rooms */
-            bool roomIsBad2{};
-            if (!(room == nullptr) &&
-                room->isBad(roomIsBad2) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (room == nullptr || roomIsBad2)
-            {
-                continue;
-            }
-
-            /* If the room contains the wall, the hierarchy is complete */
-            if (roomContainsWall(room, p_wall))
-            {
-                wallHasRoom = true;
-                break;
-            }
-        }
-
-        /* Skip walls which already belong to a room */
-        if (wallHasRoom)
+        /* If the room containing wall is invalid, skip to next plane */
+        if (p_roomContainingWall != nullptr)
         {
             continue;
         }
 
-        bool wasAdmitted{};
+        /* Declare flag to indicate wall should be admitted to current room */
+        bool wasWallAdmitted{};
+
+        /* Admit wall to current room */
         if ((p_currentRoom != nullptr) &&
-            admitWallToRoom(p_currentRoom, p_wall, wasAdmitted) !=
+            admitWallToRoom(p_currentRoom, p_plane, wasWallAdmitted) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -462,8 +435,14 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const bool      admitted = p_currentRoom != nullptr && wasAdmitted;
-        semantic::Room *p_selectedOwner = nullptr;
+
+        /* Init flag to indicate if the wall was admitted */
+        const bool isWallAdmitted = p_currentRoom != nullptr && wasWallAdmitted;
+
+        /*!
+         * Look the owner up again in the atlas rooms. It may be a room other
+         * than the current one (passage far-side precedence).
+         */
         std::vector<semantic::Room *> atlasAllRooms{};
         if (p_atlas->getAllRooms(atlasAllRooms) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -473,81 +452,46 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (semantic::Room *p_room : atlasAllRooms)
+        semantic::Room *p_selectedOwner = nullptr;
+        if (findWallRoom(atlasAllRooms, p_plane, p_selectedOwner) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            bool roomIsBad3{};
-            if ((p_room != nullptr) &&
-                p_room->isBad(roomIsBad3) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_room != nullptr && !roomIsBad3 &&
-                roomContainsWall(p_room, p_wall))
-            {
-                p_selectedOwner = p_room;
-                break;
-            }
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findWallRoom returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
-        if (admitted && p_selectedOwner != nullptr)
+        /*!
+         * Register the wall in the atlas room-wall collection, whether or
+         * not a room owns it yet, so a later passage or room detection can
+         * still find it.
+         */
+        geometric::Plane *p_atlasRoomWallPlane = nullptr;
+        if (p_atlas->getRoomWallPlaneById(planeId, p_atlasRoomWallPlane) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
-            int wallGetId5{};
-            if (p_wall->getId(wallGetId5) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById =
-                nullptr;
-            if (p_atlas->getRoomWallPlaneById(wallGetId5,
-                                              p_atlasRoomWallPlaneById) !=
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomWallPlaneById returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlasRoomWallPlane == nullptr &&
+            p_atlas->addRoomWallPlane(p_plane) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getRoomWallPlaneById returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            if (p_atlasRoomWallPlaneById == nullptr)
-            {
-                if (p_atlas->addRoomWallPlane(p_wall) !=
-                    atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: addRoomWallPlane returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-            }
-            int wallGetId6{};
-            if (p_wall->getId(wallGetId6) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            undefendedWalls.erase(wallGetId6);
-            int wallGetId7{};
-            if (p_wall->getId(wallGetId7) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            loggedOrphanWallIds.erase(wallGetId7);
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addRoomWallPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* The wall is committed: clear its pending bookkeeping and record. */
+        if (isWallAdmitted && p_selectedOwner != nullptr)
+        {
+            undefendedWalls.erase(planeId);
+            loggedOrphanWallIds.erase(planeId);
+
             int selectedOwnerId{};
             if (p_selectedOwner->getId(selectedOwnerId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -557,29 +501,12 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            int wallGetId8{};
-            if (p_wall->getId(wallGetId8) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            unsigned long activeMapId2{};
-            if (p_activeMap->getId(activeMapId2) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
+
             std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
                          "\"map_id\":"
-                      << activeMapId2
+                      << activeMapIdRecord
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                      << ",\"wall_id\":" << wallGetId8
+                      << ",\"wall_id\":" << planeId
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
                       << selectedOwnerId << ",\"reason\":\""
@@ -593,80 +520,18 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         }
 
         /*!
-         * The free-space detector did not assign this wall to a room.
-         * Register the wall for future association via passages or room
-         * detection. Do NOT create a provisional room for orphan walls - only
-         * passages create prospective rooms.
+         * No room took the wall. It stays registered above for future
+         * association via passages or room detection. No provisional room is
+         * created for an orphan wall - only passages create prospective
+         * rooms. The pending record is emitted once per wall.
          */
-
-        /* Register the uniquely owned wall in the room-wall collection. */
-        int wallGetId9{};
-        if (p_wall->getId(wallGetId9) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        if (loggedOrphanWallIds.insert(planeId).second)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById2 = nullptr;
-        if (p_atlas->getRoomWallPlaneById(wallGetId9,
-                                          p_atlasRoomWallPlaneById2) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomWallPlaneById returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_atlasRoomWallPlaneById2 == nullptr)
-        {
-            if (p_atlas->addRoomWallPlane(p_wall) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: addRoomWallPlane returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-
-        int wallGetId10{};
-        if (p_wall->getId(wallGetId10) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (loggedOrphanWallIds.insert(wallGetId10).second)
-        {
-            int wallGetId11{};
-            if (p_wall->getId(wallGetId11) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            unsigned long activeMapId3{};
-            if ((p_activeMap != nullptr) && p_activeMap->getId(activeMapId3) !=
-                                                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
-                      << (p_activeMap != nullptr
-                              ? static_cast<long long>(activeMapId3)
-                              : -1)
+                      << activeMapIdRecord
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                      << ",\"wall_id\":" << wallGetId11
+                      << ",\"wall_id\":" << planeId
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
                          "\"reason\":\""

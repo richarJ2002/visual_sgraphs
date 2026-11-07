@@ -90,6 +90,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/crossProduct2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateWallAdmissionEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findWallRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/getPlaneVariantName.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasSeparatingFiniteWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
