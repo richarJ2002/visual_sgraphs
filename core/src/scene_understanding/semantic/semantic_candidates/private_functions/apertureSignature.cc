@@ -6,7 +6,7 @@
  */
 
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include <algorithm>
 #include <cmath>

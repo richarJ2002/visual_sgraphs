@@ -24,7 +24,7 @@
 
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/utils.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 #include "scene_understanding/semantics_manager/objects/FiniteWallSegment2dStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"

@@ -24,8 +24,8 @@
  */
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 
 #include "private_functions.h"
 #include <rclcpp/logging.hpp>

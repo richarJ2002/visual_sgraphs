@@ -25,8 +25,8 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "mapping/geometric/Plane/Plane.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include "private_functions.h"
 #include <rclcpp/logging.hpp>

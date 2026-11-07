@@ -42,8 +42,8 @@
 #include "estimation/mlpnp_solver/objects/MLPnPsolverStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
 #include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 #include "execution/system/objects/VerboseStatusEnum.h"
 
 #include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"

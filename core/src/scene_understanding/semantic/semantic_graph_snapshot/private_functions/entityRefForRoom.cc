@@ -25,8 +25,8 @@
 
 #include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include "map_state/map/map.h"
 #include <rclcpp/logging.hpp>

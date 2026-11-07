@@ -24,7 +24,7 @@
  */
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include "private_functions.h"
 

@@ -33,7 +33,7 @@
 
 #include <Eigen/Core>
 
-#include "scene_understanding/semantic/floor/objects/FloorClass.h"
+#include "scene_understanding/scene_graph/Floor/objects/FloorClass.h"
 
 namespace vs_graphs
 {

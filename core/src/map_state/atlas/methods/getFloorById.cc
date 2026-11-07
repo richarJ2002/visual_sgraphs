@@ -32,7 +32,7 @@
 
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/floor/floor.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

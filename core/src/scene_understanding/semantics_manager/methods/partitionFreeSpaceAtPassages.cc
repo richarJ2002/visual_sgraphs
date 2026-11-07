@@ -27,8 +27,8 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "configuration/types/types.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"

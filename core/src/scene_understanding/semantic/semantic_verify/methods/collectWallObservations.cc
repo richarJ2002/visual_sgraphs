@@ -7,8 +7,8 @@
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
@@ -21,7 +21,7 @@
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
 #include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>

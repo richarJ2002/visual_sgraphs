@@ -38,7 +38,7 @@
 #include <pcl/point_types.h>
 
 #include "mapping/geometric/Plane/Plane.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "mapping/geometry_helpers/utils.h"
 
 namespace vs_graphs

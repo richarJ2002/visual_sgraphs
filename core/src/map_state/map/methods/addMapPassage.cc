@@ -30,9 +30,9 @@
  * map/objects/MapClass.h.
  */
 
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "map_state/map/objects/MapClass.h"
 
 #include <algorithm>

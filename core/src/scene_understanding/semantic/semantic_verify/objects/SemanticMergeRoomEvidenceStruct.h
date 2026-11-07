@@ -26,7 +26,7 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_MERGE_ROOM_EVIDENCE_STRUCT_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_MERGE_ROOM_EVIDENCE_STRUCT_H
 
-#include "scene_understanding/semantic/room/objects/RoomContextSnapshotStruct.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomContextSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/VerifyWallObservationStruct.h"
 
 #include <Eigen/Core>

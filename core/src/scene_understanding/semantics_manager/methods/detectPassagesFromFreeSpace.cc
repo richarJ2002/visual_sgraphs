@@ -42,8 +42,8 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 
 namespace vs_graphs
 {

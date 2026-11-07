@@ -27,8 +27,8 @@
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
 
 #include <iostream>
 #include <rclcpp/logging.hpp>

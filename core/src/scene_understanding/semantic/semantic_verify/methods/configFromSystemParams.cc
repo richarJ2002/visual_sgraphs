@@ -13,7 +13,7 @@
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
 
 #include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>

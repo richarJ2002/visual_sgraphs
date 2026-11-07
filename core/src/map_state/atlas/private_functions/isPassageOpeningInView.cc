@@ -8,8 +8,8 @@
 #include "private_functions.h"
 
 #include "map_state/keyframe/keyframe.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 
 #include <array>
 #include <rclcpp/logging.hpp>

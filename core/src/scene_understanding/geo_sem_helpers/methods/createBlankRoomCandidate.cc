@@ -27,10 +27,10 @@
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include <algorithm>
 #include <iostream>

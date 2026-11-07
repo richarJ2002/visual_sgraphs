@@ -24,7 +24,7 @@
  */
 
 #include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

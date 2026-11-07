@@ -27,7 +27,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "private_functions.h"

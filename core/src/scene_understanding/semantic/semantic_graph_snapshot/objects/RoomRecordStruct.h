@@ -36,7 +36,7 @@
 
 #include <Eigen/Core>
 
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 
 namespace vs_graphs
 {

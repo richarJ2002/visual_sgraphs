@@ -36,7 +36,7 @@
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"

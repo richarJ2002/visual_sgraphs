@@ -43,8 +43,8 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 
 #include "execution/system/system.h"
 #include "mapping/geometry_helpers/utils.h"

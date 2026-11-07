@@ -217,9 +217,9 @@
  * -------------------------------------------------------------------------- */
 
 #include "mapping/geometric/Plane/Plane.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 namespace vs_graphs::common
 {
 

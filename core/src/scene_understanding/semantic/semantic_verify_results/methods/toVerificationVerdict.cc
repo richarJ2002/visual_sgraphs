@@ -20,7 +20,7 @@
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
 #include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>

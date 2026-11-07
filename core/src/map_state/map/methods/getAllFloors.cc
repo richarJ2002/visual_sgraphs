@@ -31,7 +31,7 @@
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/semantic/floor/floor.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
 
 #include <algorithm>
 #include <iterator>

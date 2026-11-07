@@ -26,10 +26,10 @@
 #include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/KnownSideProvenanceStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Passage/objects/KnownSideProvenanceStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include <algorithm>
 #include <rclcpp/logging.hpp>

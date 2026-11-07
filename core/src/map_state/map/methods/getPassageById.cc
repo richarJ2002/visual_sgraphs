@@ -31,7 +31,7 @@
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 
 #include <algorithm>
 #include <iterator>

@@ -30,9 +30,9 @@
  * map/objects/MapClass.h.
  */
 
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/floor/floor.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "map_state/map/objects/MapClass.h"
 
 #include <algorithm>

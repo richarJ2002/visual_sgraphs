@@ -24,7 +24,7 @@
  */
 
 #include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

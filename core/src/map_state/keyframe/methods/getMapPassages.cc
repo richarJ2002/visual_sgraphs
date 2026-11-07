@@ -31,7 +31,7 @@
  */
 
 #include "map_state/keyframe/objects/KeyFrameClass.h"
-#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 
 
 #include "estimation/converter/converter.h"

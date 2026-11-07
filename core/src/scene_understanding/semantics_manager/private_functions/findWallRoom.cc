@@ -32,7 +32,7 @@
 
 #include <rclcpp/logging.hpp>
 
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 
 namespace vs_graphs
 {

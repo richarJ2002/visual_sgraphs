@@ -5,13 +5,13 @@
  *                  Semantic/SemanticVerify/private_functions.h.
  */
 
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/KnownSideProvenanceStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/KnownSideProvenanceStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
 #include "map_state/map/map.h"
@@ -19,7 +19,7 @@
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
 
 #include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>

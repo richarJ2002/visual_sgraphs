@@ -31,10 +31,10 @@
  */
 
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/scene_graph/Floor/Floor.h"
+#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
