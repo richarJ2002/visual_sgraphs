@@ -121,7 +121,6 @@ RUN --mount=type=ssh git clone git@github.com:snt-arg/visual_sgraphs.git
 RUN --mount=type=ssh git clone git@github.com:snt-arg/situational_graphs_msgs.git
 RUN --mount=type=ssh git clone git@github.com:snt-arg/scene_segment_ros.git
 RUN --mount=type=ssh git clone -b r/4.57.7 git@github.com:IntelRealSense/realsense-ros.git
-# RUN --mount=type=ssh git clone -b humble-devel git@github.com:pal-robotics/aruco_ros.git
 
 # Repositories for GNN-based room detection and reasoning
 # RUN --mount=type=ssh git clone -b develop git@github.com:snt-arg/situational_graphs_wrapper.git

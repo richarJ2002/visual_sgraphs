@@ -9,15 +9,6 @@ These parameters are grouped under the `general` category and define system-wide
 | Category  | Parameter           | Description                                                                                                      |
 | --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `general` | `mode_of_operation` | Operating mode: <br> `0` = SemSeg + GeoSeg <br> `1` = SemSeg only (default - recommended) <br> `2` = GeoSeg only |
-| `general` | `env_database`      | Path to the `JSON` file containing information about fiducial markers in the environment                         |
-
-## 🏷️ Marker Parameters
-
-These parameters are grouped under the `markers` category and control configurations related to ArUco markers:
-
-| Category  | Parameter | Description                                                 |
-| --------- | --------- | ----------------------------------------------------------- |
-| `markers` | `impact`  | Defines the weight or trust level assigned to marker poses. |
 
 ## 🧮 Optimization Parameters
 
@@ -124,7 +115,6 @@ These parameters belong to the `room_seg` category and configure the detection a
 | `room_seg` | —                | `perpendicularity_thresh`                        | Threshold in degrees for walls perpendicularity                                                                             |
 | `room_seg` | —                | `parallelism_thresh`                             | Threshold in degrees for walls parallelism                                                                                  |
 | `room_seg` | —                | `center_distance_thresh`                         | Maximum distance (meters) between room centroids to be associated                                                           |
-| `room_seg` | `geo_based`      | `marker_wall_distance_thresh`                    | Max distance from marker to wall to consider marker part of the room (geometric method)                                     |
 | `room_seg` | `skeleton_based` | `min_cluster_vertices`                           | Minimum number of points to form a cluster (voxblox free-space room segmentation)                                           |
 | `room_seg` | `skeleton_based` | `cluster_point_wall_distance_thresh`             | Max distance from a cluster points to a wall to be considered part of the room (voxblox free-space segmentation)            |
 | `room_seg` | `skeleton_based` | `cluster_centroid_wall_centroid_distance_thresh` | Max distance from a cluster centroid to a wall centroid to be considered part of the room (voxblox free-space segmentation) |

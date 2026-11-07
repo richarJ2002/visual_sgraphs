@@ -1,8 +1,7 @@
 ###############################################################################
 # 📋 Table of Contents (auto-summary; keep in sync with top-level sections)  #
 ###############################################################################
-# general:                      General mode & env database path              #
-# markers:                      Marker trust impact                            #
+# general:                      General mode of operation                      #
 # optimization:                 Plane-based optimization factors               #
 # refine_map_points:            Refining map points using semantics            #
 # plane_based_covisibility:     Plane-based covisibility graph config        #
@@ -25,15 +24,6 @@ general:
   # 2: Geometric Segmentation runs independently
   # run with 2 if semantic segmentation is not running - this clears the pointclouds
   mode_of_operation: 1
-
-  # The path of the high level semantic information of the environment
-  # [TODO] - the path looks ugly, possible workaround?
-  env_database: ""
-
-#################################### Marker Parameters ###########################################
-markers:
-  # Read but not used: no optimisation step weights markers by it at present
-  impact: 0.1
 
 ################################## Optimization Parameters #######################################
 optimization:
@@ -273,11 +263,6 @@ room_seg:
 
   # The maximum distance between two room centroids to be considered the same room (in meters)
   center_distance_thresh: 2.0
-
-  # [deprecated] Parameters for the geometrically-based closest walls room segmentation
-  geo_based:
-    # The maximum distance from a marker to a wall to be considered part of the room
-    marker_wall_distance_thresh: 6.0
 
   # Parameters for skeleton voxblox free-space room segmentation
   skeleton_based:

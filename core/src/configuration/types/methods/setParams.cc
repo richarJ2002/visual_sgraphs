@@ -62,13 +62,8 @@ SystemParamsStatus
     try
     {
         /* General Parameters */
-        general.envDatabase =
-            config["general"]["env_database"].as<std::string>();
         general.modeOfOperation = static_cast<General::ModeOfOperation>(
             config["general"]["mode_of_operation"].as<int>());
-
-        /* Marker Parameters */
-        markers.impact = config["markers"]["impact"].as<float>();
 
         /* Tracking Refinement Parameters */
         refineMapPoints.enabled =
@@ -316,9 +311,6 @@ SystemParamsStatus
         roomSeg.minClusterVertices =
             config["room_seg"]["skeleton_based"]["min_cluster_vertices"]
                 .as<unsigned int>();
-        roomSeg.markerWallDistanceThresh =
-            config["room_seg"]["geo_based"]["marker_wall_distance_thresh"]
-                .as<float>();
         roomSeg.clusterPointWallDistanceThresh =
             config["room_seg"]["skeleton_based"]
                   ["cluster_point_wall_distance_thresh"]

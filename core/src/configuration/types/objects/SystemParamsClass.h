@@ -142,34 +142,11 @@ class SystemParams
          *                  range-checked).
          */
         ModeOfOperation modeOfOperation = ModeOfOperation::SEM_GEO;
-        /*!
-         * @brief           Path of the JSON file holding the high-level
-         *                  semantic description of the environment;
-         *                  System::initialize parses it.
-         */
-        std::string     envDatabase = "";
     };
     /*!
-     * @brief           Run mode and environment-database settings.
+     * @brief           Run mode settings.
      */
     General general;
-
-    /*!
-     * @brief           Fiducial-marker settings.
-     */
-    struct Markers
-    {
-        /*!
-         * @brief           Trust weight of marker observations, unitless.
-         *                  Loaded from YAML but no optimisation step reads it
-         *                  yet.
-         */
-        float impact = 0.1f;
-    };
-    /*!
-     * @brief           Fiducial-marker settings.
-     */
-    Markers markers;
 
     /*!
      * @brief           Depth range accepted from the RGB-D sensor.
@@ -853,12 +830,6 @@ class SystemParams
          *                  free-space cluster.
          */
         unsigned int minClusterVertices = 5;
-        /*!
-         * @brief           Largest marker to wall distance, metres, for the
-         *                  geometric room method. Deprecated; loaded from YAML
-         *                  but not read anywhere.
-         */
-        float        markerWallDistanceThresh = 3.0f;
         /*!
          * @brief           Largest distance from a cluster point to a wall,
          *                  metres, for the wall to belong to the room.
