@@ -20,18 +20,15 @@
  * @file            getExpectedPlaneType.cc
  *
  * @brief           Implements Plane::getExpectedPlaneType(), declared in
- *                  Geometric/Plane.h.
+ *                  mapping/geometric/Plane/objects/PlaneClass.h.
  */
 
+/* Matching Declaration Include */
 #include "mapping/geometric/Plane/objects/PlaneClass.h"
-#include <algorithm>
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
-#include <cmath>
-#include <limits>
+
+/* C++ Standard Library Includes */
+#include <map>
 #include <mutex>
-#include <pcl/octree/octree_search.h>
-#include <vector>
 
 namespace vs_graphs
 {
@@ -43,21 +40,28 @@ namespace geometric
 PlaneStatus
     Plane::getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out)
 {
-    std::unique_lock<std::mutex> lock(typeMutex);
+    /* semanticVotes is written under typeMutex, so read it under the same. */
+    std::lock_guard<std::mutex> typeLock(typeMutex);
 
-    /* get the maximum vote */
-    double       maximumVotes = 0;
-    PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
-    for (const std::pair<const Plane::PlaneVariant, double> &vote :
-         semanticVotes)
+    /*!
+     * Only a vote above zero can lead, so a plane without votes stays
+     * UNDEFINED. The comparison is strict and std::map iterates in key
+     * order, so a tie goes to the class with the lowest enumerator value.
+     */
+    PlaneVariant leadingPlaneType  = PlaneVariant::UNDEFINED;
+    double       leadingVoteWeight = 0.0;
+
+    for (const std::pair<const PlaneVariant, double> &classVote : semanticVotes)
     {
-        if (vote.second > maximumVotes)
+        if (classVote.second > leadingVoteWeight)
         {
-            maximumVotes = vote.second;
-            maximumType  = vote.first;
+            leadingVoteWeight = classVote.second;
+            leadingPlaneType  = classVote.first;
         }
     }
-    expectedPlaneType_out = maximumType;
+
+    expectedPlaneType_out = leadingPlaneType;
+
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
