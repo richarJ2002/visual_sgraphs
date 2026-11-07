@@ -1051,6 +1051,23 @@ class SystemParams
     RoomTracking roomTracking;
 
     /*!
+     * @brief           Timing of the semantics manager's cycle.
+     */
+    struct SemanticsManager
+    {
+        /*!
+         * @brief           Wall-clock period of one semantic cycle (seconds);
+         *                  a cycle that runs longer is followed by the next
+         *                  one after a 1 ms yield.
+         */
+        double runInterval_s = 3.0;
+    };
+    /*!
+     * @brief           Semantics manager cycle settings.
+     */
+    SemanticsManager semanticsManager;
+
+    /*!
      * @brief           Limits and weights for generating room-match candidates
      *                  across maps.
      */

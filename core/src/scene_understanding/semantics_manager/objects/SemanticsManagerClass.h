@@ -249,12 +249,6 @@ class SemanticsManager
     Eigen::Matrix4f planePoseMat;
 
     /*!
-     * @brief           The main Run() function runs every runInterval_s
-     *                  seconds.
-     */
-    const double runInterval_s = 3.0;
-
-    /*!
      * @brief           Member which contains the system parameters.
      */
     types::SystemParams *p_sysParams;

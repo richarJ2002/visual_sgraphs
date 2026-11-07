@@ -420,6 +420,9 @@ SystemParamsStatus
         roomTracking.reacquireMinPlanes =
             config["room_tracking"]["reacquire_min_planes"].as<unsigned int>();
 
+        semanticsManager.runInterval_s =
+            config["semantics_manager"]["run_interval_s"].as<double>();
+
         this->candidateGen.topK =
             config["candidate_gen"]["top_k"].as<unsigned int>();
         this->candidateGen.candidatePairCap =
@@ -551,6 +554,8 @@ SystemParamsStatus
             !std::isfinite(roomTracking.reacquireRetryInterval_s) ||
             roomTracking.reacquireMaxRetries < 1U ||
             roomTracking.reacquireMinPlanes < 1U ||
+            semanticsManager.runInterval_s <= 0.0 ||
+            !std::isfinite(semanticsManager.runInterval_s) ||
             this->candidateGen.topK < 1U ||
             this->candidateGen.candidatePairCap < 1U ||
             this->candidateGen.topologyNodesCap < 1U ||

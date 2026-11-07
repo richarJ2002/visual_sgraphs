@@ -10,6 +10,7 @@
 # sem_seg:                      Semantic segmentation parameters               #
 # room_seg:                     Room segmentation parameters                 #
 # room_tracking:                Room-tracking state machine                    #
+# semantics_manager:            Semantic cycle timing                          #
 # candidate_gen:                Candidate generation & topology              #
 # verification:                 Geometric verification gates                   #
 # factor:                     Edge-plane transform noise model                 #
@@ -367,6 +368,12 @@ room_tracking:
   reacquire_max_retries: 3
   # Minimum planes required to attempt a reacquire.
   reacquire_min_planes: 3
+
+# Semantic cycle timing.
+semantics_manager:
+  # Wall-clock period of one semantic cycle (seconds); a cycle that runs
+  # longer starts the next one after a 1 ms yield.
+  run_interval_s: 3.0
 
 candidate_gen:
   top_k: 10

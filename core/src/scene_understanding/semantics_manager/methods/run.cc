@@ -1421,7 +1421,8 @@ void SemanticsManager::run(void)
         const std::chrono::duration<double> elapsed = end - start;
 
         /* Find how much longer in the loop is left */
-        const double remainingSeconds = runInterval_s - elapsed.count();
+        const double remainingSeconds =
+            p_sysParams->semanticsManager.runInterval_s - elapsed.count();
 
         /* If there is remaining time, sleep until next loop cycle */
         if (remainingSeconds > 0.0)
