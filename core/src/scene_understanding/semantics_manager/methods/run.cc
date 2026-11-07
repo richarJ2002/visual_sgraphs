@@ -59,6 +59,7 @@
 #include <chrono>
 #include <map>
 #include <rclcpp/logging.hpp>
+#include <string>
 #include <thread>
 #include <unordered_set>
 
@@ -1320,6 +1321,28 @@ void SemanticsManager::run(void)
                 }
                 currentMapRevision = currentMapMapChangeIndex;
             }
+        }
+
+        /* Mirror the map lists into the scene graph and check the copy. No
+         * reader uses the tree yet, so a mismatch is only reported. */
+        std::string sceneGraphMismatch{};
+        if (sceneGraph.refreshFromAtlas(*p_atlas) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
+            sceneGraph.verifyAgainstAtlas(*p_atlas, sceneGraphMismatch) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: refreshFromAtlas/verifyAgainstAtlas returned a "
+                         "failure status although they cannot fail; "
+                         "continuing as before.",
+                         __func__);
+        }
+        if (!sceneGraphMismatch.empty())
+        {
+            RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                        "%s: scene graph disagrees with the map lists: %s",
+                        __func__,
+                        sceneGraphMismatch.c_str());
         }
 
         /* Unlock before any evaluation/serialization/caching/logging work --
