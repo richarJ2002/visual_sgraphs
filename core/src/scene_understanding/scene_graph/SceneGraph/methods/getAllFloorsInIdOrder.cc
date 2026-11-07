@@ -25,8 +25,9 @@
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
 
-#include <map>
-#include <memory>
+#include <mutex>
+#include <optional>
+#include <shared_mutex>
 #include <vector>
 
 namespace vs_graphs
@@ -40,22 +41,18 @@ SceneGraphStatus SceneGraph::getAllFloorsInIdOrder(
     std::vector<semantic::Floor *> &floors_out) const
 {
     floors_out.clear();
-    const SceneMap        *p_activeSceneMap = nullptr;
-    const SceneGraphStatus activeStatus = getActiveSceneMap(p_activeSceneMap);
-    if (p_activeSceneMap == nullptr)
+    std::optional<unsigned long> activeMapIdCopy{};
     {
-        return activeStatus;
+        std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+        activeMapIdCopy = activeMapId;
     }
-    for (const std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
-         p_activeSceneMap->buildings)
+    /* The lock is released before the by-map query takes it again: one
+     * thread must not hold a shared mutex twice. */
+    if (!activeMapIdCopy.has_value())
     {
-        for (const std::pair<const int, semantic::Floor *> &floorEntry :
-             buildingEntry.second->floors)
-        {
-            floors_out.push_back(floorEntry.second);
-        }
+        return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    return activeStatus;
+    return getMapFloorsInIdOrder(*activeMapIdCopy, floors_out);
 }
 
 } /* namespace scene_graph */

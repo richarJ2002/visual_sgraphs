@@ -17,37 +17,28 @@
  */
 
 /*!
- * @file            getSceneMap.cc
+ * @file            getSceneGraph.cc
  *
- * @brief           Implements SceneGraph::getSceneMap(), declared in
- *                  scene_graph/SceneGraph/objects/SceneGraphClass.h.
+ * @brief           Implements Atlas::getSceneGraph(), declared in
+ *                  atlas/objects/AtlasClass.h.
  */
 
-#include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
-
-#include <map>
-#include <memory>
+#include "map_state/atlas/objects/AtlasClass.h"
 
 namespace vs_graphs
 {
 namespace core
 {
-namespace scene_graph
+namespace atlas
 {
 
-SceneGraphStatus SceneGraph::getSceneMap(unsigned long    mapId_in,
-                                         const SceneMap *&p_sceneMap_out) const
+AtlasStatus Atlas::getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out)
 {
-    p_sceneMap_out = nullptr;
-    std::map<unsigned long, std::unique_ptr<SceneMap>>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator != sceneMaps.end())
-    {
-        p_sceneMap_out = sceneMapIterator->second.get();
-    }
-    return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
+    p_sceneGraph_out = &sceneGraph;
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} /* namespace scene_graph */
+} /* namespace atlas */
 } /* namespace core */
 } /* namespace vs_graphs */

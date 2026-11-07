@@ -50,14 +50,14 @@ namespace scene_graph
 
 /*!
  * @brief           The scene graph of one SLAM map: its buildings and id
- *                  indexes of its rooms and passages.
+ *                  indexes of its detected rooms, candidate rooms and
+ *                  passages.
  *
  *                  Rooms and passages are borrowed from the map lists, which
- *                  own them and stay the source of truth; a room or passage
- *                  not yet linked to a storey is reachable through the
- *                  indexes only. Bad-flagged objects are kept, as the map
- *                  lists keep them. Written by SceneGraph::refreshFromAtlas()
- *                  and read only while the atlas semantic-update lock is held.
+ *                  own them; a room or passage not yet linked to a storey is
+ *                  reachable through the indexes only. Bad-flagged objects
+ *                  are kept, as the map lists keep them. Owned by SceneGraph
+ *                  and guarded by its graph mutex.
  */
 struct SceneMap
 {
@@ -75,10 +75,14 @@ struct SceneMap
     std::map<int, std::unique_ptr<Building>> buildings;
 
     /*!
-     * @brief           Detected and candidate rooms of the map by room id;
-     *                  borrowed.
+     * @brief           Detected rooms of the map by room id; borrowed.
      */
-    std::map<int, semantic::Room *> rooms;
+    std::map<int, semantic::Room *> detectedRooms;
+
+    /*!
+     * @brief           Candidate rooms of the map by room id; borrowed.
+     */
+    std::map<int, semantic::Room *> candidateRooms;
 
     /*!
      * @brief           Passages of the map by passage id; borrowed.

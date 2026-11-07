@@ -28,7 +28,6 @@
 
 #include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
@@ -138,13 +137,6 @@ class SemanticsManager
      *                  semantic-update lock.
      */
     semantic::SemanticReportCache semanticReportCache;
-
-    /*!
-     * @brief           Scene graph mirrored from the map lists at the end of
-     *                  every cycle; owned. Written and read only by run()
-     *                  while the atlas semantic-update lock is held.
-     */
-    scene_graph::SceneGraph sceneGraph;
 
     /*!
      * @brief           Caller-owned state carried across

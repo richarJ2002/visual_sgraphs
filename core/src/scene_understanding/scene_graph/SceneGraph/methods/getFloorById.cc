@@ -25,8 +25,9 @@
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
 
-#include <map>
-#include <memory>
+#include <mutex>
+#include <optional>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -38,25 +39,19 @@ namespace scene_graph
 SceneGraphStatus SceneGraph::getFloorById(int               floorId_in,
                                           semantic::Floor *&p_floor_out) const
 {
-    p_floor_out                             = nullptr;
-    const SceneMap        *p_activeSceneMap = nullptr;
-    const SceneGraphStatus activeStatus = getActiveSceneMap(p_activeSceneMap);
-    if (p_activeSceneMap == nullptr)
+    p_floor_out = nullptr;
+    std::optional<unsigned long> activeMapIdCopy{};
     {
-        return activeStatus;
+        std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+        activeMapIdCopy = activeMapId;
     }
-    for (const std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
-         p_activeSceneMap->buildings)
+    /* The lock is released before the by-map query takes it again: one
+     * thread must not hold a shared mutex twice. */
+    if (!activeMapIdCopy.has_value())
     {
-        std::map<int, semantic::Floor *>::const_iterator floorIterator =
-            buildingEntry.second->floors.find(floorId_in);
-        if (floorIterator != buildingEntry.second->floors.end())
-        {
-            p_floor_out = floorIterator->second;
-            break;
-        }
+        return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    return activeStatus;
+    return getMapFloorById(*activeMapIdCopy, floorId_in, p_floor_out);
 }
 
 } /* namespace scene_graph */

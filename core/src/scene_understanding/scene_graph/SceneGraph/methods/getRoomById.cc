@@ -25,7 +25,9 @@
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
 
-#include <map>
+#include <mutex>
+#include <optional>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -37,19 +39,19 @@ namespace scene_graph
 SceneGraphStatus SceneGraph::getRoomById(int              roomId_in,
                                          semantic::Room *&p_room_out) const
 {
-    p_room_out                              = nullptr;
-    const SceneMap        *p_activeSceneMap = nullptr;
-    const SceneGraphStatus activeStatus = getActiveSceneMap(p_activeSceneMap);
-    if (p_activeSceneMap != nullptr)
+    p_room_out = nullptr;
+    std::optional<unsigned long> activeMapIdCopy{};
     {
-        std::map<int, semantic::Room *>::const_iterator roomIterator =
-            p_activeSceneMap->rooms.find(roomId_in);
-        if (roomIterator != p_activeSceneMap->rooms.end())
-        {
-            p_room_out = roomIterator->second;
-        }
+        std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+        activeMapIdCopy = activeMapId;
     }
-    return activeStatus;
+    /* The lock is released before the by-map query takes it again: one
+     * thread must not hold a shared mutex twice. */
+    if (!activeMapIdCopy.has_value())
+    {
+        return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
+    }
+    return getMapRoomById(*activeMapIdCopy, roomId_in, p_room_out);
 }
 
 } /* namespace scene_graph */

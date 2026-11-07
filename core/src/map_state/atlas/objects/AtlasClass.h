@@ -45,6 +45,7 @@
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <Eigen/Core>
 #include <atomic>
@@ -809,6 +810,20 @@ class Atlas
         std::unique_lock<std::mutex> &semanticUpdateLock_out);
 
     /*!
+     * @brief           Returns the scene graph of every map this atlas holds.
+     *                  No lock is taken: the graph lives as long as the atlas
+     *                  and guards itself with its own graph mutex.
+     *
+     * @param[out]      p_sceneGraph_out
+     *                  Borrowed pointer to the atlas-owned scene graph; never
+     *                  null, valid until the atlas is destroyed.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus
+        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
+
+    /*!
      * @brief           Removes a map from the active Atlas and marks it
      *                  invalid.
      *
@@ -1179,6 +1194,14 @@ class Atlas
      *                  transactions.
      */
     std::mutex semanticUpdateMutex;
+
+    /*!
+     * @brief           Scene graph of the maps in maps; owned. A scene map is
+     *                  added when a map is created or loaded and removed when
+     *                  the map leaves maps (setMapBad, clearAtlas, postLoad).
+     *                  Guarded by its own graph mutex, taken after atlasMutex.
+     */
+    scene_graph::SceneGraph sceneGraph;
 
     /*!
      * @brief           Snapshots of departed maps' room geometry, keyed by

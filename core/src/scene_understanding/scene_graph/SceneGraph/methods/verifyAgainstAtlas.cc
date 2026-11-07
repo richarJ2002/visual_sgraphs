@@ -28,8 +28,9 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <rclcpp/logging.hpp>
-#include <set>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -49,6 +50,8 @@ SceneGraphStatus
 {
     mismatchReport_out.clear();
 
+    /* The atlas is read before the graph lock: lock order is atlasMutex,
+     * then the graph lock. */
     std::vector<map::Map *> allMaps{};
     if (atlas_inout.getAllMaps(allMaps) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -58,6 +61,8 @@ SceneGraphStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    std::shared_lock<std::shared_mutex> graphLock(graphMutex);
     if (allMaps.size() != sceneMaps.size())
     {
         mismatchReport_out += "maps " + std::to_string(sceneMaps.size()) +
@@ -96,18 +101,14 @@ SceneGraphStatus
             (p_map->getAllPassages(mapPassages) !=
              map::MapStatus::MAP_STATUS_SUCCESS))
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllFloors/getAllDetectedMapRooms/"
-                         "getAllCandidateMapRooms/getAllPassages returned a "
-                         "failure status although they cannot fail; "
-                         "continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: "
+                "getAllFloors/getAllDetectedMapRooms/getAllCandidateMapRooms/"
+                "getAllPassages returned a failure status although they "
+                "cannot fail; continuing as before.",
+                __func__);
         }
-
-        /* A room listed both as detected and as candidate counts once. */
-        std::set<semantic::Room *> distinctRooms(detectedRooms.begin(),
-                                                 detectedRooms.end());
-        distinctRooms.insert(candidateRooms.begin(), candidateRooms.end());
 
         std::size_t treeFloorCount = 0U;
         for (const std::pair<const int, std::unique_ptr<Building>>
@@ -122,12 +123,19 @@ SceneGraphStatus
                 mapLabel + "floors " + std::to_string(treeFloorCount) +
                 " in tree, " + std::to_string(mapFloors.size()) + " in lists; ";
         }
-        if (sceneMap.rooms.size() != distinctRooms.size())
+        if (sceneMap.detectedRooms.size() != detectedRooms.size())
         {
             mismatchReport_out +=
-                mapLabel + "rooms " + std::to_string(sceneMap.rooms.size()) +
-                " in tree, " + std::to_string(distinctRooms.size()) +
-                " in lists; ";
+                mapLabel + "detected rooms " +
+                std::to_string(sceneMap.detectedRooms.size()) + " in tree, " +
+                std::to_string(detectedRooms.size()) + " in lists; ";
+        }
+        if (sceneMap.candidateRooms.size() != candidateRooms.size())
+        {
+            mismatchReport_out +=
+                mapLabel + "candidate rooms " +
+                std::to_string(sceneMap.candidateRooms.size()) + " in tree, " +
+                std::to_string(candidateRooms.size()) + " in lists; ";
         }
         if (sceneMap.passages.size() != mapPassages.size())
         {

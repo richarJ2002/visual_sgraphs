@@ -35,6 +35,7 @@
 #include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_axiom_evaluator/objects/SemanticAxiomEvaluatorStatusEnum.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidatesStatusEnum.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/SemanticGraphSnapshotStatusEnum.h"
@@ -1323,18 +1324,25 @@ void SemanticsManager::run(void)
             }
         }
 
-        /* Mirror the map lists into the scene graph and check the copy. No
-         * reader uses the tree yet, so a mismatch is only reported. */
-        std::string sceneGraphMismatch{};
-        if (sceneGraph.refreshFromAtlas(*p_atlas) !=
+        /* Resync the atlas-owned scene graph from the map lists, then check
+         * it. The resync covers writers that still bypass the mutation API
+         * (this cycle and any merge since the last one); once every writer
+         * uses that API the resync is deleted and the check reports any
+         * writer that bypasses it. No reader uses the tree yet, so a
+         * mismatch is only reported. */
+        std::string              sceneGraphMismatch{};
+        scene_graph::SceneGraph *p_sceneGraph = nullptr;
+        if (p_atlas->getSceneGraph(p_sceneGraph) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
+            p_sceneGraph->refreshFromAtlas(*p_atlas) !=
                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
-            sceneGraph.verifyAgainstAtlas(*p_atlas, sceneGraphMismatch) !=
+            p_sceneGraph->verifyAgainstAtlas(*p_atlas, sceneGraphMismatch) !=
                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: refreshFromAtlas/verifyAgainstAtlas returned a "
-                         "failure status although they cannot fail; "
-                         "continuing as before.",
+                         "%s: getSceneGraph/refreshFromAtlas/"
+                         "verifyAgainstAtlas returned a failure status "
+                         "although they cannot fail; continuing as before.",
                          __func__);
         }
         if (!sceneGraphMismatch.empty())

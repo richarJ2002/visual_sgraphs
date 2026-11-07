@@ -17,13 +17,16 @@
  */
 
 /*!
- * @file            getActiveSceneMap.cc
+ * @file            eraseSceneMap.cc
  *
- * @brief           Implements SceneGraph::getActiveSceneMap(), declared in
+ * @brief           Implements SceneGraph::eraseSceneMap(), declared in
  *                  scene_graph/SceneGraph/objects/SceneGraphClass.h.
  */
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
+
+#include <mutex>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -32,13 +35,13 @@ namespace core
 namespace scene_graph
 {
 
-SceneGraphStatus
-    SceneGraph::getActiveSceneMap(const SceneMap *&p_activeSceneMap_out) const
+SceneGraphStatus SceneGraph::eraseSceneMap(unsigned long mapId_in)
 {
-    p_activeSceneMap_out = nullptr;
-    if (activeMapId.has_value())
+    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    sceneMaps.erase(mapId_in);
+    if (activeMapId == mapId_in)
     {
-        return getSceneMap(*activeMapId, p_activeSceneMap_out);
+        activeMapId.reset();
     }
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }

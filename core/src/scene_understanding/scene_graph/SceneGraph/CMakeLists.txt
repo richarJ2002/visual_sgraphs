@@ -1,15 +1,33 @@
 # SceneGraph object sources: exactly this object's translation units.
 set(VS_GRAPHS_SCENEGRAPH_SCENEGRAPH_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getActiveSceneMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addPassage.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/clearSemantics.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/erasePassage.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseSceneMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloorsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassagesInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRoomsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorPassagesInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapCandidateRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapDetectedRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassageById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassagesInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getSceneMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/mirrorMapBuilding.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/mirrorMapIndexes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/promoteCandidateRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/refreshFromAtlas.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resyncMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setActiveMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/verifyAgainstAtlas.cc
 )

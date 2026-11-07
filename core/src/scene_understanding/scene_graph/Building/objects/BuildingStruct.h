@@ -36,22 +36,21 @@ namespace semantic
 {
 class Floor;
 class Passage;
-class Room;
 } /* namespace semantic */
 
 namespace scene_graph
 {
 
 /*!
- * @brief           One building of a scene map: its storeys, the rooms and
- *                  passages of each storey, and the passages that join rooms
- *                  of different storeys.
+ * @brief           One building of a scene map: its storeys and the passages
+ *                  that join rooms of different storeys. The rooms and
+ *                  passages of a storey are read from the storey and its
+ *                  rooms when queried, not stored here.
  *
  *                  Every pointer is borrowed: the SLAM map lists own the
- *                  objects and stay the source of truth. Containers are keyed
- *                  by id so iteration runs in id order. Written by
- *                  SceneGraph::refreshFromAtlas() and read only while the
- *                  atlas semantic-update lock is held.
+ *                  objects. Containers are keyed by id so iteration runs in
+ *                  id order. Owned by a SceneMap and guarded by the
+ *                  SceneGraph graph mutex.
  */
 struct Building
 {
@@ -60,19 +59,6 @@ struct Building
      * @brief           Storeys of this building by floor id; borrowed.
      */
     std::map<int, semantic::Floor *> floors;
-
-    /*!
-     * @brief           Rooms of each storey, by floor id and then room id,
-     *                  taken from the floor's own room list; borrowed.
-     */
-    std::map<int, std::map<int, semantic::Room *>> floorRooms;
-
-    /*!
-     * @brief           Passages of each storey, by floor id and then passage
-     *                  id, taken from the passage lists of the storey's
-     *                  rooms; borrowed.
-     */
-    std::map<int, std::map<int, semantic::Passage *>> floorPassages;
 
     /*!
      * @brief           Passages joining rooms of different storeys

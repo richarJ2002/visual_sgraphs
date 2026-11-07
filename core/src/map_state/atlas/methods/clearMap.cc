@@ -62,6 +62,18 @@ AtlasStatus Atlas::clearMap()
                      "fail; continuing as before.",
                      __func__);
     }
+    /* Map::clear emptied the semantic lists; the scene map follows. */
+    unsigned long activeMapId{};
+    if ((p_activeMap->getId(activeMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (sceneGraph.clearSemantics(activeMapId) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId/clearSemantics returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
     /* A same-map clear keeps the map id, so the visualization/voxblox
      * revision token would not observe the reset and stale markers and
      * clouds would persist alongside the fresh map. A clear is at least as

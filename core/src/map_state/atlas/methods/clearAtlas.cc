@@ -32,6 +32,7 @@
 
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,6 +44,22 @@ namespace atlas
 AtlasStatus Atlas::clearAtlas()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
+    /* The maps leave maps, so their scene maps go too. */
+    for (map::Map *p_map : maps)
+    {
+        unsigned long retiredMapId{};
+        if ((p_map->getId(retiredMapId) !=
+             map::MapStatus::MAP_STATUS_SUCCESS) ||
+            (sceneGraph.eraseSceneMap(retiredMapId) !=
+             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId/eraseSceneMap returned a failure status "
+                         "although they cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
     /* Readers may still hold these maps: retire them; ~Atlas frees them. */
     retiredMaps.insert(maps.begin(), maps.end());
     maps.clear();

@@ -65,6 +65,22 @@ AtlasStatus Atlas::postLoad()
         camerasById[cameraId] = p_camera;
     }
 
+    /* The loaded maps replace maps: the old scene maps go, and each loaded
+     * map is mirrored once it has re-linked below. */
+    for (map::Map *p_map : maps)
+    {
+        unsigned long replacedMapId{};
+        if ((p_map->getId(replacedMapId) !=
+             map::MapStatus::MAP_STATUS_SUCCESS) ||
+            (sceneGraph.eraseSceneMap(replacedMapId) !=
+             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId/eraseSceneMap returned a failure status "
+                         "although they cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
     maps.clear();
     unsigned long int keyFrameCount = 0, mapPointCount = 0;
     for (map::Map *p_map : backupMaps)
@@ -75,6 +91,14 @@ AtlasStatus Atlas::postLoad()
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: postLoad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (sceneGraph.resyncMap(*p_map) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resyncMap returned a failure status although it "
                          "cannot fail; continuing as before.",
                          __func__);
         }

@@ -44,7 +44,13 @@ enum class SceneGraphStatus : std::uint8_t
     /*!
      * @brief           The operation completed and every output was written.
      */
-    SCENE_GRAPH_STATUS_SUCCESS = 0U
+    SCENE_GRAPH_STATUS_SUCCESS = 0U,
+
+    /*!
+     * @brief           The tree has no scene map for the requested SLAM map
+     *                  id; nothing was written.
+     */
+    SCENE_GRAPH_STATUS_MAP_NOT_FOUND = 1U
 };
 
 } /* namespace scene_graph */
