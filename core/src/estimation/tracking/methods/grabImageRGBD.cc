@@ -38,7 +38,6 @@
 #include "map_state/frame/frame.h"
 #include "map_state/frame/objects/FrameStatusEnum.h"
 #include "sensor_models/imu_types/calib/calib.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "execution/system/system.h"
 
 #include "execution/profiling/profiling.h"
@@ -56,7 +55,6 @@ TrackingStatus Tracking::grabImageRGBD(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
     const double                                 &timestamp_in,
     std::string                                   filename_in,
-    const std::vector<semantic::Marker *>         markers_in,
     Sophus::SE3f                                 &cameraPose_out)
 {
     PROFILE_FUNCTION();
@@ -106,8 +104,7 @@ TrackingStatus Tracking::grabImageRGBD(
                                     depthThreshold,
                                     p_camera,
                                     nullptr,
-                                    imu_types::calib::Calib(),
-                                    markers_in);
+                                    imu_types::calib::Calib());
     /* RGB-D Intertial */
     else if (sensor == system::System::IMU_RGBD)
         currentFrame = frame::Frame(imageRgb_in,
@@ -123,8 +120,7 @@ TrackingStatus Tracking::grabImageRGBD(
                                     depthThreshold,
                                     p_camera,
                                     &lastFrame,
-                                    *p_imuCalibration,
-                                    markers_in);
+                                    *p_imuCalibration);
 
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;

@@ -10,7 +10,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyframePoses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc

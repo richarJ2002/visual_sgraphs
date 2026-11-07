@@ -35,7 +35,6 @@
 #include "sensor_models/imu_types/point/point.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "estimation/tracking/objects/TrackingStatusEnum.h"
 #include "configuration/settings/objects/SettingsStatusEnum.h"
@@ -61,9 +60,8 @@ SystemStatus System::trackRGBD(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
     const double                                 &timestamp_in,
     Sophus::SE3f                                 &cameraPose_out,
-    const std::vector<imu_types::point::Point>                &imuMeas_in,
-    std::string                                   filename_in,
-    const std::vector<semantic::Marker *>         markers_in)
+    const std::vector<imu_types::point::Point>   &imuMeas_in,
+    std::string                                   filename_in)
 {
     PROFILE_FUNCTION();
     /* Check if the sensor is correctly set as RGB-D */
@@ -149,7 +147,6 @@ SystemStatus System::trackRGBD(
                                  p_mainCloud_in,
                                  timestamp_in,
                                  filename_in,
-                                 markers_in,
                                  cameraPose_worldToCamera) !=
         tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

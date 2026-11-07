@@ -7,7 +7,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/createMapInAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findPointsCloseToLocation.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/findPointsCloseToMarker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCamTwc.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImageScale.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuTwb.cc

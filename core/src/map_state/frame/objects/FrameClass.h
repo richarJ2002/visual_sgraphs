@@ -82,11 +82,6 @@ namespace core
  */
 #define FRAME_GRID_COLS 64
 
-
-namespace semantic
-{
-class Marker;
-}
 namespace map_point
 {
 class MapPoint;
@@ -330,10 +325,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat               &imageColor_in,
           const cv::Mat               &imageLeft_in,
@@ -348,8 +339,7 @@ class Frame
           const float                 &thresholdDepth_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -497,9 +487,6 @@ class Frame
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         projectedPoints.clear();
 
@@ -652,10 +639,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat               &imageColor_in,
           const cv::Mat               &imageLeft_in,
@@ -672,8 +655,7 @@ class Frame
           camera_models::geometric_camera::GeometricCamera *p_camera2_in,
           Sophus::SE3f                                     &Tlr_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -872,9 +854,6 @@ class Frame
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
 
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
-
         outlierFlags = std::vector<bool>(keyPointCount, false);
 
         if (assignFeaturesToGrid() != FrameStatus::FRAME_STATUS_SUCCESS)
@@ -946,10 +925,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat                                &imageColor_in,
           const cv::Mat                                &imageGray_in,
@@ -964,8 +939,7 @@ class Frame
           const float                                  &thresholdDepth_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -1110,9 +1084,6 @@ class Frame
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
 
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
-
         /* Initialize PointCloud */
         pointClouds = p_pointcloud_in;
 
@@ -1251,10 +1222,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat                                    &imageColor_in,
           const cv::Mat                                    &imageGray_in,
@@ -1262,12 +1229,11 @@ class Frame
           orb_extractor::ORBextractor                      *p_extractor_in,
           ORBVocabulary                                    *p_vocabulary_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_inout,
-          cv::Mat                              &distanceCoefficients_in,
-          const float                          &bf_in,
-          const float                          &thresholdDepth_in,
-          Frame                                *p_previousF_in,
-          const imu_types::calib::Calib        &imuCalibration_in,
-          const std::vector<semantic::Marker *> markers_in) :
+          cv::Mat                       &distanceCoefficients_in,
+          const float                   &bf_in,
+          const float                   &thresholdDepth_in,
+          Frame                         *p_previousF_in,
+          const imu_types::calib::Calib &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -1402,9 +1368,6 @@ class Frame
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         projectedPoints.clear();
 
@@ -2146,12 +2109,6 @@ class Frame
      * index; nullptr when there is none. The frame does not own the map points.
      */
     std::vector<map_point::MapPoint *> mapPoints;
-
-    /*!
-     * @brief           Semantic markers found in this frame; passed in at
-     *                  construction and not owned.
-     */
-    std::vector<semantic::Marker *> mapMarkers;
 
     /*!
      * @brief           Right-image x coordinate, pixels, matched to each left

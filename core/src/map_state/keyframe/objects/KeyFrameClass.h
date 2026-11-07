@@ -79,10 +79,6 @@ namespace frame
 class Frame;
 } /* namespace frame */
 
-namespace semantic
-{
-class Marker;
-}
 namespace geometric
 {
 class Plane;
@@ -96,8 +92,8 @@ namespace keyframe
 
 /*!
  * @brief           A frame the SLAM system keeps in the map: its camera pose,
- *                  features, observed map points, markers, planes and passages,
- *                  and its links to other key frames (covisibility graph,
+ *                  features, observed map points, planes and passages, and
+ *                  its links to other key frames (covisibility graph,
  *                  spanning tree, loop and merge edges). Tracking creates it
  *                  from a frame::Frame; Tracking, LocalMapping and LoopClosing
  * share it across threads, so most state is guarded by one of the mutexes
@@ -276,7 +272,6 @@ class KeyFrame
         isPendingErase(false),
         isFlaggedBad(false),
         halfBaseline(F_inout.mb / 2),
-        currentFrameMarkers(F_inout.mapMarkers),
         currentFrameMapPoints(F_inout.mapPoints),
         currentFramePointClouds(F_inout.pointClouds),
         p_map(p_map_in),
@@ -927,28 +922,6 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus
         getMapPoint(const size_t         &index_in,
                     map_point::MapPoint *&p_mapPoint_out);
-
-    /* MapMarker observation functions */
-    /*!
-     * @brief           Adds a marker observed by this key frame; duplicates are
-     *                  not filtered.
-     *
-     * @param[in]       p_marker_in
-     *                  Marker; borrowed.
-     *
-     * @return          KEY_FRAME_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] KeyFrameStatus addMapMarker(semantic::Marker *p_marker_in);
-    /*!
-     * @brief           Returns the markers observed by this key frame.
-     *
-     * @param[out]      mapMarkers_out
-     *                  Observed markers; borrowed pointers.
-     *
-     * @return          KEY_FRAME_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] KeyFrameStatus
-        getMapMarkers(std::vector<semantic::Marker *> &mapMarkers_out);
 
     /* MapPlane observation functions */
     /*!
@@ -1882,12 +1855,6 @@ class KeyFrame
     std::vector<map_point::MapPoint *> mapPoints;
 
     /*!
-     * @brief           Markers observed in this key frame. Guarded by
-     *                  featuresMutex.
-     */
-    std::vector<semantic::Marker *> mapMarkers;
-
-    /*!
      * @brief           Planes observed in this key frame; entries can be null.
      *                  Guarded by featuresMutex.
      */
@@ -2017,11 +1984,6 @@ class KeyFrame
 
     /* Variables to be passed to GeometricSegmentation */
     /*!
-     * @brief           Markers detected in the source frame, copied at
-     *                  construction for the semantic analysis.
-     */
-    std::vector<semantic::Marker *>    currentFrameMarkers;
-    /*!
      * @brief           map::Map points of the source frame, copied at
      * construction for the semantic analysis.
      */
@@ -2091,7 +2053,7 @@ class KeyFrame
      */
     std::mutex connectionsMutex;
     /*!
-     * @brief           Guards the map point, marker, plane and passage lists.
+     * @brief           Guards the map point, plane and passage lists.
      */
     std::mutex featuresMutex;
     /*!
@@ -2226,17 +2188,6 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus
         getRightTranslation(Eigen::Vector3f &rightTranslation_out);
 
-    /*!
-     * @brief           Returns the markers detected in the frame this key frame
-     *                  was created from.
-     *
-     * @param[out]      getCurrentFrameMarkers_out
-     *                  Detected markers; borrowed pointers.
-     *
-     * @return          KEY_FRAME_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] KeyFrameStatus getCurrentFrameMarkers(
-        std::vector<semantic::Marker *> &getCurrentFrameMarkers_out) const;
     /*!
      * @brief           Returns the map points of the frame this key frame was
      *                  created from.

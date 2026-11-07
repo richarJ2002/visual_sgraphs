@@ -35,14 +35,12 @@
 #include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 
 #include "mapping/geometric/Plane/Plane.h"
 
 #include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "estimation/converter/converter.h"
 
 #include <mutex>
@@ -124,30 +122,6 @@ KeyFrameStatus KeyFrame::setBadFlag()
         }
     }
 
-    std::vector<semantic::Marker *> observedMarkers{};
-    if (getMapMarkers(observedMarkers) !=
-        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (semantic::Marker *p_marker : observedMarkers)
-    {
-        if (p_marker != nullptr)
-        {
-            if (p_marker->eraseObservation(this) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: eraseObservation returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
     for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
          mapPointIndex++)
     {
@@ -171,7 +145,6 @@ KeyFrameStatus KeyFrame::setBadFlag()
         connectedKeyFrameWeights.clear();
         orderedConnectedKeyFrames.clear();
         mapPlanes.clear();
-        mapMarkers.clear();
 
         /* Update Spanning Tree */
         std::set<KeyFrame *> parentCandidates;

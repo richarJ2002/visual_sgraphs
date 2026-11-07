@@ -36,7 +36,6 @@
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "scene_understanding/semantic/room/room.h"
 #include <rclcpp/logging.hpp>
 
@@ -74,14 +73,6 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<vs_graphs::core::semantic::Marker *> allMarkers{};
-    if (p_map_in->getAllMarkers(allMarkers) != map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
     std::vector<vs_graphs::core::map_point::MapPoint *> allMapPoints{};
     if (p_map_in->getAllMapPoints(allMapPoints) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
@@ -103,7 +94,6 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
 
     if (bundleAdjustment(allKeyFrames,
                          allMapPoints,
-                         allMarkers,
                          allPlanes,
                          allRooms,
                          iterationCount_in,

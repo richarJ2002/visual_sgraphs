@@ -135,8 +135,6 @@ std::shared_ptr<tf2_ros::StaticTransformBroadcaster> staticTfBroadcaster =
  * SHARED DATA BUFFERS
  * -------------------------------------------------------------------------- */
 
-std::vector<std::vector<vs_graphs::core::semantic::Marker *>> markersBuffer;
-
 std::vector<vs_graphs::core::semantic::Room *> gnnRoomCandidates;
 
 std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
@@ -337,9 +335,6 @@ std::shared_ptr<image_transport::Publisher> pubTrackingImage = nullptr;
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubDoor =
     nullptr;
 
-rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    pubFiducialMarker = nullptr;
-
 /* -------------------------------------------------------------------------- *
  * BUILDING-COMPONENT PUBLISHERS
  * -------------------------------------------------------------------------- */
@@ -464,7 +459,6 @@ static void clearMapScopedVisualization(const rclcpp::Time &msgTime_s_in)
     clearPublishedMarkers(pubKeyFrameMarker, msgTime_s_in);
     clearPublishedMarkers(pubCameraPoseVis, msgTime_s_in);
     clearPublishedMarkers(pubDoor, msgTime_s_in);
-    clearPublishedMarkers(pubFiducialMarker, msgTime_s_in);
     clearPublishedMarkers(pubPlaneLabel, msgTime_s_in);
     clearPublishedMarkers(pubStructuralElements, msgTime_s_in);
 
@@ -2321,43 +2315,6 @@ cv::Mat convertSE3fToCvMat(const Sophus::SE3f &transformation_SE3f_in)
     cv::eigen2cv(transformationMatrix_Eigen, transformationMatrix_OpenCV);
 
     return transformationMatrix_OpenCV;
-}
-
-std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
-    findNearestMarker(double frameTimestamp_in)
-{
-    /* Init variable of the minimum time difference */
-    double minTimeDifference = 100;
-
-    /* Init a variable which will be used to find best match to marker */
-    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers;
-
-    /* Loop through the markersBuffer */
-    for (const std::vector<vs_graphs::core::semantic::Marker *> &markers :
-         markersBuffer)
-    {
-        /* Find the time difference */
-        double time2{};
-        if (markers[0]->getTime(time2) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getTime returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        double timeDifference = time2 - frameTimestamp_in;
-
-        /* If better match found, update */
-        if (timeDifference < minTimeDifference)
-        {
-            matchedMarkers    = markers;
-            minTimeDifference = timeDifference;
-        }
-    }
-
-    /* Return the minimum time difference and best matched marker */
-    return std::make_pair(minTimeDifference, matchedMarkers);
 }
 
 bool getPassageDisplayPoints(
@@ -4903,146 +4860,6 @@ void publishCameraPose(const Sophus::SE3f &cameraPose_world_in,
     }
 }
 
-void publishFiducialMarkers(
-    const std::vector<vs_graphs::core::semantic::Marker *> &fiducialMarkers_in,
-    const rclcpp::Time                                     &msgTime_s_in)
-{
-    /* Confirm that the marker publisher has been initialised */
-    if (pubFiducialMarker == nullptr)
-    {
-        RCLCPP_WARN(
-            rclcpp::get_logger("visual_sgraphs"),
-            "Cannot publish fiducial markers: publisher is not initialised.");
-
-        return;
-    }
-
-    /* Return when there are no fiducial markers to publish */
-    if (fiducialMarkers_in.empty())
-    {
-        return;
-    }
-
-    /* Initialise the output marker array */
-    visualization_msgs::msg::MarkerArray fiducialMarkerArray;
-
-    /*!
-     * Reserve capacity without creating empty marker messages.
-     *
-     * resize() must not be used here because the markers are added using
-     * push_back().
-     */
-    fiducialMarkerArray.markers.reserve(fiducialMarkers_in.size());
-
-    /* Create one visualisation marker for every valid mapped marker */
-    for (vs_graphs::core::semantic::Marker *fiducialMarker : fiducialMarkers_in)
-    {
-        /* Skip invalid marker pointers */
-        if (fiducialMarker == nullptr)
-        {
-            continue;
-        }
-
-        /* Extract the globally expressed fiducial-marker pose */
-        Sophus::SE3f T_world_fiducial_SE3f{};
-        if (fiducialMarker->getGlobalPose(T_world_fiducial_SE3f) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /* Skip invalid poses */
-        if (!T_world_fiducial_SE3f.translation().allFinite() ||
-            !T_world_fiducial_SE3f.rotationMatrix().allFinite())
-        {
-            continue;
-        }
-
-        /* Extract the pose components once */
-        const Eigen::Vector3f fiducialPosition_world_m =
-            T_world_fiducial_SE3f.translation();
-
-        const Eigen::Quaternionf fiducialOrientation_world =
-            T_world_fiducial_SE3f.unit_quaternion();
-
-        /* Initialise the visualisation marker */
-        visualization_msgs::msg::Marker fiducialMarkerMessage;
-
-        fiducialMarkerMessage.header.frame_id = frameWorld;
-        fiducialMarkerMessage.header.stamp    = msgTime_s_in;
-        fiducialMarkerMessage.ns              = "fiducial_markers";
-
-        /*!
-         * Use the persistent semantic marker ID rather than the current array
-         * position. This keeps the RViz marker identity stable when marker
-         * ordering changes.
-         */
-        int fiducialMarkerId{};
-        if (fiducialMarker->getId(fiducialMarkerId) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        fiducialMarkerMessage.id     = fiducialMarkerId;
-        fiducialMarkerMessage.action = visualization_msgs::msg::Marker::ADD;
-
-        fiducialMarkerMessage.type =
-            visualization_msgs::msg::Marker::MESH_RESOURCE;
-
-        fiducialMarkerMessage.mesh_resource =
-            "package://vs_graphs/config/Assets/aruco_marker.dae";
-
-        fiducialMarkerMessage.mesh_use_embedded_materials = true;
-
-        /* Set the marker position in the world frame */
-        fiducialMarkerMessage.pose.position.x = fiducialPosition_world_m.x();
-        fiducialMarkerMessage.pose.position.y = fiducialPosition_world_m.y();
-        fiducialMarkerMessage.pose.position.z = fiducialPosition_world_m.z();
-
-        /* Set the marker orientation relative to the world frame */
-        fiducialMarkerMessage.pose.orientation.x =
-            fiducialOrientation_world.x();
-
-        fiducialMarkerMessage.pose.orientation.y =
-            fiducialOrientation_world.y();
-
-        fiducialMarkerMessage.pose.orientation.z =
-            fiducialOrientation_world.z();
-
-        fiducialMarkerMessage.pose.orientation.w =
-            fiducialOrientation_world.w();
-
-        /* Set the displayed mesh size */
-        fiducialMarkerMessage.scale.x = 0.2;
-        fiducialMarkerMessage.scale.y = 0.2;
-        fiducialMarkerMessage.scale.z = 0.2;
-
-        /*!
-         * Keep the marker fully visible. The embedded mesh materials determine
-         * its displayed colour.
-         */
-        fiducialMarkerMessage.color.a = 1.0;
-
-        /* Keep the marker visible until it is replaced or deleted */
-        fiducialMarkerMessage.lifetime = rclcpp::Duration::from_seconds(0);
-
-        /* Add the completed marker to the output array */
-        fiducialMarkerArray.markers.push_back(std::move(fiducialMarkerMessage));
-    }
-
-    /* Publish only when at least one valid marker was generated */
-    if (!fiducialMarkerArray.markers.empty())
-    {
-        pubFiducialMarker->publish(fiducialMarkerArray);
-    }
-}
-
 void publishFramePointCloud(const Sophus::SE3f &cameraPose_cameraToWorld_in,
                             const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                                                &pointCloudCameraMessage_in,
@@ -6909,16 +6726,6 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                      __func__);
     }
 
-    std::vector<vs_graphs::core::semantic::Marker *> mappedFiducialMarkers{};
-    if (p_slamSystem->getAllMarkers(mappedFiducialMarkers) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
     std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
     if (p_slamSystem->getAllRooms(mappedRooms) !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
@@ -6965,7 +6772,6 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
 
     publishKeyFrameImages(mappedKeyFrames, msgTime_s_in);
     publishKeyFrameMarkers(mappedKeyFrames, msgTime_s_in);
-    publishFiducialMarkers(mappedFiducialMarkers, msgTime_s_in);
     cv::Mat slamSystemCurrentFrame{};
     if (p_slamSystem->getCurrentFrame(slamSystemCurrentFrame) !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
@@ -7690,11 +7496,6 @@ void setupPublishers(
         makeTopicName("doors"),
         standardPublisherQoS);
 
-    pubFiducialMarker =
-        node_in->create_publisher<visualization_msgs::msg::MarkerArray>(
-            makeTopicName("fiducial_markers"),
-            standardPublisherQoS);
-
     /* ---------------------------------------------------------------------- *
      * BUILDING-COMPONENT PUBLISHERS
      * ---------------------------------------------------------------------- */
@@ -7805,7 +7606,6 @@ void shutdownRosInterfaces()
     pubCameraPoseVis.reset();
     pubTrackingImage.reset();
     pubDoor.reset();
-    pubFiducialMarker.reset();
     pubPlaneLabel.reset();
     pubBuildingComponents.reset();
     pubSegmentedPointcloud.reset();

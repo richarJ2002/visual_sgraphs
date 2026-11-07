@@ -43,8 +43,6 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/room/room.h"
 
@@ -73,7 +71,6 @@ namespace optimizer
 OptimizerStatus Optimizer::bundleAdjustment(
     const std::vector<vs_graphs::core::keyframe::KeyFrame *>  &keyFrames_in,
     const std::vector<vs_graphs::core::map_point::MapPoint *> &mapPoints_in,
-    const std::vector<vs_graphs::core::semantic::Marker *>    &markers_in,
     const std::vector<vs_graphs::core::geometric::Plane *>    &planes_in,
     const std::vector<vs_graphs::core::semantic::Room *>      &rooms_in,
     int                     iterationCount_in,
@@ -218,7 +215,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
     int planeCount              = 1;
     int roomCount               = 1;
     int maxGlobalOptimizationId = 0;
-    int markerCount             = 1;
 
     /* [GBA] MapPoints */
     for (size_t elementIndex = 0; elementIndex < mapPoints_in.size();
@@ -464,57 +460,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    /* [GBA] Markers */
-    for (semantic::Marker *const &marker : markers_in)
-    {
-        /* Adding a vertex for each marker */
-        g2o::VertexSE3Expmap *p_markerPoseVertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3f          markerGlobalPose{};
-        if (marker->getGlobalPose(markerGlobalPose) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        Sophus::SE3f markerGlobalPose2{};
-        if (marker->getGlobalPose(markerGlobalPose2) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        p_markerPoseVertex->setEstimate(
-            g2o::SE3Quat(markerGlobalPose.unit_quaternion().cast<double>(),
-                         markerGlobalPose2.translation().cast<double>()));
-        int globalOptimizationId = maxGlobalOptimizationId + markerCount;
-        p_markerPoseVertex->setId(globalOptimizationId);
-        optimizer.addVertex(p_markerPoseVertex);
-        markerCount++;
-
-        /* Setting the Global Optimization ID for the marker */
-        if (marker->setOpIdG(globalOptimizationId) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setOpIdG returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /*!
-         * The edge used to connect a Marker vertex (SE3) to a
-         * keyframe::KeyFrame vertex (SE3) 🚧 [vS-Graphs v.2.0] This edge is not
-         * used anymore, in contrast to the previous version. [Note]: it creates
-         * constraint for six measurements, i.e., (x, y, z, roll, pitch, yaw)
-         */
-    }
-
-    maxGlobalOptimizationId += markerCount;
-
     /* [GBA] Planes */
     for (geometric::Plane *const &plane : planes_in)
     {
@@ -712,12 +657,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 }
             }
         }
-
-        /*!
-         * 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
-         * S-Graphs, where there was an edge between Markers and Planes, in this
-         * version we removed that edge
-         */
     }
 
     maxGlobalOptimizationId += planeCount;
@@ -1301,61 +1240,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    /*
-     * Apply semantic vertices immediately only for the initial-map BA. A
-     * loop-triggered GBA runs on a worker and must not mutate semantic state
-     * before loop_closing::LoopClosing validates its generation and acquires
-     * the semantic transaction lock. The validated post-GBA deformation pass
-     * updates markers and rooms for that case.
-     */
-    keyframe::KeyFrame *p_mapOriginKeyFrame4 = nullptr;
-    if (p_map->getOriginKeyFrame(p_mapOriginKeyFrame4) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getOriginKeyFrame returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (loopKeyFrameId_in == p_mapOriginKeyFrame4->id)
-    {
-        /* [GBA] Globally optimized markers */
-        for (semantic::Marker *p_marker : markers_in)
-        {
-            int markerOpIdG{};
-            if (p_marker->getOpIdG(markerOpIdG) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getOpIdG returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            g2o::VertexSE3Expmap *p_markerVertex =
-                static_cast<g2o::VertexSE3Expmap *>(
-                    optimizer.vertex(markerOpIdG));
-
-            if (p_markerVertex == nullptr)
-            {
-                continue;
-            }
-
-            const g2o::SE3Quat markerPose_markerToWorld =
-                p_markerVertex->estimate();
-
-            if (p_marker->setGlobalPose(Sophus::SE3f(
-                    markerPose_markerToWorld.rotation().cast<float>(),
-                    markerPose_markerToWorld.translation().cast<float>())) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setGlobalPose returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
     /* [GBA] Globally optimized planes */
     for (geometric::Plane *const &plane : planes_in)
     {
@@ -1420,6 +1304,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
+    /*
+     * Apply semantic vertices immediately only for the initial-map BA. A
+     * loop-triggered GBA runs on a worker and must not mutate semantic state
+     * before loop_closing::LoopClosing validates its generation and acquires
+     * the semantic transaction lock. The validated post-GBA deformation pass
+     * updates rooms for that case.
+     */
     /* [GBA] Globally optimized rooms */
     keyframe::KeyFrame *p_mapOriginKeyFrame6 = nullptr;
     if (p_map->getOriginKeyFrame(p_mapOriginKeyFrame6) !=

@@ -1071,23 +1071,19 @@ class System
      * @param[in]       filename_in
      *                  the name of the file.
      *
-     * @param[in]       markers_in
-     *                  the vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackStereo(
-        const cv::Mat                 &imageLeft_in,
-        const cv::Mat                 &imageRight_in,
-        const double                  &timestamp_in,
-        Sophus::SE3f                  &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackStereo(const cv::Mat                              &imageLeft_in,
+                    const cv::Mat                              &imageRight_in,
+                    const double                               &timestamp_in,
+                    Sophus::SE3f                               &cameraPose_out,
+                    const std::vector<imu_types::point::Point> &imuMeas_in =
+                        std::vector<imu_types::point::Point>(),
+                    std::string filename_in = "");
 
     /*!
      * @brief           Process the given rgbd frame for tracking. The DepthMap
@@ -1111,24 +1107,20 @@ class System
      * @param[in]       filename_in
      *                  The name of the file.
      *
-     * @param[in]       markers_in
-     *                  The vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackRGBD(
-        const cv::Mat                                &colorImage_in,
-        const cv::Mat                                &depthmap_in,
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
-        const double                                 &timestamp_in,
-        Sophus::SE3f                                 &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackRGBD(const cv::Mat                                &colorImage_in,
+                  const cv::Mat                                &depthmap_in,
+                  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
+                  const double                                 &timestamp_in,
+                  Sophus::SE3f                                 &cameraPose_out,
+                  const std::vector<imu_types::point::Point>   &imuMeas_in =
+                      std::vector<imu_types::point::Point>(),
+                  std::string filename_in = "");
 
     /*!
      * @brief           Process the given stereo frame for tracking. Images must
@@ -1147,22 +1139,18 @@ class System
      * @param[in]       filename_in
      *                  The name of the file.
      *
-     * @param[in]       markers_in
-     *                  The vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackMonocular(
-        const cv::Mat                 &image_in,
-        const double                  &timestamp_in,
-        Sophus::SE3f                  &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackMonocular(const cv::Mat &image_in,
+                       const double  &timestamp_in,
+                       Sophus::SE3f  &cameraPose_out,
+                       const std::vector<imu_types::point::Point> &imuMeas_in =
+                           std::vector<imu_types::point::Point>(),
+                       std::string filename_in = "");
 
     /*!
      * @brief           This stops local mapping thread (map building) and
@@ -1564,20 +1552,6 @@ class System
      */
     [[nodiscard]] SystemStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
-
-    /*!
-     * @brief           Get all markers (fiducial markers/AprilTags) in the
-     *                  current map. Markers are used for place recognition and
-     *                  localization.
-     *
-     * @param[out]      allMarkers_out
-     *                  Vector of pointers to Marker objects. May be empty if no
-     *                  markers have been detected yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus
-        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
 
     /*!
      * @brief           Get all passages in the current map. Passages connect

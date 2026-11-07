@@ -252,56 +252,21 @@ void ImageGrabber::syncWithImu()
                                      cloudFailureReason.c_str());
                 continue;
             }
-            processingStage = "marker association";
-            std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
-                nearestMarker = vs_graphs::common::findNearestMarker(
-                    imageTimestamp_seconds);
-            const double markerTimeDifference_seconds = nearestMarker.first;
-            std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
-                std::move(nearestMarker.second);
             processingStage = "inertial RGB-D tracking";
-            if (markerTimeDifference_seconds < 0.05)
+            Sophus::SE3f slamSystemCameraPose{};
+            if (vs_graphs::common::p_slamSystem->trackRGBD(
+                    rgbImage,
+                    depthImage,
+                    p_pointCloud,
+                    imageTimestamp_seconds,
+                    slamSystemCameraPose,
+                    imuMeasurements) !=
+                vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
             {
-                Sophus::SE3f slamSystemCameraPose{};
-                if (vs_graphs::common::p_slamSystem->trackRGBD(
-                        rgbImage,
-                        depthImage,
-                        p_pointCloud,
-                        imageTimestamp_seconds,
-                        slamSystemCameraPose,
-                        imuMeasurements,
-                        "",
-                        matchedMarkers) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: trackRGBD returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                vs_graphs::common::markersBuffer.clear();
-            }
-            else
-            {
-                Sophus::SE3f slamSystemCameraPose2{};
-                if (vs_graphs::common::p_slamSystem->trackRGBD(
-                        rgbImage,
-                        depthImage,
-                        p_pointCloud,
-                        imageTimestamp_seconds,
-                        slamSystemCameraPose2,
-                        imuMeasurements) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: trackRGBD returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: trackRGBD returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double estimatorInterval_seconds = 0.0;
             if (hasProcessedRgbdPacket)

@@ -38,7 +38,6 @@
 #include "map_state/frame/frame.h"
 #include "map_state/frame/objects/FrameStatusEnum.h"
 #include "sensor_models/imu_types/calib/calib.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "execution/system/system.h"
 
 namespace vs_graphs
@@ -48,13 +47,11 @@ namespace core
 namespace tracking
 {
 
-TrackingStatus
-    Tracking::grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
-                              const cv::Mat &imageRectifiedRight_in,
-                              const double  &timestamp_in,
-                              std::string    filename_in,
-                              const std::vector<semantic::Marker *> markers_in,
-                              Sophus::SE3f &cameraPose_out)
+TrackingStatus Tracking::grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
+                                         const cv::Mat &imageRectifiedRight_in,
+                                         const double  &timestamp_in,
+                                         std::string    filename_in,
+                                         Sophus::SE3f  &cameraPose_out)
 {
     /* Adaptive FAST threshold: adjust before feature extraction */
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -110,8 +107,7 @@ TrackingStatus
                                     depthThreshold,
                                     p_camera,
                                     nullptr,
-                                    imu_types::calib::Calib(),
-                                    markers_in);
+                                    imu_types::calib::Calib());
     else if (sensor == system::System::STEREO && p_camera2)
         currentFrame = frame::Frame(imageRectifiedLeft_in,
                                     imageGray,
@@ -128,8 +124,7 @@ TrackingStatus
                                     p_camera2,
                                     poseTlr,
                                     nullptr,
-                                    imu_types::calib::Calib(),
-                                    markers_in);
+                                    imu_types::calib::Calib());
     else if (sensor == system::System::IMU_STEREO && !p_camera2)
         currentFrame = frame::Frame(imageRectifiedLeft_in,
                                     imageGray,
@@ -144,8 +139,7 @@ TrackingStatus
                                     depthThreshold,
                                     p_camera,
                                     &lastFrame,
-                                    *p_imuCalibration,
-                                    markers_in);
+                                    *p_imuCalibration);
     else if (sensor == system::System::IMU_STEREO && p_camera2)
         currentFrame = frame::Frame(imageRectifiedLeft_in,
                                     imageGray,
@@ -162,8 +156,7 @@ TrackingStatus
                                     p_camera2,
                                     poseTlr,
                                     &lastFrame,
-                                    *p_imuCalibration,
-                                    markers_in);
+                                    *p_imuCalibration);
 
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
