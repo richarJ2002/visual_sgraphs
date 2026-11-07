@@ -25,6 +25,7 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWallNormalTowardRoom_world.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasPreviouslyVisited.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/hasWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBoundaryComplete.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeInvalidWalls.cc

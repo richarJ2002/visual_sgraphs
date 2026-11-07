@@ -813,6 +813,22 @@ class Room
                     bool                              &wasWallReplaced_out);
 
     /*!
+     * @brief           Reports whether a wall is associated with this room.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to look for; compared by address.
+     *
+     * @param[out]      isWallInRoom_out
+     *                  True when the wall is associated with this room.
+     *
+     * @return          ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT
+     *                  when the wall is null.
+     */
+    [[nodiscard]] RoomStatus
+        hasWall(vs_graphs::core::geometric::Plane *p_wall_in,
+                bool                              &isWallInRoom_out) const;
+
+    /*!
      * @brief           Removes one non-owning wall association.
      *
      * @param[in]       p_wall_in
