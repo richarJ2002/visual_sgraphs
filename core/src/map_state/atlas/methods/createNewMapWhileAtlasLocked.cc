@@ -117,20 +117,20 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
     }
     maps.insert(p_activeMap);
 
-    /* The new map gets its (empty) scene map and becomes the scene graph's
+    /* The new map gets its empty scene map and becomes the scene graph's
      * active map, so the tree always has one scene map per map in maps; the
-     * map reads its rooms, passages and floors back from the graph. */
+     * map's rooms, passages and floors live only in the graph. */
     unsigned long newMapId{};
     if ((p_activeMap->getId(newMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_activeMap->setSceneGraph(&sceneGraph) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (sceneGraph.resyncMap(*p_activeMap) !=
+        (sceneGraph.addSceneMap(*p_activeMap) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (sceneGraph.setActiveMap(newMapId) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/setSceneGraph/resyncMap/setActiveMap returned "
+                     "%s: getId/setSceneGraph/addSceneMap/setActiveMap returned "
                      "a failure status although they cannot fail; continuing "
                      "as before.",
                      __func__);

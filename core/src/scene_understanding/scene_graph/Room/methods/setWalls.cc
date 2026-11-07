@@ -64,14 +64,14 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
     /* Deduplicate membership within this room; the manager owns global policy.
      */
     const bool isAlreadyAssociated =
-        std::any_of(walls.begin(),
-                    walls.end(),
+        std::any_of(wallPlanes.begin(),
+                    wallPlanes.end(),
                     [p_wall_in](const geometric::Plane *p_existingWall)
                     { return p_existingWall == p_wall_in; });
 
     if (!isAlreadyAssociated)
     {
-        walls.push_back(p_wall_in);
+        wallPlanes.push_back(p_wall_in);
     }
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

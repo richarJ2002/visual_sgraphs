@@ -46,10 +46,8 @@ namespace map
 MapStatus Map::clearTransferredEntityIndexes()
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    floorIndex.clear();
     planeIndex.clear();
     keyFrameIndex.clear();
-    passageIndex.clear();
     roomWallPlaneIndex.clear();
 
     return MapStatus::MAP_STATUS_SUCCESS;

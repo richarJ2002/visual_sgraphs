@@ -843,12 +843,25 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     std::cout << " (" << informationStream.str()
               << "), centroid=" << centroid.transpose() << "." << std::endl;
 
-    if (p_atlas_inout->addMapPassage(p_newMapPassage) !=
+    /* Move the passage identity allocator past the id, then add the
+     * passage to the map's scene graph. */
+    if (p_atlas_inout->observePassageIdentity(passageId) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: addMapPassage returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: observePassageIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long atlasCurrentMapId{};
+    if ((p_atlasCurrentMap->getId(atlasCurrentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_sceneGraph->addPassage(atlasCurrentMapId, p_newMapPassage) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId/addPassage found no scene map for the "
+                     "passage's map; the passage was not added.",
                      __func__);
     }
 

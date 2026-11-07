@@ -53,11 +53,12 @@ namespace scene_graph
  *                  indexes of its detected rooms, candidate rooms and
  *                  passages.
  *
- *                  Rooms and passages are borrowed from the map lists, which
- *                  own them; a room or passage not yet linked to a storey is
- *                  reachable through the indexes only. Bad-flagged objects
- *                  are kept, as the map lists keep them. Owned by SceneGraph
- *                  and guarded by its graph mutex.
+ *                  This is the only list of the map's rooms, storeys and
+ *                  passages. They are borrowed: the tree does not free them.
+ *                  A room or passage not yet linked to a storey is reachable
+ *                  through the indexes only. Bad-flagged objects are kept
+ *                  until they are erased. Owned by SceneGraph and guarded by
+ *                  its graph mutex.
  */
 struct SceneMap
 {
@@ -88,6 +89,13 @@ struct SceneMap
      * @brief           Passages of the map by passage id; borrowed.
      */
     std::map<int, semantic::Passage *> passages;
+
+    /*!
+     * @brief           Next storey id SceneGraph::addFloor() hands out when a
+     *                  storey's id is negative or taken; never lowered, so a
+     *                  freed id is not reused. Kept by clearSemantics().
+     */
+    int nextAvailableFloorId{0};
 };
 
 } /* namespace scene_graph */

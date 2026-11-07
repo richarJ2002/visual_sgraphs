@@ -64,14 +64,10 @@ MapStatus Map::clear()
     }
 
     planes.clear();
-    passages.clear();
-    floors.clear();
     mapPoints.clear();
     keyFrames.clear();
 
     planeIndex.clear();
-    passageIndex.clear();
-    floorIndex.clear();
     keyFrameIndex.clear();
     roomWallPlaneIndex.clear();
 
@@ -86,10 +82,9 @@ MapStatus Map::clear()
     hasImuInitialization = false;
     upDirection_world    = Eigen::Vector3d(0.0, -1.0, 0.0);
     isUpFromImuGravity   = false;
-    detectedRooms.clear();
-    markerBasedRooms.clear();
-    /* The rooms are gone, so are the mission-chain ends that point at them;
-     * the next bootstrap sets the starting room again. */
+    /* The rooms go with the map (the caller clears its scene map), so do
+     * the mission-chain ends that point at them; the next bootstrap sets the
+     * starting room again. */
     p_startingRoom           = nullptr;
     p_finalRoom              = nullptr;
     p_finalRoomBeyondPassage = nullptr;

@@ -50,9 +50,9 @@ RoomStatus Room::replacePassageAssociation(
 
     bool wasAssociationReplaced = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
-    rebuiltPassages.reserve(doorways.size());
+    rebuiltPassages.reserve(passages.size());
 
-    for (vs_graphs::core::semantic::Passage *p_existingPassage : doorways)
+    for (vs_graphs::core::semantic::Passage *p_existingPassage : passages)
     {
         vs_graphs::core::semantic::Passage *p_candidatePassage =
             p_existingPassage;
@@ -76,7 +76,7 @@ RoomStatus Room::replacePassageAssociation(
 
     if (wasAssociationReplaced)
     {
-        doorways.swap(rebuiltPassages);
+        passages.swap(rebuiltPassages);
     }
 
     wasAssociationReplaced_out = wasAssociationReplaced;

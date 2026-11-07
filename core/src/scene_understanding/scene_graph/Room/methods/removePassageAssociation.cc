@@ -47,15 +47,15 @@ RoomStatus Room::removePassageAssociation(
     std::lock_guard<std::mutex> lock(mapMutex);
 
     const std::vector<Passage *>::iterator passageIt =
-        std::find(doorways.begin(), doorways.end(), p_removedPassage_in);
+        std::find(passages.begin(), passages.end(), p_removedPassage_in);
 
-    if (passageIt == doorways.end())
+    if (passageIt == passages.end())
     {
         wasPassageRemoved_out = false;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    doorways.erase(passageIt);
+    passages.erase(passageIt);
     wasPassageRemoved_out = true;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

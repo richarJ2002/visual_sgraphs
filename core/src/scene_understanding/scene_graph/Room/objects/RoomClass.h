@@ -76,9 +76,9 @@ struct RoomContextSnapshot;
 class Floor;
 
 /*!
- * @brief           A room or corridor found in the building: the walls around
- *                  it, its doorways, the floor it is on and how well its
- *                  boundary has been observed.
+ * @brief           A room or corridor found in the building: its ground,
+ *                  wall and ceiling planes, its passages, the floor it is on
+ *                  and how well its boundary has been observed.
  */
 class Room
 {
@@ -217,11 +217,6 @@ class Room
     bool wasPreviouslyVisited{false};
 
     /*!
-     * @brief           The ground plane associated with the room.
-     */
-    geometric::Plane *p_groundPlane{nullptr};
-
-    /*!
      * @brief           Non-owning floor node in the semantic hierarchy.
      */
     Floor *p_floor{nullptr};
@@ -238,14 +233,28 @@ class Room
     Eigen::Vector3d centroid{Eigen::Vector3d::Zero()};
 
     /*!
-     * @brief           The vector of detected walls of a room.
+     * @brief           Ground planes of the room; non-owning. Holds at most
+     *                  one plane: setGroundPlane() replaces it. Guarded by
+     *                  wallsMutex.
      */
-    std::vector<geometric::Plane *> walls;
+    std::vector<geometric::Plane *> groundPlanes;
 
     /*!
-     * @brief           The vector of detected doorways of a room.
+     * @brief           Wall planes of the room; non-owning. Guarded by
+     *                  wallsMutex.
      */
-    std::vector<vs_graphs::core::semantic::Passage *> doorways;
+    std::vector<geometric::Plane *> wallPlanes;
+
+    /*!
+     * @brief           Ceiling planes of the room; non-owning. Empty: no
+     *                  ceiling is detected yet. Guarded by wallsMutex.
+     */
+    std::vector<geometric::Plane *> ceilingPlanes;
+
+    /*!
+     * @brief           Passages of the room; non-owning. Guarded by mapMutex.
+     */
+    std::vector<vs_graphs::core::semantic::Passage *> passages;
 
     /*!
      * @brief           Current validation result for the finite
@@ -856,6 +865,30 @@ class Room
      *                  Ground plane to associate; may be null.
      */
     [[nodiscard]] RoomStatus setGroundPlane(geometric::Plane *p_groundPlane_in);
+
+    /*!
+     * @brief           Returns the ground planes of the room: the plane
+     *                  getGroundPlane() returns, or none when it is unset.
+     *
+     * @param[out]      groundPlanes_out
+     *                  Non-owning ground planes.
+     *
+     * @return          ROOM_STATUS_SUCCESS.
+     */
+    [[nodiscard]] RoomStatus
+        getGroundPlanes(std::vector<geometric::Plane *> &groundPlanes_out) const;
+
+    /*!
+     * @brief           Returns the ceiling planes of the room; empty until
+     *                  ceilings are detected.
+     *
+     * @param[out]      ceilingPlanes_out
+     *                  Non-owning ceiling planes.
+     *
+     * @return          ROOM_STATUS_SUCCESS.
+     */
+    [[nodiscard]] RoomStatus getCeilingPlanes(
+        std::vector<geometric::Plane *> &ceilingPlanes_out) const;
 
     /*!
      * @brief           Replaces a retired ground-plane association.

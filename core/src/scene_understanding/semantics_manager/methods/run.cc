@@ -1367,31 +1367,6 @@ void SemanticsManager::run(void)
             }
         }
 
-        /* Resync the atlas-owned scene graph from the map lists, then check
-         * it. The resync covers writers that still bypass the mutation API
-         * (this cycle and any merge since the last one); once every writer
-         * uses that API the resync is deleted and the check reports any
-         * writer that bypasses it. A mismatch is only reported. */
-        std::string sceneGraphMismatch{};
-        if (p_sceneGraph->refreshFromAtlas(*p_atlas) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
-            p_sceneGraph->verifyAgainstAtlas(*p_atlas, sceneGraphMismatch) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: refreshFromAtlas/verifyAgainstAtlas returned a "
-                         "failure status although they cannot fail; "
-                         "continuing as before.",
-                         __func__);
-        }
-        if (!sceneGraphMismatch.empty())
-        {
-            RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                        "%s: scene graph disagrees with the map lists: %s",
-                        __func__,
-                        sceneGraphMismatch.c_str());
-        }
-
         /* Unlock before any evaluation/serialization/caching/logging work --
          * the monitor must never hold the semantic-update lock while doing
          * read-only diagnostic work. */

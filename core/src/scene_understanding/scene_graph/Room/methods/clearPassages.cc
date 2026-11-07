@@ -37,7 +37,7 @@ namespace semantic
 RoomStatus Room::clearPassages()
 {
     std::lock_guard<std::mutex> lock(mapMutex);
-    doorways.clear();
+    passages.clear();
 
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

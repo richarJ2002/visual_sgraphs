@@ -60,9 +60,9 @@ RoomStatus Room::replaceWall(geometric::Plane *p_retiredWall_in,
 
     bool                            wasRetiredWallReplaced = false;
     std::vector<geometric::Plane *> rebuiltWalls;
-    rebuiltWalls.reserve(walls.size());
+    rebuiltWalls.reserve(wallPlanes.size());
 
-    for (geometric::Plane *p_existingWall : walls)
+    for (geometric::Plane *p_existingWall : wallPlanes)
     {
         geometric::Plane *p_candidateWall = p_existingWall;
 
@@ -86,7 +86,7 @@ RoomStatus Room::replaceWall(geometric::Plane *p_retiredWall_in,
 
     if (wasRetiredWallReplaced)
     {
-        walls.swap(rebuiltWalls);
+        wallPlanes.swap(rebuiltWalls);
     }
 
     wasWallReplaced_out = wasRetiredWallReplaced;

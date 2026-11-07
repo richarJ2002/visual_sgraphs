@@ -47,13 +47,13 @@ RoomStatus Room::replaceGroundPlane(geometric::Plane *p_retiredGround_in,
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    if (p_groundPlane != p_retiredGround_in)
+    if (groundPlanes.empty() || groundPlanes.front() != p_retiredGround_in)
     {
         wasGroundPlaneReplaced_out = false;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    p_groundPlane              = p_retainedGround_in;
+    groundPlanes.front()       = p_retainedGround_in;
     wasGroundPlaneReplaced_out = true;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

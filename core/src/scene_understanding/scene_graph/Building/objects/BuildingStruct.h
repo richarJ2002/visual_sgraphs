@@ -47,7 +47,7 @@ namespace scene_graph
  *                  passages of a storey are read from the storey and its
  *                  rooms when queried, not stored here.
  *
- *                  Every pointer is borrowed: the SLAM map lists own the
+ *                  Every pointer is borrowed: the tree does not free the
  *                  objects. Containers are keyed by id so iteration runs in
  *                  id order. Owned by a SceneMap and guarded by the
  *                  SceneGraph graph mutex.

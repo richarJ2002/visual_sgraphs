@@ -3,8 +3,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/acquireSemanticUpdateLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addCamera.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addRoomWallPlane.cc
@@ -20,13 +18,10 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewMapWhileAtlasLocked.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/exportRoomContextFromCurrentMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllCameras.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBiggestGroundPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCoherentMapView.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentMap.cc

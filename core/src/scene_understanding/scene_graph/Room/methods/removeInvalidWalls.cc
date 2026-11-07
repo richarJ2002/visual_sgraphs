@@ -42,10 +42,10 @@ RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    const std::size_t wallCountBefore = walls.size();
-    walls.erase(std::remove_if(
-                    walls.begin(),
-                    walls.end(),
+    const std::size_t wallCountBefore = wallPlanes.size();
+    wallPlanes.erase(std::remove_if(
+                    wallPlanes.begin(),
+                    wallPlanes.end(),
                     [](geometric::Plane *p_wall)
                     {
                         bool wallIsBad{};
@@ -61,9 +61,9 @@ RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
                         }
                         return p_wall == nullptr || wallIsBad;
                     }),
-                walls.end());
+                wallPlanes.end());
 
-    removedWallCount_out = wallCountBefore - walls.size();
+    removedWallCount_out = wallCountBefore - wallPlanes.size();
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

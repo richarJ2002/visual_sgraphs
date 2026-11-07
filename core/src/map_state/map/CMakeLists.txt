@@ -1,10 +1,6 @@
 # Map object sources: exactly this object's translation units.
 set(VS_GRAPHS_MAP_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateMapRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeRecord.cc
@@ -14,26 +10,15 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clear.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearTransferredEntityIndexes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseDetectedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseKeyFrame.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPoint.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMarkerBasedMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseRoomWallPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllCandidateMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllDetectedMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkerBasedMapRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBiggestGroundPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFinalRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFollowingMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getInertialBA1.cc
@@ -50,10 +35,8 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMergeRecords.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginKeyFrame.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSceneGraph.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
@@ -69,9 +52,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isInertial.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/promoteCandidateMapRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceLinkedRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/reserveFloorId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reservePlaneId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc

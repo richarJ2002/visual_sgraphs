@@ -66,7 +66,9 @@ AtlasStatus Atlas::postLoad()
     }
 
     /* The loaded maps replace maps: the old scene maps go, and each loaded
-     * map is mirrored once it has re-linked below. */
+     * map gets an empty scene map once it has re-linked below. Rooms,
+     * floors and passages are not part of a saved map, so there is nothing
+     * to restore into it. */
     for (map::Map *p_map : maps)
     {
         unsigned long replacedMapId{};
@@ -96,11 +98,11 @@ AtlasStatus Atlas::postLoad()
         }
         if ((p_map->setSceneGraph(&sceneGraph) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (sceneGraph.resyncMap(*p_map) !=
+            (sceneGraph.addSceneMap(*p_map) !=
              scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setSceneGraph/resyncMap returned a failure "
+                         "%s: setSceneGraph/addSceneMap returned a failure "
                          "status although they cannot fail; continuing as "
                          "before.",
                          __func__);

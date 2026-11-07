@@ -27,8 +27,8 @@
  * @file            MapClass.h
  *
  * @brief           Declares Map, one map of the atlas: its key frames, map
- *                  points and the semantic entities (planes, walls, rooms,
- *                  floors, passages) built on them.
+ *                  points and planes. Its rooms, floors and passages live in
+ *                  the atlas's scene graph.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_MAP_OBJECTS_MAP_CLASS_H
@@ -112,8 +112,9 @@ namespace map
 
 /*!
  * @brief           One map of the atlas: the key frames, map points and
- *                  semantic entities (planes, rooms, floors, passages) that
- *                  share one world frame. The pointers it holds are
+ *                  planes that share one world frame; its rooms, floors and
+ *                  passages are listed by the scene graph (getSceneGraph()),
+ *                  not by the map. The pointers it holds are
  *                  borrowed: destroying or clearing the map only drops its
  *                  references. Most methods take mapMutex, as each one says.
  */
@@ -210,11 +211,7 @@ class Map
         keyFrames.clear();
 
         /* Erase all semantic entities from memory */
-        floors.clear();
         planes.clear();
-        passages.clear();
-        detectedRooms.clear();
-        markerBasedRooms.clear();
 
         referenceMapPoints.clear();
         keyFrameOrigins.clear();
@@ -262,46 +259,6 @@ class Map
      */
     [[nodiscard]] MapStatus addMapPlane(geometric::Plane *p_plane_inout);
     /*!
-     * @brief           Adds a room to the detected rooms of this map. Takes
-     *                  mapMutex.
-     *
-     * @param[in]       p_room_in
-     *                  Room to add; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus addDetectedMapRoom(semantic::Room *p_room_in);
-    /*!
-     * @brief           Adds a room to the candidate (marker-based) rooms of
-     *                  this map, which are rooms not yet promoted to detected
-     *                  rooms. Takes mapMutex.
-     *
-     * @param[in]       p_room_in
-     *                  Room to add; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus addCandidateMapRoom(semantic::Room *p_room_in);
-    /*!
-     * @brief           Atomically moves a room from candidate to detected
-     *                  storage.
-     */
-    [[nodiscard]] MapStatus promoteCandidateMapRoom(semantic::Room *p_room_in);
-    /*!
-     * @brief           Adds a floor to this map and indexes it by floor id. If
-     *                  the floor id is negative or already used by another
-     *                  floor, the floor is given a fresh id. Does nothing for a
-     *                  null floor. Takes mapMutex.
-     *
-     * @param[in,out]   p_floor_inout
-     *                  Floor to add; borrowed. Its id may be changed to resolve
-     *                  a collision.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        addMapFloor(vs_graphs::core::semantic::Floor *p_floor_inout);
-    /*!
      * @brief           Indexes a wall plane of a room by its plane id, so
      *                  getRoomWallPlaneById() can find it. The plane is not
      *                  added to the map's plane set. Takes mapMutex.
@@ -313,21 +270,6 @@ class Map
      */
     [[nodiscard]] MapStatus
         addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
-    /*!
-     * @brief           Adds a passage to this map and indexes it by passage id.
-     *                  A passage whose id is negative or already used by
-     *                  another passage is rejected: it is not added, a message
-     *                  is printed and the status is still success, so the
-     *                  caller must resolve the id first. Does nothing for a
-     *                  null passage. Takes mapMutex.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Passage to add; borrowed. Only its id is read.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        addMapPassage(vs_graphs::core::semantic::Passage *p_passage_inout);
 
     /*!
      * @brief           Reserves a plane identifier that will not be reused by
@@ -339,17 +281,6 @@ class Map
      * @return          MAP_STATUS_SUCCESS.
      */
     [[nodiscard]] MapStatus reservePlaneId(int &planeId_out);
-
-    /*!
-     * @brief           Reserves a floor identifier that will not be reused by
-     *                  this map.
-     *
-     * @param[out]      floorId_out
-     *                  Unique floor identifier for a subsequently added floor.
-     *
-     * @return          MAP_STATUS_SUCCESS.
-     */
-    [[nodiscard]] MapStatus reserveFloorId(int &floorId_out);
 
     /*!
      * @brief           Removes a map point from this map and from its reference
@@ -385,27 +316,6 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus eraseMapPlane(geometric::Plane *p_plane_in);
-    /*!
-     * @brief           Removes a room from the detected rooms of this map. The
-     *                  room itself is not deleted. Takes mapMutex.
-     *
-     * @param[in]       p_room_in
-     *                  Room to remove.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus eraseDetectedMapRoom(semantic::Room *p_room_in);
-    /*!
-     * @brief           Removes a room from the candidate (marker-based) rooms
-     *                  of this map. The room itself is not deleted. Takes
-     *                  mapMutex.
-     *
-     * @param[in]       p_room_in
-     *                  Room to remove.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus eraseMarkerBasedMapRoom(semantic::Room *p_room_in);
     /*!
      * @brief           Removes a room wall plane from the wall plane id index.
      *                  The plane itself is not deleted. Takes mapMutex.
@@ -525,30 +435,6 @@ class Map
                                               semantic::Room *p_keptRoom_in);
 
     /*!
-     * @brief           Removes a passage from this map and from the passage id
-     *                  index. The passage itself is not deleted. Takes
-     *                  mapMutex.
-     *
-     * @param[in]       p_passage_in
-     *                  Passage to remove.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
-    /*!
-     * @brief           Removes a floor from this map and from the floor id
-     *                  index. The floor itself is not deleted. Takes mapMutex.
-     *
-     * @param[in]       p_floor_in
-     *                  Floor to remove.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in);
-
-    /*!
      * @brief           Clears lookup-only state after every indexed entity was
      *                  transferred.
      */
@@ -586,18 +472,6 @@ class Map
         const std::vector<map_point::MapPoint *> &mapPoints_in);
 
     /*!
-     * @brief           Returns a snapshot copy of all rooms of this map,
-     *                  detected rooms first and then candidate rooms. Takes
-     *                  mapMutex.
-     *
-     * @param[out]      allRooms_out
-     *                  Receives the rooms; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
-    /*!
      * @brief           Returns a snapshot copy of all planes of this map. Takes
      *                  mapMutex.
      *
@@ -631,51 +505,6 @@ class Map
     [[nodiscard]] MapStatus
         getAllMapPoints(std::vector<map_point::MapPoint *> &allMapPoints_out);
     /*!
-     * @brief           Returns a snapshot copy of the detected rooms of this
-     *                  map. Takes mapMutex.
-     *
-     * @param[out]      allDetectedMapRooms_out
-     *                  Receives the detected rooms; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getAllDetectedMapRooms(
-        std::vector<semantic::Room *> &allDetectedMapRooms_out);
-    /*!
-     * @brief           Returns a snapshot copy of all floors of this map. Takes
-     *                  mapMutex.
-     *
-     * @param[out]      allFloors_out
-     *                  Receives the floors; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        getAllFloors(std::vector<semantic::Floor *> &allFloors_out);
-    /*!
-     * @brief           Returns a snapshot copy of the candidate (marker-based)
-     *                  rooms of this map. Takes mapMutex.
-     *
-     * @param[out]      allMarkerBasedMapRooms_out
-     *                  Receives the candidate rooms; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getAllMarkerBasedMapRooms(
-        std::vector<semantic::Room *> &allMarkerBasedMapRooms_out);
-    /*!
-     * @brief           Returns a snapshot copy of the candidate (marker-based)
-     *                  rooms of this map, the same set as
-     *                  getAllMarkerBasedMapRooms(). Takes mapMutex.
-     *
-     * @param[out]      allCandidateMapRooms_out
-     *                  Receives the candidate rooms; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getAllCandidateMapRooms(
-        std::vector<semantic::Room *> &allCandidateMapRooms_out);
-    /*!
      * @brief           Returns a snapshot copy of the reference map points set
      *                  by setReferenceMapPoints(). Takes mapMutex.
      *
@@ -686,17 +515,6 @@ class Map
      */
     [[nodiscard]] MapStatus getReferenceMapPoints(
         std::vector<map_point::MapPoint *> &referenceMapPoints_out);
-    /*!
-     * @brief           Returns a snapshot copy of all passages of this map.
-     *                  Takes mapMutex.
-     *
-     * @param[out]      allPassages_out
-     *                  Receives the passages; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getAllPassages(
-        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief           Get the cluster points of the map set by
@@ -806,20 +624,6 @@ class Map
     [[nodiscard]] MapStatus
         getOriginKeyFrame(keyframe::KeyFrame *&p_originKeyFrame_out);
     /*!
-     * @brief           Looks up a floor by id. Takes mapMutex.
-     *
-     * @param[in]       floorId_in
-     *                  Id of the floor.
-     *
-     * @param[out]      p_floorById_out
-     *                  Receives the floor, or nullptr when no floor has that
-     *                  id; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getFloorById(int               floorId_in,
-                                         semantic::Floor *&p_floorById_out);
-    /*!
      * @brief           Looks up a plane by id. Takes mapMutex.
      *
      * @param[in]       planeId_in
@@ -833,21 +637,6 @@ class Map
      */
     [[nodiscard]] MapStatus getPlaneById(int                planeId_in,
                                          geometric::Plane *&p_planeById_out);
-    /*!
-     * @brief           Looks up a room by id, skipping bad rooms. Takes
-     *                  mapMutex.
-     *
-     * @param[in]       roomId_in
-     *                  Id of the room.
-     *
-     * @param[out]      p_roomById_out
-     *                  Receives the first usable room with that id, or nullptr
-     *                  when there is none; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getRoomById(int              roomId_in,
-                                        semantic::Room *&p_roomById_out);
     /*!
      * @brief           Looks up a key frame by id. Takes mapMutex.
      *
@@ -863,21 +652,6 @@ class Map
     [[nodiscard]] MapStatus
         getKeyFrameById(long unsigned int    idCount_in,
                         keyframe::KeyFrame *&p_keyFrameById_out);
-    /*!
-     * @brief           Looks up a passage by id. Takes mapMutex.
-     *
-     * @param[in]       passageId_in
-     *                  Id of the passage.
-     *
-     * @param[out]      p_passageById_out
-     *                  Receives the passage, or nullptr when no passage has
-     *                  that id; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-                            getPassageById(int                                  passageId_in,
-                                           vs_graphs::core::semantic::Passage *&p_passageById_out);
     /*!
      * @brief           Looks up a room wall plane by plane id among the planes
      *                  indexed by addRoomWallPlane(). Takes mapMutex.
@@ -958,13 +732,15 @@ class Map
 
     /*!
      * @brief           Empties this map: key frames (their map link is reset to
-     *                  null), map points, semantic entities, id indexes,
+     *                  null), map points, planes, id indexes,
      *                  reference points, origins and skeleton data are dropped,
      *                  the origin and lowest-id key frames become nullptr, the
      *                  highest key frame id goes back to the first key frame id
      *                  and the IMU initialisation and inertial bundle
      *                  adjustment flags are reset. The objects are not deleted.
-     *                  Does not lock mapMutex.
+     *                  The map's rooms, floors and passages are left to the
+     *                  caller (SceneGraph::clearSemantics()). Does not lock
+     *                  mapMutex.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
@@ -1296,10 +1072,6 @@ class Map
     long unsigned int id;
 
     /*!
-     * @brief           Floors of this map; borrowed.
-     */
-    std::set<semantic::Floor *>                    floors;
-    /*!
      * @brief           Planes of this map; borrowed.
      */
     std::set<geometric::Plane *>                   planes;
@@ -1311,19 +1083,6 @@ class Map
      * @brief           Key frames of this map; borrowed.
      */
     std::set<keyframe::KeyFrame *>                 keyFrames;
-    /*!
-     * @brief           Rooms detected in this map; borrowed.
-     */
-    std::set<semantic::Room *>                     detectedRooms;
-    /*!
-     * @brief           Candidate rooms built from markers that are not yet
-     *                  promoted to detected rooms; borrowed.
-     */
-    std::set<semantic::Room *>                     markerBasedRooms;
-    /*!
-     * @brief           Passages of this map; borrowed.
-     */
-    std::set<vs_graphs::core::semantic::Passage *> passages;
 
     /*!
      * @brief           Scene graph holding this map's rooms, passages and
@@ -1346,10 +1105,6 @@ class Map
     /* Hashmaps and indices for fetching elements */
 
     /*!
-     * @brief           Floors by floor id.
-     */
-    std::unordered_map<int, semantic::Floor *>                    floorIndex;
-    /*!
      * @brief           Planes by plane id.
      */
     std::unordered_map<int, geometric::Plane *>                   planeIndex;
@@ -1357,10 +1112,6 @@ class Map
      * @brief           Key frames by key frame id.
      */
     std::unordered_map<long unsigned int, keyframe::KeyFrame *>   keyFrameIndex;
-    /*!
-     * @brief           Passages by passage id.
-     */
-    std::unordered_map<int, vs_graphs::core::semantic::Passage *> passageIndex;
     std::unordered_map<int, vs_graphs::core::geometric::Plane *>
         /*!
          * @brief           Room wall planes by plane id.
@@ -1372,11 +1123,6 @@ class Map
      *                  fusion leaves gaps in planeIndex.
      */
     int nextAvailablePlaneId{0};
-    /*!
-     * @brief           Next floor id to hand out; ids stay unique even when
-     *                  fusion leaves gaps in floorIndex.
-     */
-    int nextAvailableFloorId{0};
 
     /*!
      * @brief           Map points copied by preSave() for saving, as a vector

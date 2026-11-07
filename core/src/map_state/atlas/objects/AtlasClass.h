@@ -272,17 +272,6 @@ class Atlas
 
     /* Methods for adding new components in the current map */
     /*!
-     * @brief           Registers a floor with the map the floor belongs to,
-     *                  through the scene graph, and moves the floor identity
-     *                  allocator past its id. A null pointer is ignored.
-     *
-     * @param[in]       p_floor_in
-     *                  Floor to register; borrowed, the owning map keeps it.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus addMapFloor(semantic::Floor *p_floor_in);
-    /*!
      * @brief           Registers a plane with the map the plane belongs to.
      *
      * @param[in]       p_plane_in
@@ -311,19 +300,6 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus addMapPoint(map_point::MapPoint *p_mapPoint_in);
-    /*!
-     * @brief           Registers a passage with the map the passage belongs
-     *                  to, through the scene graph, and moves the passage
-     *                  identity allocator past its id. A null pointer is
-     *                  ignored.
-     *
-     * @param[in]       p_passage_in
-     *                  Passage to register; borrowed, the owning map keeps it.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
     /*!
      * @brief           Registers a room wall plane with the map the plane
      *                  belongs to.
@@ -483,30 +459,6 @@ class Atlas
 
     /* Method for get data in current map */
     /*!
-     * @brief           Returns the rooms of the active map from the scene
-     *                  graph, in ascending id order. Takes atlasMutex, then
-     *                  the scene graph lock.
-     *
-     * @param[out]      allRooms_out
-     *                  The active map's rooms; the pointers are borrowed.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
-    /*!
-     * @brief           Returns the floors of the active map from the scene
-     *                  graph, in ascending id order. Takes atlasMutex, then
-     *                  the scene graph lock.
-     *
-     * @param[out]      allFloors_out
-     *                  The active map's floors; the pointers are borrowed.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus
-        getAllFloors(std::vector<semantic::Floor *> &allFloors_out);
-    /*!
      * @brief           Returns the key frames of the active map. Takes
      *                  atlasMutex.
      *
@@ -553,18 +505,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus getReferenceMapPoints(
         std::vector<map_point::MapPoint *> &referenceMapPoints_out);
-    /*!
-     * @brief           Returns the passages of the active map from the scene
-     *                  graph, in ascending id order. Takes atlasMutex, then
-     *                  the scene graph lock.
-     *
-     * @param[out]      allPassages_out
-     *                  The active map's passages; the pointers are borrowed.
-     *
-     * @return          ATLAS_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] AtlasStatus getAllPassages(
-        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief           Get the cluster points of the map set by

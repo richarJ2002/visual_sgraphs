@@ -33,18 +33,12 @@
 #include <memory>
 #include <optional>
 #include <shared_mutex>
-#include <string>
 #include <vector>
 
 namespace vs_graphs
 {
 namespace core
 {
-namespace atlas
-{
-class Atlas;
-} /* namespace atlas */
-
 namespace map
 {
 class Map;
@@ -64,21 +58,23 @@ namespace scene_graph
  * @brief           Scene graph of every SLAM map: map -> building -> storey
  *                  -> rooms and passages.
  *
- *                  Owned by the atlas, which adds a scene map when it creates
- *                  or loads a map and removes it when it drops the map. Every
- *                  room, storey and passage is borrowed from the map lists,
- *                  which own them and stay the source of truth while writers
- *                  move onto the mutation API: each mutation writes the tree
- *                  and the matching map list.
+ *                  Owned by the atlas, which adds an empty scene map when it
+ *                  creates or loads a map and removes it when it drops the
+ *                  map. The tree is the only list of each map's rooms,
+ *                  storeys and passages: they are added and removed through
+ *                  the mutations only, which also enforce the id rules. Every
+ *                  room, storey and passage is borrowed: the tree does not
+ *                  free them.
  *
  *                  Thread safety: one graph-wide shared mutex. Every public
  *                  query takes it shared and every public mutation takes it
  *                  exclusive, inside the method; returned pointers are copied
- *                  out under the lock and stay valid while their map list
- *                  keeps the object. Public methods never call each other
- *                  while holding the lock. Lock order: atlasMutex, then this
- *                  lock, then Map::mapMutex and the semantic object mutexes;
- *                  no method takes atlasMutex while holding this lock.
+ *                  out under the lock and stay valid while the object lives
+ *                  (nothing frees them yet). Public methods never call each
+ *                  other while holding the lock. Lock order: atlasMutex,
+ *                  then this lock, then the semantic object mutexes; no
+ *                  method takes atlasMutex or Map::mapMutex while holding
+ *                  this lock.
  */
 class SceneGraph
 {
@@ -108,63 +104,19 @@ class SceneGraph
     SceneGraph &operator=(const SceneGraph &otherSceneGraph_in) = delete;
 
     /*!
-     * @brief           Rebuilds the scene map of every atlas map from its map
-     *                  lists (resyncMap() per map). Scene maps of maps the
-     *                  atlas no longer lists are left to the atlas, which
-     *                  erases them when it drops a map; the active map is
-     *                  left as the atlas set it.
+     * @brief           Adds an empty scene map for a SLAM map: one building
+     *                  (id 0) and no storeys, rooms or passages, replacing any
+     *                  scene map it had. Used by the atlas when it creates or
+     *                  loads a map. Takes this lock exclusive after reading
+     *                  the map id.
      *
-     *                  Temporary: it keeps the tree equal to the map lists
-     *                  while writers still bypass the mutation API, and goes
-     *                  once every writer uses that API. Takes atlasMutex
-     *                  (through the atlas getters) before this lock.
-     *
-     * @param[in,out]   atlas_inout
-     *                  Atlas to read; only its getters are called.
-     *
-     * @return          SCENE_GRAPH_STATUS_SUCCESS always; a failing getter is
-     *                  logged and its part of the tree left as it was.
-     */
-    [[nodiscard]] SceneGraphStatus refreshFromAtlas(atlas::Atlas &atlas_inout);
-
-    /*!
-     * @brief           Compares the number of maps, storeys, detected rooms,
-     *                  candidate rooms and passages in the tree with the atlas
-     *                  map lists.
-     *
-     *                  Counted as the lists hold them, bad-flagged objects
-     *                  included. Takes atlasMutex (through the atlas getters)
-     *                  before this lock, shared.
-     *
-     * @param[in,out]   atlas_inout
-     *                  Atlas to read; only its getters are called.
-     *
-     * @param[out]      mismatchReport_out
-     *                  Empty when the tree agrees with the lists; otherwise
-     *                  one entry per disagreeing count.
+     * @param[in,out]   map_inout
+     *                  SLAM map the scene map belongs to; only its id is
+     *                  read. The scene map borrows it; the atlas owns it.
      *
      * @return          SCENE_GRAPH_STATUS_SUCCESS always.
      */
-    [[nodiscard]] SceneGraphStatus
-        verifyAgainstAtlas(atlas::Atlas &atlas_inout,
-                           std::string  &mismatchReport_out) const;
-
-    /*!
-     * @brief           Rebuilds the scene map of one SLAM map from its map
-     *                  lists, replacing any scene map it had: one building
-     *                  (id 0) holding the map's storeys, plus its detected
-     *                  rooms, candidate rooms and passages. Used by the atlas
-     *                  when it creates or loads a map. Takes this lock
-     *                  exclusive after reading the map lists.
-     *
-     * @param[in,out]   map_inout
-     *                  SLAM map to mirror; only its getters are called. The
-     *                  scene map borrows it; the atlas owns it.
-     *
-     * @return          SCENE_GRAPH_STATUS_SUCCESS always; a failing getter is
-     *                  logged and its part of the scene map left empty.
-     */
-    [[nodiscard]] SceneGraphStatus resyncMap(map::Map &map_inout);
+    [[nodiscard]] SceneGraphStatus addSceneMap(map::Map &map_inout);
 
     /*!
      * @brief           Removes the scene map of a SLAM map the atlas dropped;
@@ -190,19 +142,16 @@ class SceneGraph
     [[nodiscard]] SceneGraphStatus setActiveMap(unsigned long mapId_in);
 
     /*!
-     * @brief           Adds a detected room to a map, as
-     *                  Map::addDetectedMapRoom does, then calls it. A room
-     *                  whose id another room already holds in the tree is
-     *                  listed by the map but not by the tree, and
-     *                  verifyAgainstAtlas() reports it. Takes this lock
-     *                  exclusive.
+     * @brief           Adds a detected room to a map, keyed by its id. A room
+     *                  whose id another detected room already holds is not
+     *                  added (a warning is logged); adding a room twice is a
+     *                  no-op. Takes this lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
      *
      * @param[in]       p_room_in
-     *                  Room to add; borrowed, the map list owns it. A null
-     *                  room is ignored.
+     *                  Room to add; borrowed. A null room is ignored.
      *
      * @return          SCENE_GRAPH_STATUS_SUCCESS, or
      *                  SCENE_GRAPH_STATUS_MAP_NOT_FOUND when the tree has no
@@ -212,17 +161,15 @@ class SceneGraph
                                                    semantic::Room *p_room_in);
 
     /*!
-     * @brief           Adds a candidate room to a map, as
-     *                  Map::addCandidateMapRoom does, then calls it. Id
-     *                  clashes behave as in addDetectedRoom(). Takes this lock
-     *                  exclusive.
+     * @brief           Adds a candidate room to a map, keyed by its id. Id
+     *                  clashes with other candidate rooms behave as in
+     *                  addDetectedRoom(). Takes this lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
      *
      * @param[in]       p_room_in
-     *                  Room to add; borrowed, the map list owns it. A null
-     *                  room is ignored.
+     *                  Room to add; borrowed. A null room is ignored.
      *
      * @return          SCENE_GRAPH_STATUS_SUCCESS, or
      *                  SCENE_GRAPH_STATUS_MAP_NOT_FOUND when the tree has no
@@ -233,8 +180,9 @@ class SceneGraph
 
     /*!
      * @brief           Moves a room from the candidate rooms to the detected
-     *                  rooms of a map, as Map::promoteCandidateMapRoom does,
-     *                  then calls it. Takes this lock exclusive.
+     *                  rooms of a map; when its id is already held by another
+     *                  detected room it only leaves the candidates. Takes this
+     *                  lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -251,10 +199,9 @@ class SceneGraph
 
     /*!
      * @brief           Removes a room from both the detected and the
-     *                  candidate rooms of a map, then calls
-     *                  Map::eraseDetectedMapRoom and
-     *                  Map::eraseMarkerBasedMapRoom. The room is not deleted.
-     *                  Takes this lock exclusive.
+     *                  candidate rooms of a map, by pointer, whatever id it is
+     *                  keyed under. The room is not deleted. Takes this lock
+     *                  exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -270,17 +217,17 @@ class SceneGraph
                                              semantic::Room *p_room_in);
 
     /*!
-     * @brief           Adds a passage to a map, then calls
-     *                  Map::addMapPassage. As there, a passage with a negative
-     *                  id or an id another passage holds is rejected by both.
-     *                  Takes this lock exclusive.
+     * @brief           Adds a passage to a map, keyed by its id. A passage
+     *                  with a negative id or an id another passage holds is
+     *                  rejected: it is not added, a message is printed and the
+     *                  status is still success, so the caller must resolve
+     *                  the id first. Takes this lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
      *
      * @param[in]       p_passage_in
-     *                  Passage to add; borrowed, the map list owns it. A null
-     *                  passage is ignored.
+     *                  Passage to add; borrowed. A null passage is ignored.
      *
      * @return          SCENE_GRAPH_STATUS_SUCCESS, or
      *                  SCENE_GRAPH_STATUS_MAP_NOT_FOUND when the tree has no
@@ -290,9 +237,9 @@ class SceneGraph
                                               semantic::Passage *p_passage_in);
 
     /*!
-     * @brief           Removes a passage from a map, then calls
-     *                  Map::eraseMapPassage. The passage is not deleted. Takes
-     *                  this lock exclusive.
+     * @brief           Removes a passage from a map and from its buildings,
+     *                  by pointer. The passage is not deleted. Takes this lock
+     *                  exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -308,18 +255,19 @@ class SceneGraph
         erasePassage(unsigned long mapId_in, semantic::Passage *p_passage_in);
 
     /*!
-     * @brief           Adds a storey to building 0 of a map by calling
-     *                  Map::addMapFloor first, which gives the storey a free
-     *                  id when its id is negative or taken, and then keys it
-     *                  in the tree by the id it ends with. Takes this lock
-     *                  exclusive.
+     * @brief           Adds a storey to building 0 of a map, keyed by its id.
+     *                  A storey whose id is negative or held by another
+     *                  storey of the map is given the next free id (a message
+     *                  is printed); an entry for the storey under an older id
+     *                  is dropped. Ids handed out are never reused. Takes this
+     *                  lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
      *
      * @param[in,out]   p_floor_inout
-     *                  Storey to add; its id may be changed. Borrowed, the
-     *                  map list owns it. A null storey is ignored.
+     *                  Storey to add; its id may be changed. Borrowed. A null
+     *                  storey is ignored.
      *
      * @return          SCENE_GRAPH_STATUS_SUCCESS, or
      *                  SCENE_GRAPH_STATUS_MAP_NOT_FOUND when the tree has no
@@ -329,9 +277,9 @@ class SceneGraph
                                             semantic::Floor *p_floor_inout);
 
     /*!
-     * @brief           Removes a storey from a map, then calls
-     *                  Map::eraseMapFloor. The storey is not deleted. Takes
-     *                  this lock exclusive.
+     * @brief           Removes a storey from every building of a map, by
+     *                  pointer. The storey is not deleted. Takes this lock
+     *                  exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -347,9 +295,9 @@ class SceneGraph
                                               semantic::Floor *p_floor_in);
 
     /*!
-     * @brief           Empties the storeys, rooms and passages of a map, as
-     *                  Map::clear does for its semantic lists. Map::clear is
-     *                  not called (it also clears key frames and map points);
+     * @brief           Empties the storeys, rooms and passages of a map; the
+     *                  buildings and the next free storey id stay. Map::clear
+     *                  is not called (it clears key frames and map points);
      *                  the caller clears the map itself. Takes this lock
      *                  exclusive.
      *

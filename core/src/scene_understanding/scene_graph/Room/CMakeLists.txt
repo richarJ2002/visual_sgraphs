@@ -5,9 +5,11 @@ set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBoundaryCorners_world_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBoundaryStatus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCeilingPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCentroid.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getGroundPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getHasKnownLabel.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getIsPassageFaceRefused.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getIsSeparatedFrom.cc

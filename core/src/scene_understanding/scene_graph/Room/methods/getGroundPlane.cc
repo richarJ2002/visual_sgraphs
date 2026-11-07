@@ -38,7 +38,7 @@ namespace semantic
 RoomStatus Room::getGroundPlane(geometric::Plane *&p_groundPlane_out) const
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
-    p_groundPlane_out = p_groundPlane;
+    p_groundPlane_out = groundPlanes.empty() ? nullptr : groundPlanes.front();
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

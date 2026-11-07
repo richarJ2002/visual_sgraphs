@@ -1,33 +1,13 @@
-# SceneGraph object sources: exactly this object's translation units.
+# SceneGraph object package: the class header and the helpers shared by its
+# methods live here; the methods are split into the lifecycle, mutations and
+# queries subpackages, each declaring exactly its own sources.
+include(${CMAKE_CURRENT_LIST_DIR}/lifecycle/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mutations/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/queries/CMakeLists.txt)
+
 set(VS_GRAPHS_SCENEGRAPH_SCENEGRAPH_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addDetectedRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addPassage.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/clearSemantics.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/erasePassage.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseSceneMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloorsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassagesInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRoomsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorPassagesInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorRoomsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapCandidateRoomsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapDetectedRoomsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassageById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassagesInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomsInIdOrder.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/promoteCandidateRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/refreshFromAtlas.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/resyncMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setActiveMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/verifyAgainstAtlas.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/findFloorInBuildings.cc
+  ${VS_GRAPHS_SCENEGRAPH_SCENEGRAPH_LIFECYCLE_SOURCES}
+  ${VS_GRAPHS_SCENEGRAPH_SCENEGRAPH_MUTATIONS_SOURCES}
+  ${VS_GRAPHS_SCENEGRAPH_SCENEGRAPH_QUERIES_SOURCES}
 )

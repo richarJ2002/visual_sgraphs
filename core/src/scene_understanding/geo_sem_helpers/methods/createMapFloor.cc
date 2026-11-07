@@ -29,6 +29,7 @@
 #include "map_state/map/map.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <iostream>
 #include <rclcpp/logging.hpp>
@@ -119,13 +120,28 @@ GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
                      __func__);
     }
 
-    /* Add the floor to the map */
-    if (p_atlas_inout->addMapFloor(p_newMapFloor) !=
+    /* Move the floor identity allocator past the id, then add the floor to
+     * the map's scene graph, which may give it a free id. */
+    if (p_atlas_inout->observeFloorIdentity(floorId) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: addMapFloor returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: observeFloorIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    unsigned long            currentMapId{};
+    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
+        (p_currentMap->getId(currentMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_sceneGraph->addFloor(currentMapId, p_newMapFloor) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneGraph/getId/addFloor found no scene map for "
+                     "the floor's map; the floor was not added.",
                      __func__);
     }
 
