@@ -204,22 +204,22 @@
  * ORB-SLAM3
  * -------------------------------------------------------------------------- */
 
+#include "configuration/types/types.h"
+#include "execution/system/system.h"
 #include "map_state/atlas/atlas.h"
-#include "sensor_models/imu_types/point/point.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
-#include "execution/system/system.h"
-#include "configuration/types/types.h"
+#include "sensor_models/imu_types/point/point.h"
 
 /* -------------------------------------------------------------------------- *
  * SEMANTIC ELEMENTS
  * -------------------------------------------------------------------------- */
 
 #include "mapping/geometric/Plane/Plane.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 namespace vs_graphs::common
 {
 

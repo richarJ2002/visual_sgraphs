@@ -70,6 +70,10 @@ int main(int argc, char **argv)
                     "Arguments supplied via command line are ignored.");
     }
 
+    /* ---------------------------------------------------------------------- *
+     * PARAMETERS
+     * ---------------------------------------------------------------------- */
+
     /* Extract node name */
     std::string nodeName = node->get_name();
 
@@ -173,10 +177,12 @@ int main(int argc, char **argv)
     const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
     const bool directGazeboFluCloud =
         node->get_parameter("direct_gazebo_flu_cloud").as_bool();
-    std::shared_ptr<vs_graphs::image_grabber::RgbdImageGrabber> igb =
-        std::make_shared<vs_graphs::image_grabber::RgbdImageGrabber>(
-            useSimTime,
-            directGazeboFluCloud);
+
+    std::shared_ptr<vs_graphs::image_grabber::RgbdImageGrabber>
+        rgbImageGrabber =
+            std::make_shared<vs_graphs::image_grabber::RgbdImageGrabber>(
+                useSimTime,
+                directGazeboFluCloud);
 
     /* Declare system type */
     vs_graphs::common::sensorType = vs_graphs::core::system::System::RGBD;
@@ -185,7 +191,10 @@ int main(int argc, char **argv)
      * VSGRAPH SLAM SYSTEM INIT
      * ---------------------------------------------------------------------- */
 
+    /* Declare the slam system object, and allocate the memory */
     vs_graphs::common::p_slamSystem = new vs_graphs::core::system::System();
+
+    /* Init the slam system, and extract the status of the system */
     const vs_graphs::core::system::SystemStatus systemStatus =
         vs_graphs::common::p_slamSystem->initialize(
             vocFile,
@@ -193,11 +202,15 @@ int main(int argc, char **argv)
             sysParamsFile,
             vs_graphs::common::sensorType,
             verboseLevel);
+
+    /* Confirm system was able to initialize correctly */
     if (systemStatus !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
-        /* A settings, vocabulary or map file could not be read: stop with
-         * the same exit code the system used before (exit(-1)). */
+        /*!
+         * A settings, vocabulary or map file could not be read: stop with the
+         * same exit code the system used before (exit(-1)).
+         */
         RCLCPP_FATAL(node->get_logger(),
                      "vS-Graphs could not start: a settings, vocabulary or "
                      "map file could not be read (status %d).",
@@ -235,6 +248,10 @@ int main(int argc, char **argv)
         node->create_callback_group(
             rclcpp::CallbackGroupType::MutuallyExclusive);
 
+    /* ---------------------------------------------------------------------- *
+     * TOPIC SUBSCRIPTION OPTIONS
+     * ---------------------------------------------------------------------- */
+
     /* Init visual subscription options and store callback */
     rclcpp::SubscriptionOptions visualSubscriptionOptions;
     visualSubscriptionOptions.callback_group = visualCallbackGroup;
@@ -247,9 +264,53 @@ int main(int argc, char **argv)
     rclcpp::SubscriptionOptions skeletonSubscriptionOptions;
     skeletonSubscriptionOptions.callback_group = skeletonCallbackGroup;
 
+    /* ---------------------------------------------------------------------- *
+     * TOPIC SUBSCRIBERS
+     * ---------------------------------------------------------------------- */
+
+    /* Subscribe to segmentation results from the SemanticSegmenter module */
+    std::shared_ptr<rclcpp::Subscription<segmenter_ros::msg::SegmenterDataMsg>>
+        subSegmentedImage =
+            node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
+                "/camera/color/image_segment",
+                rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
+                [rgbImageGrabber](
+                    const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
+                {
+                    vs_graphs::common::addSegmentationToSystem(
+                        *msg,
+                        rgbImageGrabber->get_logger());
+                },
+                semanticSubscriptionOptions);
+
+    /* Subsriber to get skeletonized graph from the `voxblox` module */
+    std::shared_ptr<rclcpp::Subscription<visualization_msgs::msg::MarkerArray>>
+        subVoxbloxSkeletonMesh =
+            node->create_subscription<visualization_msgs::msg::MarkerArray>(
+                "/voxblox_skeletonizer/sparse_graph",
+                rclcpp::QoS(1).transient_local(),
+                [rgbImageGrabber](
+                    const visualization_msgs::msg::MarkerArray::SharedPtr msg)
+                {
+                    rgbImageGrabber->grabVoxbloxSkeletonGraph(*msg);
+                    vs_graphs::common::observeVoxbloxSparseGraphPublication(
+                        *msg);
+                },
+                skeletonSubscriptionOptions);
+
+    /* Subsriber to get free space skeleton from the `voxblox` module */
+    std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>>
+        subVoxbloxSkeleton =
+            node->create_subscription<sensor_msgs::msg::PointCloud2>(
+                "/voxblox_skeletonizer/skeleton",
+                rclcpp::QoS(1).transient_local(),
+                [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+                { vs_graphs::common::observeVoxbloxSkeletonPublication(*msg); },
+                skeletonSubscriptionOptions);
+
     /* Subscribe to the rgb image */
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>>
-        subImgRGB =
+        subImgRgb =
             std::make_shared<Subscriber<Image>>(node.get(),
                                                 "/camera/rgb/image_raw",
                                                 rmw_qos_profile_sensor_data,
@@ -271,15 +332,21 @@ int main(int argc, char **argv)
             rmw_qos_profile_sensor_data,
             visualSubscriptionOptions);
 
-    /* Init sync policy */
+    /* ---------------------------------------------------------------------- *
+     * SYNC CONFIGURATION
+     * ---------------------------------------------------------------------- */
+
+    /* Declare sync policy */
     typedef ApproximateTime<Image, Image, PointCloud2> syncPolicy;
+
+    /* Init sync policy object */
     std::shared_ptr<message_filters::Synchronizer<
         message_filters::sync_policies::ApproximateTime<
             sensor_msgs::msg::Image,
             sensor_msgs::msg::Image,
             sensor_msgs::msg::PointCloud2>>>
         sync = std::make_shared<Synchronizer<syncPolicy>>(syncPolicy(10),
-                                                          *subImgRGB,
+                                                          *subImgRgb,
                                                           *subImgDepth,
                                                           *subPointcloud);
 
@@ -289,59 +356,18 @@ int main(int argc, char **argv)
     /* Set sync policy to RGBD register callback */
     sync->registerCallback(
         std::bind(&vs_graphs::image_grabber::RgbdImageGrabber::grabRgbd,
-                  igb.get(),
+                  rgbImageGrabber.get(),
                   std::placeholders::_1,
                   std::placeholders::_2,
                   std::placeholders::_3));
 
-    /* Subscribe to segmentation results from the SemanticSegmenter module */
-    std::shared_ptr<rclcpp::Subscription<segmenter_ros::msg::SegmenterDataMsg>>
-        subSegmentedImage =
-            node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
-                "/camera/color/image_segment",
-                rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
-                [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
-                {
-                    vs_graphs::common::addSegmentationToSystem(
-                        *msg,
-                        igb->get_logger());
-                },
-                semanticSubscriptionOptions);
-
-    /* Subsriber to get skeletonized graph from the `voxblox` module */
-    /* Match the skeletonizer transient-local publisher so the latest usable
-     * graph is received even when this node joins after publication. */
-    std::shared_ptr<rclcpp::Subscription<visualization_msgs::msg::MarkerArray>>
-        subVoxbloxSkeletonMesh =
-            node->create_subscription<visualization_msgs::msg::MarkerArray>(
-                "/voxblox_skeletonizer/sparse_graph",
-                rclcpp::QoS(1).transient_local(),
-                [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-                {
-                    igb->grabVoxbloxSkeletonGraph(*msg);
-                    vs_graphs::common::observeVoxbloxSparseGraphPublication(
-                        *msg);
-                },
-                skeletonSubscriptionOptions);
-
-    /* Match the skeletonizer transient-local publisher so the latest usable
-     * cloud is received even when this node joins after publication. */
-    std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>>
-        subVoxbloxSkeleton =
-            node->create_subscription<sensor_msgs::msg::PointCloud2>(
-                "/voxblox_skeletonizer/skeleton",
-                rclcpp::QoS(1).transient_local(),
-                [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-                { vs_graphs::common::observeVoxbloxSkeletonPublication(*msg); },
-                skeletonSubscriptionOptions);
+    /* ---------------------------------------------------------------------- *
+     * PUBLISHERS & SERVICES
+     * ---------------------------------------------------------------------- */
 
     /* Init image transport */
     std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
-
-    /* ---------------------------------------------------------------------- *
-     * PUBLISHERS & SERVICES
-     * ---------------------------------------------------------------------- */
 
     /* Setup publishers for system */
     vs_graphs::common::setupPublishers(node, image_transport, nodeName);
@@ -359,7 +385,7 @@ int main(int argc, char **argv)
     /* Create an rgbd processing thread */
     std::thread rgbdProcessingThread(
         &vs_graphs::image_grabber::RgbdImageGrabber::processRgbdPackets,
-        igb.get());
+        rgbImageGrabber.get());
 
     /*!
      * Create a multithreaded ROS 2 executor with 3 worker threads for
@@ -376,13 +402,15 @@ int main(int argc, char **argv)
      * ---------------------------------------------------------------------- */
 
     executor.add_node(node);
-    executor.add_node(igb);
+    executor.add_node(rgbImageGrabber);
     executor.spin();
+
     vs_graphs::core::profiling::writeTimerReport(
         vs_graphs::common::sgraphArchiveTestRunDir);
 
-    igb->requestStop();
+    rgbImageGrabber->requestStop();
     rgbdProcessingThread.join();
+
     if (vs_graphs::common::p_slamSystem->shutdown() !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
@@ -391,11 +419,15 @@ int main(int argc, char **argv)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
     /* ~System joins the worker threads: none may outlive main(). */
     delete vs_graphs::common::p_slamSystem;
+
+    /* Termination Clean Up */
     vs_graphs::common::p_slamSystem = nullptr;
     vs_graphs::common::shutdownRosInterfaces();
     image_transport.reset();
     rclcpp::shutdown();
+
     return 0;
 }
