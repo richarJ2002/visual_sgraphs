@@ -26,8 +26,8 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_FLOOR_OBJECTS_FLOOR_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_FLOOR_OBJECTS_FLOOR_CLASS_H
 
-#include <vs_graphs_g2o/types/sim3.h>
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include <vs_graphs_g2o/types/sim3.h>
 
 #include <Eigen/Core>
 #include <cstddef>
@@ -36,14 +36,15 @@
 #include <string>
 #include <vector>
 
-namespace vs_graphs::core::map { class Map; }
+namespace vs_graphs::core::map
+{
+class Map;
+}
 
 namespace vs_graphs
 {
 namespace core
-{
-
-} /* namespace core */
+{} /* namespace core */
 } /* namespace vs_graphs */
 
 namespace vs_graphs
@@ -121,6 +122,13 @@ class Floor
     int opIdG;
 
     /*!
+     * @brief           True once the floor was invalidated (see setBad); it
+     *                  is then treated as deleted until the scene-graph sweep
+     *                  frees it. Guarded by mapMutex.
+     */
+    bool isFlaggedBad{false};
+
+    /*!
      * @brief           Optional display name of this floor (empty = none).
      */
     std::string name;
@@ -142,18 +150,6 @@ class Floor
      *                  stored with setPlaneIdentity. Guarded by geometryMutex.
      */
     std::optional<PlaneIdentity> planeIdentity;
-
-    /*!
-     * @brief           Removes a room from this floor and clears the room's
-     *                  floor link when it still points here.
-     *
-     * @param[in,out]   p_room_inout
-     *                  Room to detach; a null pointer is ignored.
-     *
-     * @return          FLOOR_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] FloorStatus
-        detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -285,6 +281,26 @@ class Floor
     [[nodiscard]] FloorStatus setName(std::string value_in);
 
     /*!
+     * @brief           Flags this floor as invalid. Only
+     *                  SceneGraph::markFloorBad() should call it, because the
+     *                  rooms below the floor must be flagged in the same
+     *                  step.
+     *
+     * @return          FLOOR_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] FloorStatus setBad();
+
+    /*!
+     * @brief           Tells whether this floor was flagged invalid.
+     *
+     * @param[out]      isBad_out
+     *                  True once setBad() was called.
+     *
+     * @return          FLOOR_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] FloorStatus isBad(bool &isBad_out);
+
+    /*!
      * @brief           Returns the centroid of this floor.
      *
      * @param[out]      centroid_out
@@ -400,6 +416,18 @@ class Floor
      */
     [[nodiscard]] FloorStatus setRooms(
         const std::vector<vs_graphs::core::semantic::Room *> &value_in);
+
+    /*!
+     * @brief           Removes a room from this floor and clears the room's
+     *                  floor link when it still points here.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Room to detach; a null pointer is ignored.
+     *
+     * @return          FLOOR_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] FloorStatus
+        detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
 
     /*!
      * @brief           Replaces a retired room association after consolidation.

@@ -13,9 +13,11 @@ set(VS_GRAPHS_SCENEGRAPH_FLOOR_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasPlaneIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/planeIdentitiesMatch.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/selectBestObservedFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
