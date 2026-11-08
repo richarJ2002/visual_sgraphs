@@ -23,20 +23,22 @@
  *                  declared in GeoSemHelpers.h.
  */
 
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantic/value_order/value_order.h"
+#include <algorithm>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
 
 GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
-    atlas::Atlas                           *p_atlas_in,
+    atlas::Atlas                    *p_atlas_in,
     vs_graphs::core::semantic::Room *p_givenRoom_inout)
 {
     std::vector<vs_graphs::core::geometric::Plane *> allWalls{};
@@ -79,6 +81,12 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
             groundPlanes.push_back(plane);
         }
     }
+
+    /* The map's plane set is ordered by address; on equal inlier counts the
+     * first plane wins, so visit the planes in id order. */
+    std::sort(groundPlanes.begin(),
+              groundPlanes.end(),
+              semantic::isEntityIdLess<geometric::Plane>);
 
     if (groundPlanes.empty())
     {
