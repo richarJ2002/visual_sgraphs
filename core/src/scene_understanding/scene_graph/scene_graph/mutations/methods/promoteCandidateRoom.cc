@@ -48,9 +48,9 @@ SceneGraphStatus SceneGraph::promoteCandidateRoom(unsigned long   mapId_in,
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    std::unique_lock<std::shared_mutex>           graphLock(graphMutex);
+    std::map<unsigned long, SceneMap *>::iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;

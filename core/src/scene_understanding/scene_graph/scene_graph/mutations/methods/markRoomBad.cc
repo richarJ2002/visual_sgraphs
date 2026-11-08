@@ -49,8 +49,8 @@ SceneGraphStatus SceneGraph::markRoomBad(unsigned long   mapId_in,
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    const std::map<unsigned long, SceneMap *>::const_iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         /* Without the map there are no other rooms to consult: flag the room

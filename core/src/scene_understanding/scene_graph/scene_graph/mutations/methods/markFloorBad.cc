@@ -63,8 +63,8 @@ SceneGraphStatus SceneGraph::markFloorBad(unsigned long    mapId_in,
                      __func__);
     }
 
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    const std::map<unsigned long, SceneMap *>::const_iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;

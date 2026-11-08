@@ -54,8 +54,8 @@ SceneGraphStatus SceneGraph::sweepBadNodes()
     std::vector<semantic::Room *> retiredRoomPointers{};
     {
         std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-        for (std::pair<const unsigned long, std::unique_ptr<SceneMap>>
-                 &sceneMapEntry : sceneMaps)
+        for (std::pair<const unsigned long, SceneMap *> &sceneMapEntry :
+             sceneMaps)
         {
             retireBadNodes(*sceneMapEntry.second, retiredNodes);
             if (sceneMapEntry.second->p_map != nullptr)

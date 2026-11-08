@@ -39,6 +39,7 @@
 #include "dependency_lineage/sophus/objects/se3.hpp"
 #include "map_state/map/objects/MapMergeRecordStruct.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_map/objects/SceneMapStruct.h"
 #include "views_io/archive_support/objects/SerializationUtils.h"
 #include <Eigen/Core>
 #include <atomic>
@@ -115,11 +116,13 @@ namespace map
 
 /*!
  * @brief           One map of the atlas: the key frames, map points and
- *                  planes that share one world frame; its rooms, floors and
- *                  passages are listed by the scene graph (getSceneGraph()),
- *                  not by the map. The pointers it holds are
- *                  borrowed: destroying or clearing the map only drops its
- *                  references. Most methods take mapMutex, as each one says.
+ *                  planes that share one world frame, and the S-Graph that
+ *                  abstracts them (getSceneMap()): the building, its floors,
+ *                  and the map's rooms and passages. The map owns that graph
+ *                  as a member, so the graph is created, moved and freed with
+ *                  the map. The other pointers it holds are borrowed:
+ *                  destroying or clearing the map only drops its references.
+ *                  Most methods take mapMutex, as each one says.
  */
 class Map
 {
@@ -853,6 +856,20 @@ class Map
     [[nodiscard]] MapStatus setImuInitialized();
 
     /*!
+     * @brief           Returns the S-Graph this map owns (building, floors,
+     *                  rooms, passages). The scene graph's operations lock
+     *                  and edit it; read or write its content only through
+     *                  them. Does not lock mapMutex: the member lives as long
+     *                  as the map.
+     *
+     * @param[out]      p_sceneMap_out
+     *                  S-Graph of this map; borrowed, never null.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus getSceneMap(scene_graph::SceneMap *&p_sceneMap_out);
+
+    /*!
      * @brief           Records the scene graph that holds this map's rooms,
      *                  passages and floors; applyScaledRotation() reads them
      *                  from it. Set by the atlas when it creates or loads the
@@ -1126,6 +1143,14 @@ class Map
      * @brief           Key frames of this map; borrowed.
      */
     std::set<keyframe::KeyFrame *> keyFrames;
+
+    /*!
+     * @brief           S-Graph of this map: its building, floors, rooms and
+     *                  passages; owned. Starts empty (one building, id 0).
+     *                  Guarded by the scene graph's graph mutex, not by
+     *                  mapMutex.
+     */
+    scene_graph::SceneMap sceneMap;
 
     /*!
      * @brief           Scene graph holding this map's rooms, passages and

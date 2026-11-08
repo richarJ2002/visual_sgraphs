@@ -42,9 +42,9 @@ namespace scene_graph
 SceneGraphStatus SceneGraph::eraseFloor(unsigned long    mapId_in,
                                         semantic::Floor *p_floor_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    std::unique_lock<std::shared_mutex>           graphLock(graphMutex);
+    std::map<unsigned long, SceneMap *>::iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;

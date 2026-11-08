@@ -49,11 +49,11 @@ SceneGraphStatus SceneGraph::moveFloor(unsigned long    sourceMapId_in,
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        sourceIterator = sceneMaps.find(sourceMapId_in);
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        destinationIterator = sceneMaps.find(destinationMapId_in);
+    std::unique_lock<std::shared_mutex>                 graphLock(graphMutex);
+    const std::map<unsigned long, SceneMap *>::iterator sourceIterator =
+        sceneMaps.find(sourceMapId_in);
+    const std::map<unsigned long, SceneMap *>::iterator destinationIterator =
+        sceneMaps.find(destinationMapId_in);
     if (sourceIterator == sceneMaps.end() ||
         destinationIterator == sceneMaps.end())
     {

@@ -52,8 +52,8 @@ SceneGraphStatus
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        sceneMapIterator = sceneMaps.find(*activeMapId);
+    const std::map<unsigned long, SceneMap *>::iterator sceneMapIterator =
+        sceneMaps.find(*activeMapId);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;

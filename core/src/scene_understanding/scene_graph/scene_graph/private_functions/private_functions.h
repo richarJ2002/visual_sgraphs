@@ -311,9 +311,8 @@ void retireSceneMapContents(SceneMap     &sceneMap_inout,
  * @param[in]       retiredNodes_in
  *                  Nodes about to be freed.
  */
-void unlinkRetiredNodes(
-    const std::map<unsigned long, std::unique_ptr<SceneMap>> &sceneMaps_in,
-    const RetiredNodes                                       &retiredNodes_in);
+void unlinkRetiredNodes(const std::map<unsigned long, SceneMap *> &sceneMaps_in,
+                        const RetiredNodes &retiredNodes_in);
 
 /*!
  * @brief           Lets live storeys and passages drop their links to retired

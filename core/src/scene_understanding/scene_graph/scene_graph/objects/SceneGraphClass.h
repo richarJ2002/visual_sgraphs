@@ -812,10 +812,12 @@ class SceneGraph
     mutable std::shared_mutex graphMutex;
 
     /*!
-     * @brief           Scene maps by SLAM map id; owned. Keyed by the map's
-     *                  own id type. Guarded by graphMutex.
+     * @brief           Scene maps by SLAM map id; borrowed. Each SLAM map
+     *                  owns its scene map as a member and is registered here
+     *                  by addSceneMap() until eraseSceneMap(). Guarded by
+     *                  graphMutex.
      */
-    std::map<unsigned long, std::unique_ptr<SceneMap>> sceneMaps;
+    std::map<unsigned long, SceneMap *> sceneMaps;
 
     /*!
      * @brief           Id of the atlas's current map; empty when there is

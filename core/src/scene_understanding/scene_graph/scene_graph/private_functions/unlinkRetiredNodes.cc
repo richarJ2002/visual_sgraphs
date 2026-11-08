@@ -35,16 +35,15 @@ namespace core
 namespace scene_graph
 {
 
-void unlinkRetiredNodes(
-    const std::map<unsigned long, std::unique_ptr<SceneMap>> &sceneMaps_in,
-    const RetiredNodes                                       &retiredNodes_in)
+void unlinkRetiredNodes(const std::map<unsigned long, SceneMap *> &sceneMaps_in,
+                        const RetiredNodes &retiredNodes_in)
 {
     /* Everything still in the tree is live: retireBadNodes() ran first. */
     std::vector<semantic::Room *>    liveRooms{};
     std::vector<semantic::Passage *> livePassages{};
     std::vector<semantic::Floor *>   liveFloors{};
-    for (const std::pair<const unsigned long, std::unique_ptr<SceneMap>>
-             &sceneMapEntry : sceneMaps_in)
+    for (const std::pair<const unsigned long, SceneMap *> &sceneMapEntry :
+         sceneMaps_in)
     {
         for (const std::pair<const int, std::unique_ptr<semantic::Room>>
                  &roomEntry : sceneMapEntry.second->detectedRooms)

@@ -52,21 +52,30 @@ SceneGraphStatus SceneGraph::addSceneMap(map::Map &map_inout)
                      __func__);
     }
 
-    std::unique_ptr<SceneMap> p_sceneMap = std::make_unique<SceneMap>();
-    p_sceneMap->p_map                    = &map_inout;
-
-    /* One building per map until buildings are detected. */
-    p_sceneMap->buildings[0] = std::make_unique<Building>();
+    /* The map owns its scene map; only the registry entry is made here. */
+    SceneMap *p_sceneMap = nullptr;
+    if (map_inout.getSceneMap(p_sceneMap) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSceneMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::unique_ptr<SceneMap>          &p_slot = sceneMaps[mapId];
-    if (p_slot != nullptr)
+
+    /* A scene map that held nodes may still be pointed at by other nodes:
+     * its nodes are retired for the next sweep, not freed here. */
+    retireSceneMapContents(*p_sceneMap, retiredNodes);
+    p_sceneMap->nextAvailableFloorId = 0;
+    p_sceneMap->p_map                = &map_inout;
+
+    /* One building per map until buildings are detected. */
+    if (p_sceneMap->buildings.find(0) == p_sceneMap->buildings.end())
     {
-        /* A replaced scene map may still be pointed at by other nodes: its
-         * nodes are retired for the next sweep, not freed here. */
-        retireSceneMapContents(*p_slot, retiredNodes);
+        p_sceneMap->buildings[0] = std::make_unique<Building>();
     }
-    p_slot = std::move(p_sceneMap);
+    sceneMaps[mapId] = p_sceneMap;
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

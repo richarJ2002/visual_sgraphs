@@ -44,9 +44,9 @@ SceneGraphStatus SceneGraph::getMapRoomById(unsigned long    mapId_in,
                                             semantic::Room *&p_room_out) const
 {
     p_room_out = nullptr;
-    std::shared_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, std::unique_ptr<SceneMap>>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    std::shared_lock<std::shared_mutex>                 graphLock(graphMutex);
+    std::map<unsigned long, SceneMap *>::const_iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;

@@ -41,9 +41,9 @@ namespace scene_graph
 
 SceneGraphStatus SceneGraph::eraseSceneMap(unsigned long mapId_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
+    std::unique_lock<std::shared_mutex>                 graphLock(graphMutex);
+    const std::map<unsigned long, SceneMap *>::iterator sceneMapIterator =
+        sceneMaps.find(mapId_in);
     if (sceneMapIterator != sceneMaps.end())
     {
         /* Other maps may still link to this map's rooms (their starting and
