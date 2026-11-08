@@ -125,9 +125,10 @@ class SceneGraph
     /*!
      * @brief           Adds an empty scene map for a SLAM map: one building
      *                  (id 0) and no storeys, rooms or passages, replacing any
-     *                  scene map it had. Used by the atlas when it creates or
-     *                  loads a map. Takes this lock exclusive after reading
-     *                  the map id.
+     *                  scene map it had (that map's nodes are retired for the
+     *                  next sweep, not freed here). Used by the atlas when it
+     *                  creates or loads a map. Takes this lock exclusive after
+     *                  reading the map id.
      *
      * @param[in,out]   map_inout
      *                  SLAM map the scene map belongs to; only its id is

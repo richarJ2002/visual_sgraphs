@@ -32,6 +32,7 @@
 #include <utility>
 
 #include "map_state/map/map.h"
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
@@ -58,7 +59,14 @@ SceneGraphStatus SceneGraph::addSceneMap(map::Map &map_inout)
     p_sceneMap->buildings[0] = std::make_unique<Building>();
 
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    sceneMaps[mapId] = std::move(p_sceneMap);
+    std::unique_ptr<SceneMap>          &p_slot = sceneMaps[mapId];
+    if (p_slot != nullptr)
+    {
+        /* A replaced scene map may still be pointed at by other nodes: its
+         * nodes are retired for the next sweep, not freed here. */
+        retireSceneMapContents(*p_slot, retiredNodes);
+    }
+    p_slot = std::move(p_sceneMap);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 
