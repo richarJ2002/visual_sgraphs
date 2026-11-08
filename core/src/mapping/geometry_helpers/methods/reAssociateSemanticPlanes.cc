@@ -23,22 +23,24 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/private_functions/private_functions.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/semantic/value_order/value_order.h"
 
 #include <algorithm>
 #include <iostream>
@@ -71,16 +73,6 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                      __func__);
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
     bool mergedPlaneInPass = true;
 
     while (mergedPlaneInPass)
@@ -96,6 +88,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
+
+        /* The map's plane set is ordered by address; the first fusable pair
+         * wins, so visit the planes in id order. */
+        std::sort(mappedPlanes.begin(),
+                  mappedPlanes.end(),
+                  semantic::isEntityIdLess<geometric::Plane>);
 
         for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
@@ -197,8 +195,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                                   candidatePlaneEvidence,
                                   matchSettings,
                                   matchedPlaneId,
-                                  nullptr) !=
-                UtilsStatus::UTILS_STATUS_SUCCESS)
+                                  nullptr) != UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: findMatchingPlane returned a failure status "
@@ -323,13 +320,17 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                 p_retainedPlane == p_candidatePlane ? p_matchedPlane
                                                     : p_candidatePlane;
 
-            /* One locked step combines and refreshes every plane member. */
-            if (p_retainedPlane->absorb(p_retiredPlane) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            /* Every holder of the retired plane (its own records, the rooms
+             * and passages, the keyframes) is re-pointed in one place. */
+            if (relinkRetiredPlane(p_atlas_in,
+                                   p_retiredPlane,
+                                   p_retainedPlane) !=
+                UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: absorb returned a failure status although "
-                             "it cannot fail; continuing as before.",
+                             "%s: relinkRetiredPlane returned a failure "
+                             "status although it cannot fail; continuing as "
+                             "before.",
                              __func__);
             }
             geometric::Plane::PlaneVariant retainedPlaneType{};
@@ -340,129 +341,6 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                              "%s: getPlaneType returned a failure status "
                              "although it cannot fail; continuing as before.",
                              __func__);
-            }
-
-            std::vector<semantic::Room *> atlasAllRooms{};
-            if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: the scene graph has no scene map for the active map; "
-                    "continuing without its rooms.",
-                    __func__);
-            }
-            for (semantic::Room *p_room : atlasAllRooms)
-            {
-                bool roomIsBad{};
-                if (!(p_room == nullptr) &&
-                    p_room->isBad(roomIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_room == nullptr || roomIsBad)
-                {
-                    continue;
-                }
-
-                bool roomWasWallReplaced{};
-                if (p_room->replaceWall(p_retiredPlane,
-                                        p_retainedPlane,
-                                        roomWasWallReplaced) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    roomWasWallReplaced = false;
-                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                "%s: replaceWall rejected its input; "
-                                "continuing as before.",
-                                __func__);
-                }
-                bool roomWasGroundPlaneReplaced{};
-                if (p_room->replaceGroundPlane(p_retiredPlane,
-                                               p_retainedPlane,
-                                               roomWasGroundPlaneReplaced) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    roomWasGroundPlaneReplaced = false;
-                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                "%s: replaceGroundPlane rejected its input; "
-                                "continuing as before.",
-                                __func__);
-                }
-            }
-
-            std::vector<vs_graphs::core::semantic::Passage *>
-                atlasAllPassages{};
-            if (p_sceneGraph->getAllPassagesInIdOrder(atlasAllPassages) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: the scene graph has no scene map for the active map; "
-                    "continuing without its passages.",
-                    __func__);
-            }
-            for (vs_graphs::core::semantic::Passage *p_passage :
-                 atlasAllPassages)
-            {
-                if (p_passage != nullptr)
-                {
-                    bool passageWasAssociationReplaced{};
-                    if (p_passage->replacePlaneAssociation(
-                            p_retiredPlane,
-                            p_retainedPlane,
-                            passageWasAssociationReplaced) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        passageWasAssociationReplaced = false;
-                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                    "%s: replacePlaneAssociation rejected its "
-                                    "input; continuing as before.",
-                                    __func__);
-                    }
-                }
-            }
-
-            std::vector<keyframe::KeyFrame *> atlasAllKeyFrames{};
-            if (p_atlas_in->getAllKeyFrames(atlasAllKeyFrames) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllKeyFrames returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (keyframe::KeyFrame *p_keyFrame : atlasAllKeyFrames)
-            {
-                bool keyFrameIsBad2{};
-                if ((p_keyFrame != nullptr) &&
-                    p_keyFrame->isBad(keyFrameIsBad2) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_keyFrame != nullptr && !keyFrameIsBad2)
-                {
-                    bool keyFrameWasReplaced{};
-                    if (p_keyFrame->replaceMapPlane(p_retiredPlane,
-                                                    p_retainedPlane,
-                                                    keyFrameWasReplaced) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                    {
-                        keyFrameWasReplaced = false;
-                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                    "%s: replaceMapPlane rejected its input; "
-                                    "continuing as before.",
-                                    __func__);
-                    }
-                }
             }
 
             map::Map *p_currentMap = nullptr;

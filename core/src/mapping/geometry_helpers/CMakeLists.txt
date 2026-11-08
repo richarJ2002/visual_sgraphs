@@ -31,4 +31,5 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/observationSide.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/passageOpening.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneBounds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/relinkRetiredPlane.cc
 )
