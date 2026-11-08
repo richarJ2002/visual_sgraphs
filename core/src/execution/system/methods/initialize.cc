@@ -76,6 +76,8 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                                 const SensorType              sensor_in,
                                 const Verbose::VerbosityLevel verboseLevel_in)
 {
+    sensor = sensor_in;
+
     /* Output welcome message */
     std::cout << std::endl
               << "------------------------------------------------------"
