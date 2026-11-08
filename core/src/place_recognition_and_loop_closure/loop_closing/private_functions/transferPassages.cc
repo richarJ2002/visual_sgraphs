@@ -116,17 +116,18 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
             }
         }
 
-        if (p_sceneGraph->erasePassage(mergeMapId, p_passage) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: erasePassage found no scene map for map %lu; "
-                         "continuing as before.",
-                         __func__,
-                         mergeMapId);
-        }
         if (p_retainedPassage != nullptr)
         {
+            /* The duplicate leaves the tree and is freed by a later sweep. */
+            if (p_sceneGraph->erasePassage(mergeMapId, p_passage) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: erasePassage found no scene map for map "
+                             "%lu; continuing as before.",
+                             __func__,
+                             mergeMapId);
+            }
             bool retainedPassageWasGeometryReplaced{};
             if (p_retainedPassage->mergeFromDuplicate(
                     p_passage,
@@ -198,13 +199,14 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->addPassage(currentMapId, p_passage) !=
+        if (p_sceneGraph->movePassage(mergeMapId, currentMapId, p_passage) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addPassage found no scene map for map %lu; "
-                         "continuing as before.",
+                         "%s: movePassage found no scene map for maps %lu and "
+                         "%lu or no such passage; continuing as before.",
                          __func__,
+                         mergeMapId,
                          currentMapId);
         }
     }

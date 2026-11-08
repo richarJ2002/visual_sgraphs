@@ -26,6 +26,8 @@
 #define VS_GRAPHS_SCENE_GRAPH_SCENE_MAP_STRUCT_H
 
 #include "scene_understanding/scene_graph/Building/objects/BuildingStruct.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include <map>
 #include <memory>
@@ -39,12 +41,6 @@ namespace map
 class Map;
 } /* namespace map */
 
-namespace semantic
-{
-class Passage;
-class Room;
-} /* namespace semantic */
-
 namespace scene_graph
 {
 
@@ -54,11 +50,13 @@ namespace scene_graph
  *                  passages.
  *
  *                  This is the only list of the map's rooms, storeys and
- *                  passages. They are borrowed: the tree does not free them.
- *                  A room or passage not yet linked to a storey is reachable
- *                  through the indexes only. Bad-flagged objects are kept
- *                  until they are erased. Owned by SceneGraph and guarded by
- *                  its graph mutex.
+ *                  passages. The scene map owns its rooms and passages and
+ *                  its buildings own their storeys; nothing outside the tree
+ *                  frees them. A room or passage not yet linked to a storey
+ *                  is reachable through these maps only. Bad-flagged objects
+ *                  stay here, hidden from every query, until the sweep moves
+ *                  them out. Owned by SceneGraph and guarded by its graph
+ *                  mutex.
  */
 struct SceneMap
 {
@@ -76,19 +74,19 @@ struct SceneMap
     std::map<int, std::unique_ptr<Building>> buildings;
 
     /*!
-     * @brief           Detected rooms of the map by room id; borrowed.
+     * @brief           Detected rooms of the map by room id; owned.
      */
-    std::map<int, semantic::Room *> detectedRooms;
+    std::map<int, std::unique_ptr<semantic::Room>> detectedRooms;
 
     /*!
-     * @brief           Candidate rooms of the map by room id; borrowed.
+     * @brief           Candidate rooms of the map by room id; owned.
      */
-    std::map<int, semantic::Room *> candidateRooms;
+    std::map<int, std::unique_ptr<semantic::Room>> candidateRooms;
 
     /*!
-     * @brief           Passages of the map by passage id; borrowed.
+     * @brief           Passages of the map by passage id; owned.
      */
-    std::map<int, semantic::Passage *> passages;
+    std::map<int, std::unique_ptr<semantic::Passage>> passages;
 
     /*!
      * @brief           Next storey id SceneGraph::addFloor() hands out when a

@@ -31,6 +31,8 @@
 #include <shared_mutex>
 #include <vector>
 
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,10 +53,13 @@ SceneGraphStatus SceneGraph::getMapCandidateRoomsInIdOrder(
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    for (const std::pair<const int, semantic::Room *> &roomEntry :
-         sceneMapIterator->second->candidateRooms)
+    for (const std::pair<const int, std::unique_ptr<semantic::Room>>
+             &roomEntry : sceneMapIterator->second->candidateRooms)
     {
-        rooms_out.push_back(roomEntry.second);
+        if (isRoomLive(roomEntry.second.get()))
+        {
+            rooms_out.push_back(roomEntry.second.get());
+        }
     }
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }

@@ -23,16 +23,18 @@
  *                  GeoSemHelpers.h.
  */
 
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
+#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <iostream>
+#include <memory>
 #include <rclcpp/logging.hpp>
+#include <utility>
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
@@ -55,9 +57,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
     }
 
     /* Create a new floor object */
-    Eigen::Vector3d                   centroid = Eigen::Vector3d::Zero();
-    vs_graphs::core::semantic::Floor *p_newMapFloor =
-        new vs_graphs::core::semantic::Floor();
+    Eigen::Vector3d                  centroid = Eigen::Vector3d::Zero();
+    std::unique_ptr<semantic::Floor> p_newFloorOwner =
+        std::make_unique<semantic::Floor>();
+    semantic::Floor *p_newMapFloor = p_newFloorOwner.get();
 
     /* Variables */
     int floorId{};
@@ -136,7 +139,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->addFloor(currentMapId, p_newMapFloor) !=
+        (p_sceneGraph->addFloor(currentMapId, std::move(p_newFloorOwner)) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -60,8 +60,8 @@ SceneGraphStatus SceneGraph::getFloorRoomsInIdOrder(
         findFloorInBuildings(*sceneMapIterator->second, floorId_in);
 
     std::vector<semantic::Room *> floorRoomList{};
-    if (p_floor != nullptr && p_floor->getRooms(floorRoomList) !=
-                                  semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    if (isFloorLive(p_floor) && p_floor->getRooms(floorRoomList) !=
+                                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getRooms returned a failure status although it "
@@ -74,7 +74,7 @@ SceneGraphStatus SceneGraph::getFloorRoomsInIdOrder(
     for (semantic::Room *p_room : floorRoomList)
     {
         int roomId{};
-        if (p_room != nullptr &&
+        if (isRoomLive(p_room) &&
             p_room->getId(roomId) == semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             roomsById.emplace(roomId, p_room);

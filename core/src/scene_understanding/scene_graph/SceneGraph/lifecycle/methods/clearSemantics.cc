@@ -30,6 +30,8 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -47,17 +49,9 @@ SceneGraphStatus SceneGraph::clearSemantics(unsigned long mapId_in)
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    /* Buildings stay: building 0 is part of every scene map. */
-    SceneMap &sceneMap = *sceneMapIterator->second;
-    for (std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
-         sceneMap.buildings)
-    {
-        buildingEntry.second->floors.clear();
-        buildingEntry.second->passages.clear();
-    }
-    sceneMap.detectedRooms.clear();
-    sceneMap.candidateRooms.clear();
-    sceneMap.passages.clear();
+    /* The nodes are retired, not freed: callers may still hold pointers to
+     * them until the next sweep. */
+    retireSceneMapContents(*sceneMapIterator->second, retiredNodes);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

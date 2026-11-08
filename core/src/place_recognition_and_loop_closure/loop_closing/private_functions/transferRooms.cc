@@ -99,27 +99,19 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
                          __func__);
         }
 
-        /* Add the room to the current map */
-        if (p_sceneGraph->addDetectedRoom(currentMapId,
-                                          p_currentDetectedRoom) !=
+        /* Hand the room from the merged map to the current map */
+        if (p_sceneGraph->moveRoom(mergeMapId,
+                                   currentMapId,
+                                   p_currentDetectedRoom,
+                                   scene_graph::RoomList::ROOM_LIST_DETECTED) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addDetectedRoom found no scene map for map %lu; "
-                         "continuing as before.",
+                         "%s: moveRoom found no scene map for maps %lu and "
+                         "%lu or no such room; continuing as before.",
                          __func__,
+                         mergeMapId,
                          currentMapId);
-        }
-
-        /* Remove the room from the merged map */
-        if (p_sceneGraph->eraseRoom(mergeMapId, p_currentDetectedRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseRoom found no scene map for map %lu; "
-                         "continuing as before.",
-                         __func__,
-                         mergeMapId);
         }
     }
 
@@ -152,23 +144,19 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->addCandidateRoom(currentMapId, pRoom) !=
+        if (p_sceneGraph->moveRoom(
+                mergeMapId,
+                currentMapId,
+                pRoom,
+                scene_graph::RoomList::ROOM_LIST_CANDIDATE) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addCandidateRoom found no scene map for map %lu; "
-                         "continuing as before.",
+                         "%s: moveRoom found no scene map for maps %lu and "
+                         "%lu or no such room; continuing as before.",
                          __func__,
+                         mergeMapId,
                          currentMapId);
-        }
-        if (p_sceneGraph->eraseRoom(mergeMapId, pRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseRoom found no scene map for map %lu; "
-                         "continuing as before.",
-                         __func__,
-                         mergeMapId);
         }
     }
 }

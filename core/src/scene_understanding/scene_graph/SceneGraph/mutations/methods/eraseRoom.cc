@@ -50,11 +50,13 @@ SceneGraphStatus SceneGraph::eraseRoom(unsigned long   mapId_in,
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    /* Erased by pointer, so a room whose id changed after it was added
+    /* Retired by pointer, so a room whose id changed after it was added
      * still leaves the tree. */
     SceneMap &sceneMap = *sceneMapIterator->second;
-    eraseEntriesByPointer(sceneMap.detectedRooms, p_room_in);
-    eraseEntriesByPointer(sceneMap.candidateRooms, p_room_in);
+    retireEntryByPointer(sceneMap.detectedRooms, p_room_in, retiredNodes.rooms);
+    retireEntryByPointer(sceneMap.candidateRooms,
+                         p_room_in,
+                         retiredNodes.rooms);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

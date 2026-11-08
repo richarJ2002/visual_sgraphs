@@ -55,6 +55,7 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <set>
+#include <shared_mutex>
 #include <sstream>
 #include <system_error>
 #include <unordered_map>
@@ -6752,6 +6753,22 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAtlas/getSceneGraph returned a failure status "
                      "although they cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /*!
+     * The rooms, floors and passages below are used until this function ends,
+     * on a thread that holds no semantic update lock: the guard keeps the scene
+     * graph from freeing them meanwhile.
+     */
+    std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
+    if (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
+        vs_graphs::core::scene_graph::SceneGraphStatus::
+            SCENE_GRAPH_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireReclaimGuard returned a failure status "
+                     "although it cannot fail; continuing as before.",
                      __func__);
     }
 

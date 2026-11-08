@@ -25,14 +25,11 @@
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
 
-#include <algorithm>
-#include <iostream>
-#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <rclcpp/logging.hpp>
 #include <shared_mutex>
+#include <utility>
 
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
@@ -44,10 +41,11 @@ namespace core
 namespace scene_graph
 {
 
-SceneGraphStatus SceneGraph::addFloor(unsigned long    mapId_in,
-                                      semantic::Floor *p_floor_inout)
+SceneGraphStatus
+    SceneGraph::addFloor(unsigned long                    mapId_in,
+                         std::unique_ptr<semantic::Floor> p_floor_in)
 {
-    if (p_floor_inout == nullptr)
+    if (p_floor_in == nullptr)
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
@@ -56,74 +54,11 @@ SceneGraphStatus SceneGraph::addFloor(unsigned long    mapId_in,
         sceneMapIterator = sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
+        retiredNodes.floors.push_back(std::move(p_floor_in));
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    SceneMap &sceneMap = *sceneMapIterator->second;
-    int       floorId{};
-    if (p_floor_inout->getId(floorId) !=
-        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    /* An entry for this storey under an older id is dropped first. */
-    for (std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
-         sceneMap.buildings)
-    {
-        std::map<int, semantic::Floor *> &floorsById =
-            buildingEntry.second->floors;
-        for (std::map<int, semantic::Floor *>::iterator floorIterator =
-                 floorsById.begin();
-             floorIterator != floorsById.end();)
-        {
-            floorIterator = floorIterator->second == p_floor_inout &&
-                                    floorIterator->first != floorId
-                                ? floorsById.erase(floorIterator)
-                                : std::next(floorIterator);
-        }
-    }
-
-    /* A storey whose id is negative or held by another storey moves to the
-     * next free id; ids handed out are never reused. */
-    semantic::Floor *p_existingFloor = findFloorInBuildings(sceneMap, floorId);
-    if (floorId < 0 ||
-        (p_existingFloor != nullptr && p_existingFloor != p_floor_inout))
-    {
-        while (findFloorInBuildings(sceneMap, sceneMap.nextAvailableFloorId) !=
-               nullptr)
-        {
-            sceneMap.nextAvailableFloorId++;
-        }
-        const int replacementFloorId = sceneMap.nextAvailableFloorId++;
-        std::cerr << "[Map] Floor ID collision for " << floorId
-                  << "; reassigned to " << replacementFloorId << "."
-                  << std::endl;
-        if (p_floor_inout->setId(replacementFloorId) !=
-            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        floorId = replacementFloorId;
-    }
-    else
-    {
-        sceneMap.nextAvailableFloorId =
-            std::max(sceneMap.nextAvailableFloorId, floorId + 1);
-    }
-
-    std::unique_ptr<Building> &p_building = sceneMap.buildings[0];
-    if (p_building == nullptr)
-    {
-        p_building = std::make_unique<Building>();
-    }
-    p_building->floors.insert_or_assign(floorId, p_floor_inout);
+    insertFloor(*sceneMapIterator->second, std::move(p_floor_in));
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

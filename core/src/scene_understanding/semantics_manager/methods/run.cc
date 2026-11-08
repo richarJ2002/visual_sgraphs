@@ -23,18 +23,19 @@
  *                  SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_axiom_evaluator/objects/SemanticAxiomEvaluatorStatusEnum.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidatesStatusEnum.h"
@@ -43,13 +44,12 @@
 #include "scene_understanding/semantic/semantic_report_cache/objects/SemanticReportCacheStatusEnum.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include "scene_understanding/semantic/sha256_digest/objects/Sha256DigestStatusEnum.h"
-#include "configuration/types/types.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantic/semantic_axiom_evaluator/semantic_axiom_evaluator.h"
+#include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_canonical_serilization/semantic_canonical_serilization.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/semantic_graph_snapshot.h"
-#include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/sha256_digest/sha256_digest.h"
 
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
@@ -120,7 +120,7 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        pipelineSemanticCycle  = ++summaryCycle;
+        pipelineSemanticCycle       = ++summaryCycle;
         map::Map *p_atlasCurrentMap = nullptr;
         if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -289,11 +289,11 @@ void SemanticsManager::run(void)
             if (associateWallsToRoomsFromFreeSpaceClusters() !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: updateRoomsFromFreeSpaceClusters returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateRoomsFromFreeSpaceClusters returned a "
+                             "failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -710,11 +710,11 @@ void SemanticsManager::run(void)
             if (associateWallsToRoomsFromFreeSpaceClusters() !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: updateRoomsFromFreeSpaceClusters returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateRoomsFromFreeSpaceClusters returned a "
+                             "failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -1365,6 +1365,18 @@ void SemanticsManager::run(void)
                 }
                 currentMapRevision = currentMapMapChangeIndex;
             }
+        }
+
+        /* Deletion ends the cycle: flagged rooms, passages and storeys leave
+         * the scene graph and are freed here, under the same lock that every
+         * writer holds, so no cycle step can still use them. */
+        if (p_sceneGraph->sweepBadNodes() !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: sweepBadNodes returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Unlock before any evaluation/serialization/caching/logging work --

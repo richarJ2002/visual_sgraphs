@@ -47,6 +47,7 @@
 #include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphStatusEnum.h"
 #include <rclcpp/logging.hpp>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -73,9 +74,14 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
      * Candidate rooms (prospective/provisional) may not have full wall loops
      * yet but still carry spatial identity needed for cross-restart matching.
      */
-    std::vector<semantic::Room *> rooms{};
-    if (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    std::vector<semantic::Room *>       rooms{};
+    /* The tracking thread may call this without the semantic update lock: the
+     * guard keeps the scene graph from freeing the rooms read below. */
+    std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
+    if ((sceneGraph.acquireReclaimGuard(sceneGraphReclaimGuard) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+        (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapDetectedRoomsInIdOrder found no scene map for "

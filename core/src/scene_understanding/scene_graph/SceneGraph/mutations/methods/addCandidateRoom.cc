@@ -28,11 +28,11 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <rclcpp/logging.hpp>
 #include <shared_mutex>
 #include <utility>
 
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
@@ -41,8 +41,9 @@ namespace core
 namespace scene_graph
 {
 
-SceneGraphStatus SceneGraph::addCandidateRoom(unsigned long   mapId_in,
-                                              semantic::Room *p_room_in)
+SceneGraphStatus
+    SceneGraph::addCandidateRoom(unsigned long                   mapId_in,
+                                 std::unique_ptr<semantic::Room> p_room_in)
 {
     if (p_room_in == nullptr)
     {
@@ -53,31 +54,14 @@ SceneGraphStatus SceneGraph::addCandidateRoom(unsigned long   mapId_in,
         sceneMapIterator = sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
+        retiredNodes.rooms.push_back(std::move(p_room_in));
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    int roomId{};
-    if (p_room_in->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    /* Rooms are keyed by id: a room whose id another room already holds
-     * is not added, and the first room keeps the id. */
-    const std::pair<std::map<int, semantic::Room *>::iterator, bool>
-        roomInsertion =
-            sceneMapIterator->second->candidateRooms.emplace(roomId, p_room_in);
-    if (roomInsertion.first->second != p_room_in)
-    {
-        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                    "%s: room id %d is already taken in map %lu; the room "
-                    "was not added.",
-                    __func__,
-                    roomId,
-                    mapId_in);
-    }
+    insertRoom(sceneMapIterator->second->candidateRooms,
+               std::move(p_room_in),
+               mapId_in,
+               retiredNodes);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

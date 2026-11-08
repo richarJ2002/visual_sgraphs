@@ -23,33 +23,35 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "configuration/types/types.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
 #include "scene_understanding/scene_graph/Passage/objects/KnownSideProvenanceStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
-#include "configuration/types/types.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
-#include "scene_understanding/semantic/value_order/value_order.h"
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
+#include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <rclcpp/logging.hpp>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include "execution/profiling/profiling.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
@@ -2139,7 +2141,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         /* SPATIAL DEDUPLICATION: Check if a
                          * candidate/prospective room already exists near this
                          * location (within 2.0m) across ALL passages. */
-                        bool prospectiveExists = false;
+                        bool      prospectiveExists = false;
                         map::Map *p_activeMap       = nullptr;
                         if (p_atlas->getCurrentMap(p_activeMap) !=
                             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -2481,13 +2483,16 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             if (!prospectiveExists)
                             {
                                 /* Create the prospective room */
-                                vs_graphs::core::semantic::Room
-                                    *p_prospectiveRoom = nullptr;
-                                if (utils::geo_sem_helpers::GeoSemHelpers::createBlankRoomCandidate(
-                                        p_atlas,
-                                        p_prospectiveRoom,
-                                        prospectiveCentroid) !=
-                                    utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+                                std::unique_ptr<semantic::Room>
+                                    p_prospectiveRoomOwner{};
+                                if (utils::geo_sem_helpers::GeoSemHelpers::
+                                        createBlankRoomCandidate(
+                                            p_atlas,
+                                            p_prospectiveRoomOwner,
+                                            prospectiveCentroid) !=
+                                    utils::geo_sem_helpers::
+                                        GeoSemHelpersStatus::
+                                            GEO_SEM_HELPERS_STATUS_SUCCESS)
                                 {
                                     RCLCPP_ERROR(
                                         rclcpp::get_logger("vs_graphs"),
@@ -2497,6 +2502,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         __func__);
                                 }
 
+                                vs_graphs::core::semantic::Room
+                                    *p_prospectiveRoom =
+                                        p_prospectiveRoomOwner.get();
                                 if (p_prospectiveRoom != nullptr)
                                 {
                                     /* Mark as provisional - will be promoted
@@ -2540,7 +2548,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                      * confirmed room) */
                                     if (p_sceneGraph->addCandidateRoom(
                                             activeMapId,
-                                            p_prospectiveRoom) !=
+                                            std::move(
+                                                p_prospectiveRoomOwner)) !=
                                         scene_graph::SceneGraphStatus::
                                             SCENE_GRAPH_STATUS_SUCCESS)
                                     {
@@ -3250,9 +3259,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
+                    unsigned long roomMapId{};
                     if (p_roomMap != nullptr)
                     {
-                        unsigned long roomMapId{};
                         if (p_roomMap->getId(roomMapId) !=
                             map::MapStatus::MAP_STATUS_SUCCESS)
                         {
@@ -3283,14 +3292,17 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (p_prospectiveRoom->setBad() !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    if (p_sceneGraph->markRoomBad(roomMapId,
+                                                  p_prospectiveRoom) !=
+                        scene_graph::SceneGraphStatus::
+                            SCENE_GRAPH_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),
-                            "%s: setBad returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
+                            "%s: markRoomBad found no scene map for map %lu; "
+                            "the room is flagged alone; continuing as before.",
+                            __func__,
+                            roomMapId);
                     }
 
                     if (p_farSideConfirmedRoom->setDoorways(p_passage) !=

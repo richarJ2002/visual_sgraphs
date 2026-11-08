@@ -234,16 +234,16 @@ void reassociateMergedSemantics(
         int freshRoomId{};
         if (p_importedRoom->getId(importedRoomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
-            p_sceneGraph->eraseRoom(currentMapId, p_importedRoom) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
             p_atlas_inout->reserveRoomIdentity(freshRoomId) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedRoom->setId(freshRoomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
-            (isDetectedRoom
-                 ? p_sceneGraph->addDetectedRoom(currentMapId, p_importedRoom)
-                 : p_sceneGraph->addCandidateRoom(currentMapId,
-                                                  p_importedRoom)) !=
+            p_sceneGraph->moveRoom(
+                currentMapId,
+                currentMapId,
+                p_importedRoom,
+                isDetectedRoom ? scene_graph::RoomList::ROOM_LIST_DETECTED
+                               : scene_graph::RoomList::ROOM_LIST_CANDIDATE) !=
                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -302,13 +302,13 @@ void reassociateMergedSemantics(
         int freshPassageId{};
         if (p_importedPassage->getId(importedPassageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-            p_sceneGraph->erasePassage(currentMapId, p_importedPassage) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
             p_atlas_inout->reservePassageIdentity(freshPassageId) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedPassage->setId(freshPassageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-            p_sceneGraph->addPassage(currentMapId, p_importedPassage) !=
+            p_sceneGraph->movePassage(currentMapId,
+                                      currentMapId,
+                                      p_importedPassage) !=
                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

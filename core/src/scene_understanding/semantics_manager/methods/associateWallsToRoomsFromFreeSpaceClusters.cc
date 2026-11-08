@@ -1812,9 +1812,9 @@ SemanticsManagerStatus
                             __func__);
                     }
 
+                    unsigned long currentMapId{};
                     if (p_currentMap != nullptr)
                     {
-                        unsigned long currentMapId{};
                         if (p_currentMap->getId(currentMapId) !=
                             map::MapStatus::MAP_STATUS_SUCCESS)
                         {
@@ -1836,14 +1836,17 @@ SemanticsManagerStatus
                         }
                     }
 
-                    if (p_existingWallOwner->setBad() !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    if (p_sceneGraph->markRoomBad(currentMapId,
+                                                  p_existingWallOwner) !=
+                        scene_graph::SceneGraphStatus::
+                            SCENE_GRAPH_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),
-                            "%s: setBad returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
+                            "%s: markRoomBad found no scene map for map %lu; "
+                            "the room is flagged alone; continuing as before.",
+                            __func__,
+                            currentMapId);
                     }
 
                     int existingWallOwnerId{};

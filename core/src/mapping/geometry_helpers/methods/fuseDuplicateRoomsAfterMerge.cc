@@ -808,13 +808,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_importedRoom->setBad() !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        if (p_sceneGraph->markRoomBad(mapId, p_importedRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
+                         "%s: markRoomBad found no scene map for map %lu; the "
+                         "room is flagged alone; continuing as before.",
+                         __func__,
+                         mapId);
         }
         if (p_map_inout->replaceLinkedRoom(p_importedRoom,
                                            p_bestRetainedRoom) !=

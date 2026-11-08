@@ -27,6 +27,9 @@
 #define VS_GRAPHS_SCENE_GRAPH_BUILDING_STRUCT_H
 
 #include <map>
+#include <memory>
+
+#include "scene_understanding/scene_graph/Floor/Floor.h"
 
 namespace vs_graphs
 {
@@ -34,7 +37,6 @@ namespace core
 {
 namespace semantic
 {
-class Floor;
 class Passage;
 } /* namespace semantic */
 
@@ -47,18 +49,18 @@ namespace scene_graph
  *                  passages of a storey are read from the storey and its
  *                  rooms when queried, not stored here.
  *
- *                  Every pointer is borrowed: the tree does not free the
- *                  objects. Containers are keyed by id so iteration runs in
- *                  id order. Owned by a SceneMap and guarded by the
- *                  SceneGraph graph mutex.
+ *                  The building owns its storeys; the staircase passage
+ *                  index is borrowed from the scene map. Containers are keyed
+ *                  by id so iteration runs in id order. Owned by a SceneMap
+ *                  and guarded by the SceneGraph graph mutex.
  */
 struct Building
 {
   public:
     /*!
-     * @brief           Storeys of this building by floor id; borrowed.
+     * @brief           Storeys of this building by floor id; owned.
      */
-    std::map<int, semantic::Floor *> floors;
+    std::map<int, std::unique_ptr<semantic::Floor>> floors;
 
     /*!
      * @brief           Passages joining rooms of different storeys

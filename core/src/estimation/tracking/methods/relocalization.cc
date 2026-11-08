@@ -30,32 +30,33 @@
  *                  Tracking.h.
  */
 
+#include "estimation/mlpnp_solver/objects/MLPnPsolverStatusEnum.h"
 #include "estimation/tracking/objects/TrackingClass.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/frame/objects/FrameStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
-#include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
-#include "estimation/mlpnp_solver/objects/MLPnPsolverStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
-#include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
+#include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
 
-#include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
 #include "estimation/mlpnp_solver/mlpnp_solver.h"
-#include "visual_features/orb_matcher/orb_matcher.h"
-#include "optimization/optimizer/optimizer.h"
 #include "execution/system/system.h"
+#include "optimization/optimizer/optimizer.h"
+#include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
+#include "visual_features/orb_matcher/orb_matcher.h"
 
 #include <iostream>
 #include <rclcpp/logging.hpp>
+#include <shared_mutex>
 
 #include "execution/profiling/profiling.h"
 
@@ -70,7 +71,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
 {
     PROFILE_FUNCTION();
     if (system::Verbose::printMess("Starting relocalization",
-                           system::Verbose::VERBOSITY_NORMAL) !=
+                                   system::Verbose::VERBOSITY_NORMAL) !=
         system::VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -79,7 +80,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                      __func__);
     }
     /* Compute Bag of Words Vector */
-    if (currentFrame.computeBagOfWords() != frame::FrameStatus::FRAME_STATUS_SUCCESS)
+    if (currentFrame.computeBagOfWords() !=
+        frame::FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: computeBagOfWords returned a failure status although "
@@ -105,15 +107,19 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     }
     if (p_currentMap)
     {
-        std::vector<semantic::Room *> rooms{};
-        scene_graph::SceneGraph      *p_sceneGraph = nullptr;
-        unsigned long                 currentMapId{};
+        std::vector<semantic::Room *>       rooms{};
+        scene_graph::SceneGraph            *p_sceneGraph = nullptr;
+        unsigned long                       currentMapId{};
+        /* The tracking thread holds no semantic lock: the guard keeps the
+         * scene graph from freeing these rooms while the loop below runs. */
+        std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
         if ((p_atlas->getSceneGraph(p_sceneGraph) !=
              atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
             (p_currentMap->getId(currentMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_sceneGraph->getMapDetectedRoomsInIdOrder(currentMapId,
-                                                        rooms) !=
+            (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
+             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
+            (p_sceneGraph->getMapDetectedRoomsInIdOrder(currentMapId, rooms) !=
              scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -181,8 +187,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     if (p_keyFrameDatabase->detectRelocalizationCandidates(
             &currentFrame,
             p_atlasCurrentMap,
-            candidateKeyFrames) !=
-        keyframe_database::KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+            candidateKeyFrames) != keyframe_database::KeyFrameDatabaseStatus::
+                                       KEY_FRAME_DATABASE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: detectRelocalizationCandidates returned a failure "
@@ -193,7 +199,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     if (candidateKeyFrames.empty())
     {
         if (system::Verbose::printMess("There are not candidates",
-                               system::Verbose::VERBOSITY_NORMAL) !=
+                                       system::Verbose::VERBOSITY_NORMAL) !=
             system::VerboseStatus::VERBOSE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -260,11 +266,13 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             else
             {
                 mlpnp_solver::MLPnPsolver *p_solver =
-                    new mlpnp_solver::MLPnPsolver(currentFrame,
-                                    vvpMapPointMatches[keyFrameIndex]);
+                    new mlpnp_solver::MLPnPsolver(
+                        currentFrame,
+                        vvpMapPointMatches[keyFrameIndex]);
                 if (p_solver
                         ->setRansacParameters(0.99, 10, 300, 6, 0.5, 5.991) !=
-                    mlpnp_solver::MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+                    mlpnp_solver::MLPnPsolverStatus::
+                        MLPN_PSOLVER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
                         rclcpp::get_logger("vs_graphs"),
@@ -340,8 +348,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             candidateKeyFrames;
         std::vector<std::vector<map_point::MapPoint *>> reorderedMatches =
             vvpMapPointMatches;
-        std::vector<mlpnp_solver::MLPnPsolver *> reorderedSolvers   = pnpSolvers;
-        std::vector<bool>          reorderedDiscarded = discardedFlags;
+        std::vector<mlpnp_solver::MLPnPsolver *> reorderedSolvers = pnpSolvers;
+        std::vector<bool> reorderedDiscarded = discardedFlags;
 
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
@@ -361,7 +369,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
      * Alternatively perform some iterations of P4P RANSAC
      * Until we found a camera pose supported by enough inliers
      */
-    bool       isMatched = false;
+    bool                    isMatched = false;
     orb_matcher::ORBmatcher matcher2(0.9, true);
 
     while (candidateCount > 0 && !isMatched)
@@ -377,9 +385,9 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             int               inlierCount;
             bool              areIterationsExhausted;
 
-            mlpnp_solver::MLPnPsolver    *p_solver = pnpSolvers[keyFrameIndex];
-            Eigen::Matrix4f poseEigen_worldToCamera;
-            bool            bTcw{};
+            mlpnp_solver::MLPnPsolver *p_solver = pnpSolvers[keyFrameIndex];
+            Eigen::Matrix4f            poseEigen_worldToCamera;
+            bool                       bTcw{};
             if (p_solver->iterate(5,
                                   areIterationsExhausted,
                                   inliersFlags,
@@ -432,7 +440,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                 }
 
                 int goodCount{};
-                if (optimizer::Optimizer::poseOptimization(&currentFrame, goodCount) !=
+                if (optimizer::Optimizer::poseOptimization(&currentFrame,
+                                                           goodCount) !=
                     optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -463,8 +472,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                             founds,
                             10,
                             100,
-                            nadditional) !=
-                        orb_matcher::ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                            nadditional) != orb_matcher::ORBmatcherStatus::
+                                                ORBMATCHER_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),
@@ -476,9 +485,10 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                     if (nadditional + goodCount >= 50)
                     {
                         int inlierCount2{};
-                        if (optimizer::Optimizer::poseOptimization(&currentFrame,
-                                                        inlierCount2) !=
-                            optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                        if (optimizer::Optimizer::poseOptimization(
+                                &currentFrame,
+                                inlierCount2) != optimizer::OptimizerStatus::
+                                                     OPTIMIZER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: poseOptimization returned a "
@@ -508,7 +518,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                                     3,
                                     64,
                                     matcher2ByProjection) !=
-                                orb_matcher::ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                                orb_matcher::ORBmatcherStatus::
+                                    ORBMATCHER_STATUS_SUCCESS)
                             {
                                 RCLCPP_ERROR(
                                     rclcpp::get_logger("vs_graphs"),
@@ -523,9 +534,11 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                             if (goodCount + nadditional >= 50)
                             {
                                 int inlierCount3{};
-                                if (optimizer::Optimizer::poseOptimization(&currentFrame,
-                                                                inlierCount3) !=
-                                    optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                                if (optimizer::Optimizer::poseOptimization(
+                                        &currentFrame,
+                                        inlierCount3) !=
+                                    optimizer::OptimizerStatus::
+                                        OPTIMIZER_STATUS_SUCCESS)
                                 {
                                     RCLCPP_ERROR(
                                         rclcpp::get_logger("vs_graphs"),

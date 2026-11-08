@@ -52,7 +52,9 @@ SceneGraphStatus
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
-    p_floor_out = findFloorInBuildings(*sceneMapIterator->second, floorId_in);
+    semantic::Floor *p_foundFloor =
+        findFloorInBuildings(*sceneMapIterator->second, floorId_in);
+    p_floor_out = isFloorLive(p_foundFloor) ? p_foundFloor : nullptr;
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

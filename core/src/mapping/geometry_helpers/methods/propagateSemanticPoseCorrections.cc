@@ -24,19 +24,19 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <algorithm>
@@ -45,6 +45,7 @@
 #include <map>
 #include <rclcpp/logging.hpp>
 #include <set>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -56,7 +57,7 @@ namespace utils
 {
 
 UtilsStatus Utils::propagateSemanticPoseCorrections(
-    map::Map                   *p_map_inout,
+    map::Map              *p_map_inout,
     const KeyFramePoseMap &keyFramePosesBefore_worldToCamera_in,
     const KeyFramePoseMap &keyFramePosesAfter_worldToCamera_in,
     const g2o::Sim3       &fallbackTransform_oldWorldToNewWorld_in)
@@ -65,11 +66,17 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     {
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            mapId{};
+    scene_graph::SceneGraph            *p_sceneGraph = nullptr;
+    unsigned long                       mapId{};
+    /* Not every caller holds the semantic update lock: the guard keeps the
+     * scene graph from freeing the nodes read below. */
+    std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
     if ((p_map_inout->getSceneGraph(p_sceneGraph) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS))
+        (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_sceneGraph == nullptr) ||
+        (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getSceneGraph/getId returned a failure status "
@@ -79,11 +86,11 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
 
     struct PoseCorrectionNode
     {
-        keyframe::KeyFrame       *p_keyFrame;
-        g2o::Sim3       poseBefore_worldToCamera;
-        g2o::Sim3       poseAfter_worldToCamera;
-        g2o::Sim3       poseCorrection_oldWorldToNewWorld;
-        Eigen::Vector3d cameraCenter_oldWorld_m;
+        keyframe::KeyFrame *p_keyFrame;
+        g2o::Sim3           poseBefore_worldToCamera;
+        g2o::Sim3           poseAfter_worldToCamera;
+        g2o::Sim3           poseCorrection_oldWorldToNewWorld;
+        Eigen::Vector3d     cameraCenter_oldWorld_m;
     };
 
     const auto isFiniteSim3 = [](const g2o::Sim3 &transform_in)
@@ -152,8 +159,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         { return firstNode_in.p_keyFrame->id < secondNode_in.p_keyFrame->id; });
 
     const auto findNodeForKeyFrame =
-        [&correctionNodes](
-            const keyframe::KeyFrame *p_keyFrame_in) -> const PoseCorrectionNode *
+        [&correctionNodes](const keyframe::KeyFrame *p_keyFrame_in)
+        -> const PoseCorrectionNode *
     {
         if (p_keyFrame_in == nullptr)
         {

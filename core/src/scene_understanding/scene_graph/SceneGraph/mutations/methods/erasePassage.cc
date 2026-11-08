@@ -51,12 +51,14 @@ SceneGraphStatus SceneGraph::erasePassage(unsigned long      mapId_in,
     }
 
     SceneMap &sceneMap = *sceneMapIterator->second;
-    eraseEntriesByPointer(sceneMap.passages, p_passage_in);
     for (std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
          sceneMap.buildings)
     {
         eraseEntriesByPointer(buildingEntry.second->passages, p_passage_in);
     }
+    retireEntryByPointer(sceneMap.passages,
+                         p_passage_in,
+                         retiredNodes.passages);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

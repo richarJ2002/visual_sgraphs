@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            addDetectedRoom.cc
+ * @file            markFloorBad.cc
  *
- * @brief           Implements SceneGraph::addDetectedRoom(), declared in
+ * @brief           Implements SceneGraph::markFloorBad(), declared in
  *                  scene_graph/SceneGraph/objects/SceneGraphClass.h.
  */
 
@@ -30,9 +30,11 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <shared_mutex>
-#include <utility>
+#include <vector>
 
+#include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
@@ -41,42 +43,38 @@ namespace core
 namespace scene_graph
 {
 
-SceneGraphStatus SceneGraph::addDetectedRoom(unsigned long   mapId_in,
-                                             semantic::Room *p_room_in)
+SceneGraphStatus SceneGraph::markFloorBad(unsigned long    mapId_in,
+                                          semantic::Floor *p_floor_inout)
 {
-    if (p_room_in == nullptr)
+    if (p_floor_inout == nullptr)
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
+
+    std::vector<semantic::Room *> floorRooms{};
+    if (p_floor_inout->getRooms(floorRooms) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS ||
+        p_floor_inout->setBad() != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRooms/setBad returned a failure status although "
+                     "they cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    const std::map<unsigned long, std::unique_ptr<SceneMap>>::const_iterator
         sceneMapIterator = sceneMaps.find(mapId_in);
     if (sceneMapIterator == sceneMaps.end())
     {
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    int roomId{};
-    if (p_room_in->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    /* A bad parent means bad children: every room of the storey goes with it
+     * and takes its dependent passages along. */
+    for (semantic::Room *p_room : floorRooms)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    /* Rooms are keyed by id: a room whose id another room already holds
-     * is not added, and the first room keeps the id. */
-    const std::pair<std::map<int, semantic::Room *>::iterator, bool>
-        roomInsertion =
-            sceneMapIterator->second->detectedRooms.emplace(roomId, p_room_in);
-    if (roomInsertion.first->second != p_room_in)
-    {
-        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                    "%s: room id %d is already taken in map %lu; the room "
-                    "was not added.",
-                    __func__,
-                    roomId,
-                    mapId_in);
+        flagRoomBad(*sceneMapIterator->second, p_room);
     }
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }

@@ -54,7 +54,9 @@ SceneGraphStatus SceneGraph::eraseFloor(unsigned long    mapId_in,
     for (std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
          sceneMap.buildings)
     {
-        eraseEntriesByPointer(buildingEntry.second->floors, p_floor_in);
+        retireEntryByPointer(buildingEntry.second->floors,
+                             p_floor_in,
+                             retiredNodes.floors);
     }
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }

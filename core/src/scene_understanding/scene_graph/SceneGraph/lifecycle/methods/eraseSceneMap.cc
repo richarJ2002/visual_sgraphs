@@ -25,8 +25,12 @@
 
 #include "scene_understanding/scene_graph/SceneGraph/objects/SceneGraphClass.h"
 
+#include <map>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
+
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
@@ -38,7 +42,16 @@ namespace scene_graph
 SceneGraphStatus SceneGraph::eraseSceneMap(unsigned long mapId_in)
 {
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    sceneMaps.erase(mapId_in);
+    const std::map<unsigned long, std::unique_ptr<SceneMap>>::iterator
+        sceneMapIterator = sceneMaps.find(mapId_in);
+    if (sceneMapIterator != sceneMaps.end())
+    {
+        /* Other maps may still link to this map's rooms (their starting and
+         * final rooms), so the nodes are retired and freed by a sweep after
+         * those links are cleared. */
+        retireSceneMapContents(*sceneMapIterator->second, retiredNodes);
+        sceneMaps.erase(sceneMapIterator);
+    }
     if (activeMapId == mapId_in)
     {
         activeMapId.reset();

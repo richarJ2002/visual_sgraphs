@@ -39,7 +39,9 @@
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
+#include <memory>
 #include <rclcpp/logging.hpp>
+#include <utility>
 
 namespace vs_graphs
 {
@@ -294,13 +296,14 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     bool recoveredRoom   = false;
     if (p_bootstrapRoom == nullptr)
     {
-        vs_graphs::core::semantic::Room *p_blankRoomCandidate = nullptr;
+        std::unique_ptr<semantic::Room> p_blankRoomCandidate{};
         if (utils::geo_sem_helpers::GeoSemHelpers::createBlankRoomCandidate(
                 p_atlas,
                 p_blankRoomCandidate,
                 cameraPosition_world_m,
                 recoveryContext.has_value()) !=
-            utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            utils::geo_sem_helpers::GeoSemHelpersStatus::
+                GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
@@ -308,7 +311,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        p_bootstrapRoom = p_blankRoomCandidate;
+        p_bootstrapRoom = p_blankRoomCandidate.get();
         if (p_bootstrapRoom == nullptr)
         {
             unsigned long activeMapId2{};
@@ -330,7 +333,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
             return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
-        if (p_sceneGraph->addCandidateRoom(activeMapId, p_bootstrapRoom) !=
+        if (p_sceneGraph->addCandidateRoom(activeMapId,
+                                           std::move(p_blankRoomCandidate)) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -420,7 +424,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     if (p_canonicalFloor == nullptr)
     {
         if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas) !=
-            utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            utils::geo_sem_helpers::GeoSemHelpersStatus::
+                GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: createMapFloor returned a failure status "
@@ -462,7 +467,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          __func__);
         }
         unsigned long activeMapId3{};
-        if (p_activeMap->getId(activeMapId3) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_activeMap->getId(activeMapId3) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId returned a failure status although it "
@@ -580,7 +586,9 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                  * frame-free state (passable, traversal history, live links
                  * below) is restored. A zero-sized aperture shrinks geometric
                  * tests to their margin sliver, as before this change. */
-                p_recoveryPassage = new semantic::Passage();
+                std::unique_ptr<semantic::Passage> p_recoveryPassageOwner =
+                    std::make_unique<semantic::Passage>();
+                p_recoveryPassage = p_recoveryPassageOwner.get();
                 int recoveryPassageId{};
                 if (p_atlas->reservePassageIdentity(recoveryPassageId) !=
                         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
@@ -674,7 +682,9 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          */
                     }
                 }
-                if (p_sceneGraph->addPassage(activeMapId, p_recoveryPassage) !=
+                if (p_sceneGraph->addPassage(
+                        activeMapId,
+                        std::move(p_recoveryPassageOwner)) !=
                     scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -781,7 +791,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          __func__);
         }
         unsigned long activeMapId4{};
-        if (p_activeMap->getId(activeMapId4) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_activeMap->getId(activeMapId4) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId returned a failure status although it "
@@ -820,7 +831,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          __func__);
         }
         unsigned long activeMapId5{};
-        if (p_activeMap->getId(activeMapId5) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_activeMap->getId(activeMapId5) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId returned a failure status although it "

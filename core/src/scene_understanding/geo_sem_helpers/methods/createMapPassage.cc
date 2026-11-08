@@ -23,27 +23,29 @@
  *                  GeoSemHelpers.h.
  */
 
-#include "mapping/geometry_helpers/utils.h"
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "map_state/map/map.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/map/map.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
+#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <rclcpp/logging.hpp>
 #include <sstream>
+#include <utility>
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
@@ -290,9 +292,8 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         {
             /* Compute the dimensions of the door */
             std::pair<double, double> measuredDimensions{};
-            if (utils::Utils::computePlaneWidthHeight(
-                    p_doorCloud,
-                    measuredDimensions) !=
+            if (utils::Utils::computePlaneWidthHeight(p_doorCloud,
+                                                      measuredDimensions) !=
                 utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -697,8 +698,9 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     }
 
     /* Initialize passage object */
-    vs_graphs::core::semantic::Passage *p_newMapPassage =
-        new vs_graphs::core::semantic::Passage();
+    std::unique_ptr<semantic::Passage> p_newPassageOwner =
+        std::make_unique<semantic::Passage>();
+    semantic::Passage *p_newMapPassage = p_newPassageOwner.get();
 
     /* Fill passage object */
     if (p_newMapPassage->setId(passageId) !=
@@ -856,7 +858,8 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     unsigned long atlasCurrentMapId{};
     if ((p_atlasCurrentMap->getId(atlasCurrentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->addPassage(atlasCurrentMapId, p_newMapPassage) !=
+        (p_sceneGraph->addPassage(atlasCurrentMapId,
+                                  std::move(p_newPassageOwner)) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

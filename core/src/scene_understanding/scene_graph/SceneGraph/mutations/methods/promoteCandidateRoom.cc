@@ -28,8 +28,8 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <rclcpp/logging.hpp>
 #include <shared_mutex>
+#include <utility>
 
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
@@ -56,18 +56,15 @@ SceneGraphStatus SceneGraph::promoteCandidateRoom(unsigned long   mapId_in,
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    SceneMap &sceneMap = *sceneMapIterator->second;
-    eraseEntriesByPointer(sceneMap.candidateRooms, p_room_in);
-
-    int roomId{};
-    if (p_room_in->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    sceneMap.detectedRooms.emplace(roomId, p_room_in);
+    /* A room that is not a candidate is already detected (or gone): there
+     * is nothing to promote. */
+    SceneMap                       &sceneMap = *sceneMapIterator->second;
+    std::unique_ptr<semantic::Room> p_promotedRoom =
+        extractEntryByPointer(sceneMap.candidateRooms, p_room_in);
+    insertRoom(sceneMap.detectedRooms,
+               std::move(p_promotedRoom),
+               mapId_in,
+               retiredNodes);
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 

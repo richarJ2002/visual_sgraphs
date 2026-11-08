@@ -30,15 +30,16 @@
  *                  Optimizer.h.
  */
 
-#include "optimization/optimizer/objects/OptimizerClass.h"
-#include "mapping/geometric/Plane/Plane.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include <rclcpp/logging.hpp>
+#include <shared_mutex>
 
 #include "execution/profiling/profiling.h"
 
@@ -61,10 +62,15 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     scene_graph::SceneGraph                       *p_sceneGraph = nullptr;
     unsigned long                                  mapId{};
+    /* The rooms are used until the function ends, outside the semantic update
+     * lock: the guard keeps the scene graph from freeing them meanwhile. */
+    std::shared_lock<std::shared_mutex>            sceneGraphReclaimGuard{};
     if ((p_map_in->getSceneGraph(p_sceneGraph) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_sceneGraph == nullptr) ||
+        (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {

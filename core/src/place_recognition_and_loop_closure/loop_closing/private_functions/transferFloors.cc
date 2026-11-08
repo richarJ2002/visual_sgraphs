@@ -79,15 +79,6 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
             continue;
         }
 
-        if (p_sceneGraph->eraseFloor(mergeMapId, p_floor) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseFloor found no scene map for map %lu; "
-                         "continuing as before.",
-                         __func__,
-                         mergeMapId);
-        }
         semantic::Floor               *p_retainedFloor = nullptr;
         std::vector<semantic::Floor *> currentMapAllFloors{};
         if (p_sceneGraph->getMapFloorsInIdOrder(currentMapId,
@@ -152,6 +143,17 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
         }
         if (p_retainedFloor != nullptr)
         {
+            /* The duplicate storey leaves the tree and is freed by a later
+             * sweep. */
+            if (p_sceneGraph->eraseFloor(mergeMapId, p_floor) !=
+                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseFloor found no scene map for map %lu; "
+                             "continuing as before.",
+                             __func__,
+                             mergeMapId);
+            }
             if (mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor) !=
                 loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
             {
@@ -171,13 +173,14 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->addFloor(currentMapId, p_floor) !=
+        if (p_sceneGraph->moveFloor(mergeMapId, currentMapId, p_floor) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addFloor found no scene map for map %lu; "
-                         "continuing as before.",
+                         "%s: moveFloor found no scene map for maps %lu and "
+                         "%lu or no such storey; continuing as before.",
                          __func__,
+                         mergeMapId,
                          currentMapId);
         }
     }

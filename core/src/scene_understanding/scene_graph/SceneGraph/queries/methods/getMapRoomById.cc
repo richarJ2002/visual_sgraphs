@@ -30,6 +30,8 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -50,21 +52,22 @@ SceneGraphStatus SceneGraph::getMapRoomById(unsigned long    mapId_in,
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    /* Detected rooms first, as getMapRoomsInIdOrder() keeps them. */
+    /* Detected rooms first, as getMapRoomsInIdOrder() keeps them; a flagged
+     * room is hidden and lets the other list answer. */
     const SceneMap &sceneMap = *sceneMapIterator->second;
-    std::map<int, semantic::Room *>::const_iterator roomIterator =
-        sceneMap.detectedRooms.find(roomId_in);
-    if (roomIterator != sceneMap.detectedRooms.end())
+    std::map<int, std::unique_ptr<semantic::Room>>::const_iterator
+        roomIterator = sceneMap.detectedRooms.find(roomId_in);
+    if (roomIterator != sceneMap.detectedRooms.end() &&
+        isRoomLive(roomIterator->second.get()))
     {
-        p_room_out = roomIterator->second;
+        p_room_out = roomIterator->second.get();
+        return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
     }
-    else
+    roomIterator = sceneMap.candidateRooms.find(roomId_in);
+    if (roomIterator != sceneMap.candidateRooms.end() &&
+        isRoomLive(roomIterator->second.get()))
     {
-        roomIterator = sceneMap.candidateRooms.find(roomId_in);
-        if (roomIterator != sceneMap.candidateRooms.end())
-        {
-            p_room_out = roomIterator->second;
-        }
+        p_room_out = roomIterator->second.get();
     }
     return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }

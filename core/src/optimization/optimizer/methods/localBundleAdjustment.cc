@@ -62,6 +62,7 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <set>
+#include <shared_mutex>
 
 #include "execution/profiling/profiling.h"
 
@@ -115,10 +116,15 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
     scene_graph::SceneGraph                           *p_sceneGraph = nullptr;
     unsigned long                                      mapId{};
+    /* The rooms are used until the function ends, outside the semantic update
+     * lock: the guard keeps the scene graph from freeing them meanwhile. */
+    std::shared_lock<std::shared_mutex>                sceneGraphReclaimGuard{};
     if ((p_currentMap->getSceneGraph(p_sceneGraph) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_sceneGraph == nullptr) ||
+        (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {

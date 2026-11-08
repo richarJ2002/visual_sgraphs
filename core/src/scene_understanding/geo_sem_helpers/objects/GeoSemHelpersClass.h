@@ -27,15 +27,22 @@
 #ifndef VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 #define VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 
-#include <string>
-#include <vector>
-#include <utility>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
 #include "mapping/geometric/Plane/Plane.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
-namespace vs_graphs::core::atlas { class Atlas; }
-namespace vs_graphs::core::keyframe { class KeyFrame; }
+#include <memory>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <string>
+#include <utility>
+#include <vector>
+namespace vs_graphs::core::atlas
+{
+class Atlas;
+}
+namespace vs_graphs::core::keyframe
+{
+class KeyFrame;
+}
 namespace vs_graphs::core::semantic
 {
 class Room;
@@ -78,8 +85,8 @@ class GeoSemHelpers
      *                  The confidence of the plane observation
      */
     [[nodiscard]] static GeoSemHelpersStatus createMapPlane(
-        atlas::Atlas                                          *p_atlas_inout,
-        keyframe::KeyFrame                      *p_keyFrame_inout,
+        atlas::Atlas                                   *p_atlas_inout,
+        keyframe::KeyFrame                             *p_keyFrame_inout,
         const g2o::Plane3D                              estimatedPlane_in,
         const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   p_planeCloud_in,
         vs_graphs::core::geometric::Plane             *&p_mapPlane_out,
@@ -112,8 +119,8 @@ class GeoSemHelpers
      *                  The confidence of the plane observation
      */
     [[nodiscard]] static GeoSemHelpersStatus updateMapPlane(
-        atlas::Atlas                                          *p_atlas_in,
-        keyframe::KeyFrame                      *p_keyFrame_inout,
+        atlas::Atlas                                   *p_atlas_in,
+        keyframe::KeyFrame                             *p_keyFrame_inout,
         const g2o::Plane3D                              estimatedPlane_in,
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         p_planeCloud_in,
         int                                             planeId_in,
@@ -162,9 +169,10 @@ class GeoSemHelpers
      *                  The current map in Atlas
      *
      * @param[out]      p_blankRoomCandidate_out
-     *                  The new room, or nullptr when the Atlas is null or the
-     *                  map already holds one room more than its passable
-     *                  passages
+     *                  The new room, owned by the caller until it is passed to
+     *                  SceneGraph::addCandidateRoom(); null when the Atlas is
+     *                  null or the map already holds one room more than its
+     *                  passable passages
      *
      * @param[in]       centroid_in
      *                  The centroid of the room (optional)
@@ -175,10 +183,10 @@ class GeoSemHelpers
      *                  identity is always reserved fresh from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus createBlankRoomCandidate(
-        atlas::Atlas                            *p_atlas_inout,
-        vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
-        Eigen::Vector3d                   centroid_in = Eigen::Vector3d::Zero(),
-        bool                              isRecoveryRoom_in = false);
+        atlas::Atlas                    *p_atlas_inout,
+        std::unique_ptr<semantic::Room> &p_blankRoomCandidate_out,
+        Eigen::Vector3d                  centroid_in = Eigen::Vector3d::Zero(),
+        bool                             isRecoveryRoom_in = false);
 
     /*!
      * @brief           Chooses a ground plane from the Atlas to be associated
@@ -191,7 +199,7 @@ class GeoSemHelpers
      *                  The address of the detected room
      */
     [[nodiscard]] static GeoSemHelpersStatus associateGroundPlaneToRoom(
-        atlas::Atlas                           *p_atlas_in,
+        atlas::Atlas                    *p_atlas_in,
         vs_graphs::core::semantic::Room *p_givenRoom_inout);
 
     /*!
@@ -237,6 +245,6 @@ class GeoSemHelpers
         vs_graphs::core::geometric::Plane *p_plane_inout,
         bool                              &wasPlaneRefit_out);
 };
-}
+} // namespace vs_graphs::core::utils::geo_sem_helpers
 
 #endif /* VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H */

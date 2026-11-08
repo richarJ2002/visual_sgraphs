@@ -31,6 +31,8 @@
 #include <shared_mutex>
 #include <vector>
 
+#include "scene_understanding/scene_graph/SceneGraph/private_functions/private_functions.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,12 +53,25 @@ SceneGraphStatus SceneGraph::getMapRoomsInIdOrder(
         return SceneGraphStatus::SCENE_GRAPH_STATUS_MAP_NOT_FOUND;
     }
 
-    /* Detected rooms first: on an id held by both lists the detected room
-     * is kept. */
-    std::map<int, semantic::Room *> roomsById =
-        sceneMapIterator->second->detectedRooms;
-    roomsById.insert(sceneMapIterator->second->candidateRooms.begin(),
-                     sceneMapIterator->second->candidateRooms.end());
+    /* Detected rooms first: on an id held by both lists the live detected
+     * room is kept. Flagged rooms are hidden. */
+    std::map<int, semantic::Room *> roomsById{};
+    for (const std::pair<const int, std::unique_ptr<semantic::Room>>
+             &roomEntry : sceneMapIterator->second->detectedRooms)
+    {
+        if (isRoomLive(roomEntry.second.get()))
+        {
+            roomsById.emplace(roomEntry.first, roomEntry.second.get());
+        }
+    }
+    for (const std::pair<const int, std::unique_ptr<semantic::Room>>
+             &roomEntry : sceneMapIterator->second->candidateRooms)
+    {
+        if (isRoomLive(roomEntry.second.get()))
+        {
+            roomsById.emplace(roomEntry.first, roomEntry.second.get());
+        }
+    }
     for (const std::pair<const int, semantic::Room *> &roomEntry : roomsById)
     {
         rooms_out.push_back(roomEntry.second);

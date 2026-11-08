@@ -24,18 +24,18 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
@@ -673,13 +673,14 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_duplicateRoom->setBad() !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        if (p_sceneGraph->markRoomBad(currentMapId, p_duplicateRoom) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
+                         "%s: markRoomBad found no scene map for map %lu; the "
+                         "room is flagged alone; continuing as before.",
+                         __func__,
+                         currentMapId);
         }
         if (p_currentMap->replaceLinkedRoom(p_duplicateRoom,
                                             p_retainedRoom_inout) !=

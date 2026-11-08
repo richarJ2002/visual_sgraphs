@@ -41,11 +41,11 @@ semantic::Floor *findFloorInBuildings(const SceneMap &sceneMap_in,
     for (const std::pair<const int, std::unique_ptr<Building>> &buildingEntry :
          sceneMap_in.buildings)
     {
-        std::map<int, semantic::Floor *>::const_iterator floorIterator =
-            buildingEntry.second->floors.find(floorId_in);
+        std::map<int, std::unique_ptr<semantic::Floor>>::const_iterator
+            floorIterator = buildingEntry.second->floors.find(floorId_in);
         if (floorIterator != buildingEntry.second->floors.end())
         {
-            return floorIterator->second;
+            return floorIterator->second.get();
         }
     }
     return nullptr;
