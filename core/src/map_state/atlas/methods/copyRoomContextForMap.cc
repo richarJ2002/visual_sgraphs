@@ -72,7 +72,7 @@ AtlasStatus Atlas::copyRoomContextForMap(
                      __func__);
     }
     std::vector<semantic::Room *> rooms{};
-    if (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+    if (p_sceneGraph->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -81,7 +81,8 @@ AtlasStatus Atlas::copyRoomContextForMap(
                      __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
-    if (sceneGraph.getMapCandidateRoomsInIdOrder(mapIdValue, candidateRooms) !=
+    if (p_sceneGraph->getMapCandidateRoomsInIdOrder(mapIdValue,
+                                                    candidateRooms) !=
         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

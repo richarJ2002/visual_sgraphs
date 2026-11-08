@@ -107,10 +107,6 @@ namespace atlas
 {
 class Atlas;
 } /* namespace atlas */
-namespace scene_graph
-{
-class SceneGraph;
-} /* namespace scene_graph */
 namespace map
 {
 
@@ -870,34 +866,6 @@ class Map
     [[nodiscard]] MapStatus getSceneMap(scene_graph::SceneMap *&p_sceneMap_out);
 
     /*!
-     * @brief           Records the scene graph that holds this map's rooms,
-     *                  passages and floors; applyScaledRotation() reads them
-     *                  from it. Set by the atlas when it creates or loads the
-     *                  map. Takes mapMutex.
-     *
-     * @param[in]       p_sceneGraph_in
-     *                  Scene graph of the atlas; borrowed, the atlas owns it
-     *                  and outlives the map. Null detaches the map.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        setSceneGraph(scene_graph::SceneGraph *p_sceneGraph_in);
-
-    /*!
-     * @brief           Returns the scene graph that holds this map's rooms,
-     *                  passages and floors. Takes mapMutex.
-     *
-     * @param[out]      p_sceneGraph_out
-     *                  Scene graph of the atlas, or nullptr when the atlas has
-     *                  not set it; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
-
-    /*!
      * @brief           Returns this map's "up" direction. Takes mapMutex.
      *
      * @param[out]      upDirection_world_out
@@ -1151,13 +1119,6 @@ class Map
      *                  mapMutex.
      */
     scene_graph::SceneMap sceneMap;
-
-    /*!
-     * @brief           Scene graph holding this map's rooms, passages and
-     *                  floors; borrowed from the atlas, nullptr until the
-     *                  atlas sets it. Guarded by mapMutex.
-     */
-    scene_graph::SceneGraph *p_sceneGraph{nullptr};
 
     /*!
      * @brief           Cluster points of the map set by `voxblox_skeleton`, in

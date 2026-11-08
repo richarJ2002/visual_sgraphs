@@ -55,8 +55,8 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
 {
     scene_graph::SceneGraph *p_survivingSceneGraph = nullptr;
     unsigned long            survivingMapId{};
-    if ((p_survivingMap_in->getSceneGraph(p_survivingSceneGraph) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
+    if ((scene_graph::SceneGraph::getSceneGraph(p_survivingSceneGraph) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_survivingMap_in->getId(survivingMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
@@ -67,8 +67,8 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     }
     scene_graph::SceneGraph *p_absorbedSceneGraph = nullptr;
     unsigned long            absorbedMapId{};
-    if ((p_absorbedMap_in->getSceneGraph(p_absorbedSceneGraph) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
+    if ((scene_graph::SceneGraph::getSceneGraph(p_absorbedSceneGraph) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_absorbedMap_in->getId(absorbedMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {

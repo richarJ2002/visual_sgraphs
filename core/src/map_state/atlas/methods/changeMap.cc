@@ -76,7 +76,7 @@ AtlasStatus Atlas::changeMap(map::Map *p_map_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (sceneGraph.setActiveMap(mapId) !=
+    if (p_sceneGraph->setActiveMap(mapId) !=
         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

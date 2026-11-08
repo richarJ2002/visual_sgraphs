@@ -70,7 +70,7 @@ AtlasStatus Atlas::clearMap()
     unsigned long activeMapId{};
     if ((p_activeMap->getId(activeMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (sceneGraph.clearSemantics(activeMapId) !=
+        (p_sceneGraph->clearSemantics(activeMapId) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

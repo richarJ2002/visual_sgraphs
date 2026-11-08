@@ -71,8 +71,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     /* Not every caller holds the semantic update lock: the guard keeps the
      * scene graph from freeing the nodes read below. */
     std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
-    if ((p_map_inout->getSceneGraph(p_sceneGraph) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
+    if ((scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_sceneGraph == nullptr) ||
         (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=

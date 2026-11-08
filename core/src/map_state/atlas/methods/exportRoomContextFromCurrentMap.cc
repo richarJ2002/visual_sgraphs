@@ -78,9 +78,9 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
     /* The tracking thread may call this without the semantic update lock: the
      * guard keeps the scene graph from freeing the rooms read below. */
     std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
-    if ((sceneGraph.acquireReclaimGuard(sceneGraphReclaimGuard) !=
+    if ((p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (sceneGraph.getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+        (p_sceneGraph->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -89,7 +89,8 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                      __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
-    if (sceneGraph.getMapCandidateRoomsInIdOrder(mapIdValue, candidateRooms) !=
+    if (p_sceneGraph->getMapCandidateRoomsInIdOrder(mapIdValue,
+                                                    candidateRooms) !=
         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

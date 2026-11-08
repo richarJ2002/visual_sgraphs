@@ -50,7 +50,7 @@ AtlasStatus Atlas::clearAtlas()
         unsigned long retiredMapId{};
         if ((p_map->getId(retiredMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (sceneGraph.eraseSceneMap(retiredMapId) !=
+            (p_sceneGraph->eraseSceneMap(retiredMapId) !=
              scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

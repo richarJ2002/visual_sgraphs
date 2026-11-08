@@ -95,7 +95,8 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
                          __func__);
         }
         unsigned long activeMapId{};
-        if (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_activeMap->getId(activeMapId) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId returned a failure status although it "
@@ -122,15 +123,13 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
      * map's rooms, passages and floors live only in the graph. */
     unsigned long newMapId{};
     if ((p_activeMap->getId(newMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_activeMap->setSceneGraph(&sceneGraph) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (sceneGraph.addSceneMap(*p_activeMap) !=
+        (p_sceneGraph->addSceneMap(*p_activeMap) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (sceneGraph.setActiveMap(newMapId) !=
+        (p_sceneGraph->setActiveMap(newMapId) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/setSceneGraph/addSceneMap/setActiveMap returned "
+                     "%s: getId/addSceneMap/setActiveMap returned "
                      "a failure status although they cannot fail; continuing "
                      "as before.",
                      __func__);

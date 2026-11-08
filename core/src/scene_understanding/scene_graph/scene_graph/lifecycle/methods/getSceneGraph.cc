@@ -19,29 +19,27 @@
 /*!
  * @file            getSceneGraph.cc
  *
- * @brief           Implements Map::getSceneGraph(), declared in
- *                  map/objects/MapClass.h.
+ * @brief           Implements SceneGraph::getSceneGraph(), declared
+ *                  in scene_graph/objects/SceneGraphClass.h.
  */
 
-#include "map_state/map/objects/MapClass.h"
-
-#include <mutex>
+#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphClass.h"
 
 namespace vs_graphs
 {
 namespace core
 {
-namespace map
+namespace scene_graph
 {
 
-MapStatus Map::getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out)
+SceneGraphStatus SceneGraph::getSceneGraph(SceneGraph *&p_sceneGraph_out)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
-    p_sceneGraph_out = p_sceneGraph;
+    static SceneGraph sceneGraph;
+    p_sceneGraph_out = &sceneGraph;
 
-    return MapStatus::MAP_STATUS_SUCCESS;
+    return SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS;
 }
 
-} /* namespace map */
+} /* namespace scene_graph */
 } /* namespace core */
 } /* namespace vs_graphs */

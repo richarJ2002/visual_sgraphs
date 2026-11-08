@@ -65,7 +65,7 @@ AtlasStatus Atlas::setMapBad(map::Map *p_map_inout)
     /* The map left maps, so its scene map goes too. */
     unsigned long badMapId{};
     if ((p_map_inout->getId(badMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (sceneGraph.eraseSceneMap(badMapId) !=
+        (p_sceneGraph->eraseSceneMap(badMapId) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -181,6 +181,14 @@ class Atlas
     Atlas()
     {
         p_activeMap = static_cast<map::Map *>(nullptr);
+        if (scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSceneGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /*!
@@ -191,9 +199,9 @@ class Atlas
      *                  lastInitKeyFrameId.
      */
     Atlas(int initialKeyFrameId_in) :
-        lastInitKeyFrameId(initialKeyFrameId_in)
+        Atlas()
     {
-        p_activeMap = static_cast<map::Map *>(nullptr);
+        lastInitKeyFrameId = initialKeyFrameId_in;
         if (createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -217,6 +225,23 @@ class Atlas
         std::set<map::Map *> mapsToDelete = maps;
         mapsToDelete.insert(badMaps.begin(), badMaps.end());
         mapsToDelete.insert(retiredMaps.begin(), retiredMaps.end());
+
+        /* The maps own their S-Graphs and the scene graph is shared by the
+         * process, so every map leaves its registry before it is deleted. */
+        for (map::Map *p_map : mapsToDelete)
+        {
+            unsigned long mapId{};
+            if ((p_map != nullptr) && (p_sceneGraph != nullptr) &&
+                (p_map->getId(mapId) == map::MapStatus::MAP_STATUS_SUCCESS) &&
+                (p_sceneGraph->eraseSceneMap(mapId) !=
+                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseSceneMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
 
         for (map::Map *p_map : mapsToDelete)
         {
@@ -693,13 +718,13 @@ class Atlas
         std::unique_lock<std::mutex> &semanticUpdateLock_out);
 
     /*!
-     * @brief           Returns the scene graph of every map this atlas holds.
-     *                  No lock is taken: the graph lives as long as the atlas
-     *                  and guards itself with its own graph mutex.
+     * @brief           Returns the scene graph operations for the maps this
+     *                  atlas holds. No lock is taken: the object is shared by
+     *                  the process and guards itself with its own graph mutex.
      *
      * @param[out]      p_sceneGraph_out
-     *                  Borrowed pointer to the atlas-owned scene graph; never
-     *                  null, valid until the atlas is destroyed.
+     *                  Borrowed pointer to the process-wide scene graph; never
+     *                  null, valid for the life of the process.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -1027,12 +1052,16 @@ class Atlas
     std::mutex semanticUpdateMutex;
 
     /*!
-     * @brief           Scene graph of the maps in maps; owned. A scene map is
-     *                  added when a map is created or loaded and removed when
-     *                  the map leaves maps (setMapBad, clearAtlas, postLoad).
-     *                  Guarded by its own graph mutex, taken after atlasMutex.
+     * @brief           Scene graph operations for the maps in maps; borrowed,
+     *                  the process-wide object from SceneGraph::getSceneGraph.
+     *                  The atlas owns no graph content: each map owns its
+     *                  S-Graph. A map's scene map is registered when the map
+     *                  is created or loaded and unregistered when the map
+     *                  leaves maps (setMapBad, clearAtlas, postLoad) or the
+     *                  atlas is destroyed. Guarded by its own graph mutex,
+     *                  taken after atlasMutex.
      */
-    scene_graph::SceneGraph sceneGraph;
+    scene_graph::SceneGraph *p_sceneGraph{nullptr};
 
     /*!
      * @brief           Snapshots of departed maps' room geometry, keyed by

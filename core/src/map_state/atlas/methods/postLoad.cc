@@ -31,12 +31,12 @@
  */
 
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
-#include "sensor_models/camera_models/geometric_camera/objects/GeometricCameraStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
+#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
+#include "sensor_models/camera_models/geometric_camera/objects/GeometricCameraStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -74,7 +74,7 @@ AtlasStatus Atlas::postLoad()
         unsigned long replacedMapId{};
         if ((p_map->getId(replacedMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (sceneGraph.eraseSceneMap(replacedMapId) !=
+            (p_sceneGraph->eraseSceneMap(replacedMapId) !=
              scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -96,14 +96,12 @@ AtlasStatus Atlas::postLoad()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if ((p_map->setSceneGraph(&sceneGraph) !=
-             map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (sceneGraph.addSceneMap(*p_map) !=
-             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        if (p_sceneGraph->addSceneMap(*p_map) !=
+            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setSceneGraph/addSceneMap returned a failure "
-                         "status although they cannot fail; continuing as "
+                         "%s: addSceneMap returned a failure "
+                         "status although it cannot fail; continuing as "
                          "before.",
                          __func__);
         }

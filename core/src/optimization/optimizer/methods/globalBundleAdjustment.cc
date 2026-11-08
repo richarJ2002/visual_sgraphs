@@ -65,8 +65,8 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     /* The rooms are used until the function ends, outside the semantic update
      * lock: the guard keeps the scene graph from freeing them meanwhile. */
     std::shared_lock<std::shared_mutex>            sceneGraphReclaimGuard{};
-    if ((p_map_in->getSceneGraph(p_sceneGraph) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
+    if ((scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_sceneGraph == nullptr) ||
         (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=

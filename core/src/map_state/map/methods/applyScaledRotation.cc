@@ -71,7 +71,8 @@ MapStatus Map::applyScaledRotation(
     std::vector<semantic::Room *>    mapDetectedRooms{};
     std::vector<semantic::Room *>    mapCandidateRooms{};
     std::vector<semantic::Floor *>   mapFloors{};
-    if ((getSceneGraph(p_mapSceneGraph) != MapStatus::MAP_STATUS_SUCCESS) ||
+    if ((scene_graph::SceneGraph::getSceneGraph(p_mapSceneGraph) !=
+         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
         (p_mapSceneGraph == nullptr) ||
         (p_mapSceneGraph->getMapPassagesInIdOrder(id, mapPassages) !=
          scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||

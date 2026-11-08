@@ -62,13 +62,15 @@ namespace scene_graph
 {
 
 /*!
- * @brief           Scene graph of every SLAM map: map -> building -> storey
- *                  -> rooms and passages.
+ * @brief           Operations on the S-Graph of every SLAM map: map ->
+ *                  building -> storey -> rooms and passages.
  *
- *                  Owned by the atlas, which adds an empty scene map when it
- *                  creates or loads a map and removes it when it drops the
- *                  map. The tree is the only list of each map's rooms,
- *                  storeys and passages and it owns them: a scene map owns
+ *                  Each Map owns its S-Graph content (Map::getSceneMap()); this
+ *                  class only finds it by map id and adds the shared lock. The
+ *                  atlas registers a map's scene map when it creates or loads
+ *                  the map and unregisters it when it drops the map. The
+ *                  S-Graph is the only list of the map's rooms, storeys and
+ *                  passages and it owns them: a scene map owns
  *                  its rooms and passages, a building owns its storeys. They
  *                  are added and removed through the mutations only, which
  *                  also enforce the id rules.
@@ -121,6 +123,23 @@ class SceneGraph
      *                  uniquely.
      */
     SceneGraph &operator=(const SceneGraph &otherSceneGraph_in) = delete;
+
+    /*!
+     * @brief           Returns the one scene graph of the process: the lock,
+     *                  the reclaim guard and the retired-node list that every
+     *                  map's S-Graph shares until each graph has its own lock.
+     *                  It holds no graph content; each Map owns its S-Graph
+     *                  (Map::getSceneMap()) and is registered here by map id.
+     *                  Map ids are unique in the process, so one atlas or
+     *                  several share it without clashes. Needs no atlas or
+     *                  map in hand.
+     * @param[out]      p_sceneGraph_out
+     *                  Borrowed pointer; never null, valid for the life of the
+     *                  process.
+     * @return          SCENE_GRAPH_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] static SceneGraphStatus
+        getSceneGraph(SceneGraph *&p_sceneGraph_out);
 
     /*!
      * @brief           Adds an empty scene map for a SLAM map: one building

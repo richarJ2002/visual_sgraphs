@@ -34,7 +34,7 @@ namespace atlas
 
 AtlasStatus Atlas::getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out)
 {
-    p_sceneGraph_out = &sceneGraph;
+    p_sceneGraph_out = p_sceneGraph;
 
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
