@@ -30,9 +30,9 @@
  *                  LoopClosing.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "scene_understanding/scene_graph/Floor/Floor.h"
 #include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
@@ -151,24 +151,6 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
         result_out = "DEFERRED";
-        unsigned long survivingMapId{};
-        if (p_survivingMap_in->getId(survivingMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        unsigned long absorbedMapId{};
-        if (p_absorbedMap_in->getId(absorbedMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
         std::cout << "[FloorVerify] map::Map#" << survivingMapId
                   << " and map::Map#" << absorbedMapId
                   << " floor verification deferred (current="
