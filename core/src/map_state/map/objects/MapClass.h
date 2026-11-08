@@ -36,10 +36,10 @@
 
 #include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
 
-#include "views_io/archive_support/objects/SerializationUtils.h"
 #include "dependency_lineage/sophus/objects/se3.hpp"
 #include "map_state/map/objects/MapMergeRecordStruct.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "views_io/archive_support/objects/SerializationUtils.h"
 #include <Eigen/Core>
 #include <atomic>
 #include <boost/serialization/access.hpp>
@@ -50,7 +50,10 @@
 #include <utility>
 #include <vector>
 
-namespace vs_graphs::core::atlas { class Atlas; }
+namespace vs_graphs::core::atlas
+{
+class Atlas;
+}
 
 namespace vs_graphs
 {
@@ -236,6 +239,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus addKeyFrame(keyframe::KeyFrame *p_keyFrame_inout);
+
     /*!
      * @brief           Adds a map point to this map. Takes mapMutex.
      *
@@ -245,6 +249,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus addMapPoint(map_point::MapPoint *p_mapPoint_in);
+
     /*!
      * @brief           Adds a plane to this map and indexes it by plane id. If
      *                  the plane id is negative or already used by another
@@ -258,6 +263,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus addMapPlane(geometric::Plane *p_plane_inout);
+
     /*!
      * @brief           Indexes a wall plane of a room by its plane id, so
      *                  getRoomWallPlaneById() can find it. The plane is not
@@ -293,6 +299,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus eraseMapPoint(map_point::MapPoint *p_mapPoint_in);
+
     /*!
      * @brief           Removes a key frame from this map and from its id index
      *                  and origin list, and re-picks the origin and lowest-id
@@ -306,6 +313,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus eraseKeyFrame(keyframe::KeyFrame *p_keyFrame_inout);
+
     /*!
      * @brief           Removes a plane from this map and from the plane id
      *                  index. The plane itself is not deleted. Takes mapMutex.
@@ -316,6 +324,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus eraseMapPlane(geometric::Plane *p_plane_in);
+
     /*!
      * @brief           Removes a room wall plane from the wall plane id index.
      *                  The plane itself is not deleted. Takes mapMutex.
@@ -447,6 +456,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus informNewBigChange();
+
     /*!
      * @brief           Returns how many big changes (loop closures, global
      *                  bundle adjustments) this map has seen. Takes mapMutex.
@@ -457,6 +467,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getLastBigChangeIndex(int &lastBigChangeIndex_out);
+
     /*!
      * @brief           Replaces the reference map points, the local map points
      *                  the tracker draws and uses as its current reference.
@@ -482,6 +493,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
+
     /*!
      * @brief           Returns a snapshot copy of all key frames of this map.
      *                  Takes mapMutex.
@@ -493,6 +505,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getAllKeyFrames(std::vector<keyframe::KeyFrame *> &allKeyFrames_out);
+
     /*!
      * @brief           Returns a snapshot copy of all map points of this map.
      *                  Takes mapMutex.
@@ -504,6 +517,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getAllMapPoints(std::vector<map_point::MapPoint *> &allMapPoints_out);
+
     /*!
      * @brief           Returns a snapshot copy of the reference map points set
      *                  by setReferenceMapPoints(). Takes mapMutex.
@@ -557,6 +571,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getKeyFrameCount(unsigned long &keyFrameCount_out);
+
     /*!
      * @brief           Returns the number of map points in this map. Takes
      *                  mapMutex.
@@ -578,6 +593,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getId(unsigned long &id_out) const;
+
     /*!
      * @brief           Returns the highest key frame id added to this map;
      *                  erasing key frames does not lower it. Takes mapMutex.
@@ -588,6 +604,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getMaxKeyFrameId(unsigned long &maxKeyFrameId_out);
+
     /*!
      * @brief           Returns the id of the first key frame of this map. Takes
      *                  mapMutex.
@@ -599,6 +616,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getInitKeyFrameId(unsigned long &initKeyFrameId_out);
+
     /*!
      * @brief           Sets the id of the first key frame of this map. Takes
      *                  mapMutex.
@@ -623,6 +641,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getOriginKeyFrame(keyframe::KeyFrame *&p_originKeyFrame_out);
+
     /*!
      * @brief           Looks up a plane by id. Takes mapMutex.
      *
@@ -637,6 +656,7 @@ class Map
      */
     [[nodiscard]] MapStatus getPlaneById(int                planeId_in,
                                          geometric::Plane *&p_planeById_out);
+
     /*!
      * @brief           Looks up a key frame by id. Takes mapMutex.
      *
@@ -652,6 +672,7 @@ class Map
     [[nodiscard]] MapStatus
         getKeyFrameById(long unsigned int    idCount_in,
                         keyframe::KeyFrame *&p_keyFrameById_out);
+
     /*!
      * @brief           Looks up a room wall plane by plane id among the planes
      *                  indexed by addRoomWallPlane(). Takes mapMutex.
@@ -693,6 +714,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus setStoredMap();
+
     /*!
      * @brief           Marks this map as the one currently used, the atlas's
      *                  active map. Does not lock.
@@ -722,6 +744,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus isBad(bool &isBad_out);
+
     /*!
      * @brief           Flags this map bad; the flag is never cleared. Lock-free
      *                  atomic write.
@@ -757,6 +780,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getLastMapChange(int &lastMapChange_out);
+
     /*!
      * @brief           Returns the current change counter, which grows with
      *                  every map change. Takes mapMutex.
@@ -767,6 +791,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getMapChangeIndex(int &mapChangeIndex_out);
+
     /*!
      * @brief           Returns the epoch of the coordinate frame containing
      *                  this map.
@@ -783,6 +808,7 @@ class Map
      *                  Record of the committed merge.
      */
     void addMergeRecord(const MapMergeRecord &mergeRecord_in);
+
     /*!
      * @brief           Returns a copy of every merge record of this map, oldest
      *                  first. Takes mapMutex.
@@ -795,6 +821,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus increaseChangeIndex();
+
     /*!
      * @brief           Records the change index a consumer has already handled.
      *                  Takes mapMutex.
@@ -816,6 +843,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus isImuInitialized(bool &isImuInitialized_out);
+
     /*!
      * @brief           Records that the IMU of this map is initialised. Takes
      *                  mapMutex.
@@ -823,6 +851,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus setImuInitialized();
+
     /*!
      * @brief           Records the scene graph that holds this map's rooms,
      *                  passages and floors; applyScaledRotation() reads them
@@ -837,6 +866,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         setSceneGraph(scene_graph::SceneGraph *p_sceneGraph_in);
+
     /*!
      * @brief           Returns the scene graph that holds this map's rooms,
      *                  passages and floors. Takes mapMutex.
@@ -849,6 +879,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
+
     /*!
      * @brief           Returns this map's "up" direction. Takes mapMutex.
      *
@@ -864,6 +895,7 @@ class Map
     [[nodiscard]] MapStatus
         getUpDirection(Eigen::Vector3d &upDirection_world_out,
                        bool            &isFromImuGravity_out);
+
     /*!
      * @brief           Sets "up" from an IMU gravity estimate. Takes mapMutex.
      *                  Call before the map is rotated into the gravity frame;
@@ -919,6 +951,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus isInertial(bool &isInertial_out);
+
     /*!
      * @brief           Records that the first inertial bundle adjustment of
      *                  this map has run. Takes mapMutex.
@@ -926,6 +959,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus setInertialBA1();
+
     /*!
      * @brief           Records that the second inertial bundle adjustment of
      *                  this map has run. Takes mapMutex.
@@ -933,6 +967,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus setInertialBA2();
+
     /*!
      * @brief           Tells whether the first inertial bundle adjustment has
      *                  run. Takes mapMutex.
@@ -943,6 +978,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getInertialBA1(bool &inertialBA1_out);
+
     /*!
      * @brief           Tells whether the second inertial bundle adjustment has
      *                  run. Takes mapMutex.
@@ -953,6 +989,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus getInertialBA2(bool &inertialBA2_out);
+
     /*!
      * @brief           Marks this map as using an inertial sensor. Takes
      *                  mapMutex.
@@ -999,6 +1036,7 @@ class Map
     [[nodiscard]] MapStatus
         preSave(std::set<camera_models::geometric_camera::GeometricCamera *>
                     &cams_inout);
+
     /*!
      * @brief           Rebuilds the map after loading: restores the key frame
      *                  and map point sets from the backup lists, links them to
@@ -1021,7 +1059,7 @@ class Map
      */
     [[nodiscard]] MapStatus
         postLoad(keyframe_database::KeyFrameDatabase *p_keyFrameDatabase_inout,
-                 ORBVocabulary    *p_orbVocabulary_in,
+                 ORBVocabulary                       *p_orbVocabulary_in,
                  std::map<unsigned int,
                           camera_models::geometric_camera::GeometricCamera *>
                      &cams_inout);
@@ -1030,18 +1068,20 @@ class Map
      * @brief           Held by tracking and the optimizers while they update
      *                  this map, so the map cannot change under them.
      */
-    std::mutex                        mapUpdateMutex;
+    std::mutex mapUpdateMutex;
+
     /*!
      * @brief           Key frames this map started from: the initial key frame
      *                  of each initialisation, plus those imported by map
      *                  merges. Erased key frames are removed.
      */
     std::vector<keyframe::KeyFrame *> keyFrameOrigins;
+
     /*!
      * @brief           Ids of keyFrameOrigins, filled by preSave() and read
      *                  back by postLoad() because pointers cannot be saved.
      */
-    std::vector<unsigned long int>    backupKeyFrameOriginIds;
+    std::vector<unsigned long int> backupKeyFrameOriginIds;
 
     /*!
      * @brief           Held while a map point is created, so two threads cannot
@@ -1059,6 +1099,7 @@ class Map
      *                  optimised; used by the map drawer to colour them.
      */
     std::set<long unsigned int> optKeyFrameIds;
+
     /*!
      * @brief           Ids of the key frames the last local bundle adjustment
      *                  held fixed; used by the map drawer to colour them.
@@ -1074,15 +1115,17 @@ class Map
     /*!
      * @brief           Planes of this map; borrowed.
      */
-    std::set<geometric::Plane *>                   planes;
+    std::set<geometric::Plane *> planes;
+
     /*!
      * @brief           Map points of this map; borrowed.
      */
-    std::set<map_point::MapPoint *>                mapPoints;
+    std::set<map_point::MapPoint *> mapPoints;
+
     /*!
      * @brief           Key frames of this map; borrowed.
      */
-    std::set<keyframe::KeyFrame *>                 keyFrames;
+    std::set<keyframe::KeyFrame *> keyFrames;
 
     /*!
      * @brief           Scene graph holding this map's rooms, passages and
@@ -1102,20 +1145,20 @@ class Map
      */
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
 
-    /* Hashmaps and indices for fetching elements */
-
     /*!
      * @brief           Planes by plane id.
      */
-    std::unordered_map<int, geometric::Plane *>                   planeIndex;
+    std::unordered_map<int, geometric::Plane *> planeIndex;
+
     /*!
      * @brief           Key frames by key frame id.
      */
-    std::unordered_map<long unsigned int, keyframe::KeyFrame *>   keyFrameIndex;
+    std::unordered_map<long unsigned int, keyframe::KeyFrame *> keyFrameIndex;
+
+    /*!
+     * @brief           Room wall planes by plane id.
+     */
     std::unordered_map<int, vs_graphs::core::geometric::Plane *>
-        /*!
-         * @brief           Room wall planes by plane id.
-         */
         roomWallPlaneIndex;
 
     /*!
@@ -1130,11 +1173,12 @@ class Map
      *                  emptied by postLoad().
      */
     std::vector<map_point::MapPoint *> backupMapPoints;
+
     /*!
      * @brief           Key frames copied by preSave() for saving, as a vector
      *                  because the boost 1.58 set serialisation was broken.
      */
-    std::vector<keyframe::KeyFrame *>  backupKeyFrames;
+    std::vector<keyframe::KeyFrame *> backupKeyFrames;
 
     /*!
      * @brief           Origin key frame of this map, the one that anchors it;
@@ -1142,6 +1186,7 @@ class Map
      *                  after clear().
      */
     keyframe::KeyFrame *p_initialKeyFrame;
+
     /*!
      * @brief           Key frame with the lowest id in this map; borrowed,
      *                  nullptr until the first addKeyFrame(), after the last
@@ -1154,11 +1199,13 @@ class Map
      *                  setStartingRoom() is called; borrowed.
      */
     vs_graphs::core::semantic::Room *p_startingRoom{nullptr};
+
     /*!
      * @brief           Room the robot was in when this map was left, or nullptr
      *                  until setFinalRoom() is called; borrowed.
      */
     vs_graphs::core::semantic::Room *p_finalRoom{nullptr};
+
     /*!
      * @brief           Room beyond the passage the camera saw through when
      *                  this map was left, the second anchor candidate; nullptr
@@ -1166,17 +1213,19 @@ class Map
      *                  p_finalRoom.
      */
     vs_graphs::core::semantic::Room *p_finalRoomBeyondPassage{nullptr};
+
     /*!
      * @brief           Next map in the mission chain, or nullptr; borrowed from
      *                  the atlas.
      */
-    Map                             *p_followingMap{nullptr};
+    Map *p_followingMap{nullptr};
 
     /*!
      * @brief           Id of p_lowerIdKeyFrame saved by preSave(); NO_SAVED_ID
      *                  when there was none and before the first preSave().
      */
     unsigned long int backupLowerKeyFrameId;
+
     /*!
      * @brief           Id of p_initialKeyFrame saved by preSave(); NO_SAVED_ID
      *                  when there was none and before the first preSave().
@@ -1215,6 +1264,7 @@ class Map
      *                  applyScaledRotation().
      */
     int mapChange;
+
     /*!
      * @brief           Change index a consumer last recorded with
      *                  setLastMapChange().
@@ -1237,6 +1287,7 @@ class Map
      * @brief           Id of the first key frame of this map.
      */
     long unsigned int initKeyFrameId;
+
     /*!
      * @brief           Highest key frame id added to this map so far.
      */
@@ -1251,7 +1302,8 @@ class Map
     /*!
      * @brief           True while this map is the atlas's active map.
      */
-    bool             isMapInUse;
+    bool isMapInUse;
+
     /*!
      * @brief           True once setBad() flagged this map bad; atomic so
      *                  isBad() needs no lock.
@@ -1262,10 +1314,12 @@ class Map
      * @brief           True when this map uses an inertial sensor.
      */
     bool isInertialMode;
+
     /*!
      * @brief           True once the first inertial bundle adjustment has run.
      */
     bool hasInertialBA1;
+
     /*!
      * @brief           True once the second inertial bundle adjustment has run.
      */

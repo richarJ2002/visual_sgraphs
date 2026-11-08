@@ -36,9 +36,9 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 

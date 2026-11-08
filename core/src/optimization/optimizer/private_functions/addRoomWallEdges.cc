@@ -18,7 +18,7 @@
 #include "mapping/geometry_helpers/utils.h"
 #include "optimization/optimizable_types/EdgeVertex4PlaneProjectSE3Room/EdgeVertex4PlaneProjectSE3Room.h"
 #include "optimization/optimizable_types/EdgeVertexNPlaneProjectSE3Room/EdgeVertexNPlaneProjectSE3Room.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 #include <vs_graphs_g2o/types/types_six_dof_expmap.h>
 #include <vs_graphs_g2o/types/vertex_plane.h>
 

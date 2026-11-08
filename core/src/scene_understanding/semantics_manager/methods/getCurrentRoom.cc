@@ -22,7 +22,7 @@
  *                  SemanticsManager.h.
  */
 
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 namespace vs_graphs

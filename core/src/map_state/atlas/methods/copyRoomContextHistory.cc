@@ -31,7 +31,7 @@
  */
 
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 
 namespace vs_graphs
 {

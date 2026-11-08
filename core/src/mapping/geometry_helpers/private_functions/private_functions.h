@@ -40,7 +40,7 @@
 #include "map_state/atlas/atlas.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometry_helpers/utils.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
 
 namespace vs_graphs
 {

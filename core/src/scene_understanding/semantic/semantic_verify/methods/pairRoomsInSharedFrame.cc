@@ -7,7 +7,7 @@
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 
 #include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
 

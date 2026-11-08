@@ -30,25 +30,21 @@
  * map/objects/MapClass.h.
  */
 
+#include "map_state/keyframe/keyframe.h"
+#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
+#include "map_state/map/objects/MapClass.h"
+#include "map_state/map_point/map_point.h"
+#include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
-#include "map_state/map_point/objects/MapPointStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "map_state/keyframe/keyframe.h"
-#include "map_state/map_point/map_point.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include <vs_graphs_g2o/types/sim3.h>
-#include "map_state/map/objects/MapClass.h"
 
 #include <algorithm>
 #include <iterator>

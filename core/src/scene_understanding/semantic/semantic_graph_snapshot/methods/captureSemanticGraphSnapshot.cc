@@ -23,16 +23,16 @@
  *                  public_functions.h.
  */
 
-#include "scene_understanding/semantic/semantic_graph_snapshot/semantic_graph_snapshot.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantic/semantic_graph_snapshot/semantic_graph_snapshot.h"
 
 #include <algorithm>
 #include <map>
@@ -52,7 +52,7 @@ namespace semantic
 {
 
 SemanticGraphSnapshotStatus
-    captureSemanticGraphSnapshot(atlas::Atlas           *p_atlas_in,
+    captureSemanticGraphSnapshot(atlas::Atlas          *p_atlas_in,
                                  SemanticGraphSnapshot &snapshot_out)
 {
     SemanticGraphSnapshot snapshot;
@@ -330,7 +330,8 @@ SemanticGraphSnapshotStatus
         }
 
         std::vector<geometric::Plane *> mapAllPlanes{};
-        if (p_map->getAllPlanes(mapAllPlanes) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_map->getAllPlanes(mapAllPlanes) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getAllPlanes returned a failure status although "

@@ -23,28 +23,28 @@
  *                  SemanticsManager.h.
  */
 
-#include "mapping/geometry_helpers/utils.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -102,7 +102,8 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
          * camera pose. The new floor takes a fresh identity and carries no
          * prior-map geometry. */
         if (utils::geo_sem_helpers::GeoSemHelpers::createMapFloor(p_atlas) !=
-            utils::geo_sem_helpers::GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
+            utils::geo_sem_helpers::GeoSemHelpersStatus::
+                GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: createMapFloor returned a failure status "

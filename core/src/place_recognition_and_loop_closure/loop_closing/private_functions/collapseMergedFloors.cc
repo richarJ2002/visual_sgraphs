@@ -30,16 +30,16 @@
  *                  LoopClosing/private_functions.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

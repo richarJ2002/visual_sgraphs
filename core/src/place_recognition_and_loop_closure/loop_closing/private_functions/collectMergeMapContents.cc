@@ -36,7 +36,7 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 #include <rclcpp/logging.hpp>
 

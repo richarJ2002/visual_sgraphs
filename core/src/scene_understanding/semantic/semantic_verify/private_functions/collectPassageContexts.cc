@@ -5,8 +5,8 @@
  *                  private_functions.h.
  */
 
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 
 #include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
 

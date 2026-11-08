@@ -14,7 +14,7 @@
 #define VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 
 #include "map_state/atlas/atlas.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 #include <atomic>
 #include <utility>
 #include <vector>

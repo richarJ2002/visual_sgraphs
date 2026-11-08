@@ -23,23 +23,23 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
-#include "mapping/geometry_helpers/utils.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -48,7 +48,7 @@
 #include <unordered_set>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -110,7 +110,8 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                      __func__);
     }
     std::vector<geometric::Plane *> allPlanes{};
-    if (p_currentMap->getAllPlanes(allPlanes) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_currentMap->getAllPlanes(allPlanes) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPlanes returned a failure status although it "
@@ -493,7 +494,8 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         const unsigned int retiredAfterCycles = state.unresolvedCycles;
 
         /* Relationships were checked above under the semantic transaction. */
-        std::map<keyframe::KeyFrame *, geometric::Plane::Observation> wallObservations{};
+        std::map<keyframe::KeyFrame *, geometric::Plane::Observation>
+            wallObservations{};
         if (p_wall->getObservations(wallObservations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {

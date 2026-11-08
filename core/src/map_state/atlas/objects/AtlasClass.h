@@ -35,17 +35,17 @@
 
 #include "map_state/atlas/objects/AtlasCurrentMapStatusEnum.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
-#include "sensor_models/camera_models/kannala_brandt8/kannala_brandt8.h"
-#include "sensor_models/camera_models/pinhole/pinhole.h"
-#include "mapping/geometric/Plane/Plane.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
+#include "sensor_models/camera_models/kannala_brandt8/kannala_brandt8.h"
+#include "sensor_models/camera_models/pinhole/pinhole.h"
 
 #include <Eigen/Core>
 #include <atomic>
@@ -257,7 +257,6 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus changeMap(map::Map *p_map_in);
-
 
     /*!
      * @brief           Remembers the viewer and records that one is attached.
@@ -752,15 +751,11 @@ class Atlas
         int                                           roomId_in,
         std::optional<semantic::RoomContextSnapshot> &roomContext_out) const;
 
-
     /*!
      * @brief           Returns and clears the map-created lifecycle event.
      */
     [[nodiscard]] AtlasStatus
         consumeNewMapCreatedEvent(bool &wasEventPending_out);
-
-
-
 
     /*!
      * @brief           Moves invalid maps out of the transient retirement
@@ -860,7 +855,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus postLoad();
 
-
     /* Functions for getting the entities */
     /*!
      * @brief           Looks up a plane of the active map by id. Takes
@@ -891,8 +885,8 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus
-        getKeyFrameById(long unsigned int    idCount_in,
-                        keyframe::KeyFrame *&p_keyFrameById_out);
+                              getKeyFrameById(long unsigned int    idCount_in,
+                                              keyframe::KeyFrame *&p_keyFrameById_out);
     /*!
      * @brief           Looks up a room wall plane of the active map by id.
      *                  Takes atlasMutex.
@@ -935,7 +929,6 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
-
 
   protected:
     /*!

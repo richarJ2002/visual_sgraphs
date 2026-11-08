@@ -9,9 +9,9 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
 #include "map_state/map/map.h"
@@ -19,7 +19,7 @@
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
 
 #include "configuration/types/types.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>

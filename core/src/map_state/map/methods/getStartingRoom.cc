@@ -31,7 +31,7 @@
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 
 #include <algorithm>
 #include <iterator>

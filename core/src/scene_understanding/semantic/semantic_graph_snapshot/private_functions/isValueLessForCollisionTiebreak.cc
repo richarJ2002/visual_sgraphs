@@ -21,9 +21,9 @@
  *                  private_functions/private_functions.h.
  */
 
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
 
 #include <algorithm>
 

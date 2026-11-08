@@ -34,9 +34,9 @@
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 #include <algorithm>
 #include <cmath>

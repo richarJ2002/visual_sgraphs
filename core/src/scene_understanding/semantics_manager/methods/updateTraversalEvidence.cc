@@ -23,22 +23,22 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/KnownSideProvenanceStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/KnownSideProvenanceStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
@@ -48,15 +48,15 @@
 #include <unordered_map>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
-    atlas::Atlas *p_atlas_in)
+SemanticsManagerStatus
+    SemanticsManager::updateTraversalEvidence(atlas::Atlas *p_atlas_in)
 {
     PROFILE_FUNCTION();
     if (p_atlas_in == nullptr)
@@ -144,7 +144,8 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
         orderedKeyFrames.end());
     std::sort(orderedKeyFrames.begin(),
               orderedKeyFrames.end(),
-              [](const keyframe::KeyFrame *p_first, const keyframe::KeyFrame *p_second)
+              [](const keyframe::KeyFrame *p_first,
+                 const keyframe::KeyFrame *p_second)
               {
                   if (p_first->frameId != p_second->frameId)
                   {
@@ -235,8 +236,8 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
         orderedKeyFrames.size() > maximumTraversalHistoryKeyFrames
                 ? orderedKeyFrames.size() - maximumTraversalHistoryKeyFrames
                 : 0U;
-    keyframe::KeyFrame       *p_seedKeyFrame = orderedKeyFrames[historyStartIndex];
-    Eigen::Vector3f seedKeyFrameCameraCenter{};
+    keyframe::KeyFrame *p_seedKeyFrame = orderedKeyFrames[historyStartIndex];
+    Eigen::Vector3f     seedKeyFrameCameraCenter{};
     if (p_seedKeyFrame->getCameraCenter(seedKeyFrameCameraCenter) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -721,7 +722,8 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                         currentRoomId = reachedRoomId;
                     }
                     if (p_atlas->setCurrentSemanticRoomIdentity(
-                            reachedRoomId) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+                            reachedRoomId) !=
+                        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                      "%s: setCurrentSemanticRoomIdentity "
@@ -841,9 +843,9 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     }
 
     keyframe::KeyFrame *p_latestKeyFrame = orderedKeyFrames.back();
-    lastTraversalFrameId       = p_latestKeyFrame->frameId;
-    lastTraversalKeyFrameId    = p_latestKeyFrame->id;
-    hasTraversalKeyFrameCursor = true;
+    lastTraversalFrameId                 = p_latestKeyFrame->frameId;
+    lastTraversalKeyFrameId              = p_latestKeyFrame->id;
+    hasTraversalKeyFrameCursor           = true;
 
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

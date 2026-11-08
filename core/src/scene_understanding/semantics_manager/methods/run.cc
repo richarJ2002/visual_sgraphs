@@ -31,12 +31,12 @@
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_axiom_evaluator/objects/SemanticAxiomEvaluatorStatusEnum.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidatesStatusEnum.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/SemanticGraphSnapshotStatusEnum.h"
@@ -54,7 +54,7 @@
 
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "mapping/geometry_helpers/utils.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
@@ -72,7 +72,10 @@ namespace core
 
 void SemanticsManager::run(void)
 {
+    /* Declare object to point to memory address of the scene graph */
     scene_graph::SceneGraph *p_sceneGraph = nullptr;
+
+    /* Extract the address of scene graph */
     if (p_atlas->getSceneGraph(p_sceneGraph) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -81,12 +84,21 @@ void SemanticsManager::run(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    /* Init counter to track summary cycle */
     std::size_t summaryCycle = 0U;
 
     while (true)
     {
-        /* Graceful shutdown on System::Shutdown() */
+
+        /* ------------------------------------------------------------------ *
+         * DETERMINE IF SYSTEM IS STILL RUNNING
+         * ------------------------------------------------------------------ */
+
+        /* Declare variable which will track if a shutdown should happen */
         bool shouldFinish{};
+
+        /* Extract status to see if system should finish */
         if (checkFinish(shouldFinish) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -95,21 +107,29 @@ void SemanticsManager::run(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
+
+        /* If system should finish, break while loop */
         if (shouldFinish)
         {
             break;
         }
 
+        /* ------------------------------------------------------------------ *
+         * SGRAPH LOCKING INFORMATION
+         * ------------------------------------------------------------------ */
+
         /* Find the current time of the loop */
         const std::chrono::steady_clock::time_point start =
             std::chrono::steady_clock::now();
+
+        /* Declare variable which tracks the semantic lock on SGraph */
+        std::unique_lock<std::mutex> semanticUpdateLock{};
 
         /*!
          * Treat one hierarchy update as an atomic semantic transaction. Map
          * merging takes the same atlas-owned lock before changing frames or
          * ownership, so this cycle can never traverse a half-merged graph.
          */
-        std::unique_lock<std::mutex> semanticUpdateLock{};
         if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
@@ -120,8 +140,17 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        pipelineSemanticCycle       = ++summaryCycle;
+        /* ------------------------------------------------------------------ *
+         * CYCLE
+         * ------------------------------------------------------------------ */
+
+        /* Incriment summary cycle and store in pipelineSemanticCycle */
+        pipelineSemanticCycle = ++summaryCycle;
+
+        /* Declare pointer which will hold addres of current map */
         map::Map *p_atlasCurrentMap = nullptr;
+
+        /* Extract the current map */
         if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
@@ -130,6 +159,8 @@ void SemanticsManager::run(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
+
+        /* Reset the temporal state of the map */
         if (resetTemporalStateForMap(p_atlasCurrentMap) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -139,8 +170,8 @@ void SemanticsManager::run(void)
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        /* One camera centre per cycle for bootstrap, admission ordering and
-         * the room viewpoint. */
+
+        /* Reset the current camera center */
         if (refreshCurrentCameraCenter() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -150,7 +181,11 @@ void SemanticsManager::run(void)
                          "before.",
                          __func__);
         }
+
+        /* Declare variable which tracks the bootstrap result of the map */
         SemanticsManager::ActiveMapBootstrapResult bootstrapResult{};
+
+        /* Ensure active map bootstraps the SGraph hierarchy */
         if (ensureActiveMapBootstrapHierarchy(bootstrapResult) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -161,8 +196,7 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        /* Reject wrongly oriented ground and wall planes first, so one can
-           never become the ground reference below */
+        /* Geometrically test planes to make sure normals are expected */
         if (rejectMisorientedPlanes() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -173,8 +207,10 @@ void SemanticsManager::run(void)
                          __func__);
         }
 
-        /* Validate the low-level semantic planes */
+        /* Declare variable which will point to the main ground plane */
         geometric::Plane *p_mainGroundPlane = nullptr;
+
+        /* Validate the low-level semantic planes */
         if (p_atlas->getBiggestGroundPlane(p_mainGroundPlane) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
@@ -187,8 +223,10 @@ void SemanticsManager::run(void)
         /* If there is a ground plane, find its transform and filter planes */
         if (p_mainGroundPlane != nullptr)
         {
-            /* Find the transform from ground plane to horizontal */
+            /* Declare variable which will track the transform from */
             Eigen::Matrix4f plane2{};
+
+            /* Find the transform from ground plane to horizontal */
             if (computePlaneToHorizontal(p_mainGroundPlane, plane2) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
@@ -198,7 +236,9 @@ void SemanticsManager::run(void)
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            planePoseMat = plane2;
+
+            /* Store the plane transformation matrix */
+            groundPlanToHorizontalTransformation = plane2;
 
             /* Drop ground planes past the step limit from the main floor */
             if (filterGroundPlanes(p_mainGroundPlane) !=
@@ -235,7 +275,8 @@ void SemanticsManager::run(void)
             }
         }
 
-        /*  Detect/update passage GEOMETRY before any wall-to-room admission
+        /*!
+         * Detect/update passage GEOMETRY before any wall-to-room admission
          * this cycle, so admitWallToRoom()'s far-side-passage backstop (and
          * Pass 1's free-space clustering below) can route a wall to the
          * correct side of a doorway the moment that doorway itself becomes
@@ -246,7 +287,8 @@ void SemanticsManager::run(void)
          * steps that DO need current room membership (traversal evidence,
          * room association, wall detachment, prospective-room cleanup) stay
          * below, after Pass 1's wall admission, where room data exists to
-         * work from. */
+         * work from.
+         */
         if (p_sysParams->semSeg.enablePassageDetection)
         {
             if (detectDoorsAndDoorways(p_atlas) !=

@@ -36,8 +36,8 @@
 #include "map_state/map_point/map_point.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include <rclcpp/logging.hpp>
 #include <shared_mutex>
 

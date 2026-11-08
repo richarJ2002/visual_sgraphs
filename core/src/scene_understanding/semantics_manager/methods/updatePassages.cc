@@ -23,22 +23,22 @@
  *                  SemanticsManager.h.
  */
 
-#include "mapping/geometry_helpers/utils.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {

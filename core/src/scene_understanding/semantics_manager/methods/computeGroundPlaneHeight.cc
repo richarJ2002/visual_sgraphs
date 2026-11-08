@@ -23,9 +23,9 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -51,7 +51,9 @@ SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
         groundPlaneGetGeometrySnapshot.supportCloud;
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_transformedCloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
-    pcl::transformPointCloud(*p_planeCloud, *p_transformedCloud, planePoseMat);
+    pcl::transformPointCloud(*p_planeCloud,
+                             *p_transformedCloud,
+                             groundPlanToHorizontalTransformation);
 
     /* Not a median: partial_sort with std::greater keeps the lower half in
        descending order, so [numPoint-1] is the upper edge of that half. */

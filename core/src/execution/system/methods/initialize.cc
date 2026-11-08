@@ -30,24 +30,24 @@
  * system/objects/SystemClass.h.
  */
 
-#include "views_io/frame_drawer/frame_drawer.h"
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "mapping/local_mapping/objects/LocalMappingStatusEnum.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
-#include "views_io/map_drawer/map_drawer.h"
-#include "estimation/tracking/objects/TrackingStatusEnum.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
 #include "configuration/settings/objects/SettingsStatusEnum.h"
 #include "configuration/settings/settings.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "estimation/tracking/objects/TrackingStatusEnum.h"
+#include "estimation/tracking/tracking.h"
+#include "execution/system/objects/SystemClass.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "mapping/local_mapping/local_mapping.h"
+#include "mapping/local_mapping/objects/LocalMappingStatusEnum.h"
 #include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
+#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "mapping/local_mapping/local_mapping.h"
-#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "execution/system/objects/SystemClass.h"
-#include "estimation/tracking/tracking.h"
+#include "views_io/frame_drawer/frame_drawer.h"
+#include "views_io/map_drawer/map_drawer.h"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -76,8 +76,6 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                                 const SensorType              sensor_in,
                                 const Verbose::VerbosityLevel verboseLevel_in)
 {
-    sensor = sensor_in;
-
     /* Output welcome message */
     std::cout << std::endl
               << "------------------------------------------------------"
@@ -173,6 +171,7 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
     if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)
     {
         double stereoDepthThreshold{};
+
         if (p_settings->thDepth(stereoDepthThreshold) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
@@ -181,7 +180,9 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
+
         double settingsB{};
+
         if (p_settings->b(settingsB) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
@@ -190,13 +191,16 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                          "fail; continuing as before.",
                          __func__);
         }
+
         const double metricCloseDepth_m = settingsB * stereoDepthThreshold;
         std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
                   << " closeDepthMeters=" << metricCloseDepth_m << std::endl;
     }
 
-    node          = fsSettings["loopClosing"];
+    node = fsSettings["loopClosing"];
+
     bool activeLc = true;
+
     if (!node.empty())
     {
         activeLc = static_cast<int>(fsSettings["loopClosing"]) != 0;
@@ -272,6 +276,7 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
     if (p_sysParams->setParams(sysParamsFile_in) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
@@ -285,7 +290,8 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
     if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
         sensor_in == IMU_RGBD)
     {
-        if (p_atlas->setInertialSensor() != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        if (p_atlas->setInertialSensor() !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: setInertialSensor returned a failure status "
@@ -300,7 +306,8 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
 
     /* Create drawers for the tracking pipeline. */
     p_frameDrawer = new frame_drawer::FrameDrawer(p_atlas);
-    p_mapDrawer   = new map_drawer::MapDrawer(p_atlas, settingsFile_in, p_settings);
+    p_mapDrawer =
+        new map_drawer::MapDrawer(p_atlas, settingsFile_in, p_settings);
 
     /* Initialize the tracking::Tracking thread */
     p_tracker = new tracking::Tracking(this,
@@ -380,11 +387,13 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
      * ---------------------------------------------------------------------- */
 
     /* Initialize the Semantic Segmentation thread */
-    p_semanticSegmentation = new semantic_segmentation::SemanticSegmentation(p_atlas);
+    p_semanticSegmentation =
+        new semantic_segmentation::SemanticSegmentation(p_atlas);
 
     /* Launch the Semantic Segmentation thread */
     p_semanticSegmentationThread =
-        new std::thread(&semantic_segmentation::SemanticSegmentation::run, p_semanticSegmentation);
+        new std::thread(&semantic_segmentation::SemanticSegmentation::run,
+                        p_semanticSegmentation);
 
     /* ---------------------------------------------------------------------- *
      * SEMANTIC MANAGER THREAD

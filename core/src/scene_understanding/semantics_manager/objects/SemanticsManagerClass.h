@@ -246,7 +246,7 @@ class SemanticsManager
      * @brief           The transformation matrix from ground plane to
      *                  horizontal.
      */
-    Eigen::Matrix4f planePoseMat;
+    Eigen::Matrix4f groundPlanToHorizontalTransformation;
 
     /*!
      * @brief           Member which contains the system parameters.

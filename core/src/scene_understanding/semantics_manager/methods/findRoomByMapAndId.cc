@@ -26,9 +26,9 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
@@ -43,7 +43,8 @@ SemanticsManagerStatus
                                          semantic::Room  *&p_room_out) const
 {
     std::vector<map::Map *> atlasAllMaps{};
-    if (p_atlas->getAllMaps(atlasAllMaps) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_atlas->getAllMaps(atlasAllMaps) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllMaps returned a failure status although it "

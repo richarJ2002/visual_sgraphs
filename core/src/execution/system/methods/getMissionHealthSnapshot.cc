@@ -41,13 +41,13 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
-#include "scene_understanding/scene_graph/Floor/Floor.h"
-#include "scene_understanding/scene_graph/Floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/Passage/Passage.h"
-#include "scene_understanding/scene_graph/Passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
 #include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
@@ -101,7 +101,8 @@ SystemStatus System::getMissionHealthSnapshot(
                      __func__);
     }
     int atlasMaps{};
-    if (p_atlas->countMaps(atlasMaps) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_atlas->countMaps(atlasMaps) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: countMaps returned a failure status although it "
@@ -157,9 +158,11 @@ SystemStatus System::getMissionHealthSnapshot(
     }
     else if (p_semanticSegmentation != nullptr)
     {
-        semantic_segmentation::SemanticSegmentation::ProcessingStats processingStats{};
+        semantic_segmentation::SemanticSegmentation::ProcessingStats
+            processingStats{};
         if (p_semanticSegmentation->getProcessingStats(processingStats) !=
-            semantic_segmentation::SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            semantic_segmentation::SemanticSegmentationStatus::
+                SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getProcessingStats returned a failure status "
@@ -235,7 +238,8 @@ SystemStatus System::getMissionHealthSnapshot(
     if (p_activeMap != nullptr)
     {
         unsigned long activeMapId{};
-        if (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+        if (p_activeMap->getId(activeMapId) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId returned a failure status although it "
@@ -294,6 +298,7 @@ SystemStatus System::getMissionHealthSnapshot(
         if (includeSemantics_in)
         {
             scene_graph::SceneGraph *p_sceneGraph = nullptr;
+
             if (p_atlas->getSceneGraph(p_sceneGraph) !=
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
             {

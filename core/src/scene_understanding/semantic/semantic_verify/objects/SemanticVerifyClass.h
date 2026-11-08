@@ -19,7 +19,7 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_VERIFY_CLASS_H
 
-#include "scene_understanding/scene_graph/Room/objects/RoomContextSnapshotStruct.h"
+#include "scene_understanding/scene_graph/room/objects/RoomContextSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/MergePairStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeGateResultStruct.h"

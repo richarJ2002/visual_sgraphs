@@ -43,9 +43,9 @@
 #include "map_state/map_point/map_point.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
 #include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
-#include "scene_understanding/scene_graph/Room/Room.h"
-#include "scene_understanding/scene_graph/Room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/SceneGraph/SceneGraph.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
 
 #include "estimation/mlpnp_solver/mlpnp_solver.h"
