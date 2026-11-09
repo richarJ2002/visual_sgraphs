@@ -52,9 +52,10 @@ AtlasStatus Atlas::setSemanticsManager(SemanticsManager *p_semanticsManager_in)
     /* Maps created or loaded before the manager existed have no registry
      * entry yet: the tree gets one scene graph per map in maps, and the current
      * map becomes the active map. */
-    for (map::Map *p_map : maps)
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
     {
-        if (p_semanticsManager->addSceneGraph(*p_map) !=
+        if (p_semanticsManager->addSceneGraph(*mapEntry.second) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

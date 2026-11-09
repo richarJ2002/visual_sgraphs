@@ -103,7 +103,9 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
     map::Map *p_previousMap = p_activeMap;
 
     /* Create new map (which is initialized as current active map) */
-    p_activeMap = new map::Map(lastInitKeyFrameId);
+    std::unique_ptr<map::Map> p_newMap =
+        std::make_unique<map::Map>(lastInitKeyFrameId);
+    p_activeMap = p_newMap.get();
 
     /* Set the new map as the current active map */
     if (p_activeMap->setCurrentMap() != map::MapStatus::MAP_STATUS_SUCCESS)
@@ -114,8 +116,16 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
                      __func__);
     }
 
-    /* Insert the new active map into the atlas map list */
-    maps.insert(p_activeMap);
+    /* Insert the new active map into the atlas map list, keyed by its id */
+    unsigned long newMapKey{};
+    if (p_activeMap->getId(newMapKey) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    maps[newMapKey] = std::move(p_newMap);
 
     /* The new map gets its empty scene graph and becomes the semantics
      * manager's active map, so the registry always has one scene graph per map

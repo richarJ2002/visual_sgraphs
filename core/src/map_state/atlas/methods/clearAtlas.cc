@@ -46,23 +46,26 @@ AtlasStatus Atlas::clearAtlas()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
     /* The maps leave maps, so their scene graphs go too. */
-    for (map::Map *p_map : maps)
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
     {
-        unsigned long retiredMapId{};
-        if ((p_map->getId(retiredMapId) !=
-             map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_semanticsManager->eraseSceneGraph(retiredMapId) !=
-             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+        if (p_semanticsManager->eraseSceneGraph(mapEntry.first) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId/eraseSceneGraph returned a failure status "
-                         "although they cannot fail; continuing as before.",
+                         "%s: eraseSceneGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
     }
 
-    /* Readers may still hold these maps: retire them; ~Atlas frees them. */
-    retiredMaps.insert(maps.begin(), maps.end());
+    /* Readers may still hold these maps: retire them, in id order; ~Atlas
+     * frees them. */
+    for (std::pair<const unsigned long, std::unique_ptr<map::Map>> &mapEntry :
+         maps)
+    {
+        retiredMaps.push_back(std::move(mapEntry.second));
+    }
     maps.clear();
     p_activeMap        = static_cast<map::Map *>(nullptr);
     lastInitKeyFrameId = 0;

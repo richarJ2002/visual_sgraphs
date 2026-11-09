@@ -211,37 +211,35 @@ class Atlas
 
     /*!
      * @brief           Deletes every map the atlas still holds, each exactly
-     *                  once.
+     *                  once, after the maps leave the semantics manager's
+     *                  registry.
      */
     ~Atlas()
     {
-        /*
-         * A map may move through the active, pending-retirement, and retired
-         * sets during its lifetime. Delete the union exactly once at Atlas
-         * shutdown.
-         */
-        std::set<map::Map *> mapsToDelete = maps;
-        mapsToDelete.insert(badMaps.begin(), badMaps.end());
-        mapsToDelete.insert(retiredMaps.begin(), retiredMaps.end());
-
         /* The maps own their S-Graphs and the semantics manager keeps a
          * registry of them, so every map leaves the registry before it is
          * deleted. */
-        if (unregisterSceneGraphs(mapsToDelete) !=
+        std::vector<map::Map *> mapsToUnregister{};
+        for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+                 &mapEntry : maps)
+        {
+            mapsToUnregister.push_back(mapEntry.second.get());
+        }
+        for (const std::unique_ptr<map::Map> &p_badMap : badMaps)
+        {
+            mapsToUnregister.push_back(p_badMap.get());
+        }
+        for (const std::unique_ptr<map::Map> &p_retiredMap : retiredMaps)
+        {
+            mapsToUnregister.push_back(p_retiredMap.get());
+        }
+        if (unregisterSceneGraphs(mapsToUnregister) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: unregisterSceneGraphs returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
-        }
-
-        for (map::Map *p_map : mapsToDelete)
-        {
-            if (p_map != nullptr)
-            {
-                delete p_map;
-            }
         }
 
         maps.clear();
@@ -1009,26 +1007,29 @@ class Atlas
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
-    [[nodiscard]] AtlasStatus
-        unregisterSceneGraphs(const std::set<map::Map *> &mapsToUnregister_in);
+    [[nodiscard]] AtlasStatus unregisterSceneGraphs(
+        const std::vector<map::Map *> &mapsToUnregister_in);
 
     /*!
-     * @brief           Active maps. The Atlas owns them and deletes them in its
-     *                  destructor.
+     * @brief           Active maps, owned by the Atlas and keyed by map id, so
+     *                  every iteration runs in ascending map-id order. Guarded
+     *                  by atlasMutex.
      */
-    std::set<map::Map *> maps;
+    std::map<unsigned long, std::unique_ptr<map::Map>> maps;
 
     /*!
      * @brief           Maps marked bad by setMapBad that removeBadMaps has not
-     *                  yet moved to retiredMaps; still owned by the Atlas.
+     *                  yet moved to retiredMaps; still owned by the Atlas, in
+     *                  the order they went bad.
      */
-    std::set<map::Map *> badMaps;
+    std::vector<std::unique_ptr<map::Map>> badMaps;
 
     /*!
-     * @brief           Maps retired from active use (by removeBadMaps or
-     *                  clearAtlas) but still owned until Atlas destruction.
+     * @brief           Maps retired from active use (by removeBadMaps,
+     *                  clearAtlas or postLoad) but still owned until Atlas
+     *                  destruction, in the order they were retired.
      */
-    std::set<map::Map *> retiredMaps;
+    std::vector<std::unique_ptr<map::Map>> retiredMaps;
 
     /*!
      * @brief           Maps sorted by id, filled by preSave for serialisation

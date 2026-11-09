@@ -44,7 +44,7 @@ namespace atlas
 {
 
 AtlasStatus Atlas::unregisterSceneGraphs(
-    const std::set<map::Map *> &mapsToUnregister_in)
+    const std::vector<map::Map *> &mapsToUnregister_in)
 {
     for (map::Map *p_map : mapsToUnregister_in)
     {

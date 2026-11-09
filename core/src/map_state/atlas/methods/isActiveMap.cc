@@ -51,8 +51,20 @@ AtlasStatus Atlas::isActiveMap(map::Map *p_map_in, bool &isActiveMap_out)
     }
 
     std::unique_lock<std::mutex> lock(atlasMutex);
+    unsigned long                mapId{};
     bool                         mapIsBad{};
-    if ((maps.count(p_map_in) > 0) &&
+    if (p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::map<unsigned long, std::unique_ptr<map::Map>>::const_iterator
+               mapEntry = maps.find(mapId);
+    const bool isInMaps =
+        mapEntry != maps.end() && mapEntry->second.get() == p_map_in;
+    if (isInMaps &&
         p_map_in->isBad(mapIsBad) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -60,7 +72,7 @@ AtlasStatus Atlas::isActiveMap(map::Map *p_map_in, bool &isActiveMap_out)
                      "fail; continuing as before.",
                      __func__);
     }
-    isActiveMap_out = maps.count(p_map_in) > 0 && !mapIsBad;
+    isActiveMap_out = isInMaps && !mapIsBad;
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 

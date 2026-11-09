@@ -58,30 +58,14 @@ AtlasStatus Atlas::getCoherentMapView(
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
-    std::vector<map::Map *> activeMaps(maps.begin(), maps.end());
-    std::sort(
-        activeMaps.begin(),
-        activeMaps.end(),
-        [](map::Map *p_lhs_in, map::Map *p_rhs_in)
-        {
-            unsigned long lhsId{};
-            if (p_lhs_in->getId(lhsId) != map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            unsigned long rhsId{};
-            if (p_rhs_in->getId(rhsId) != map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return lhsId < rhsId;
-        });
+    /* maps is keyed by id, so the view is already in ascending id order. */
+    std::vector<map::Map *> activeMaps{};
+    activeMaps.reserve(maps.size());
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
+    {
+        activeMaps.push_back(mapEntry.second.get());
+    }
 
     currentMapId_inout.reset();
     currentMapStatus_out = AtlasCurrentMapStatus::NO_CURRENT_MAP;

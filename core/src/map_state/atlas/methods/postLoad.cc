@@ -72,26 +72,39 @@ AtlasStatus Atlas::postLoad()
      * them). Rooms,
      * floors and passages are not part of a saved map, so there is nothing
      * to restore into it. */
-    for (map::Map *p_map : maps)
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
     {
-        unsigned long replacedMapId{};
-        if ((p_map->getId(replacedMapId) !=
-             map::MapStatus::MAP_STATUS_SUCCESS) ||
-            ((p_semanticsManager != nullptr) &&
-             (p_semanticsManager->eraseSceneGraph(replacedMapId) !=
-              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)))
+        if ((p_semanticsManager != nullptr) &&
+            (p_semanticsManager->eraseSceneGraph(mapEntry.first) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId/eraseSceneGraph returned a failure status "
-                         "although they cannot fail; continuing as before.",
+                         "%s: eraseSceneGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
+    }
+    /* The replaced maps stay owned (retired): other threads and the old
+     * active map pointer may still refer to them. */
+    for (std::pair<const unsigned long, std::unique_ptr<map::Map>> &mapEntry :
+         maps)
+    {
+        retiredMaps.push_back(std::move(mapEntry.second));
     }
     maps.clear();
     unsigned long int keyFrameCount = 0, mapPointCount = 0;
     for (map::Map *p_map : backupMaps)
     {
-        maps.insert(p_map);
+        unsigned long loadedMapId{};
+        if (p_map->getId(loadedMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        maps[loadedMapId] = std::unique_ptr<map::Map>(p_map);
         if (p_map->postLoad(p_keyFrameDatabase, p_orbVocabulary, camerasById) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
