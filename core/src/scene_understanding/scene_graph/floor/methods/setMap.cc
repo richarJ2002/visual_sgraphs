@@ -39,7 +39,6 @@ namespace semantic
 
 FloorStatus Floor::setMap(map::Map *p_map_in)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
     p_map = p_map_in;
 
     return FloorStatus::FLOOR_STATUS_SUCCESS;

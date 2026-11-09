@@ -37,8 +37,7 @@ namespace semantic
 
 PassageStatus Passage::setTraversalObservationCount(std::size_t value_in)
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
-    const std::size_t           directionalCount =
+    const std::size_t directionalCount =
         traversalKnownToFarCount + traversalFarToKnownCount;
     traversalUnknownCount =
         value_in > directionalCount ? value_in - directionalCount : 0U;

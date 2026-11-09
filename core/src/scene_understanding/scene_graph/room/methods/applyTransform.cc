@@ -38,7 +38,6 @@ namespace semantic
 RoomStatus Room::applyTransform(
     const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
 
     centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
 

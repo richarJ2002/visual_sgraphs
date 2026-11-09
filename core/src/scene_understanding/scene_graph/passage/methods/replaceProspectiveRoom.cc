@@ -47,8 +47,6 @@ PassageStatus Passage::replaceProspectiveRoom(
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
-
     bool replaced = false;
     if (p_prospectiveRoom == p_retiredRoom_in)
     {

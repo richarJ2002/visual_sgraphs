@@ -63,7 +63,6 @@ RoomStatus Room::getWallNormalTowardRoom_world(
     Eigen::Vector3d roomCentroid_world_m;
 
     {
-        std::lock_guard<std::mutex> lock(mapMutex);
         roomCentroid_world_m = centroid;
     }
 

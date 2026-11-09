@@ -37,7 +37,6 @@ namespace semantic
 
 RoomStatus Room::getFloor(Floor *&p_floor_out) const
 {
-    std::lock_guard<std::mutex> lock(floorMutex);
     p_floor_out = p_floor;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

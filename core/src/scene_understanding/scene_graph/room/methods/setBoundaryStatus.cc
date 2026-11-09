@@ -35,7 +35,6 @@ namespace semantic
 
 RoomStatus Room::setBoundaryStatus(const BoundaryStatus boundaryStatus_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     boundaryStatus = boundaryStatus_in;
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

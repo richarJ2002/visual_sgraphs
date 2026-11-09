@@ -37,7 +37,6 @@ namespace semantic
 RoomStatus Room::setBoundaryCorners_world_m(
     std::vector<Eigen::Vector3d> boundaryCorners_world_m_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     boundaryCorners_world_m = std::move(boundaryCorners_world_m_in);
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

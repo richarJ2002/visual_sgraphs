@@ -50,7 +50,6 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
 
     bool canonicalIsRecoveryProxy = false;
     {
-        std::lock_guard<std::mutex> typeLock(typeMutex);
         canonicalIsRecoveryProxy = isMarkedRecoveryProxy;
     }
 
@@ -61,8 +60,6 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
     std::size_t    duplicateFarToKnownCount = 0U;
     std::size_t    duplicateUnknownCount    = 0U;
     {
-        std::lock_guard<std::mutex> duplicateTypeLock(
-            p_duplicate_inout->typeMutex);
         duplicateIsRecoveryProxy = p_duplicate_inout->isMarkedRecoveryProxy;
         duplicateIsPassable      = p_duplicate_inout->isMarkedPassable;
         duplicatePassageType     = p_duplicate_inout->passageType;
@@ -80,8 +77,6 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
     Room                           *p_duplicateProspectiveRoom = nullptr;
     KnownSideProvenance             duplicateKnownSide;
     {
-        std::lock_guard<std::mutex> duplicateGeometryLock(
-            p_duplicate_inout->geometryMutex);
         duplicateCentroid          = p_duplicate_inout->centroid;
         duplicateEquation          = p_duplicate_inout->globalEquation;
         duplicateWidth_m           = p_duplicate_inout->width;
@@ -105,8 +100,7 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
 
     bool replacedGeometry = false;
     {
-        std::lock_guard<std::mutex> geometryLock(geometryMutex);
-        const Eigen::Vector4d       canonicalEquationCoefficients =
+        const Eigen::Vector4d canonicalEquationCoefficients =
             globalEquation.coeffs();
         const double canonicalNormalNorm =
             canonicalEquationCoefficients.head<3>().norm();
@@ -183,7 +177,6 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
     }
 
     {
-        std::lock_guard<std::mutex> typeLock(typeMutex);
         traversalKnownToFarCount =
             std::max(traversalKnownToFarCount, duplicateKnownToFarCount);
         traversalFarToKnownCount =

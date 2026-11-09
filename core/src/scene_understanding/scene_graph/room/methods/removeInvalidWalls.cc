@@ -39,7 +39,6 @@ namespace semantic
 
 RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
 {
-    std::lock_guard<std::mutex> lock(wallsMutex);
 
     const std::size_t wallCountBefore = wallPlanes.size();
     wallPlanes.erase(

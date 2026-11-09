@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setCentroid(const Eigen::Vector3d &value_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     centroid = value_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

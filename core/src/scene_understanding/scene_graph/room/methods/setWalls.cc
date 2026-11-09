@@ -59,8 +59,6 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    std::lock_guard<std::mutex> lock(wallsMutex);
-
     /* Deduplicate membership within this room; the manager owns global policy.
      */
     const bool isAlreadyAssociated =

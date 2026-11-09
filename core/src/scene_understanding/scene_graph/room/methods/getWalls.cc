@@ -37,7 +37,6 @@ namespace semantic
 
 RoomStatus Room::getWalls(std::vector<geometric::Plane *> &walls_out) const
 {
-    std::lock_guard<std::mutex> lock(wallsMutex);
     walls_out = wallPlanes;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

@@ -45,7 +45,6 @@ PassageStatus Passage::setKnownSideDirection(
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
     knownSideProvenance.knownSideDirection_world =
         knownSideDirection_world_in / directionNorm;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

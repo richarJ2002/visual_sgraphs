@@ -36,7 +36,6 @@ namespace semantic
 
 RoomStatus Room::clearWalls()
 {
-    std::lock_guard<std::mutex> lock(wallsMutex);
     wallPlanes.clear();
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

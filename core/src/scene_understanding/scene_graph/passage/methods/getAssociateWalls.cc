@@ -39,7 +39,6 @@ namespace semantic
 PassageStatus Passage::getAssociateWalls(
     std::vector<vs_graphs::core::geometric::Plane *> &associateWalls_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     associateWalls_out = associateWalls;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

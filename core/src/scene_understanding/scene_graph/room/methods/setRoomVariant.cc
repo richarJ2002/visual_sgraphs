@@ -36,7 +36,6 @@ namespace semantic
 
 RoomStatus Room::setRoomVariant(Room::RoomVariant variant_in)
 {
-    std::lock_guard<std::mutex> lock(stateMutex);
     variant = variant_in;
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

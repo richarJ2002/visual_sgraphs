@@ -39,7 +39,6 @@ namespace semantic
 PassageStatus
     Passage::setKnownSideRoom(vs_graphs::core::semantic::Room *p_room_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     knownSideProvenance.p_room = p_room_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

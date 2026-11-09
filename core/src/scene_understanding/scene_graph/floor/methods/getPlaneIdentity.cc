@@ -38,7 +38,6 @@ namespace semantic
 FloorStatus Floor::getPlaneIdentity(
     std::optional<Floor::PlaneIdentity> &planeIdentity_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     planeIdentity_out = planeIdentity;
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }

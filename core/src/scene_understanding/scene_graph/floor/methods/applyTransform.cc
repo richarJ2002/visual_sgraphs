@@ -39,7 +39,6 @@ namespace semantic
 FloorStatus Floor::applyTransform(
     const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
 
     centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
 

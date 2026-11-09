@@ -37,7 +37,6 @@ namespace semantic
 
 RoomStatus Room::isBad(bool &isBad_out)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
     isBad_out = isBadFlag;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

@@ -78,7 +78,6 @@ FloorStatus Floor::setRooms(
 
     std::vector<Room *> oldRooms;
     {
-        std::lock_guard<std::mutex> lock(roomsMutex);
         oldRooms = rooms;
         rooms    = newRooms;
     }

@@ -54,7 +54,6 @@ PassageStatus
                      __func__);
     }
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
     if (!associateWalls.empty() &&
         std::find(roomWalls.begin(), roomWalls.end(), associateWalls.front()) !=
             roomWalls.end())

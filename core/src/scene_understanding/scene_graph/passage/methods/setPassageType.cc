@@ -38,7 +38,6 @@ namespace semantic
 
 PassageStatus Passage::setPassageType(Passage::PassageVariant newType_in)
 {
-    std::unique_lock<std::mutex> lock(typeMutex);
     passageType = newType_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

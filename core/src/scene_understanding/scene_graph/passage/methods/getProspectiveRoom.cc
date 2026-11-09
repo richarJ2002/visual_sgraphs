@@ -39,7 +39,6 @@ namespace semantic
 PassageStatus Passage::getProspectiveRoom(
     vs_graphs::core::semantic::Room *&p_prospectiveRoom_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     p_prospectiveRoom_out = p_prospectiveRoom;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setHeight(double value_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     height = value_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

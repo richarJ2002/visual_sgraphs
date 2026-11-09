@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::isRecoveryProxy(bool &isRecoveryProxy_out) const
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     isRecoveryProxy_out = isMarkedRecoveryProxy;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

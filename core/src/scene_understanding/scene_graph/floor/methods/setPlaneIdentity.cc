@@ -50,7 +50,6 @@ FloorStatus
 
     normalizedEquation_world /= normalNorm;
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
     planeIdentity = PlaneIdentity{normalizedEquation_world,
                                   finiteSupportCount_in,
                                   observationCount_in};

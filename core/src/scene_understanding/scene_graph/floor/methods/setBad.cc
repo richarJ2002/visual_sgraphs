@@ -35,7 +35,6 @@ namespace semantic
 
 FloorStatus Floor::setBad()
 {
-    std::lock_guard<std::mutex> lock(mapMutex);
     isFlaggedBad = true;
 
     return FloorStatus::FLOOR_STATUS_SUCCESS;

@@ -38,7 +38,6 @@ namespace semantic
 RoomStatus Room::getPassages(
     std::vector<vs_graphs::core::semantic::Passage *> &passages_out) const
 {
-    std::lock_guard<std::mutex> lock(mapMutex);
     passages_out = passages;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

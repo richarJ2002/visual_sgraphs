@@ -296,13 +296,13 @@ class Passage
      */
     ~Passage() = default;
     /*!
-     * @brief           Copying is forbidden: the passage holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a passage is owned by one scene
+     *                  graph and is never copied.
      */
     Passage(const Passage &otherPassage_in) = delete;
     /*!
-     * @brief           Copying is forbidden: the passage holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a passage is owned by one scene
+     *                  graph and is never copied.
      */
     Passage &operator=(const Passage &otherPassage_in) = delete;
 
@@ -907,24 +907,6 @@ class Passage
      *                  Guarded by mapMutex.
      */
     map::Map *p_map{nullptr};
-
-    /*!
-     * @brief           Guards p_map and the bad flag.
-     */
-    std::mutex mapMutex;
-
-    /*!
-     * @brief           Guards the passable flag, the passage type, the recovery
-     *                  proxy flag, the traversal counters and history, the
-     *                  blocked flag and the verdict counters.
-     */
-    mutable std::mutex typeMutex;
-
-    /*!
-     * @brief           Guards the size, centroid, plane, the door and wall
-     *                  planes, the far-side room and the known-side provenance.
-     */
-    mutable std::mutex geometryMutex;
 };
 
 } /* namespace semantic */

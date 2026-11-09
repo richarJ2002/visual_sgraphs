@@ -36,7 +36,6 @@ namespace semantic
 
 PassageStatus Passage::isBlocked(bool &isBlocked_out) const
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     isBlocked_out = isMarkedBlocked;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

@@ -38,7 +38,6 @@ namespace semantic
 PassageStatus Passage::getKnownSideProvenance(
     Passage::KnownSideProvenance &knownSideProvenance_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     knownSideProvenance_out = knownSideProvenance;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

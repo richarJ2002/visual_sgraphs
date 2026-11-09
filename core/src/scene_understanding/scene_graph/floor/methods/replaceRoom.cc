@@ -50,7 +50,6 @@ FloorStatus Floor::replaceRoom(Room *p_retiredRoom_inout,
     }
 
     {
-        std::lock_guard<std::mutex> lock(roomsMutex);
         if (std::find(rooms.begin(), rooms.end(), p_retiredRoom_inout) ==
             rooms.end())
         {
@@ -83,7 +82,6 @@ FloorStatus Floor::replaceRoom(Room *p_retiredRoom_inout,
     bool                replacedRetiredRoom = false;
     std::vector<Room *> rebuiltRooms;
     {
-        std::lock_guard<std::mutex> lock(roomsMutex);
         rebuiltRooms.reserve(rooms.size());
 
         for (Room *p_existingRoom : rooms)

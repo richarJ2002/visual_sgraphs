@@ -36,7 +36,6 @@ namespace semantic
 
 RoomStatus Room::getCentroid(Eigen::Vector3d &centroid_out) const
 {
-    std::lock_guard<std::mutex> lock(mapMutex);
     centroid_out = centroid;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

@@ -47,8 +47,6 @@ PassageStatus
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
-
     bool replacedAssociation = false;
 
     if (p_associatedDoor == p_retiredPlane_in)

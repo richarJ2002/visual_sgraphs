@@ -39,8 +39,7 @@ namespace semantic
 PassageStatus
     Passage::mergeKnownSideProvenance(const KnownSideProvenance &provenance_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
-    bool                        knownSideProvenanceHasDirection{};
+    bool knownSideProvenanceHasDirection{};
     if (knownSideProvenance.hasDirection(knownSideProvenanceHasDirection) !=
         KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
     {

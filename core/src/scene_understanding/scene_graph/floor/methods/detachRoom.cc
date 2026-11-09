@@ -47,7 +47,6 @@ FloorStatus Floor::detachRoom(Room *p_room_inout)
     }
 
     {
-        std::lock_guard<std::mutex> lock(roomsMutex);
         rooms.erase(std::remove(rooms.begin(), rooms.end(), p_room_inout),
                     rooms.end());
     }

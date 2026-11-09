@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setWidth(double value_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     width = value_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::getGlobalEquation(g2o::Plane3D &globalEquation_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     globalEquation_out = globalEquation;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

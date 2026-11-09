@@ -41,7 +41,6 @@ namespace semantic
 PassageStatus Passage::getProspectiveRoomId(
     std::optional<int> &prospectiveRoomId_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     if (p_prospectiveRoom == nullptr)
     {
         prospectiveRoomId_out = std::nullopt;

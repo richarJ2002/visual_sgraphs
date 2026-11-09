@@ -37,7 +37,6 @@ namespace semantic
 
 RoomStatus Room::setGroundPlane(geometric::Plane *p_groundPlane_in)
 {
-    std::lock_guard<std::mutex> lock(wallsMutex);
     /* The room has one ground plane: null leaves the list empty. */
     groundPlanes.clear();
     if (p_groundPlane_in != nullptr)

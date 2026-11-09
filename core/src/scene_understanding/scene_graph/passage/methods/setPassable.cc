@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setPassable(bool value_in)
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     isMarkedPassable = value_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

@@ -38,7 +38,6 @@ namespace semantic
 
 PassageStatus Passage::getPassageType(Passage::PassageVariant &passageType_out)
 {
-    std::unique_lock<std::mutex> lock(typeMutex);
     passageType_out = passageType;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

@@ -39,7 +39,6 @@ namespace semantic
 PassageStatus
     Passage::setAssociateDoor(vs_graphs::core::geometric::Plane *p_value_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     p_associatedDoor = p_value_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

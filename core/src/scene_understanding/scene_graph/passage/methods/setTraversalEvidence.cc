@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setTraversalEvidence(bool value_in)
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     if (value_in)
     {
         if (traversalKnownToFarCount == 0U && traversalFarToKnownCount == 0U &&

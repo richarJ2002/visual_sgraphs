@@ -44,8 +44,6 @@ RoomStatus Room::removePassageAssociation(
         return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
-    std::lock_guard<std::mutex> lock(mapMutex);
-
     const std::vector<Passage *>::iterator passageIt =
         std::find(passages.begin(), passages.end(), p_removedPassage_in);
 

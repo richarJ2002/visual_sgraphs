@@ -44,8 +44,6 @@ PassageStatus
         return PassageStatus::PASSAGE_STATUS_SUCCESS;
     }
 
-    std::lock_guard<std::mutex> lock(geometryMutex);
-
     const bool alreadyPresent = std::any_of(
         associateWalls.begin(),
         associateWalls.end(),

@@ -38,7 +38,6 @@ namespace semantic
 PassageStatus Passage::hasBidirectionalTraversalEvidence(
     bool &hasBidirectionalTraversalEvidence_out) const
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     hasBidirectionalTraversalEvidence_out =
         traversalKnownToFarCount > 0U && traversalFarToKnownCount > 0U;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

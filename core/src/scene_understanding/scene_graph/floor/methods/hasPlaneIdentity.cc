@@ -37,7 +37,6 @@ namespace semantic
 
 FloorStatus Floor::hasPlaneIdentity(bool &hasPlaneIdentity_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     hasPlaneIdentity_out = planeIdentity.has_value();
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }

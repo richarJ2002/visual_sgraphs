@@ -37,7 +37,6 @@ namespace semantic
 
 FloorStatus Floor::setCentroid(Eigen::Vector3d value_in)
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     centroid = value_in;
 
     return FloorStatus::FLOOR_STATUS_SUCCESS;

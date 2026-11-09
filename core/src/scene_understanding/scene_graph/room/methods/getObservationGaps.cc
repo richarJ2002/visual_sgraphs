@@ -37,7 +37,6 @@ namespace semantic
 RoomStatus Room::getObservationGaps(
     std::vector<Room::ObservationGap> &observationGaps_out) const
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
     observationGaps_out = observationGaps;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

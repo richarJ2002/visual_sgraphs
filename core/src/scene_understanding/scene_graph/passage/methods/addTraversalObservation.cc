@@ -38,7 +38,6 @@ namespace semantic
 {
 PassageStatus Passage::addTraversalObservation(TraversalDirection direction_in)
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
 
     std::size_t *p_counter = &traversalUnknownCount;
     if (direction_in == TraversalDirection::KNOWN_TO_FAR)
@@ -63,7 +62,6 @@ PassageStatus Passage::addTraversalObservation(TraversalDirection direction_in,
                                                unsigned long      keyFrameId_in,
                                                bool &wasObservationAdded_out)
 {
-    std::lock_guard<std::mutex>                   lock(typeMutex);
     const std::pair<unsigned long, unsigned long> segmentId(frameId_in,
                                                             keyFrameId_in);
     if (std::find(traversalSegmentHistory.begin(),

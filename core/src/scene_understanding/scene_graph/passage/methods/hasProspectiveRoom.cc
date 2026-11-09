@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::hasProspectiveRoom(bool &hasProspectiveRoom_out) const
 {
-    std::lock_guard<std::mutex> lock(geometryMutex);
     hasProspectiveRoom_out = p_prospectiveRoom != nullptr;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

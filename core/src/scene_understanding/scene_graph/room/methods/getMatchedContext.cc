@@ -37,7 +37,6 @@ namespace semantic
 RoomStatus
     Room::getMatchedContext(RoomContextSnapshot *&p_matchedContext_out) const
 {
-    std::lock_guard<std::mutex> lock(stateMutex);
     p_matchedContext_out = p_matchedContext;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

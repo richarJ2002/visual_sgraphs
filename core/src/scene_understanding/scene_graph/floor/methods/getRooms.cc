@@ -39,7 +39,6 @@ namespace semantic
 FloorStatus Floor::getRooms(
     std::vector<vs_graphs::core::semantic::Room *> &rooms_out) const
 {
-    std::lock_guard<std::mutex> lock(roomsMutex);
     rooms_out = rooms;
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }

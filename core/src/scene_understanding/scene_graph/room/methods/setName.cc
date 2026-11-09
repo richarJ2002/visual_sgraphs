@@ -36,7 +36,6 @@ namespace semantic
 
 RoomStatus Room::setName(std::string name_in)
 {
-    std::lock_guard<std::mutex> lock(stateMutex);
     name = name_in;
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

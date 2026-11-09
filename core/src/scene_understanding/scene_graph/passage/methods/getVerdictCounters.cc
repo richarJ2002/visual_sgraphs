@@ -39,7 +39,6 @@ PassageStatus
                                 std::size_t  &consecutiveClosedVerdicts_out,
                                 std::int64_t &lastVerdictStamp_ns_out) const
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     consecutiveOpenVerdicts_out   = consecutiveOpenVerdicts;
     consecutiveClosedVerdicts_out = consecutiveClosedVerdicts;
     lastVerdictStamp_ns_out       = lastVerdictStamp_ns;

@@ -171,13 +171,13 @@ class Floor
      */
     ~Floor() = default;
     /*!
-     * @brief           Copying is forbidden: the floor holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a floor is owned by one scene
+     *                  graph and is never copied.
      */
     Floor(const Floor &otherFloor_in) = delete;
     /*!
-     * @brief           Copying is forbidden: the floor holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a floor is owned by one scene
+     *                  graph and is never copied.
      */
     Floor &operator=(const Floor &otherFloor_in) = delete;
 
@@ -474,21 +474,6 @@ class Floor
      *                  Guarded by mapMutex.
      */
     map::Map *p_map{nullptr};
-
-    /*!
-     * @brief           Guards p_map.
-     */
-    std::mutex mapMutex;
-
-    /*!
-     * @brief           Guards the list of rooms.
-     */
-    mutable std::mutex roomsMutex;
-
-    /*!
-     * @brief           Guards the centroid and the ground-plane identity.
-     */
-    mutable std::mutex geometryMutex;
 };
 } /* namespace semantic */
 } /* namespace core */

@@ -45,8 +45,6 @@ RoomStatus Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    std::lock_guard<std::mutex> lock(mapMutex);
-
     const bool isAlreadyPresent = std::any_of(
         passages.begin(),
         passages.end(),

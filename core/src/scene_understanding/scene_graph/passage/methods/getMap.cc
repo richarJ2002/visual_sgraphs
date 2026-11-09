@@ -39,7 +39,6 @@ namespace semantic
 
 PassageStatus Passage::getMap(map::Map *&p_map_out)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
     p_map_out = p_map;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

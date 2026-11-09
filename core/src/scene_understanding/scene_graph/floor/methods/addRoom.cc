@@ -68,8 +68,7 @@ FloorStatus Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
     }
 
     {
-        std::lock_guard<std::mutex> lock(roomsMutex);
-        const bool                  alreadyPresent =
+        const bool alreadyPresent =
             std::find(rooms.begin(), rooms.end(), p_value_inout) != rooms.end();
 
         if (!alreadyPresent)

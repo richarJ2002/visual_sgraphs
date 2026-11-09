@@ -37,7 +37,6 @@ namespace semantic
 
 PassageStatus Passage::setBad()
 {
-    std::lock_guard<std::mutex> lock(mapMutex);
     isFlaggedBad = true;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

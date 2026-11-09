@@ -168,25 +168,9 @@ class Room
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Guards the name, tag, matched context, room variant and
-     *                  visited flag.
-     */
-    mutable std::mutex stateMutex;
-
-    /*!
      * @brief           The room's identifier.
      */
     int id{-1};
-
-    /*!
-     * @brief           The room's identifier in the local optimizer.
-     */
-    int opId{-1};
-
-    /*!
-     * @brief           The room's identifier in the global optimizer.
-     */
-    int opIdG{-1};
 
     /*!
      * @brief           Marks the room as bad (if true, the room will not be
@@ -317,13 +301,13 @@ class Room
      */
     ~Room() = default;
     /*!
-     * @brief           Copying is forbidden: the room holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a room is owned by one scene
+     *                  graph and is never copied.
      */
     Room(const Room &otherRoom_in) = delete;
     /*!
-     * @brief           Copying is forbidden: the room holds mutexes, which
-     *                  cannot be copied.
+     * @brief           Copying is forbidden: a room is owned by one scene
+     *                  graph and is never copied.
      */
     Room &operator=(const Room &otherRoom_in) = delete;
 
@@ -359,42 +343,6 @@ class Room
      *                  New atlas room identifier.
      */
     [[nodiscard]] RoomStatus setId(int id_in);
-
-    /*!
-     * @brief           Returns the local optimizer vertex identifier.
-     *
-     * @param[out]      opId_out
-     *                  Local optimizer identifier.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus getOpId(int &opId_out) const;
-
-    /*!
-     * @brief           Sets the local optimizer vertex identifier.
-     *
-     * @param[in]       opId_in
-     *                  New local optimizer identifier.
-     */
-    [[nodiscard]] RoomStatus setOpId(int opId_in);
-
-    /*!
-     * @brief           Returns the global optimizer vertex identifier.
-     *
-     * @param[out]      opIdG_out
-     *                  Global optimizer identifier.
-     *
-     * @return          ROOM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] RoomStatus getOpIdG(int &opIdG_out) const;
-
-    /*!
-     * @brief           Sets the global optimizer vertex identifier.
-     *
-     * @param[in]       opIdG_in
-     *                  New global optimizer identifier.
-     */
-    [[nodiscard]] RoomStatus setOpIdG(int opIdG_in);
 
     /*!
      * @brief           Reports whether the room has been invalidated.
@@ -977,29 +925,6 @@ class Room
      * @brief           Non-owning pointer to the map that owns this room.
      */
     map::Map *p_map{nullptr};
-
-    /*!
-     * @brief           Protects access to the owning-map association.
-     */
-    mutable std::mutex mapMutex;
-
-    /*!
-     * @brief           Protects the room's non-owning wall membership
-     *                  collection.
-     */
-    mutable std::mutex wallsMutex;
-
-    /*!
-     * @brief           Protects the non-owning room-to-floor hierarchy
-     *                  edge.
-     */
-    mutable std::mutex floorMutex;
-
-    /*!
-     * @brief           Protects the independently updated
-     *                  boundary-validation state.
-     */
-    mutable std::mutex boundaryStatusMutex;
 };
 } /* namespace semantic */
 } /* namespace core */

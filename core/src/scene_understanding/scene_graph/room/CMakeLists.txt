@@ -18,8 +18,6 @@ set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMatchedContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getName.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getObservationGaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpIdG.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomVariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWallNormalTowardRoom_world.cc
@@ -47,8 +45,6 @@ set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setMatchedContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setName.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setObservationGaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setPreviouslyVisited.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomVariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setWalls.cc

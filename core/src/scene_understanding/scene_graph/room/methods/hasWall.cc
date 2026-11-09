@@ -43,9 +43,6 @@ RoomStatus Room::hasWall(vs_graphs::core::geometric::Plane *p_wall_in,
         return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
-    /* wallPlanes is written under wallsMutex, so search it under the same. */
-    std::lock_guard<std::mutex> wallsLock(wallsMutex);
-
     isWallInRoom_out =
         std::find(wallPlanes.begin(), wallPlanes.end(), p_wall_in) !=
         wallPlanes.end();

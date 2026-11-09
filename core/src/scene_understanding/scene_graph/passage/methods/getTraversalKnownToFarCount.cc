@@ -38,7 +38,6 @@ namespace semantic
 PassageStatus Passage::getTraversalKnownToFarCount(
     std::size_t &traversalKnownToFarCount_out) const
 {
-    std::lock_guard<std::mutex> lock(typeMutex);
     traversalKnownToFarCount_out = traversalKnownToFarCount;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }

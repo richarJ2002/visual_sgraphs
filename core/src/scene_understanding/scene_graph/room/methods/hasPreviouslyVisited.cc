@@ -36,7 +36,6 @@ namespace semantic
 
 RoomStatus Room::hasPreviouslyVisited(bool &hasPreviouslyVisited_out) const
 {
-    std::lock_guard<std::mutex> lock(stateMutex);
     hasPreviouslyVisited_out = wasPreviouslyVisited;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

@@ -56,8 +56,6 @@ RoomStatus Room::replaceWall(geometric::Plane *p_retiredWall_in,
                      __func__);
     }
 
-    std::lock_guard<std::mutex> lock(wallsMutex);
-
     bool                            wasRetiredWallReplaced = false;
     std::vector<geometric::Plane *> rebuiltWalls;
     rebuiltWalls.reserve(wallPlanes.size());

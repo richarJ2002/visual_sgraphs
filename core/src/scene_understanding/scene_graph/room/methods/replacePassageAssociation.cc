@@ -46,8 +46,6 @@ RoomStatus Room::replacePassageAssociation(
         return RoomStatus::ROOM_STATUS_INVALID_ARGUMENT;
     }
 
-    std::lock_guard<std::mutex> lock(mapMutex);
-
     bool wasAssociationReplaced = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;
     rebuiltPassages.reserve(passages.size());
