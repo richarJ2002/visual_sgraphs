@@ -83,16 +83,12 @@ namespace geometric
 {
 class Plane;
 }
-namespace semantic
-{
-class Passage;
-}
 namespace keyframe
 {
 
 /*!
  * @brief           A frame the SLAM system keeps in the map: its camera pose,
- *                  features, observed map points, planes and passages, and
+ *                  features, observed map points and planes, and
  *                  its links to other key frames (covisibility graph,
  *                  spanning tree, loop and merge edges). Tracking creates it
  *                  from a frame::Frame; Tracking, LocalMapping and LoopClosing
@@ -981,47 +977,6 @@ class KeyFrame
                         geometric::Plane *p_retainedPlane_in,
                         bool             &wasReplaced_out);
 
-    /*!
-     * @brief           Adds a mapped passage association.
-     *
-     * @param[in]       p_passage_in
-     *                  Passage observed by this keyframe.
-     */
-    [[nodiscard]] KeyFrameStatus addMapPassage(semantic::Passage *p_passage_in);
-
-    /*!
-     * @brief           Replaces a retired passage association after fusion.
-     *
-     * @param[in]       p_retiredPassage_in
-     *                  Duplicate passage being retired.
-     *
-     * @param[in]       p_retainedPassage_in
-     *                  Passage retaining the associations.
-     *
-     * @param[out]      wasReplaced_out
-     *                  True when the retired passage was present.
-     *
-     * @return          KEY_FRAME_STATUS_SUCCESS, or
-     *                  KEY_FRAME_STATUS_INVALID_ARGUMENT when an input is
-     *                  rejected.
-     */
-    [[nodiscard]] KeyFrameStatus
-        replaceMapPassage(semantic::Passage *p_retiredPassage_in,
-                          semantic::Passage *p_retainedPassage_in,
-                          bool              &wasReplaced_out);
-
-    /*!
-     * @brief           Returns the passages (doorways) observed by this key
-     *                  frame.
-     *
-     * @param[out]      mapPassages_out
-     *                  Observed passages; borrowed pointers.
-     *
-     * @return          KEY_FRAME_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] KeyFrameStatus
-        getMapPassages(std::vector<semantic::Passage *> &mapPassages_out);
-
     /* KeyPoint functions */
     /*!
      * @brief           Finds the key points that lie inside a square around an
@@ -1859,12 +1814,6 @@ class KeyFrame
      *                  Guarded by featuresMutex.
      */
     std::vector<geometric::Plane *> mapPlanes;
-
-    /*!
-     * @brief           Passages (doorways) observed in this key frame. Guarded
-     *                  by featuresMutex.
-     */
-    std::vector<semantic::Passage *> mapPassages;
 
     /*!
      * @brief           Ids of the matched map points, -1 for none, in key point

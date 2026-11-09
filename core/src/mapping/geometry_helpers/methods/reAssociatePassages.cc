@@ -697,44 +697,6 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                 }
             }
 
-            std::vector<keyframe::KeyFrame *> activeMapAllKeyFrames{};
-            if (p_activeMap->getAllKeyFrames(activeMapAllKeyFrames) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllKeyFrames returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (keyframe::KeyFrame *p_keyFrame : activeMapAllKeyFrames)
-            {
-                bool keyFrameIsBad{};
-                if ((p_keyFrame != nullptr) &&
-                    p_keyFrame->isBad(keyFrameIsBad) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_keyFrame != nullptr && !keyFrameIsBad)
-                {
-                    bool keyFrameWasReplaced{};
-                    if (p_keyFrame->replaceMapPassage(p_candidatePassage,
-                                                      p_retainedPassage,
-                                                      keyFrameWasReplaced) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                    {
-                        keyFrameWasReplaced = false;
-                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                    "%s: replaceMapPassage rejected its input; "
-                                    "continuing as before.",
-                                    __func__);
-                    }
-                }
-            }
-
             if (p_semanticsManager->erasePassage(activeMapId,
                                                  p_candidatePassage) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
