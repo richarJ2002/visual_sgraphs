@@ -42,7 +42,10 @@ namespace atlas
 
 AtlasStatus Atlas::createNewMap()
 {
+    /* Lock the atlas object */
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
+
+    /* Create the new map */
     if (createNewMapWhileAtlasLocked() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

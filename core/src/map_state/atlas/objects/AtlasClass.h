@@ -180,7 +180,10 @@ class Atlas
      */
     Atlas()
     {
+        /* Init map and set current active map to null */
         p_activeMap = static_cast<map::Map *>(nullptr);
+
+        /* Find the address of the scene graph */
         if (scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
         {
@@ -201,7 +204,10 @@ class Atlas
     Atlas(int initialKeyFrameId_in) :
         Atlas()
     {
+        /* Store the value of the keyframe id */
         lastInitKeyFrameId = initialKeyFrameId_in;
+
+        /* Create a new map */
         if (createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -211,6 +217,7 @@ class Atlas
                 __func__);
         }
     }
+
     /*!
      * @brief           Deletes every map the atlas still holds, each exactly
      *                  once.
@@ -272,6 +279,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus createNewMap();
+
     /*!
      * @brief           Makes an existing map the current one; the previous
      *                  current map is marked as stored. Takes atlasMutex.
@@ -294,7 +302,10 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus setViewer(Viewer *p_viewer_in);
 
-    /* Methods for adding new components in the current map */
+    /* ---------------------------------------------------------------------- *
+     * METHODS FOR ADDING NEW COMPONENTS IN THE CURRENT MAP
+     * ---------------------------------------------------------------------- */
+
     /*!
      * @brief           Registers a plane with the map the plane belongs to.
      *
@@ -304,6 +315,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus addMapPlane(geometric::Plane *p_plane_in);
+
     /*!
      * @brief           Registers a key frame with the map the key frame belongs
      *                  to.
@@ -314,6 +326,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus addKeyFrame(keyframe::KeyFrame *p_keyFrame_in);
+
     /*!
      * @brief           Registers a map point with the map the map point belongs
      *                  to.
@@ -324,6 +337,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus addMapPoint(map_point::MapPoint *p_mapPoint_in);
+
     /*!
      * @brief           Registers a room wall plane with the map the plane
      *                  belongs to.
@@ -401,6 +415,7 @@ class Atlas
     [[nodiscard]] AtlasStatus getAllCameras(
         std::vector<camera_models::geometric_camera::GeometricCamera *>
             &allCameras_out);
+
     /*!
      * @brief           Registers a camera model, reusing an equal one that is
      *                  already registered. Takes atlasMutex for the whole
@@ -426,7 +441,6 @@ class Atlas
         camera_models::geometric_camera::GeometricCamera  *p_camera_in,
         camera_models::geometric_camera::GeometricCamera *&p_camera_out);
 
-    /* All methods without map::Map pointer work on current map */
     /*!
      * @brief           Tells the active map that a large change happened (for
      *                  example a loop-closure correction) by advancing its
@@ -435,6 +449,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus informNewBigChange();
+
     /*!
      * @brief           Returns the active map's big-change index (see
      *                  informNewBigChange). Takes atlasMutex.
@@ -446,6 +461,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getLastBigChangeIndex(int &lastBigChangeIndex_out);
+
     /*!
      * @brief           Stores the reference map points of the active map. Takes
      *                  atlasMutex.
@@ -469,6 +485,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getKeyFrameCount(unsigned long &keyFrameCount_out);
+
     /*!
      * @brief           Returns the number of map points in the active map.
      *                  Takes atlasMutex.
@@ -481,7 +498,10 @@ class Atlas
     [[nodiscard]] AtlasStatus
         getMapPointCount(unsigned long &mapPointCount_out);
 
-    /* Method for get data in current map */
+    /* ---------------------------------------------------------------------- *
+     * METHODS FOR GETTING DATA IN CURRENT MAP
+     * ---------------------------------------------------------------------- */
+
     /*!
      * @brief           Returns the key frames of the active map. Takes
      *                  atlasMutex.
@@ -494,6 +514,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getAllKeyFrames(std::vector<keyframe::KeyFrame *> &allKeyFrames_out);
+
     /*!
      * @brief           Returns the map points of the active map. Takes
      *                  atlasMutex.
@@ -506,6 +527,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus
         getAllMapPoints(std::vector<map_point::MapPoint *> &allMapPoints_out);
+
     /*!
      * @brief           Returns the planes of the active map. Takes atlasMutex.
      *
@@ -517,6 +539,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus getAllPlanes(
         std::vector<vs_graphs::core::geometric::Plane *> &allPlanes_out);
+
     /*!
      * @brief           Returns the reference map points of the active map.
      *                  Takes atlasMutex.
@@ -803,6 +826,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus isInertial(bool &isInertial_out);
+
     /*!
      * @brief           Marks the active map as using an inertial sensor. Takes
      *                  atlasMutex.
@@ -810,6 +834,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus setInertialSensor();
+
     /*!
      * @brief           Marks the IMU of the active map as initialised. Takes
      *                  atlasMutex.
@@ -817,6 +842,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus setImuInitialized();
+
     /*!
      * @brief           Reports whether the IMU of the active map is
      *                  initialised. Takes atlasMutex.
@@ -858,7 +884,10 @@ class Atlas
         getUpDirection(Eigen::Vector3d &upDirection_world_out,
                        bool            &isFromImuGravity_out);
 
-    /* Function for garantee the correction of serialization of this object */
+    /* ---------------------------------------------------------------------- *
+     * FUNCTIONS TO GAURANTEE THE CORRECTION OF SERIALIZATION OF ATLAS
+     * ---------------------------------------------------------------------- */
+
     /*!
      * @brief           Prepares the Atlas for saving: advances
      *                  lastInitKeyFrameId past the active map's highest key
@@ -869,6 +898,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus preSave();
+
     /*!
      * @brief           Restores run-time state after loading: refills the
      *                  active map set from backupMaps, lets each map re-link
@@ -880,7 +910,10 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus postLoad();
 
-    /* Functions for getting the entities */
+    /* ---------------------------------------------------------------------- *
+     * FUNCTIONS FOR GETTING THE ENTITIES
+     * ---------------------------------------------------------------------- */
+
     /*!
      * @brief           Looks up a plane of the active map by id. Takes
      *                  atlasMutex.
@@ -896,6 +929,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus getPlaneById(int                planeId_in,
                                            geometric::Plane *&p_planeById_out);
+
     /*!
      * @brief           Looks up a key frame of the active map by id. Takes
      *                  atlasMutex.
@@ -910,8 +944,9 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus
-                              getKeyFrameById(long unsigned int    idCount_in,
-                                              keyframe::KeyFrame *&p_keyFrameById_out);
+        getKeyFrameById(long unsigned int    idCount_in,
+                        keyframe::KeyFrame *&p_keyFrameById_out);
+
     /*!
      * @brief           Looks up a room wall plane of the active map by id.
      *                  Takes atlasMutex.
@@ -966,6 +1001,7 @@ class Atlas
      *                  destructor.
      */
     std::set<map::Map *> maps;
+
     /*!
      * @brief           Maps marked bad by setMapBad that removeBadMaps has not
      *                  yet moved to retiredMaps; still owned by the Atlas.
@@ -1023,10 +1059,11 @@ class Atlas
      *                  once hasViewer is true.
      */
     Viewer *p_viewer{nullptr};
+
     /*!
      * @brief           True once setViewer has stored a viewer.
      */
-    bool    hasViewer{false};
+    bool hasViewer{false};
 
     /*!
      * @brief           Key frame database that postLoad hands to the loaded
@@ -1081,6 +1118,7 @@ class Atlas
      *                  replacement.
      */
     std::atomic<int> nextRoomIdentity{0};
+
     /*!
      * @brief           Next passage identity that reservePassageIdentity hands
      *                  out.
