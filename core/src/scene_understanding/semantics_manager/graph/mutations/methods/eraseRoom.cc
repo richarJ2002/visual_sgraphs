@@ -40,23 +40,26 @@ namespace core
 SemanticsManagerStatus SemanticsManager::eraseRoom(unsigned long   mapId_in,
                                                    semantic::Room *p_room_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     /* Retired by pointer, so a room whose id changed after it was added
      * still leaves the tree. */
-    scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
+    scene_graph::SceneGraph &sceneGraph = *p_sceneGraph;
     retireEntryByPointer(sceneGraph.detectedRooms,
                          p_room_in,
-                         retiredNodes.rooms);
+                         p_sceneGraph->retiredNodes.rooms);
     retireEntryByPointer(sceneGraph.candidateRooms,
                          p_room_in,
-                         retiredNodes.rooms);
+                         p_sceneGraph->retiredNodes.rooms);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

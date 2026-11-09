@@ -49,6 +49,7 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasMergeMapKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/initializeInertialMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockAndRevalidateMergeCandidate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockMergeGraphs.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/mergeFloorEvidenceAndRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/optimizeMergeWindow.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/propagateInertialPoseCorrections.cc

@@ -43,15 +43,18 @@ SemanticsManagerStatus
                                       semantic::Floor *&p_floor_out) const
 {
     p_floor_out = nullptr;
-    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
     semantic::Floor *p_foundFloor =
-        findFloorInBuildings(*sceneGraphIterator->second, floorId_in);
+        findFloorInBuildings(*p_sceneGraph, floorId_in);
     p_floor_out = isFloorLive(p_foundFloor) ? p_foundFloor : nullptr;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

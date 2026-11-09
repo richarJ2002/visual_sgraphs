@@ -43,8 +43,6 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "execution/system/system.h"
@@ -62,7 +60,7 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <set>
-#include <shared_mutex>
+#include <unordered_map>
 
 #include "execution/profiling/profiling.h"
 
@@ -100,8 +98,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     optKeyFrameCount_out     = 0;
     mapPointCount_out        = 0;
     edgeCount_out            = 0;
-    std::list<vs_graphs::core::semantic::Room *> localRoomList;
-    vs_graphs::core::map::Map                   *p_currentMap = nullptr;
+    std::list<RoomSnapshot>    localRoomList;
+    vs_graphs::core::map::Map *p_currentMap = nullptr;
     if (p_keyFrame_inout->getMap(p_currentMap) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -114,17 +112,16 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::list<vs_graphs::core::keyframe::KeyFrame *>   localKeyFrameList;
     std::list<vs_graphs::core::map_point::MapPoint *>  localMapPointList;
     std::vector<vs_graphs::core::keyframe::KeyFrame *> neighborKeyFrameVector;
-    std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
+    std::vector<RoomSnapshot>                          allRooms{};
     unsigned long                                      mapId{};
-    /* The rooms are used until the function ends, outside the semantic update
-     * lock: the guard keeps the semantics manager from freeing them meanwhile.
-     */
-    std::shared_lock<std::shared_mutex>                graphReclaimGuard{};
+    /* The rooms are copied out as plain data under the shared graph lock, so
+     * the optimisation below holds no lock and a cycle is never delayed. */
     if ((p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_semanticsManager_in == nullptr) ||
-        (p_semanticsManager_in->acquireReclaimGuard(graphReclaimGuard) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapRoomsInIdOrder(mapId, allRooms) !=
+        (p_semanticsManager_in->getMapRoomSnapshots(
+             mapId,
+             GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+             allRooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(
@@ -368,19 +365,25 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
+    /* The walls of a room are planes of the map, found by id */
+    std::vector<geometric::Plane *> mapPlanes{};
+    if (p_currentMap->getAllPlanes(mapPlanes) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::unordered_map<int, geometric::Plane *> mapPlanesById{};
+    indexPlanesById(mapPlanes, mapPlanesById);
+
     /* [LBA] Among all rooms, filter only the ones with a wall in LBA */
-    for (semantic::Room *const &room : allRooms)
+    for (const RoomSnapshot &room : allRooms)
     {
         /* Get the walls of the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-        if (room->getWalls(roomWalls) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        resolveRoomWallPlanes(room, mapPlanesById, roomWalls);
         /*!
          * Add the room to the local map if any of the walls are in the local
          * map
@@ -406,21 +409,13 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
     /* [LBA] Loop through all the local Rooms to add all their walls to LBA */
     std::list<vs_graphs::core::geometric::Plane *> recentLocalMapPlanes;
-    for (std::list<vs_graphs::core::semantic::Room *>::iterator
-             roomIt = localRoomList.begin(),
-             vend   = localRoomList.end();
+    for (std::list<RoomSnapshot>::iterator roomIt = localRoomList.begin(),
+                                           vend   = localRoomList.end();
          roomIt != vend;
          roomIt++)
     {
         std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-        if ((*roomIt)->getWalls(roomWalls) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        resolveRoomWallPlanes(*roomIt, mapPlanesById, roomWalls);
         for (geometric::Plane *const &roomWall : roomWalls)
         {
             int roomWallGetId{};
@@ -1345,25 +1340,18 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     maximumOpId += planeCount;
 
     /* [LBA] Rooms */
-    for (std::list<vs_graphs::core::semantic::Room *>::iterator
-             roomIt = localRoomList.begin(),
-             lend   = localRoomList.end();
+    std::map<int, int> roomVertexIds{};
+    for (std::list<RoomSnapshot>::iterator roomIt = localRoomList.begin(),
+                                           lend   = localRoomList.end();
          roomIt != lend;
          roomIt++)
     {
         try
         {
             /* Variables */
-            vs_graphs::core::semantic::Room *p_mapRoom = *roomIt;
+            const RoomSnapshot                              &mapRoom = *roomIt;
             std::vector<vs_graphs::core::geometric::Plane *> walls{};
-            if (p_mapRoom->getWalls(walls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            resolveRoomWallPlanes(mapRoom, mapPlanesById, walls);
 
             /* No need to optimize if there are no walls */
             if (walls.empty())
@@ -1377,26 +1365,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             /* Setting the local optimization ID for the room */
             int opId = maximumOpId + roomCount;
             p_vertexRoom->setId(opId);
-            if (p_mapRoom->setOpId(opId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setOpId returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            roomVertexIds[mapRoom.id] = opId;
             roomCount++;
 
             /* Initialize the room vertex (centroid estimate) */
-            Eigen::Vector3d mapRoomCentroid{};
-            if (p_mapRoom->getCentroid(mapRoomCentroid) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
+            const Eigen::Vector3d &mapRoomCentroid = mapRoom.centroid_world_m;
             p_vertexRoom->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
                              mapRoomCentroid.cast<double>()));
@@ -1644,22 +1617,13 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                     thresholdHuber1d);
 
     /* [LBA] Room-wall edges */
-    std::vector<semantic::Room *> localRoomVec(localRoomList.begin(),
-                                               localRoomList.end());
-    auto getRoomVertexId = [](semantic::Room *p_room_in) -> int
-    {
-        int opId{};
-        if (p_room_in->getOpId(opId) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            return -1;
-        }
-        return opId;
-    };
+    std::vector<RoomSnapshot> localRoomVec(localRoomList.begin(),
+                                           localRoomList.end());
     (void)addRoomWallEdges(optimizer,
                            localRoomVec,
+                           mapPlanesById,
                            getVertexId,
-                           getRoomVertexId,
+                           roomVertexIds,
                            p_sysParams,
                            thresholdHuberStereo);
 

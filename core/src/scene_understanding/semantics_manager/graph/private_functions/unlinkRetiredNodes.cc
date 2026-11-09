@@ -35,7 +35,7 @@ namespace core
 
 void unlinkRetiredNodes(
     const std::map<unsigned long, scene_graph::SceneGraph *> &sceneGraphs_in,
-    const RetiredNodes                                       &retiredNodes_in)
+    const scene_graph::RetiredNodes                          &retiredNodes_in)
 {
     /* Everything still in the tree is live: retireBadNodes() ran first. */
     std::vector<semantic::Room *>    liveRooms{};

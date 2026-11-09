@@ -36,7 +36,7 @@ namespace core
 
 void insertPassage(scene_graph::SceneGraph           &sceneGraph_inout,
                    std::unique_ptr<semantic::Passage> p_passage_in,
-                   RetiredNodes                      &retiredNodes_inout)
+                   scene_graph::RetiredNodes         &retiredNodes_inout)
 {
     if (p_passage_in == nullptr)
     {

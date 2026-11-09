@@ -16,12 +16,15 @@
 #include <atomic>
 #include <cstddef>
 #include <functional>
+#include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "optimization/optimizer/objects/OptimizerEdgeLookupStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
 #include "optimization/optimizer/optimizer.h"
+#include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
 #include <vs_graphs_g2o/core/hyper_graph_action.h>
 
 namespace vs_graphs::core::frame
@@ -47,10 +50,6 @@ class MapPoint;
 namespace vs_graphs::core::geometric
 {
 class Plane;
-}
-namespace vs_graphs::core::semantic
-{
-class Room;
 }
 namespace vs_graphs::core::types
 {
@@ -301,6 +300,38 @@ inline optimizer::OptimizerEdgeLookupStatus
     double                                        huberThreshold1d_in);
 
 /*!
+ * @brief           Indexes planes by their id.
+ *
+ * @param[in]       planes_in
+ *                  Planes to index; borrowed, owned by the map.
+ *
+ * @param[out]      planesById_out
+ *                  Receives the index; replaced.
+ */
+void indexPlanesById(
+    const std::vector<geometric::Plane *>       &planes_in,
+    std::unordered_map<int, geometric::Plane *> &planesById_out);
+
+/*!
+ * @brief           Resolves the wall plane ids of a room snapshot to planes,
+ *                  keeping the room's order. An id the index does not hold
+ *                  (the plane left the map) is skipped.
+ *
+ * @param[in]       room_in
+ *                  Room snapshot.
+ *
+ * @param[in]       planesById_in
+ *                  Planes of the map by id.
+ *
+ * @param[out]      walls_out
+ *                  Receives the wall planes; borrowed, replaced.
+ */
+void resolveRoomWallPlanes(
+    const RoomSnapshot                                &room_in,
+    const std::unordered_map<int, geometric::Plane *> &planesById_in,
+    std::vector<geometric::Plane *>                   &walls_out);
+
+/*!
  * @brief           Adds room-wall edges: one EdgeVertex4PlaneProjectSE3Room
  *                  for a four-wall room bounded by two perpendicular facing
  *                  wall pairs, otherwise one EdgeVertexNPlaneProjectSE3Room
@@ -312,13 +343,17 @@ inline optimizer::OptimizerEdgeLookupStatus
  *                  g2o optimiser owning the room and plane vertices.
  *
  * @param[in]       rooms_in
- *                  Rooms whose centre vertex is in the optimiser.
+ *                  Snapshots of the rooms; a room without an entry in
+ *                  roomVertexIdsByRoomId_in is skipped.
+ *
+ * @param[in]       planesById_in
+ *                  Planes of the map by plane id, to resolve the walls.
  *
  * @param[in]       getWallVertexId_in
  *                  Callable returning a wall's optimiser vertex id.
  *
- * @param[in]       getRoomVertexId_in
- *                  Callable returning a room's optimiser vertex id.
+ * @param[in]       roomVertexIdsByRoomId_in
+ *                  Optimiser vertex id of each room's centre, by room id.
  *
  * @param[in]       p_systemParams_in
  *                  System parameters (optimization.room_wall).
@@ -329,12 +364,13 @@ inline optimizer::OptimizerEdgeLookupStatus
  * @return          OPTIMIZER_STATUS_SUCCESS always.
  */
 [[nodiscard]] optimizer::OptimizerStatus addRoomWallEdges(
-    g2o::SparseOptimizer                         &optimizer_inout,
-    const std::vector<semantic::Room *>          &rooms_in,
-    const std::function<int(geometric::Plane *)> &getWallVertexId_in,
-    const std::function<int(semantic::Room *)>   &getRoomVertexId_in,
-    const types::SystemParams                    *p_systemParams_in,
-    double                                        huberThreshold3d_in);
+    g2o::SparseOptimizer                              &optimizer_inout,
+    const std::vector<RoomSnapshot>                   &rooms_in,
+    const std::unordered_map<int, geometric::Plane *> &planesById_in,
+    const std::function<int(geometric::Plane *)>      &getWallVertexId_in,
+    const std::map<int, int>                          &roomVertexIdsByRoomId_in,
+    const types::SystemParams                         *p_systemParams_in,
+    double                                             huberThreshold3d_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

@@ -147,11 +147,20 @@ LoopClosingStatus
     const g2o::Sim3 g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
 
     semantic::SemanticMergeGateResult semanticMergeGate{};
-    evaluateSemanticMergeGate(p_atlas,
-                              p_currentMap,
-                              p_mergeMap,
-                              g2oSwCurrentWMerge,
-                              semanticMergeGate);
+    {
+        /* The gate only reads the two graphs. */
+        GraphLockScope gateGraphScope{};
+        lockMergeGraphs(p_atlas,
+                        p_currentMap,
+                        p_mergeMap,
+                        GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                        gateGraphScope);
+        evaluateSemanticMergeGate(p_atlas,
+                                  p_currentMap,
+                                  p_mergeMap,
+                                  g2oSwCurrentWMerge,
+                                  semanticMergeGate);
+    }
     if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         resumeMergeWorkers(semanticUpdateLock, p_localMapper);
@@ -378,6 +387,16 @@ LoopClosingStatus
     {
         std::scoped_lock mapLocks(p_currentMap->mapUpdateMutex,
                                   p_mergeMap->mapUpdateMutex);
+
+        /* Both graphs are edited in place: exclusive locks, taken after the
+         * map update mutexes (tracking holds one of those while it reads the
+         * graph on a map loss). */
+        GraphLockScope mergeGraphScope{};
+        lockMergeGraphs(p_atlas,
+                        p_currentMap,
+                        p_mergeMap,
+                        GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                        mergeGraphScope);
 
         transferKeyFramesAndMapPoints(p_currentMap,
                                       p_mergeMap,

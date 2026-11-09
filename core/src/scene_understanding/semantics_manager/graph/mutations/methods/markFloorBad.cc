@@ -49,7 +49,25 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        /* Without the map the storey is flagged alone, which still hides it. */
+        if (p_floor_inout->setBad() !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
+    }
 
     std::vector<semantic::Room *> floorRooms{};
     if (p_floor_inout->getRooms(floorRooms) !=
@@ -62,18 +80,11 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    const std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
-    {
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
-    }
-
     /* A bad parent means bad children: every room of the storey goes with it
      * and takes its dependent passages along. */
     for (semantic::Room *p_room : floorRooms)
     {
-        flagRoomBad(*sceneGraphIterator->second, p_room);
+        flagRoomBad(*p_sceneGraph, p_room);
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

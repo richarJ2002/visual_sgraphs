@@ -45,19 +45,27 @@ SemanticsManagerStatus
     SemanticsManager::replacePlane(geometric::Plane *p_retiredPlane_inout,
                                    geometric::Plane *p_retainedPlane_inout)
 {
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    if (!activeGraphMapId.has_value())
+    std::optional<unsigned long> activeMapIdCopy{};
+    {
+        std::shared_lock<std::shared_mutex> registryLock(registryMutex);
+        activeMapIdCopy = activeGraphMapId;
+    }
+    if (!activeMapIdCopy.has_value())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sceneGraphIterator = sceneGraphs.find(*activeGraphMapId);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(*activeMapIdCopy,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
+    scene_graph::SceneGraph &sceneGraph = *p_sceneGraph;
     for (std::map<int, std::unique_ptr<semantic::Room>> *p_roomsById :
          {&sceneGraph.detectedRooms, &sceneGraph.candidateRooms})
     {

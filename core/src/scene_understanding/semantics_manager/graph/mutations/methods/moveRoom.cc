@@ -49,20 +49,24 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sourceIterator = sceneGraphs.find(sourceMapId_in);
-    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        destinationIterator = sceneGraphs.find(destinationMapId_in);
-    if (sourceIterator == sceneGraphs.end() ||
-        destinationIterator == sceneGraphs.end())
+    /* Both graphs are held exclusive, locked in ascending map-id order, for
+     * the whole move. */
+    GraphLockScope graphScope{};
+    if (lockGraphs({sourceMapId_in, destinationMapId_in},
+                   GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                   graphScope) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
+    scene_graph::SceneGraph *p_sourceSceneGraph =
+        findSceneGraph(sourceMapId_in);
+    scene_graph::SceneGraph *p_destinationSceneGraph =
+        findSceneGraph(destinationMapId_in);
 
     /* The room is taken out by pointer, so it moves under the id it holds
      * now, which the caller may have changed. */
-    scene_graph::SceneGraph        &sourceMap = *sourceIterator->second;
+    scene_graph::SceneGraph        &sourceMap = *p_sourceSceneGraph;
     std::unique_ptr<semantic::Room> p_movedRoom =
         extractEntryByPointer(sourceMap.detectedRooms, p_room_in);
     if (p_movedRoom == nullptr)
@@ -75,13 +79,13 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    scene_graph::SceneGraph &destinationMap = *destinationIterator->second;
+    scene_graph::SceneGraph &destinationMap = *p_destinationSceneGraph;
     insertRoom(destinationList_in == RoomList::ROOM_LIST_DETECTED
                    ? destinationMap.detectedRooms
                    : destinationMap.candidateRooms,
                std::move(p_movedRoom),
                destinationMapId_in,
-               retiredNodes);
+               p_destinationSceneGraph->retiredNodes);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

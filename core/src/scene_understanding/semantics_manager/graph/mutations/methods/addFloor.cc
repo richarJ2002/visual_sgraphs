@@ -47,16 +47,18 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        retiredNodes.floors.push_back(std::move(p_floor_in));
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    insertFloor(*sceneGraphIterator->second, std::move(p_floor_in));
+    insertFloor(*p_sceneGraph, std::move(p_floor_in));
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

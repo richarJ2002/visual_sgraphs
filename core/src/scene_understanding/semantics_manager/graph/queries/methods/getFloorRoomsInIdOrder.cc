@@ -47,15 +47,17 @@ SemanticsManagerStatus SemanticsManager::getFloorRoomsInIdOrder(
     std::vector<semantic::Room *> &rooms_out) const
 {
     rooms_out.clear();
-    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
-    semantic::Floor *p_floor =
-        findFloorInBuildings(*sceneGraphIterator->second, floorId_in);
+    semantic::Floor *p_floor = findFloorInBuildings(*p_sceneGraph, floorId_in);
 
     std::vector<semantic::Room *> floorRoomList{};
     if (isFloorLive(p_floor) && p_floor->getRooms(floorRoomList) !=

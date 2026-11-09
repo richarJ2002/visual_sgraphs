@@ -28,6 +28,7 @@
 #include "scene_understanding/scene_graph/building/objects/BuildingStruct.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/scene_graph/objects/RetiredNodesStruct.h"
 
 #include <map>
 #include <memory>
@@ -97,6 +98,12 @@ struct SceneGraph
      * @brief           Passages of the map by passage id; owned.
      */
     std::map<int, std::unique_ptr<semantic::Passage>> passages;
+
+    /*!
+     * @brief           Rooms, passages and storeys erased from this graph and
+     *                  not yet freed; the sweep frees them.
+     */
+    RetiredNodes retiredNodes;
 
     /*!
      * @brief           Next storey id SemanticsManager::addFloor() hands out

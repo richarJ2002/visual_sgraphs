@@ -36,10 +36,9 @@
 #include "map_state/map_point/map_point.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
+#include <map>
 #include <rclcpp/logging.hpp>
-#include <shared_mutex>
 
 #include "execution/profiling/profiling.h"
 
@@ -60,17 +59,17 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     const std::atomic_bool *p_stopRequested_in)
 {
     PROFILE_FUNCTION();
-    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    unsigned long                                  mapId{};
-    /* The rooms are used until the function ends, outside the semantic update
-     * lock: the guard keeps the semantics manager from freeing them meanwhile.
+    std::vector<RoomSnapshot> allRooms{};
+    unsigned long             mapId{};
+    /* The rooms are copied out as plain data under the shared graph lock, so
+     * the long optimisation below holds no lock and a cycle is never delayed.
      */
-    std::shared_lock<std::shared_mutex>            graphReclaimGuard{};
     if ((p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_semanticsManager_in == nullptr) ||
-        (p_semanticsManager_in->acquireReclaimGuard(graphReclaimGuard) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapRoomsInIdOrder(mapId, allRooms) !=
+        (p_semanticsManager_in->getMapRoomSnapshots(
+             mapId,
+             GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+             allRooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(
@@ -106,10 +105,12 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
                      __func__);
     }
 
+    std::map<int, Eigen::Vector3d> optimizedRoomCentroids{};
     if (bundleAdjustment(allKeyFrames,
                          allMapPoints,
                          allPlanes,
                          allRooms,
+                         optimizedRoomCentroids,
                          iterationCount_in,
                          p_stopFlag_inout,
                          loopKeyFrameId_in,
@@ -121,6 +122,21 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
                      "%s: bundleAdjustment returned a failure status although "
                      "it cannot fail; continuing as before.",
                      __func__);
+    }
+
+    for (const std::pair<const int, Eigen::Vector3d> &roomCentroidEntry :
+         optimizedRoomCentroids)
+    {
+        if (p_semanticsManager_in->setRoomCentroid(mapId,
+                                                   roomCentroidEntry.first,
+                                                   roomCentroidEntry.second) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRoomCentroid found no scene graph for the "
+                         "map; continuing as before.",
+                         __func__);
+        }
     }
 
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;

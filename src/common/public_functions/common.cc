@@ -6764,17 +6764,18 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
 
     /*!
      * The rooms, floors and passages below are used until this function ends,
-     * on a thread that holds no semantic update lock: the guard keeps the scene
-     * graph from freeing them meanwhile.
+     * on a thread that holds no semantic update lock: the shared graph locks
+     * keep the semantics manager from editing or freeing them meanwhile.
      */
-    std::shared_lock<std::shared_mutex> graphReclaimGuard{};
-    if (p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
-        vs_graphs::core::SemanticsManagerStatus::
-            SEMANTICS_MANAGER_STATUS_SUCCESS)
+    vs_graphs::core::GraphLockScope graphLockScope{};
+    if (p_semanticsManager->lockAllGraphs(
+            vs_graphs::core::GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+            graphLockScope) != vs_graphs::core::SemanticsManagerStatus::
+                                   SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: acquireReclaimGuard returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: lockAllGraphs returned a failure status although "
+                     "it cannot fail; continuing as before.",
                      __func__);
     }
 

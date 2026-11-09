@@ -43,10 +43,13 @@ SemanticsManagerStatus SemanticsManager::getMapRoomsInIdOrder(
     std::vector<semantic::Room *> &rooms_out) const
 {
     rooms_out.clear();
-    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
@@ -55,7 +58,7 @@ SemanticsManagerStatus SemanticsManager::getMapRoomsInIdOrder(
      * room is kept. Flagged rooms are hidden. */
     std::map<int, semantic::Room *> roomsById{};
     for (const std::pair<const int, std::unique_ptr<semantic::Room>>
-             &roomEntry : sceneGraphIterator->second->detectedRooms)
+             &roomEntry : p_sceneGraph->detectedRooms)
     {
         if (isRoomLive(roomEntry.second.get()))
         {
@@ -63,7 +66,7 @@ SemanticsManagerStatus SemanticsManager::getMapRoomsInIdOrder(
         }
     }
     for (const std::pair<const int, std::unique_ptr<semantic::Room>>
-             &roomEntry : sceneGraphIterator->second->candidateRooms)
+             &roomEntry : p_sceneGraph->candidateRooms)
     {
         if (isRoomLive(roomEntry.second.get()))
         {

@@ -32,8 +32,8 @@ namespace vs_graphs
 namespace core
 {
 
-void retireSceneGraphContents(scene_graph::SceneGraph &sceneGraph_inout,
-                              RetiredNodes            &retiredNodes_inout)
+void retireSceneGraphContents(scene_graph::SceneGraph   &sceneGraph_inout,
+                              scene_graph::RetiredNodes &retiredNodes_inout)
 {
     for (std::pair<const int, std::unique_ptr<semantic::Room>> &roomEntry :
          sceneGraph_inout.detectedRooms)

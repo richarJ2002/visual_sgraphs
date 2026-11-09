@@ -18,6 +18,8 @@
 #include "place_recognition_and_loop_closure/loop_closing/objects/MergeMapContentsStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeGateResultStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyConfigStruct.h"
+#include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
+#include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
 
 #include <mutex>
 #include <vector>
@@ -188,6 +190,34 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
     map::Map                     *p_currentMap_in,
     map::Map                     *p_mergeMap_in,
     std::unique_lock<std::mutex> &semanticUpdateLock_out);
+
+/*!
+ * @brief           Locks the scene graphs of both merge maps through the
+ *                  semantics manager, in ascending map-id order. The caller
+ *                  holds the semantic update lock and, for an exclusive lock,
+ *                  both maps' update mutexes first (lock order: update
+ *                  mutexes, then graph locks).
+ *
+ * @param[in]       p_atlas_in
+ *                  Atlas that gives the semantics manager.
+ *
+ * @param[in]       p_currentMap_in
+ *                  Surviving map.
+ *
+ * @param[in]       p_mergeMap_in
+ *                  Absorbed map.
+ *
+ * @param[in]       mode_in
+ *                  How to lock the graphs.
+ *
+ * @param[in,out]   scope_out
+ *                  Receives the locks; unlocks on destruction.
+ */
+void lockMergeGraphs(atlas::Atlas   *p_atlas_in,
+                     map::Map       *p_currentMap_in,
+                     map::Map       *p_mergeMap_in,
+                     GraphLockMode   mode_in,
+                     GraphLockScope &scope_out);
 
 /*!
  * @brief           Computes the similarity that expresses merge-map world

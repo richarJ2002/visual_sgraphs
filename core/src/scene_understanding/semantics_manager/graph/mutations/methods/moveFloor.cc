@@ -48,20 +48,24 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sourceIterator = sceneGraphs.find(sourceMapId_in);
-    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        destinationIterator = sceneGraphs.find(destinationMapId_in);
-    if (sourceIterator == sceneGraphs.end() ||
-        destinationIterator == sceneGraphs.end())
+    /* Both graphs are held exclusive, locked in ascending map-id order, for
+     * the whole move. */
+    GraphLockScope graphScope{};
+    if (lockGraphs({sourceMapId_in, destinationMapId_in},
+                   GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                   graphScope) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
+    scene_graph::SceneGraph *p_sourceSceneGraph =
+        findSceneGraph(sourceMapId_in);
+    scene_graph::SceneGraph *p_destinationSceneGraph =
+        findSceneGraph(destinationMapId_in);
 
     std::unique_ptr<semantic::Floor> p_movedFloor{};
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
-             &buildingEntry : sourceIterator->second->buildings)
+             &buildingEntry : p_sourceSceneGraph->buildings)
     {
         if (p_movedFloor == nullptr)
         {
@@ -74,7 +78,7 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    insertFloor(*destinationIterator->second, std::move(p_movedFloor));
+    insertFloor(*p_destinationSceneGraph, std::move(p_movedFloor));
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

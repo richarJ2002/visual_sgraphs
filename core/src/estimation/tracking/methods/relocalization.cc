@@ -43,8 +43,6 @@
 #include "map_state/map_point/map_point.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
 #include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
 
@@ -56,7 +54,6 @@
 
 #include <iostream>
 #include <rclcpp/logging.hpp>
-#include <shared_mutex>
 
 #include "execution/profiling/profiling.h"
 
@@ -94,9 +91,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
      * relocalization In office corridors, room/passage markers provide strong
      * topological priors
      */
-    std::vector<Eigen::Vector3f>  roomCentroids;
-    std::vector<semantic::Room *> currentRooms;
-    map::Map                     *p_currentMap = nullptr;
+    std::vector<Eigen::Vector3f> roomCentroids;
+    map::Map                    *p_currentMap = nullptr;
     if (p_atlas->getCurrentMap(p_currentMap) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -107,67 +103,36 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     }
     if (p_currentMap)
     {
-        std::vector<semantic::Room *>       rooms{};
-        SemanticsManager                   *p_semanticsManager = nullptr;
-        unsigned long                       currentMapId{};
-        /* The tracking thread holds no semantic lock: the guard keeps the
-         * semantics manager from freeing these rooms while the loop below runs.
-         */
-        std::shared_lock<std::shared_mutex> graphReclaimGuard{};
+        SemanticsManager         *p_semanticsManager = nullptr;
+        unsigned long             currentMapId{};
+        std::vector<RoomSnapshot> roomSnapshots{};
         if ((p_atlas->getSemanticsManager(p_semanticsManager) !=
              atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
             (p_currentMap->getId(currentMapId) !=
-             map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
-             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-            (p_semanticsManager->getMapDetectedRoomsInIdOrder(currentMapId,
-                                                              rooms) !=
-             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+             map::MapStatus::MAP_STATUS_SUCCESS))
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: getSemanticsManager/getId/getMapDetectedRoomsInIdOrder "
-                "found no scene graph for the current map; continuing "
-                "without room priors.",
-                __func__);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSemanticsManager/getId returned a failure "
+                         "status although they cannot fail; continuing as "
+                         "before.",
+                         __func__);
         }
-        for (semantic::Room *p_room : rooms)
+        /* Tracking never waits for the semantic cycle: when it is editing the
+         * graph the room priors are skipped for this frame. */
+        else if (p_semanticsManager->getMapRoomSnapshots(
+                     currentMapId,
+                     GraphLockMode::GRAPH_LOCK_MODE_TRY_SHARED,
+                     roomSnapshots) !=
+                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            bool roomIsBad{};
-            if (p_room->isBad(roomIsBad) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            roomSnapshots.clear();
+        }
+        for (const RoomSnapshot &roomSnapshot : roomSnapshots)
+        {
+            if (roomSnapshot.isDetected && roomSnapshot.isBoundaryComplete)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Room::BoundaryStatus roomBoundaryStatus{};
-            if ((!roomIsBad) && p_room->getBoundaryStatus(roomBoundaryStatus) !=
-                                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getBoundaryStatus returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (!roomIsBad &&
-                roomBoundaryStatus == semantic::Room::BoundaryStatus::COMPLETE)
-            {
-                Eigen::Vector3d roomCentroid{};
-                if (p_room->getCentroid(roomCentroid) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomCentroids.push_back(Eigen::Vector3f(roomCentroid.x(),
-                                                        roomCentroid.y(),
-                                                        roomCentroid.z()));
-                currentRooms.push_back(p_room);
+                roomCentroids.push_back(
+                    roomSnapshot.centroid_world_m.cast<float>());
             }
         }
     }

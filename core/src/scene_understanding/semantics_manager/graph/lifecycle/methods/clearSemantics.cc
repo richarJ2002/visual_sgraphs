@@ -39,17 +39,20 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::clearSemantics(unsigned long mapId_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     /* The nodes are retired, not freed: callers may still hold pointers to
      * them until the next sweep. */
-    retireSceneGraphContents(*sceneGraphIterator->second, retiredNodes);
+    retireSceneGraphContents(*p_sceneGraph, p_sceneGraph->retiredNodes);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

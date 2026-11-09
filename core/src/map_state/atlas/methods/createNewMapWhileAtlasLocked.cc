@@ -74,18 +74,6 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
             lastInitKeyFrameId = activeMapMaxKeyFrameId + 1;
         }
 
-        /* Snapshot room geometry before the map is stranded so that
-         * rooms in the new map can inherit identity tags.            */
-        if (exportRoomContextFromCurrentMap() !=
-            AtlasStatus::ATLAS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: exportRoomContextFromCurrentMap returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-
         /* Change flag in map to indicate that it is no longer in use */
         if (p_activeMap->setStoredMap() != map::MapStatus::MAP_STATUS_SUCCESS)
         {

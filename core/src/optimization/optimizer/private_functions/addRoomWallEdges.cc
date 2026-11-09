@@ -65,12 +65,13 @@ Eigen::Matrix3d
 } /* namespace */
 
 [[nodiscard]] optimizer::OptimizerStatus addRoomWallEdges(
-    g2o::SparseOptimizer                         &optimizer_inout,
-    const std::vector<semantic::Room *>          &rooms_in,
-    const std::function<int(geometric::Plane *)> &getWallVertexId_in,
-    const std::function<int(semantic::Room *)>   &getRoomVertexId_in,
-    const types::SystemParams                    *p_systemParams_in,
-    double                                        huberThreshold3d_in)
+    g2o::SparseOptimizer                              &optimizer_inout,
+    const std::vector<RoomSnapshot>                   &rooms_in,
+    const std::unordered_map<int, geometric::Plane *> &planesById_in,
+    const std::function<int(geometric::Plane *)>      &getWallVertexId_in,
+    const std::map<int, int>                          &roomVertexIdsByRoomId_in,
+    const types::SystemParams                         *p_systemParams_in,
+    double                                             huberThreshold3d_in)
 {
     if (p_systemParams_in == nullptr ||
         !p_systemParams_in->optimization.roomWall.enabled)
@@ -80,26 +81,25 @@ Eigen::Matrix3d
     const double informationGain =
         p_systemParams_in->optimization.roomWall.informationGain;
 
-    for (semantic::Room *p_room : rooms_in)
+    for (const RoomSnapshot &room : rooms_in)
     {
+        const std::map<int, int>::const_iterator roomVertexIterator =
+            roomVertexIdsByRoomId_in.find(room.id);
         g2o::VertexSE3Expmap *p_roomVertex =
-            dynamic_cast<g2o::VertexSE3Expmap *>(
-                optimizer_inout.vertex(getRoomVertexId_in(p_room)));
+            roomVertexIterator == roomVertexIdsByRoomId_in.end()
+                ? nullptr
+                : dynamic_cast<g2o::VertexSE3Expmap *>(
+                      optimizer_inout.vertex(roomVertexIterator->second));
         /*
          * Only a closed boundary places the room centre between its walls;
          * an open room's centre would pull its walls off their points.
          */
-        bool                            isBoundaryComplete{};
-        std::vector<geometric::Plane *> roomWalls{};
-        if (p_roomVertex == nullptr ||
-            p_room->isBoundaryComplete(isBoundaryComplete) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
-            !isBoundaryComplete ||
-            p_room->getWalls(roomWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        if (p_roomVertex == nullptr || !room.isBoundaryComplete)
         {
             continue;
         }
+        std::vector<geometric::Plane *> roomWalls{};
+        resolveRoomWallPlanes(room, planesById_in, roomWalls);
 
         /* Wall vertices of this optimisation; nullptr for a wall without. */
         std::vector<g2o::VertexPlane *> wallVertices{};

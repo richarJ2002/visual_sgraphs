@@ -17,26 +17,36 @@
  */
 
 /*!
- * @file            acquireReclaimGuard.cc
+
+/*!
+ * @file            resolveRoomWallPlanes.cc
  *
- * @brief           Implements SemanticsManager::acquireReclaimGuard(), declared
- * in semantics_manager/objects/SemanticsManagerClass.h.
+ * @brief           Implements resolveRoomWallPlanes(), declared in
+ * optimization/optimizer/private_functions/private_functions.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
-
-#include <shared_mutex>
+#include "optimization/optimizer/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::acquireReclaimGuard(
-    std::shared_lock<std::shared_mutex> &reclaimGuard_out) const
+void resolveRoomWallPlanes(
+    const RoomSnapshot                                &room_in,
+    const std::unordered_map<int, geometric::Plane *> &planesById_in,
+    std::vector<geometric::Plane *>                   &walls_out)
 {
-    reclaimGuard_out = std::shared_lock<std::shared_mutex>(reclaimMutex);
-    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    walls_out.clear();
+    for (const int wallPlaneId : room_in.wallPlaneIds)
+    {
+        const std::unordered_map<int, geometric::Plane *>::const_iterator
+            planeIterator = planesById_in.find(wallPlaneId);
+        if (planeIterator != planesById_in.end())
+        {
+            walls_out.push_back(planeIterator->second);
+        }
+    }
 }
 
 } /* namespace core */

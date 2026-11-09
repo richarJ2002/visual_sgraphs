@@ -27,8 +27,8 @@
 #ifndef VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_PRIVATE_FUNCTIONS_H
 
+#include "scene_understanding/scene_graph/scene_graph/objects/RetiredNodesStruct.h"
 #include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
-#include "scene_understanding/semantics_manager/objects/RetiredNodesStruct.h"
 
 #include <map>
 #include <memory>
@@ -202,7 +202,7 @@ void retireDeadEntries(
 void insertRoom(std::map<int, std::unique_ptr<semantic::Room>> &roomsById_inout,
                 std::unique_ptr<semantic::Room>                 p_room_in,
                 unsigned long                                   mapId_in,
-                RetiredNodes &retiredNodes_inout);
+                scene_graph::RetiredNodes &retiredNodes_inout);
 
 /*!
  * @brief           Adds a passage to a scene graph under the id it holds now. A
@@ -222,7 +222,7 @@ void insertRoom(std::map<int, std::unique_ptr<semantic::Room>> &roomsById_inout,
  */
 void insertPassage(scene_graph::SceneGraph           &sceneGraph_inout,
                    std::unique_ptr<semantic::Passage> p_passage_in,
-                   RetiredNodes                      &retiredNodes_inout);
+                   scene_graph::RetiredNodes         &retiredNodes_inout);
 
 /*!
  * @brief           Adds a storey to building 0 of a scene graph. A storey whose
@@ -282,8 +282,8 @@ void flagRoomBad(const scene_graph::SceneGraph &sceneGraph_in,
  * @param[in,out]   retiredNodes_inout
  *                  Receives the ownership of the flagged nodes.
  */
-void retireBadNodes(scene_graph::SceneGraph &sceneGraph_inout,
-                    RetiredNodes            &retiredNodes_inout);
+void retireBadNodes(scene_graph::SceneGraph   &sceneGraph_inout,
+                    scene_graph::RetiredNodes &retiredNodes_inout);
 
 /*!
  * @brief           Moves every room, passage and storey of a scene graph into
@@ -296,8 +296,8 @@ void retireBadNodes(scene_graph::SceneGraph &sceneGraph_inout,
  * @param[in,out]   retiredNodes_inout
  *                  Receives the ownership of every node.
  */
-void retireSceneGraphContents(scene_graph::SceneGraph &sceneGraph_inout,
-                              RetiredNodes            &retiredNodes_inout);
+void retireSceneGraphContents(scene_graph::SceneGraph   &sceneGraph_inout,
+                              scene_graph::RetiredNodes &retiredNodes_inout);
 
 /*!
  * @brief           Lets every live room, passage and storey drop its link to
@@ -314,7 +314,7 @@ void retireSceneGraphContents(scene_graph::SceneGraph &sceneGraph_inout,
  */
 void unlinkRetiredNodes(
     const std::map<unsigned long, scene_graph::SceneGraph *> &sceneGraphs_in,
-    const RetiredNodes                                       &retiredNodes_in);
+    const scene_graph::RetiredNodes                          &retiredNodes_in);
 
 /*!
  * @brief           Lets live storeys and passages drop their links to retired

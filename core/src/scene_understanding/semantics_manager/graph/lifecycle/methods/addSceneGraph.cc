@@ -25,6 +25,7 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <rclcpp/logging.hpp>
@@ -32,6 +33,7 @@
 #include <utility>
 
 #include "map_state/map/map.h"
+#include "scene_understanding/semantics_manager/graph/locking/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/graph/private_functions/private_functions.h"
 
 namespace vs_graphs
@@ -61,20 +63,40 @@ SemanticsManagerStatus SemanticsManager::addSceneGraph(map::Map &map_inout)
                      __func__);
     }
 
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-
-    /* A scene graph that held nodes may still be pointed at by other nodes:
-     * its nodes are retired for the next sweep, not freed here. */
-    retireSceneGraphContents(*p_sceneGraph, retiredNodes);
-    p_sceneGraph->nextAvailableFloorId = 0;
-    p_sceneGraph->p_map                = &map_inout;
-
-    /* One building per map until buildings are detected. */
-    if (p_sceneGraph->buildings.find(0) == p_sceneGraph->buildings.end())
+    /* The graph is initialised exclusive before it is registered: nobody can
+     * hold it yet, so this never waits for a running cycle. */
     {
-        p_sceneGraph->buildings[0] = std::make_unique<scene_graph::Building>();
+        std::map<unsigned long, scene_graph::SceneGraph *> newGraph{
+            {mapId, p_sceneGraph}};
+        GraphLockScope graphScope{};
+        if (!acquireGraphLocks(newGraph,
+                               GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                               graphScope))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: an exclusive lock cannot fail to be granted.",
+                         __func__);
+        }
+
+        /* A scene graph that held nodes may still be pointed at by other
+         * nodes: its nodes are retired for the next sweep, not freed here. */
+        retireSceneGraphContents(*p_sceneGraph, p_sceneGraph->retiredNodes);
+        p_sceneGraph->nextAvailableFloorId = 0;
+        p_sceneGraph->p_map                = &map_inout;
+
+        /* One building per map until buildings are detected. */
+        if (p_sceneGraph->buildings.find(0) == p_sceneGraph->buildings.end())
+        {
+            p_sceneGraph->buildings[0] =
+                std::make_unique<scene_graph::Building>();
+        }
     }
+    std::unique_lock<std::shared_mutex> registryLock(registryMutex);
     sceneGraphs[mapId] = p_sceneGraph;
+    erasedSceneGraphs.erase(std::remove(erasedSceneGraphs.begin(),
+                                        erasedSceneGraphs.end(),
+                                        p_sceneGraph),
+                            erasedSceneGraphs.end());
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

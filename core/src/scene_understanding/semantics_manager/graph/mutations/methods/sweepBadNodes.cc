@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "map_state/map/map.h"
+#include "scene_understanding/semantics_manager/graph/locking/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/graph/private_functions/private_functions.h"
 
 namespace vs_graphs
@@ -43,40 +44,93 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::sweepBadNodes()
 {
-    /* Step 1, graph lock exclusive: flagged nodes leave the tree and the
-     * whole retired batch is taken out of the shared list, so a node retired
-     * by another thread while the later steps run waits for the next sweep
-     * and is never freed unscanned. */
-    RetiredNodes                  retiredBatch{};
-    std::vector<map::Map *>       slamMaps{};
-    std::vector<semantic::Room *> retiredRoomPointers{};
+    /* Dropped maps leave the registry for good; their graphs are locked and
+     * emptied below, together with the registered ones. */
+    std::map<unsigned long, scene_graph::SceneGraph *> graphsInIdOrder =
+        copySceneGraphs();
+    std::vector<scene_graph::SceneGraph *> erasedGraphs{};
     {
-        std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-        for (std::pair<const unsigned long, scene_graph::SceneGraph *>
-                 &sceneGraphEntry : sceneGraphs)
-        {
-            retireBadNodes(*sceneGraphEntry.second, retiredNodes);
-            if (sceneGraphEntry.second->p_map != nullptr)
-            {
-                slamMaps.push_back(sceneGraphEntry.second->p_map);
-            }
-        }
-        retiredBatch = std::move(retiredNodes);
-        retiredNodes = RetiredNodes{};
+        std::unique_lock<std::shared_mutex> registryLock(registryMutex);
+        erasedGraphs = std::move(erasedSceneGraphs);
+        erasedSceneGraphs.clear();
     }
+
+    /* Every graph is held exclusive from the first unlink to the last free, so
+     * no reader can see a node between the two. Lock order: graph locks in
+     * ascending map id, dropped maps after them (nobody else locks those), then
+     * the SLAM maps' own mutexes inside replaceLinkedRoom(). */
+    GraphLockScope graphScope{};
+    if (!acquireGraphLocks(graphsInIdOrder,
+                           GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                           graphScope))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: an exclusive lock cannot fail to be granted.",
+                     __func__);
+    }
+    std::map<unsigned long, scene_graph::SceneGraph *> erasedInIdOrder{};
+    unsigned long                                      erasedKey = 0UL;
+    for (scene_graph::SceneGraph *p_erasedGraph : erasedGraphs)
+    {
+        erasedInIdOrder[erasedKey++] = p_erasedGraph;
+    }
+    if (!acquireGraphLocks(erasedInIdOrder,
+                           GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                           graphScope))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: an exclusive lock cannot fail to be granted.",
+                     __func__);
+    }
+
+    /* The batch is declared after the scope, so it is freed while the locks
+     * are still held. */
+    scene_graph::RetiredNodes retiredBatch{};
+    std::vector<map::Map *>   slamMaps{};
+    for (scene_graph::SceneGraph *p_erasedGraph : erasedGraphs)
+    {
+        retireSceneGraphContents(*p_erasedGraph, p_erasedGraph->retiredNodes);
+    }
+    std::vector<scene_graph::SceneGraph *> allGraphs{};
+    for (std::pair<const unsigned long, scene_graph::SceneGraph *>
+             &sceneGraphEntry : graphsInIdOrder)
+    {
+        retireBadNodes(*sceneGraphEntry.second,
+                       sceneGraphEntry.second->retiredNodes);
+        allGraphs.push_back(sceneGraphEntry.second);
+    }
+    allGraphs.insert(allGraphs.end(), erasedGraphs.begin(), erasedGraphs.end());
+    for (scene_graph::SceneGraph *p_graph : allGraphs)
+    {
+        if (p_graph->p_map != nullptr)
+        {
+            slamMaps.push_back(p_graph->p_map);
+        }
+        for (std::unique_ptr<semantic::Room> &p_room :
+             p_graph->retiredNodes.rooms)
+        {
+            retiredBatch.rooms.push_back(std::move(p_room));
+        }
+        for (std::unique_ptr<semantic::Passage> &p_passage :
+             p_graph->retiredNodes.passages)
+        {
+            retiredBatch.passages.push_back(std::move(p_passage));
+        }
+        for (std::unique_ptr<semantic::Floor> &p_floor :
+             p_graph->retiredNodes.floors)
+        {
+            retiredBatch.floors.push_back(std::move(p_floor));
+        }
+        p_graph->retiredNodes = scene_graph::RetiredNodes{};
+    }
+
+    /* The maps drop their starting and final room links to retired rooms. */
     for (const std::unique_ptr<semantic::Room> &p_retiredRoom :
          retiredBatch.rooms)
     {
-        retiredRoomPointers.push_back(p_retiredRoom.get());
-    }
-
-    /* Step 2, no graph lock (lock order: a SLAM map is never locked under the
-     * graph mutex): maps drop their starting and final room links. */
-    for (map::Map *p_slamMap : slamMaps)
-    {
-        for (semantic::Room *p_retiredRoom : retiredRoomPointers)
+        for (map::Map *p_slamMap : slamMaps)
         {
-            if (p_slamMap->replaceLinkedRoom(p_retiredRoom, nullptr) !=
+            if (p_slamMap->replaceLinkedRoom(p_retiredRoom.get(), nullptr) !=
                 map::MapStatus::MAP_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -87,30 +141,8 @@ SemanticsManagerStatus SemanticsManager::sweepBadNodes()
         }
     }
 
-    /* Step 3, graph lock exclusive: every other holder lets go, then the batch
-     * is freed unless a reader holds the reclaim guard. The try-lock never
-     * waits, so a reader can never stall the cycle. */
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    unlinkRetiredNodes(sceneGraphs, retiredBatch);
-    std::unique_lock<std::shared_mutex> reclaimLock(reclaimMutex,
-                                                    std::try_to_lock);
-    if (reclaimLock.owns_lock())
-    {
-        retiredBatch = RetiredNodes{};
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
-    }
-    for (std::unique_ptr<semantic::Room> &p_room : retiredBatch.rooms)
-    {
-        retiredNodes.rooms.push_back(std::move(p_room));
-    }
-    for (std::unique_ptr<semantic::Passage> &p_passage : retiredBatch.passages)
-    {
-        retiredNodes.passages.push_back(std::move(p_passage));
-    }
-    for (std::unique_ptr<semantic::Floor> &p_floor : retiredBatch.floors)
-    {
-        retiredNodes.floors.push_back(std::move(p_floor));
-    }
+    /* Every other holder lets go; the batch is then freed on return. */
+    unlinkRetiredNodes(graphsInIdOrder, retiredBatch);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

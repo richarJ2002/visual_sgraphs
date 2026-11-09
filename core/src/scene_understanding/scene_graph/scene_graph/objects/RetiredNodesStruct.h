@@ -23,8 +23,8 @@
  *                  that left the scene graph but are not yet freed.
  */
 
-#ifndef VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_RETIRED_NODES_STRUCT_H
-#define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_RETIRED_NODES_STRUCT_H
+#ifndef VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_OBJECTS_RETIRED_NODES_STRUCT_H
+#define VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_OBJECTS_RETIRED_NODES_STRUCT_H
 
 #include <memory>
 #include <vector>
@@ -37,12 +37,16 @@ namespace vs_graphs
 {
 namespace core
 {
+namespace scene_graph
+{
 
 /*!
- * @brief           Nodes taken out of the tree and kept alive until
- *                  SemanticsManager::sweepBadNodes() has unlinked every holder
- *                  and no reader guard is active. No query returns them. Owned
- *                  by SemanticsManager and guarded by its graph mutex.
+ * @brief           Nodes taken out of a map's tree and kept alive until
+ *                  SemanticsManager::sweepBadNodes() has unlinked every holder;
+ *                  the sweep then frees them under the exclusive graph lock.
+ *                  No query returns them. Kept because the code that erased a
+ *                  node may still hold its pointer until the cycle ends. Owned
+ *                  by the map's SceneGraph and guarded by its graphMutex.
  */
 struct RetiredNodes
 {
@@ -63,8 +67,9 @@ struct RetiredNodes
     std::vector<std::unique_ptr<semantic::Floor>> floors;
 };
 
+} /* namespace scene_graph */
 } /* namespace core */
 } /* namespace vs_graphs */
 
-#endif /* VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_OBJECTS_RETIRED_NODES_STRUCT_H  \
+#endif /* VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_OBJECTS_RETIRED_NODES_STRUCT_H     \
         */

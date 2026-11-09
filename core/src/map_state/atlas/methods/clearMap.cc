@@ -48,11 +48,11 @@ AtlasStatus Atlas::clearMap()
      * the semantics manager and segmentation read and write the semantic
      * lists under it, and this clear empties them. */
     std::unique_lock<std::mutex> semanticUpdateLock(semanticUpdateMutex);
-    std::unique_lock<std::mutex> atlasLock(atlasMutex);
     /* Same-map reset (Tracking::ResetActiveMap) wipes rooms/floors/passages
      * from the live Map object without creating a new Map. Snapshot first so
      * the bootstrap recovery path can recreate the last-known hierarchy
-     * (under fresh identities) afterwards. */
+     * (under fresh identities) afterwards. The export takes graph locks, which
+     * come before atlasMutex in the lock order. */
     if (exportRoomContextFromCurrentMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -60,23 +60,33 @@ AtlasStatus Atlas::clearMap()
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_activeMap->clear() != map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: clear returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
-    }
-    /* Map::clear emptied the semantic lists; the scene graph follows. */
     unsigned long activeMapId{};
-    if ((p_activeMap->getId(activeMapId) !=
-         map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_semanticsManager->clearSemantics(activeMapId) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+    {
+        std::unique_lock<std::mutex> atlasLock(atlasMutex);
+        if (p_activeMap->clear() != map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clear returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_activeMap->getId(activeMapId) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+    /* Map::clear emptied the semantic lists; the scene graph follows, with
+     * atlasMutex released (it takes the graph lock exclusive). */
+    if (p_semanticsManager->clearSemantics(activeMapId) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/clearSemantics returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: clearSemantics returned a failure status although "
+                     "it cannot fail; continuing as before.",
                      __func__);
     }
     /* A same-map clear keeps the map id, so the visualization/voxblox

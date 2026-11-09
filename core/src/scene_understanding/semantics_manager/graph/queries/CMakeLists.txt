@@ -14,6 +14,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_QUERIES_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassagesInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomSnapshots.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc

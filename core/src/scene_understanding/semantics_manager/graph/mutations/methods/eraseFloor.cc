@@ -40,21 +40,24 @@ namespace core
 SemanticsManagerStatus SemanticsManager::eraseFloor(unsigned long    mapId_in,
                                                     semantic::Floor *p_floor_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
+    scene_graph::SceneGraph &sceneGraph = *p_sceneGraph;
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
              &buildingEntry : sceneGraph.buildings)
     {
         retireEntryByPointer(buildingEntry.second->floors,
                              p_floor_in,
-                             retiredNodes.floors);
+                             p_sceneGraph->retiredNodes.floors);
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

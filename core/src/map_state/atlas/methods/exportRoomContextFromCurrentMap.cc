@@ -58,11 +58,18 @@ namespace atlas
 
 AtlasStatus Atlas::exportRoomContextFromCurrentMap()
 {
-    if (!p_activeMap)
+    /* Called without atlasMutex (lock order: graph locks before atlasMutex),
+     * so the active map is read under it for a moment. */
+    map::Map *p_exportMap = nullptr;
+    {
+        std::lock_guard<std::mutex> atlasLock(atlasMutex);
+        p_exportMap = p_activeMap;
+    }
+    if (!p_exportMap)
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     unsigned long mapIdValue{};
-    if (p_activeMap->getId(mapIdValue) != map::MapStatus::MAP_STATUS_SUCCESS)
+    if (p_exportMap->getId(mapIdValue) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId returned a failure status although it cannot "
@@ -74,19 +81,23 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
      * Candidate rooms (prospective/provisional) may not have full wall loops
      * yet but still carry spatial identity needed for cross-restart matching.
      */
-    std::vector<semantic::Room *>       rooms{};
-    /* The tracking thread may call this without the semantic update lock: the
-     * guard keeps the semantics manager from freeing the rooms read below. */
-    std::shared_lock<std::shared_mutex> graphReclaimGuard{};
-    if ((p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
+    std::vector<semantic::Room *> rooms{};
+    /* The rooms below are read, and the final-room link set, under the shared
+     * graph lock of the map: the cycle cannot edit or free them meanwhile.
+     * This runs on the tracking thread when a map is lost, so it waits for at
+     * most the cycle that is running. */
+    GraphLockScope                graphLockScope{};
+    if ((p_semanticsManager->lockGraphs({mapIdValue},
+                                        GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                                        graphLockScope) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
         (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),
-            "%s: getMapDetectedRoomsInIdOrder found no scene graph for "
-            "the map; continuing without its detected rooms.",
+            "%s: lockGraphs/getMapDetectedRoomsInIdOrder found no scene graph "
+            "for the map; continuing without its detected rooms.",
             __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
@@ -159,7 +170,7 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
         /* The pose at departure is the last key frame's: the tracker's own
          * frame is not handed to the atlas, and the lost frame has no pose. */
         std::vector<keyframe::KeyFrame *> mapKeyFrames{};
-        if (p_activeMap->getAllKeyFrames(mapKeyFrames) !=
+        if (p_exportMap->getAllKeyFrames(mapKeyFrames) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -188,7 +199,7 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
         }
         Eigen::Vector3d upDirection_world{};
         bool            isUpFromImuGravity{};
-        if (p_activeMap->getUpDirection(upDirection_world,
+        if (p_exportMap->getUpDirection(upDirection_world,
                                         isUpFromImuGravity) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
@@ -268,7 +279,7 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                                 : -1L,
                             passageInViewId,
                             roomBeyondId);
-                if (p_activeMap->setFinalRoom(p_room, p_roomBeyondPassage) !=
+                if (p_exportMap->setFinalRoom(p_room, p_roomBeyondPassage) !=
                     map::MapStatus::MAP_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

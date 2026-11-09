@@ -36,7 +36,7 @@ namespace core
 void insertRoom(std::map<int, std::unique_ptr<semantic::Room>> &roomsById_inout,
                 std::unique_ptr<semantic::Room>                 p_room_in,
                 unsigned long                                   mapId_in,
-                RetiredNodes &retiredNodes_inout)
+                scene_graph::RetiredNodes &retiredNodes_inout)
 {
     if (p_room_in == nullptr)
     {

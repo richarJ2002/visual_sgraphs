@@ -28,6 +28,7 @@
 
 #include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
+#include "scene_understanding/scene_graph/scene_graph/objects/RetiredNodesStruct.h"
 #include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
@@ -36,8 +37,8 @@
 #include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
 #include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
-#include "scene_understanding/semantics_manager/objects/RetiredNodesStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomListEnum.h"
+#include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
@@ -94,22 +95,25 @@ namespace core
  *                  flagged node, so to readers it is gone at once. Nothing is
  *                  freed on the spot: sweepBadNodes(), called once at the end
  *                  of each semantics cycle, retires flagged nodes, unlinks
- *                  every holder and frees the retired nodes when no reader
- *                  holds the reclaim guard. Planes belong to the SLAM map and
- *                  are only unlinked.
+ *                  every holder and frees them, all under the exclusive graph
+ *                  locks. Planes belong to the SLAM map and are only unlinked.
  *
- *                  Thread safety of the graph: one graph-wide shared mutex.
- *                  Every public graph query takes it shared and every public
- *                  graph mutation takes it exclusive, inside the method;
- *                  returned pointers are copied out under the lock. A caller
- *                  that uses them outside the semantic update lock holds the
- *                  reclaim guard (acquireReclaimGuard) for as long as it uses
- *                  them, which keeps the sweep from freeing the nodes. Public
- *                  graph methods never call each other while holding the lock.
- *                  Lock order: atlasMutex, then this lock, then the semantic
- *                  object mutexes; no method takes atlasMutex or
- *                  Map::mapMutex while holding this lock. The reclaim mutex is
- *                  only ever try-locked exclusive, so it cannot block.
+ *                  Thread safety of the graph: every SLAM map's graph has one
+ *                  std::shared_mutex (SceneGraph::graphMutex). Every public
+ *                  graph query takes it shared and every public graph
+ *                  mutation takes it exclusive, inside the method, and the
+ *                  pointers it returns are valid only while the caller holds
+ *                  a GraphLockScope on that graph (lockGraphs(),
+ *                  lockAllGraphs()); the scope is re-entrant per thread.
+ *                  Code outside the manager that must keep node pointers
+ *                  across calls takes a scope first, or asks for plain-data
+ *                  snapshots (getMapRoomSnapshots()). The cycle, a merge and
+ *                  every other writer hold the exclusive scope for their whole
+ *                  edit. Lock order: semantic update lock, then graph locks in
+ *                  ascending map id, then atlasMutex, Map::mapMutex,
+ *                  plane-geometry and room-context mutexes. The registry mutex
+ *                  is a leaf. Tracking threads never wait for a graph lock:
+ *                  they use GRAPH_LOCK_MODE_TRY_SHARED or no lock.
  */
 class SemanticsManager
 {
@@ -1018,9 +1022,11 @@ class SemanticsManager
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Guards sceneGraphs, activeGraphMapId, retiredNodes and
-     *                  everything the scene graphs hold. Shared for queries,
-     *                  exclusive for mutations.
+     * @brief           Guards sceneGraphs, erasedSceneGraphs and
+     *                  activeGraphMapId only, never a graph's nodes (those are
+     *                  guarded by each SceneGraph::graphMutex). Held for a
+     *                  lookup or an insert, never while waiting for a graph
+     *                  lock.
      */
     mutable std::shared_mutex registryMutex;
 
@@ -1039,18 +1045,12 @@ class SemanticsManager
     std::optional<unsigned long> activeGraphMapId;
 
     /*!
-     * @brief           Nodes that left the tree and wait to be freed by the
-     *                  sweep. Guarded by registryMutex.
+     * @brief           Scene graphs of maps the atlas dropped, borrowed. No
+     *                  query finds them any more; the next sweep retires their
+     *                  nodes (other nodes may still point at them) and
+     *                  forgets them. Guarded by registryMutex.
      */
-    RetiredNodes retiredNodes;
-
-    /*!
-     * @brief           The reclaim guard: readers that keep node pointers
-     *                  outside the semantic update lock hold it shared, and
-     *                  the sweep frees only while it can take it exclusive
-     *                  without waiting.
-     */
-    mutable std::shared_mutex reclaimMutex;
+    std::vector<scene_graph::SceneGraph *> erasedSceneGraphs;
 
     /*!
      * @brief           Looks a scene graph up by map id. Takes registryMutex
@@ -1074,6 +1074,33 @@ class SemanticsManager
      */
     [[nodiscard]] std::map<unsigned long, scene_graph::SceneGraph *>
         copySceneGraphs() const;
+
+    /*!
+     * @brief           Finds a map's scene graph and locks it. The graph is
+     *                  looked up first and locked second, so the registry
+     *                  mutex is never held while waiting for a graph.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       mode_in
+     *                  How to lock the graph.
+     *
+     * @param[out]      scope_out
+     *                  Holds the lock until it goes out of scope.
+     *
+     * @param[out]      p_sceneGraph_out
+     *                  The locked graph; borrowed; null on failure.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND, or
+     *                  SEMANTICS_MANAGER_STATUS_BUSY (try mode only).
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        lockMapGraph(unsigned long             mapId_in,
+                     GraphLockMode             mode_in,
+                     GraphLockScope           &scope_out,
+                     scene_graph::SceneGraph *&p_sceneGraph_out) const;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -1666,8 +1693,8 @@ class SemanticsManager
      *                  (id 0) and no storeys, rooms or passages, replacing any
      *                  scene graph it had (that map's nodes are retired for the
      *                  next sweep, not freed here). Used by the atlas when it
-     *                  creates or loads a map. Takes this lock exclusive after
-     *                  reading the map id.
+     *                  creates or loads a map. Takes the new graph's lock
+     * exclusive before registering it, so it never waits.
      *
      * @param[in,out]   map_inout
      *                  SLAM map the scene graph belongs to; only its id is
@@ -1678,9 +1705,11 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus addSceneGraph(map::Map &map_inout);
 
     /*!
-     * @brief           Removes the scene graph of a SLAM map the atlas dropped;
-     *                  when it was the active map there is no active map
-     *                  afterwards. Takes this lock exclusive.
+     * @brief           Unregisters the scene graph of a SLAM map the atlas
+     *                  dropped, so no query finds it; when it was the active
+     *                  map there is no active map afterwards. Its nodes are
+     *                  retired and freed by the next sweep. Takes only the
+     *                  registry mutex, never a graph lock.
      *
      * @param[in]       mapId_in
      *                  Id of the dropped SLAM map; unknown ids are ignored.
@@ -1692,7 +1721,7 @@ class SemanticsManager
 
     /*!
      * @brief           Records which SLAM map the active-map queries read.
-     *                  Takes this lock exclusive.
+     *                  Takes only the registry mutex.
      *
      * @param[in]       mapId_in
      *                  Id of the atlas's current map.
@@ -1728,7 +1757,7 @@ class SemanticsManager
     /*!
      * @brief           Moves a room from the candidate rooms to the detected
      *                  rooms of a map; when its id is already held by another
-     *                  detected room it is retired. Takes this lock
+     *                  detected room it is retired. Takes the graph lock
      *                  exclusive.
      *
      * @param[in]       mapId_in
@@ -1748,7 +1777,7 @@ class SemanticsManager
      * @brief           Takes a room out of the tree, by pointer, whatever id
      *                  it is keyed under, and retires it: it stays alive but
      *                  no query returns it, and the next sweep unlinks and
-     *                  frees it. Takes this lock exclusive.
+     *                  frees it. Takes the graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -1769,7 +1798,7 @@ class SemanticsManager
      *                  by the id the room holds now. This is how merge hands
      *                  rooms over and how a room is re-keyed after a new id.
      *                  A room whose id the destination list already holds is
-     *                  retired. Takes this lock exclusive; the move is one
+     *                  retired. Takes the graph lock exclusive; the move is one
      *                  step, so no reader sees the room missing.
      *
      * @param[in]       sourceMapId_in
@@ -1803,7 +1832,7 @@ class SemanticsManager
      *                  printed): it is retired, so a raw pointer the caller
      *                  kept stays valid until the next sweep, and the status
      *                  is still success, so the caller must resolve the id
-     *                  first. Takes this lock exclusive.
+     *                  first. Takes the graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -1822,7 +1851,8 @@ class SemanticsManager
 
     /*!
      * @brief           Takes a passage out of the tree, by pointer, and
-     *                  retires it (see eraseRoom). Takes this lock exclusive.
+     *                  retires it (see eraseRoom). Takes the graph lock
+     * exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -1841,8 +1871,8 @@ class SemanticsManager
      * @brief           Moves a passage, with its ownership, from one scene
      *                  graph to another (or re-keys it in the same one) under
      *                  the id it holds now. A passage whose id the
-     *                  destination already holds is retired. Takes this lock
-     *                  exclusive.
+     *                  destination already holds is retired. Takes the graph
+     * lock exclusive.
      *
      * @param[in]       sourceMapId_in
      *                  Id of the SLAM map that holds the passage.
@@ -1869,7 +1899,7 @@ class SemanticsManager
      *                  negative or held by another storey of the map is given
      *                  the next free id (a message is printed); an entry for
      *                  the storey under an older id is dropped. Ids handed out
-     *                  are never reused. Takes this lock exclusive.
+     *                  are never reused. Takes the graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -1909,8 +1939,8 @@ class SemanticsManager
      * @brief           Moves a storey, with its ownership, from building 0 of
      *                  one scene graph to building 0 of another, under the id
      *                  it holds now; an id the destination holds gives it the
-     *                  next free id there (as addFloor does). Takes this lock
-     *                  exclusive.
+     *                  next free id there (as addFloor does). Takes the graph
+     * lock exclusive.
      *
      * @param[in]       sourceMapId_in
      *                  Id of the SLAM map that holds the storey.
@@ -1941,7 +1971,7 @@ class SemanticsManager
      *                  The room's planes are not touched here: the sweep
      *                  clears the room's plane lists (planes are never freed
      *                  by the sweep). Works for a room that is already
-     *                  retired. Takes this lock exclusive.
+     *                  retired. Takes the graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map the room belongs to.
@@ -1958,7 +1988,7 @@ class SemanticsManager
 
     /*!
      * @brief           Flags a storey invalid and every room on it (see
-     *                  markRoomBad). Takes this lock exclusive.
+     *                  markRoomBad). Takes the graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map the storey belongs to.
@@ -1976,7 +2006,7 @@ class SemanticsManager
     /*!
      * @brief           Points every room and passage of the active map that
      *                  listed a retired plane at the plane that replaces it,
-     *                  both sides written in one step. Takes this lock
+     *                  both sides written in one step. Takes the graph lock
      *                  exclusive.
      *
      * @param[in,out]   p_retiredPlane_inout
@@ -1998,13 +2028,13 @@ class SemanticsManager
      *                  retired node from the nodes that still list it (the
      *                  storeys' room lists, the passages' room links, the
      *                  rooms' passage lists, the maps' linked rooms and the
-     *                  rooms' own plane lists) and frees the retired nodes
-     *                  when no reader holds the reclaim guard. Planes are
-     *                  unlinked only, never freed. A node that cannot be
-     *                  freed now stays retired and is freed by a later sweep.
+     *                  rooms' own plane lists) and frees the retired nodes.
+     *                  The graphs of dropped maps are emptied the same way.
+     *                  Planes are unlinked only, never freed. It holds the
+     *                  exclusive lock of every graph from the first unlink to
+     *                  the last free, so no reader sees a node in between.
      *                  Call it only from the cycle owner that holds the
-     *                  semantic update lock. Takes this lock exclusive for
-     *                  short steps, never while it calls into a SLAM map.
+     *                  semantic update lock.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
@@ -2012,10 +2042,11 @@ class SemanticsManager
 
     /*!
      * @brief           Empties the storeys, rooms and passages of a map by
-     *                  retiring them; the buildings and the next free storey
-     *                  id stay. Map::clear is not called (it clears key
-     *                  frames and map points); the caller clears the map
-     *                  itself. Takes this lock exclusive.
+     *                  retiring them (the next sweep frees them); the
+     *                  buildings and the next free storey id stay.
+     *                  Map::clear is not called (it clears key frames and map
+     *                  points); the caller clears the map itself. Takes the
+     *                  map's graph lock exclusive.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2027,25 +2058,51 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus clearSemantics(unsigned long mapId_in);
 
     /*!
-     * @brief           Takes the reclaim guard shared. While a reader holds
-     *                  it, the sweep frees nothing, so every room, passage and
-     *                  storey pointer the reader obtained from a query stays
-     *                  valid. Every reader that keeps such a pointer across
-     *                  calls without holding the semantic update lock takes
-     *                  the guard before its first query and releases it after
-     *                  its last use of the pointers. The sweep only try-locks
-     *                  the reclaim mutex, so holding the guard never blocks
-     *                  the cycle and a function that holds it may call
-     *                  another that takes it again.
+     * @brief           Copies every live room of a map (detected and candidate,
+     *                  ascending id) into plain data, under the map's graph
+     * lock taken as asked. The snapshots hold no pointer into the graph, so
+     * they stay valid after the call. Used by optimisation and relocalization.
      *
-     * @param[out]      reclaimGuard_out
-     *                  Shared lock on the reclaim mutex; it unlocks when it
-     *                  goes out of scope.
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
      *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     * @param[in]       lockMode_in
+     *                  GRAPH_LOCK_MODE_SHARED to wait for a writer, or
+     *                  GRAPH_LOCK_MODE_TRY_SHARED on a tracking thread, which
+     *                  never waits.
+     *
+     * @param[out]      roomSnapshots_out
+     *                  The rooms; empty on failure.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND, or
+     *                  SEMANTICS_MANAGER_STATUS_BUSY (try mode, writer active).
      */
-    [[nodiscard]] SemanticsManagerStatus acquireReclaimGuard(
-        std::shared_lock<std::shared_mutex> &reclaimGuard_out) const;
+    [[nodiscard]] SemanticsManagerStatus
+        getMapRoomSnapshots(unsigned long              mapId_in,
+                            GraphLockMode              lockMode_in,
+                            std::vector<RoomSnapshot> &roomSnapshots_out) const;
+
+    /*!
+     * @brief           Sets a room's centroid, under the map's exclusive graph
+     *                  lock. A room that no longer exists changes nothing.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       roomId_in
+     *                  Id of the room.
+     *
+     * @param[in]       centroid_world_m_in
+     *                  New centroid in the map's world frame, metres.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        setRoomCentroid(unsigned long          mapId_in,
+                        int                    roomId_in,
+                        const Eigen::Vector3d &centroid_world_m_in);
 
     /*!
      * @brief           Locks the graphs of the listed maps, in ascending
@@ -2104,7 +2161,7 @@ class SemanticsManager
     /*!
      * @brief           Lists the detected and candidate rooms of a map in
      *                  ascending id order; on an id held by both, the
-     *                  detected room. Takes this lock shared.
+     *                  detected room. Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2122,7 +2179,7 @@ class SemanticsManager
 
     /*!
      * @brief           Lists the detected rooms of a map in ascending id
-     *                  order. Takes this lock shared.
+     *                  order. Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2140,7 +2197,7 @@ class SemanticsManager
 
     /*!
      * @brief           Lists the candidate rooms of a map in ascending id
-     *                  order. Takes this lock shared.
+     *                  order. Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2158,7 +2215,7 @@ class SemanticsManager
 
     /*!
      * @brief           Lists the passages of a map in ascending id order.
-     *                  Takes this lock shared.
+     *                  Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2176,7 +2233,7 @@ class SemanticsManager
 
     /*!
      * @brief           Lists the storeys of a map in ascending id order,
-     *                  building by building. Takes this lock shared.
+     *                  building by building. Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2216,7 +2273,7 @@ class SemanticsManager
                        semantic::Room *&p_room_out) const;
 
     /*!
-     * @brief           Looks up a passage of a map by id. Takes this lock
+     * @brief           Looks up a passage of a map by id. Takes the graph lock
      *                  shared.
      *
      * @param[in]       mapId_in
@@ -2238,7 +2295,7 @@ class SemanticsManager
                           semantic::Passage *&p_passage_out) const;
 
     /*!
-     * @brief           Looks up a storey of a map by id. Takes this lock
+     * @brief           Looks up a storey of a map by id. Takes the graph lock
      *                  shared.
      *
      * @param[in]       mapId_in
@@ -2262,7 +2319,7 @@ class SemanticsManager
     /*!
      * @brief           Lists the rooms of one storey in ascending id order,
      *                  read from the storey's own room list at call time.
-     *                  Takes this lock shared.
+     *                  Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2287,7 +2344,7 @@ class SemanticsManager
      * @brief           Lists the passages of one storey in ascending id
      *                  order: the passages its rooms list at call time. A
      *                  passage between rooms of two storeys is listed by
-     *                  both. Takes this lock shared.
+     *                  both. Takes the graph lock shared.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.

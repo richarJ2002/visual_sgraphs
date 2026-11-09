@@ -66,12 +66,18 @@ MapStatus Map::applyScaledRotation(
 {
     /* Rooms, passages and floors come from the semantics manager, read before
      * mapMutex is held for the move (lock order: graph lock, then
-     * mapMutex). Callers hold the semantic lock, so the lists stay put. */
+     * mapMutex). The exclusive graph lock stays held for the whole move. */
+    GraphLockScope                   graphLockScope{};
     std::vector<semantic::Passage *> mapPassages{};
     std::vector<semantic::Room *>    mapDetectedRooms{};
     std::vector<semantic::Room *>    mapCandidateRooms{};
     std::vector<semantic::Floor *>   mapFloors{};
     if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->lockGraphs(
+             {id},
+             GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+             graphLockScope) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
         (p_semanticsManager_in->getMapPassagesInIdOrder(id, mapPassages) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
         (p_semanticsManager_in->getMapDetectedRoomsInIdOrder(

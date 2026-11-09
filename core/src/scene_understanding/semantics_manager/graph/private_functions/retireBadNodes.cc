@@ -32,8 +32,8 @@ namespace vs_graphs
 namespace core
 {
 
-void retireBadNodes(scene_graph::SceneGraph &sceneGraph_inout,
-                    RetiredNodes            &retiredNodes_inout)
+void retireBadNodes(scene_graph::SceneGraph   &sceneGraph_inout,
+                    scene_graph::RetiredNodes &retiredNodes_inout)
 {
     retireDeadEntries(sceneGraph_inout.detectedRooms,
                       &isRoomLive,

@@ -125,6 +125,24 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
+        /*!
+         * The cycle edits rooms, passages and storeys in place, so it holds
+         * the exclusive lock of every map graph until the sweep has freed the
+         * flagged nodes (lock order: semantic update lock, then graph locks).
+         * Readers on other threads wait for it or, on a tracking thread, skip
+         * their read.
+         */
+        GraphLockScope graphLockScope{};
+        if (lockAllGraphs(GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                          graphLockScope) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: lockAllGraphs returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
         /* ------------------------------------------------------------------ *
          * CYCLE
          * ------------------------------------------------------------------ */
@@ -1404,6 +1422,7 @@ void SemanticsManager::run(void)
         /* Unlock before any evaluation/serialization/caching/logging work --
          * the monitor must never hold the semantic-update lock while doing
          * read-only diagnostic work. */
+        releaseGraphLockEntries(graphLockScope.entries);
         semanticUpdateLock.unlock();
 
         const std::chrono::steady_clock::time_point evaluationStart =

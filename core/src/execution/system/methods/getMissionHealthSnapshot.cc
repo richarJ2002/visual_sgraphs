@@ -246,6 +246,20 @@ SystemStatus System::getMissionHealthSnapshot(
                          __func__);
         }
         snapshot.mapId = static_cast<std::uint64_t>(activeMapId);
+        /* The room, storey and passage reads below hold the graph shared. */
+        GraphLockScope graphLockScope{};
+        if (includeSemantics_in && p_semanticsManager != nullptr &&
+            p_semanticsManager->lockGraphs(
+                {activeMapId},
+                GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                graphLockScope) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: lockGraphs found no scene graph for the active "
+                         "map; continuing as before.",
+                         __func__);
+        }
         std::vector<keyframe::KeyFrame *> keyFrames{};
         if (p_activeMap->getAllKeyFrames(keyFrames) !=
             map::MapStatus::MAP_STATUS_SUCCESS)

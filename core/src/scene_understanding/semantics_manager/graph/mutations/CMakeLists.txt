@@ -14,5 +14,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_MUTATIONS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/moveRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/promoteCandidateRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replacePlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomCentroid.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/sweepBadNodes.cc
 )

@@ -113,11 +113,20 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     }
 
     semantic::SemanticMergeGateResult semanticMergeGate{};
-    evaluateSemanticMergeGate(p_atlas,
-                              p_currentMap,
-                              p_mergeMap,
-                              oldCorrectedPose.inverse(),
-                              semanticMergeGate);
+    {
+        /* The gate only reads the two graphs. */
+        GraphLockScope gateGraphScope{};
+        lockMergeGraphs(p_atlas,
+                        p_currentMap,
+                        p_mergeMap,
+                        GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                        gateGraphScope);
+        evaluateSemanticMergeGate(p_atlas,
+                                  p_currentMap,
+                                  p_mergeMap,
+                                  oldCorrectedPose.inverse(),
+                                  semanticMergeGate);
+    }
     if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         resumeMergeWorkers(semanticUpdateLock, p_localMapper);
@@ -159,6 +168,9 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
 
     /* Load KFs and MPs from merge map */
     MergeMapContents mergeMapContents;
+    /* Both graphs are edited in place until the merge is committed: exclusive
+     * locks, taken inside the block below after the map update mutexes. */
+    GraphLockScope   mergeGraphScope{};
     {
         /*!
          * Acquire both map-update mutexes without imposing an unsafe order.
@@ -167,6 +179,11 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
          */
         std::scoped_lock mapUpdateLocks(p_currentMap->mapUpdateMutex,
                                         p_mergeMap->mapUpdateMutex);
+        lockMergeGraphs(p_atlas,
+                        p_currentMap,
+                        p_mergeMap,
+                        GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                        mergeGraphScope);
 
         collectMergeMapContents(p_atlas, p_mergeMap, mergeMapContents);
         transferKeyFramesAndMapPoints(p_currentMap,
@@ -264,6 +281,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     /* The semantic graph and atlas::Atlas ownership are now stable for other
      * workers.
      */
+    releaseGraphLockEntries(mergeGraphScope.entries);
     resumeMergeWorkers(semanticUpdateLock, p_localMapper);
 
     if (shouldRelaunchGlobalBundleAdjustment(shouldRelaunchBa,

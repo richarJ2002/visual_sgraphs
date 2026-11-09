@@ -39,15 +39,16 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::eraseSceneGraph(unsigned long mapId_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
+    /* The graph leaves the registry at once, so no query finds it. Its nodes
+     * stay with the map: other maps' linked rooms may still point at them, so
+     * the next sweep retires and unlinks them. No graph lock is taken here, so
+     * a map dropped on the tracking thread never waits for a running cycle. */
+    std::unique_lock<std::shared_mutex> registryLock(registryMutex);
     const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator != sceneGraphs.end())
     {
-        /* Other maps may still link to this map's rooms (their starting and
-         * final rooms), so the nodes are retired and freed by a sweep after
-         * those links are cleared. */
-        retireSceneGraphContents(*sceneGraphIterator->second, retiredNodes);
+        erasedSceneGraphs.push_back(sceneGraphIterator->second);
         sceneGraphs.erase(sceneGraphIterator);
     }
     if (activeGraphMapId == mapId_in)

@@ -67,17 +67,20 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     {
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
-    unsigned long                       mapId{};
-    /* Not every caller holds the semantic update lock: the guard keeps the
-     * semantics manager from freeing the nodes read below. */
-    std::shared_lock<std::shared_mutex> graphReclaimGuard{};
+    unsigned long  mapId{};
+    GraphLockScope graphLockScope{};
+    /* This edits rooms, passages and storeys in place: exclusive graph lock
+     * for the whole pass (re-entrant when the caller already holds it). */
     if ((p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_semanticsManager_in == nullptr) ||
-        (p_semanticsManager_in->acquireReclaimGuard(graphReclaimGuard) !=
+        (p_semanticsManager_in->lockGraphs(
+             {mapId},
+             GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+             graphLockScope) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/acquireReclaimGuard returned a failure status "
+                     "%s: getId/lockGraphs returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }

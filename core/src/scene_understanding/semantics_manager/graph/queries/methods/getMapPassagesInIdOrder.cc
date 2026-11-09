@@ -43,16 +43,19 @@ SemanticsManagerStatus SemanticsManager::getMapPassagesInIdOrder(
     std::vector<semantic::Passage *> &passages_out) const
 {
     passages_out.clear();
-    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
-    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
-        sceneGraphIterator = sceneGraphs.find(mapId_in);
-    if (sceneGraphIterator == sceneGraphs.end())
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_SHARED,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     for (const std::pair<const int, std::unique_ptr<semantic::Passage>>
-             &passageEntry : sceneGraphIterator->second->passages)
+             &passageEntry : p_sceneGraph->passages)
     {
         if (isPassageLive(passageEntry.second.get()))
         {

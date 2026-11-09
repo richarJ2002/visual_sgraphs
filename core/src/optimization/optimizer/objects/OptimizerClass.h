@@ -39,6 +39,7 @@
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
 
 #include <boost/bind.hpp>
 #include <math.h>
@@ -54,6 +55,7 @@
 #include <vs_graphs_g2o/types/types_six_dof_expmap.h>
 
 #include <atomic>
+#include <map>
 
 namespace vs_graphs::core::frame { class Frame; }
 namespace vs_graphs::core::keyframe { class KeyFrame; }
@@ -135,7 +137,12 @@ class Optimizer
      *                  Planes to optimise.
      *
      * @param[in]       rooms_in
-     *                  Rooms to optimise.
+     *                  Snapshots of the rooms to optimise.
+     *
+     * @param[out]      optimizedRoomCentroids_out
+     *                  Centroid of each room (by room id) that the initial-map
+     *                  run optimised, for the caller to apply through the
+     *                  semantics manager; empty for a loop-triggered run.
      *
      * @param[in]       iterationCount_in
      *                  Number of optimiser iterations.
@@ -163,7 +170,8 @@ class Optimizer
         const std::vector<vs_graphs::core::keyframe::KeyFrame *>  &keyFrames_in,
         const std::vector<vs_graphs::core::map_point::MapPoint *> &mapPoints_in,
         const std::vector<vs_graphs::core::geometric::Plane *>    &planes_in,
-        const std::vector<vs_graphs::core::semantic::Room *>      &rooms_in,
+        const std::vector<RoomSnapshot>                           &rooms_in,
+        std::map<int, Eigen::Vector3d> &optimizedRoomCentroids_out,
         int                     iterationCount_in  = 5,
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,

@@ -43,8 +43,6 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 
 #include "mapping/geometry_helpers/utils.h"
 #include "optimization/optimizable_types/EdgeSE3KFPointToPlane/EdgeSE3KFPointToPlane.h"
@@ -60,6 +58,7 @@
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
 #include <set>
+#include <unordered_map>
 
 namespace vs_graphs
 {
@@ -72,13 +71,16 @@ OptimizerStatus Optimizer::bundleAdjustment(
     const std::vector<vs_graphs::core::keyframe::KeyFrame *>  &keyFrames_in,
     const std::vector<vs_graphs::core::map_point::MapPoint *> &mapPoints_in,
     const std::vector<vs_graphs::core::geometric::Plane *>    &planes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>      &rooms_in,
-    int                     iterationCount_in,
-    bool                   *p_stopFlag_inout,
-    const unsigned long     loopKeyFrameId_in,
-    const bool              useRobustKernel_in,
-    const std::atomic_bool *p_stopRequested_in)
+    const std::vector<RoomSnapshot>                           &rooms_in,
+    std::map<int, Eigen::Vector3d> &optimizedRoomCentroids_out,
+    int                             iterationCount_in,
+    bool                           *p_stopFlag_inout,
+    const unsigned long             loopKeyFrameId_in,
+    const bool                      useRobustKernel_in,
+    const std::atomic_bool         *p_stopRequested_in)
 {
+    optimizedRoomCentroids_out.clear();
+
     /* System parameters */
     vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
     if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
@@ -662,20 +664,16 @@ OptimizerStatus Optimizer::bundleAdjustment(
     maxGlobalOptimizationId += planeCount;
 
     /* [GBA] Rooms */
-    for (semantic::Room *const &room : rooms_in)
+    std::unordered_map<int, geometric::Plane *> planesById{};
+    indexPlanesById(planes_in, planesById);
+    std::map<int, int> roomVertexIds{};
+    for (const RoomSnapshot &room : rooms_in)
     {
         try
         {
             /* Variables */
             std::vector<vs_graphs::core::geometric::Plane *> walls{};
-            if (room->getWalls(walls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            resolveRoomWallPlanes(room, planesById, walls);
 
             /* No need to optimize if there are no walls */
             if (walls.empty())
@@ -687,29 +685,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
             /* Setting the local optimization ID for the room */
             int globalOptimizationId = maxGlobalOptimizationId + roomCount;
             p_roomPoseVertex->setId(globalOptimizationId);
-            if (room->setOpIdG(globalOptimizationId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setOpIdG returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            roomVertexIds[room.id] = globalOptimizationId;
             roomCount++;
 
             /* Initialize the room vertex (centroid estimate) */
-            Eigen::Vector3d roomCentroid{};
-            if (room->getCentroid(roomCentroid) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
             p_roomPoseVertex->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
-                             roomCentroid.cast<double>()));
+                             room.centroid_world_m));
             p_roomPoseVertex->setFixed(true);
             optimizer.addVertex(p_roomPoseVertex);
 
@@ -957,20 +939,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                     huberThreshold1D);
 
     /* [GBA] Room-wall edges */
-    auto getRoomVertexIdG = [](semantic::Room *p_room_in) -> int
-    {
-        int opId{};
-        if (p_room_in->getOpIdG(opId) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            return -1;
-        }
-        return opId;
-    };
     (void)addRoomWallEdges(optimizer,
                            rooms_in,
+                           planesById,
                            getVertexIdG,
-                           getRoomVertexIdG,
+                           roomVertexIds,
                            p_systemParams,
                            huberThreshold3D);
 
@@ -1323,36 +1296,18 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
     if (loopKeyFrameId_in == p_mapOriginKeyFrame6->id)
     {
-        for (semantic::Room *p_room : rooms_in)
+        for (const std::pair<const int, int> &roomVertexEntry : roomVertexIds)
         {
             try
             {
-                int roomOpIdG{};
-                if (p_room->getOpIdG(roomOpIdG) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getOpIdG returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
                 g2o::VertexSE3Expmap *p_roomVertex =
                     static_cast<g2o::VertexSE3Expmap *>(
-                        optimizer.vertex(roomOpIdG));
+                        optimizer.vertex(roomVertexEntry.second));
 
                 if (p_roomVertex != nullptr)
                 {
-                    if (p_room->setCentroid(
-                            p_roomVertex->estimate().translation()) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: setCentroid returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
+                    optimizedRoomCentroids_out[roomVertexEntry.first] =
+                        p_roomVertex->estimate().translation();
                 }
             }
             catch (const std::exception &caughtException)
