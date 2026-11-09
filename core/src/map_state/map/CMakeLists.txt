@@ -18,7 +18,6 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getBiggestGroundPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFinalRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFollowingMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getInertialBA1.cc
@@ -28,7 +27,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFrameCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastBigChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastMapChange.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getLinkedRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getLinkedRoomIds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLowerKeyFrameId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
@@ -36,12 +35,13 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMergeRecords.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPreviousMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomWallPlaneById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSceneGraph.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSkeletonEdges.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getStartingRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getStartingRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpDirection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getWorldFrameEpoch.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/increaseChangeIndex.cc
@@ -50,6 +50,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuInitialized.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isInUse.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isInertial.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/linkFollowingMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceLinkedRoom.cc
@@ -57,8 +58,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setFinalRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setFollowingMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setFinalRoomIds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setImuInitialized.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setInertialBA1.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setInertialBA2.cc
@@ -68,7 +68,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setReferenceMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setStartingRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setStartingRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setStoredMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setUpFromGravity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc

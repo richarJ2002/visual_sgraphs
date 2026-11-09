@@ -24,17 +24,14 @@
  */
 
 /*!
- * @file            getStartingRoom.cc
+ * @file            setStartingRoomId.cc
  *
- * @brief           Implements Map::getStartingRoom(), declared in
+ * @brief           Implements Map::setStartingRoomId(), declared in
  * map/objects/MapClass.h.
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
 
-#include <algorithm>
-#include <iterator>
 #include <mutex>
 
 namespace vs_graphs
@@ -44,10 +41,10 @@ namespace core
 namespace map
 {
 
-MapStatus Map::getStartingRoom(semantic::Room *&p_startingRoom_out)
+MapStatus Map::setStartingRoomId(int roomId_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    p_startingRoom_out = p_startingRoom;
+    startingRoom_id = roomId_in;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

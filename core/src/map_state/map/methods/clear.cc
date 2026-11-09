@@ -85,9 +85,9 @@ MapStatus Map::clear()
     /* The rooms go with the map (the caller clears its scene graph), so do
      * the mission-chain ends that point at them; the next bootstrap sets the
      * starting room again. */
-    p_startingRoom           = nullptr;
-    p_finalRoom              = nullptr;
-    p_finalRoomBeyondPassage = nullptr;
+    startingRoom_id           = NO_LINKED_ROOM_ID;
+    finalRoom_id              = NO_LINKED_ROOM_ID;
+    finalRoomBeyondPassage_id = NO_LINKED_ROOM_ID;
     referenceMapPoints.clear();
     keyFrameOrigins.clear();
     hasInertialBA1 = false;

@@ -126,6 +126,12 @@ class Map
     friend class boost::serialization::access;
 
     /*!
+     * @brief           The semantics manager is the only code that reaches the
+     *                  S-Graph this map owns (getSceneGraph()).
+     */
+    friend class vs_graphs::core::SemanticsManager;
+
+    /*!
      * @brief           Boost serialisation hook: reads or writes the map's
      *                  persistent fields (map id, key frame id bounds, big
      *                  change counter, backup key frame and map point lists,
@@ -144,6 +150,14 @@ class Map
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    /*!
+     * @brief           Room id that stands for "no room": the value of
+     *                  startingRoom_id, finalRoom_id and
+     *                  finalRoomBeyondPassage_id while they are not set. Room
+     *                  ids start at 0.
+     */
+    static constexpr int NO_LINKED_ROOM_ID{-1};
 
     /*!
      * @brief           Creates an empty map that takes the next free map id;
@@ -338,81 +352,111 @@ class Map
         eraseRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
 
     /*!
-     * @brief           Records the room this map started with (bootstrap entry
-     *                  room). Set once; non-owning, owned by this map.
-     */
-    [[nodiscard]] MapStatus
-        setStartingRoom(vs_graphs::core::semantic::Room *p_room_in);
-
-    /*!
-     * @brief           Returns the room this map started with, if any.
-     */
-    [[nodiscard]] MapStatus
-        getStartingRoom(semantic::Room *&p_startingRoom_out);
-
-    /*!
-     * @brief           Records the last current room at departure
-     *                  (reset/export) and, when the camera saw through a
-     *                  passage of it at that moment, the room beyond that
-     *                  passage as a second anchor candidate. Set on map
-     *                  transitions; non-owning, owned by this map.
+     * @brief           Records the id of the room this map started with
+     *                  (bootstrap entry room). Set once. The room is resolved
+     *                  through this map's own graph by the semantics manager
+     *                  and the resolution can fail after a delete or merge.
+     *                  Takes mapMutex.
      *
-     * @param[in]       p_room_in
-     *                  Room the robot was in; may be null.
-     *
-     * @param[in]       p_roomBeyondPassage_in
-     *                  Room on the other side of the passage in view; null
-     *                  when no passage was in view.
+     * @param[in]       roomId_in
+     *                  Id of the room, or NO_LINKED_ROOM_ID.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
-    [[nodiscard]] MapStatus
-        setFinalRoom(vs_graphs::core::semantic::Room *p_room_in,
-                     vs_graphs::core::semantic::Room *p_roomBeyondPassage_in);
+    [[nodiscard]] MapStatus setStartingRoomId(int roomId_in);
 
     /*!
-     * @brief           Returns the last current room at departure, if any.
+     * @brief           Returns the id of the room this map started with. Takes
+     *                  mapMutex.
+     *
+     * @param[out]      roomId_out
+     *                  Room id, or NO_LINKED_ROOM_ID while none is set.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
      */
-    [[nodiscard]] MapStatus getFinalRoom(semantic::Room *&p_finalRoom_out);
+    [[nodiscard]] MapStatus getStartingRoomId(int &roomId_out);
 
     /*!
-     * @brief           Links the next map in the mission chain. Left null on
-     *                  same-map clears. Non-owning; valid only while the
-     * atlas::Atlas retains both maps.
+     * @brief           Records the ids of the last current room at departure
+     *                  (reset/export) and, when the camera saw through a
+     *                  passage of it at that moment, of the room beyond that
+     *                  passage as a second anchor candidate. Set on map
+     *                  transitions. Takes mapMutex.
+     *
+     * @param[in]       finalRoomId_in
+     *                  Id of the room the robot was in, or NO_LINKED_ROOM_ID.
+     *
+     * @param[in]       roomBeyondPassageId_in
+     *                  Id of the room on the other side of the passage in
+     *                  view, or NO_LINKED_ROOM_ID when no passage was in view;
+     *                  stored as NO_LINKED_ROOM_ID when equal to
+     *                  \p finalRoomId_in.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
      */
-    [[nodiscard]] MapStatus setFollowingMap(Map *p_map_in);
+    [[nodiscard]] MapStatus setFinalRoomIds(int finalRoomId_in,
+                                            int roomBeyondPassageId_in);
+
+    /*!
+     * @brief           Makes a map the one this map continues into and this
+     *                  map the one that map continued from: the only place
+     *                  that writes the forward link (p_followingMap) and the
+     *                  backward link (p_previousMap of \p p_followingMap_in)
+     *                  together. Left null on same-map clears. Takes each
+     *                  map's mapMutex in turn, never both.
+     *
+     * @param[in]       p_followingMap_in
+     *                  Next map in the mission chain, or nullptr to end the
+     *                  chain here; borrowed, owned by the atlas.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus linkFollowingMap(Map *p_followingMap_in);
 
     /*!
      * @brief           Returns the next map in the mission chain, if any.
+     *                  Takes mapMutex.
      */
     [[nodiscard]] MapStatus getFollowingMap(Map *&p_followingMap_out);
 
     /*!
-     * @brief           Returns the rooms that link this map with another map
-     *                  in the mission chain: the earlier map's final room
-     *                  (plus the room beyond the passage that was in view at
-     *                  departure, when one was recorded) and the later map's
-     *                  starting room. This is the only identity link between
-     *                  two maps. Takes each map's mapMutex in turn, never
-     *                  both.
+     * @brief           Returns the map this map continued from in the mission
+     *                  chain, if any. Takes mapMutex.
+     *
+     * @param[out]      p_previousMap_out
+     *                  Previous map, or nullptr; borrowed, owned by the atlas.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus getPreviousMap(Map *&p_previousMap_out);
+
+    /*!
+     * @brief           Returns the ids of the rooms that link this map with
+     *                  another map in the mission chain: the earlier map's
+     *                  final room (plus the room beyond the passage that was in
+     *                  view at departure, when one was recorded) and the later
+     *                  map's starting room. This is the only identity link
+     *                  between two maps. The caller resolves each id through
+     *                  that map's own graph, which can fail. Takes each map's
+     *                  mapMutex in turn, never both.
      *
      * @param[in]       p_otherMap_in
      *                  Map to look for a link with; borrowed, may be null.
      *
-     * @param[out]      ownLinkedRooms_out
+     * @param[out]      ownLinkedRoomIds_out
      *                  This map's anchor candidates, final room first; empty
      *                  when the maps are not neighbours in the chain or no
-     *                  room is set. Borrowed pointers, never null.
+     *                  room is set.
      *
-     * @param[out]      otherLinkedRooms_out
+     * @param[out]      otherLinkedRoomIds_out
      *                  The other map's anchor candidates, likewise.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus
-        getLinkedRooms(Map                           *p_otherMap_in,
-                       std::vector<semantic::Room *> &ownLinkedRooms_out,
-                       std::vector<semantic::Room *> &otherLinkedRooms_out);
+        getLinkedRoomIds(Map              *p_otherMap_in,
+                         std::vector<int> &ownLinkedRoomIds_out,
+                         std::vector<int> &otherLinkedRoomIds_out);
 
     /*!
      * @brief           Takes over the chain links of a map merged into this
@@ -430,18 +474,18 @@ class Map
     /*!
      * @brief           Points the starting room, the final room and the room
      *                  beyond the final room's passage at the kept room when
-     *                  the room they named was fused into it.
+     *                  the room they named was fused into it. Takes mapMutex.
      *
-     * @param[in]       p_fusedRoom_in
-     *                  Room that was fused away; borrowed.
+     * @param[in]       fusedRoomId_in
+     *                  Id of the room that was fused away.
      *
-     * @param[in]       p_keptRoom_in
-     *                  Room it was fused into; borrowed.
+     * @param[in]       keptRoomId_in
+     *                  Id of the room it was fused into.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
-    [[nodiscard]] MapStatus replaceLinkedRoom(semantic::Room *p_fusedRoom_in,
-                                              semantic::Room *p_keptRoom_in);
+    [[nodiscard]] MapStatus replaceLinkedRoom(int fusedRoomId_in,
+                                              int keptRoomId_in);
 
     /*!
      * @brief           Clears lookup-only state after every indexed entity was
@@ -853,20 +897,6 @@ class Map
     [[nodiscard]] MapStatus setImuInitialized();
 
     /*!
-     * @brief           Returns the S-Graph this map owns (building, floors,
-     *                  rooms, passages). The semantics manager's graph
-     * operations lock and edit it; read or write its content only through them.
-     * Does not lock mapMutex: the member lives as long as the map.
-     *
-     * @param[out]      p_sceneGraph_out
-     *                  S-Graph of this map; borrowed, never null.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus
-        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
-
-    /*!
      * @brief           Returns this map's "up" direction. Takes mapMutex.
      *
      * @param[out]      upDirection_world_out
@@ -1100,6 +1130,21 @@ class Map
 
   protected:
     /*!
+     * @brief           Returns the S-Graph this map owns (building, floors,
+     *                  rooms, passages). The semantics manager's graph
+     * operations lock and edit it; read or write its content only through them.
+     * Reachable only by the friend SemanticsManager. Does not lock mapMutex:
+     * the member lives as long as the map.
+     *
+     * @param[out]      p_sceneGraph_out
+     *                  S-Graph of this map; borrowed, never null.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
+
+    /*!
      * @brief           Id of this map, taken from nextId at construction.
      */
     long unsigned int id;
@@ -1188,30 +1233,40 @@ class Map
     keyframe::KeyFrame *p_lowerIdKeyFrame;
 
     /*!
-     * @brief           Room this map started in, or nullptr until
-     *                  setStartingRoom() is called; borrowed.
+     * @brief           Id of the room this map started in, or
+     *                  NO_LINKED_ROOM_ID until setStartingRoomId() is called.
+     *                  Resolved through this map's own graph.
      */
-    vs_graphs::core::semantic::Room *p_startingRoom{nullptr};
+    int startingRoom_id{NO_LINKED_ROOM_ID};
 
     /*!
-     * @brief           Room the robot was in when this map was left, or nullptr
-     *                  until setFinalRoom() is called; borrowed.
+     * @brief           Id of the room the robot was in when this map was left,
+     *                  or NO_LINKED_ROOM_ID until setFinalRoomIds() is called.
      */
-    vs_graphs::core::semantic::Room *p_finalRoom{nullptr};
+    int finalRoom_id{NO_LINKED_ROOM_ID};
 
     /*!
-     * @brief           Room beyond the passage the camera saw through when
-     *                  this map was left, the second anchor candidate; nullptr
-     *                  when no passage was in view; borrowed. Never equal to
-     *                  p_finalRoom.
+     * @brief           Id of the room beyond the passage the camera saw
+     *                  through when this map was left, the second anchor
+     *                  candidate; NO_LINKED_ROOM_ID when no passage was in
+     *                  view. Never equal to finalRoom_id unless both are
+     *                  NO_LINKED_ROOM_ID.
      */
-    vs_graphs::core::semantic::Room *p_finalRoomBeyondPassage{nullptr};
+    int finalRoomBeyondPassage_id{NO_LINKED_ROOM_ID};
 
     /*!
      * @brief           Next map in the mission chain, or nullptr; borrowed from
-     *                  the atlas.
+     *                  the atlas. Written only by linkFollowingMap().
      */
     Map *p_followingMap{nullptr};
+
+    /*!
+     * @brief           Map this map continued from in the mission chain, or
+     *                  nullptr; borrowed from the atlas. Written only by
+     *                  linkFollowingMap(), as the p_followingMap of the
+     *                  earlier map is.
+     */
+    Map *p_previousMap{nullptr};
 
     /*!
      * @brief           Id of p_lowerIdKeyFrame saved by preSave(); NO_SAVED_ID

@@ -101,11 +101,11 @@ void reassociateMergedSemantics(
                          __func__);
         }
         if (p_map != p_currentMap_inout && p_followingMap == p_mergeMap_in &&
-            p_map->setFollowingMap(p_currentMap_inout) !=
+            p_map->linkFollowingMap(p_currentMap_inout) !=
                 map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setFollowingMap returned a failure status "
+                         "%s: linkFollowingMap returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }

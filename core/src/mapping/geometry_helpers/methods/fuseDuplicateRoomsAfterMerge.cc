@@ -823,8 +823,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 __func__,
                 mapId);
         }
-        if (p_map_inout->replaceLinkedRoom(p_importedRoom,
-                                           p_bestRetainedRoom) !=
+        int linkFusedRoomId{};
+        int linkKeptRoomId{};
+        if ((p_importedRoom->getId(linkFusedRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS) ||
+            (p_bestRetainedRoom->getId(linkKeptRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_map_inout->replaceLinkedRoom(linkFusedRoomId, linkKeptRoomId) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

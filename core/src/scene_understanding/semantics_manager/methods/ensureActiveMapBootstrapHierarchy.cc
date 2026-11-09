@@ -528,23 +528,27 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
         }
         /* Mission-chain trace: the room this map started with. Set once;
          * later bootstrap cycles must not overwrite it. */
-        semantic::Room *p_activeMapStartingRoom = nullptr;
-        if (p_activeMap->getStartingRoom(p_activeMapStartingRoom) !=
+        int activeMapStartingRoomId = map::Map::NO_LINKED_ROOM_ID;
+        if (p_activeMap->getStartingRoomId(activeMapStartingRoomId) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getStartingRoom returned a failure status "
+                         "%s: getStartingRoomId returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_activeMapStartingRoom == nullptr)
+        if (activeMapStartingRoomId == map::Map::NO_LINKED_ROOM_ID)
         {
-            if (p_activeMap->setStartingRoom(p_bootstrapRoom) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
+            int bootstrapStartingRoomId{};
+            if ((p_bootstrapRoom->getId(bootstrapStartingRoomId) !=
+                 semantic::RoomStatus::ROOM_STATUS_SUCCESS) ||
+                (p_activeMap->setStartingRoomId(bootstrapStartingRoomId) !=
+                 map::MapStatus::MAP_STATUS_SUCCESS))
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setStartingRoom returned a failure status "
-                             "although it cannot fail; continuing as before.",
+                             "%s: getId/setStartingRoomId returned a failure "
+                             "status although they cannot fail; continuing as "
+                             "before.",
                              __func__);
             }
         }

@@ -35,6 +35,7 @@
 
 #include "map_state/atlas/objects/AtlasCurrentMapStatusEnum.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/atlas/objects/RoomContextExportStruct.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
@@ -765,15 +766,31 @@ class Atlas
 
     /*!
      * @brief           Captures the room geometry of the current map before it
-     *                  is
-     *                         stranded by a restart.
+     *                  is stranded by a restart, and records its final room
+     *                  link.
      *
-     *                  Called internally from
+     *                  Runs on the tracking thread, which never waits for a
+     *                  graph lock: it try-locks the map's graph shared and,
+     *                  while the semantic cycle holds it, exports the context
+     *                  the last cycle cached (see refreshRoomContextCache())
+     *                  instead. Called internally from
      *                  \ref createNewMapWhileAtlasLocked, clearMap() and
      *                  clearAtlas() so that room identity survives map
      *                  transitions.
      */
     [[nodiscard]] AtlasStatus exportRoomContextFromCurrentMap();
+
+    /*!
+     * @brief           Caches the room context of the current map as plain
+     *                  data, for exportRoomContextFromCurrentMap() to use while
+     *                  a cycle holds the graph lock. The semantics manager
+     *                  calls it at the end of every cycle, still holding the
+     *                  graph locks. Takes the graph lock shared (re-entrant),
+     *                  then roomContextMutex.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus refreshRoomContextCache();
 
     /*!
      * @brief           Copies room history without exposing references beyond
@@ -1127,8 +1144,17 @@ class Atlas
         roomContextHistory;
 
     /*!
-     * @brief           Protects roomContextHistory against concurrent access
-     *                  from tracking and the semantic worker thread.
+     * @brief           Room context of the current map as of the end of the
+     *                  last semantic cycle; plain data. Guarded by
+     *                  roomContextMutex, which is a leaf lock.
+     */
+    RoomContextExport cachedRoomContext;
+
+    /*!
+     * @brief           Protects roomContextHistory and cachedRoomContext
+     *                  against concurrent access from tracking and the semantic
+     *                  worker thread. A leaf lock: nothing else is taken while
+     *                  it is held.
      */
     mutable std::mutex roomContextMutex;
 

@@ -24,16 +24,14 @@
  */
 
 /*!
- * @file            setFollowingMap.cc
+ * @file            getStartingRoomId.cc
  *
- * @brief           Implements Map::setFollowingMap(), declared in
+ * @brief           Implements Map::getStartingRoomId(), declared in
  * map/objects/MapClass.h.
  */
 
 #include "map_state/map/objects/MapClass.h"
 
-#include <algorithm>
-#include <iterator>
 #include <mutex>
 
 namespace vs_graphs
@@ -43,11 +41,10 @@ namespace core
 namespace map
 {
 
-MapStatus Map::setFollowingMap(Map *p_map_in)
+MapStatus Map::getStartingRoomId(int &roomId_out)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    p_followingMap = p_map_in;
-
+    roomId_out = startingRoom_id;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

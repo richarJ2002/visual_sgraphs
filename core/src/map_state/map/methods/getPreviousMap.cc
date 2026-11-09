@@ -24,17 +24,14 @@
  */
 
 /*!
- * @file            getFinalRoom.cc
+ * @file            getPreviousMap.cc
  *
- * @brief           Implements Map::getFinalRoom(), declared in
+ * @brief           Implements Map::getPreviousMap(), declared in
  * map/objects/MapClass.h.
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
 
-#include <algorithm>
-#include <iterator>
 #include <mutex>
 
 namespace vs_graphs
@@ -44,10 +41,10 @@ namespace core
 namespace map
 {
 
-MapStatus Map::getFinalRoom(semantic::Room *&p_finalRoom_out)
+MapStatus Map::getPreviousMap(Map *&p_previousMap_out)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    p_finalRoom_out = p_finalRoom;
+    p_previousMap_out = p_previousMap;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

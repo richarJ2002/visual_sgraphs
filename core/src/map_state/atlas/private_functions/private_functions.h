@@ -14,6 +14,7 @@
 #define VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 
 #include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/RoomContextExportStruct.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include <atomic>
 #include <utility>
@@ -56,6 +57,33 @@ namespace core
  */
 void captureRoomContext(semantic::Room                *p_room_in,
                         semantic::RoomContextSnapshot &snapshot_out);
+
+/*!
+ * @brief           Copies the room geometry of a map into plain data and finds
+ *                  the anchor rooms at departure: the room with id
+ *                  \p departureRoomId_in and, when a passage of it was in view
+ *                  from the newest key frame, the room beyond that passage.
+ *                  The caller holds a lock on the map's graph (shared or
+ *                  exclusive) while this runs; the result holds no pointer
+ *                  into the graph.
+ *
+ * @param[in]       semanticsManager_in
+ *                  Manager that serves the map's graph.
+ *
+ * @param[in]       map_in
+ *                  Map to read.
+ *
+ * @param[in]       departureRoomId_in
+ *                  Id of the room the robot is in, or negative for none.
+ *
+ * @param[out]      roomContext_out
+ *                  The context; isCaptured is true on return. Without any
+ *                  live room its roomSnapshots stay empty.
+ */
+void captureMapRoomContext(const SemanticsManager   &semanticsManager_in,
+                           map::Map                 &map_in,
+                           int                       departureRoomId_in,
+                           atlas::RoomContextExport &roomContext_out);
 
 /*!
  * @brief           Tells whether a key frame's camera sees the whole opening

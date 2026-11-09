@@ -16,26 +16,26 @@ namespace core
 namespace map
 {
 
-MapStatus Map::replaceLinkedRoom(semantic::Room *p_fusedRoom_in,
-                                 semantic::Room *p_keptRoom_in)
+MapStatus Map::replaceLinkedRoom(int fusedRoomId_in, int keptRoomId_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    if (p_startingRoom == p_fusedRoom_in)
+    if (startingRoom_id == fusedRoomId_in)
     {
-        p_startingRoom = p_keptRoom_in;
+        startingRoom_id = keptRoomId_in;
     }
-    if (p_finalRoom == p_fusedRoom_in)
+    if (finalRoom_id == fusedRoomId_in)
     {
-        p_finalRoom = p_keptRoom_in;
+        finalRoom_id = keptRoomId_in;
     }
-    if (p_finalRoomBeyondPassage == p_fusedRoom_in)
+    if (finalRoomBeyondPassage_id == fusedRoomId_in)
     {
-        p_finalRoomBeyondPassage = p_keptRoom_in;
+        finalRoomBeyondPassage_id = keptRoomId_in;
     }
+
     /* Two candidates fused into one room leave a single candidate. */
-    if (p_finalRoomBeyondPassage == p_finalRoom)
+    if (finalRoomBeyondPassage_id == finalRoom_id)
     {
-        p_finalRoomBeyondPassage = nullptr;
+        finalRoomBeyondPassage_id = NO_LINKED_ROOM_ID;
     }
     return MapStatus::MAP_STATUS_SUCCESS;
 }

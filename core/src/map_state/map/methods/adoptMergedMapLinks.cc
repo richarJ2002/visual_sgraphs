@@ -8,6 +8,7 @@
 #include "map_state/map/objects/MapClass.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -23,31 +24,45 @@ MapStatus Map::adoptMergedMapLinks(Map *p_absorbedMap_in)
         return MapStatus::MAP_STATUS_SUCCESS;
     }
 
-    semantic::Room *p_absorbedStartingRoom = nullptr;
-    semantic::Room *p_absorbedFinalRoom    = nullptr;
-    semantic::Room *p_absorbedBeyondRoom   = nullptr;
-    Map            *p_absorbedFollowingMap = nullptr;
+    int  absorbedStartingRoomId = NO_LINKED_ROOM_ID;
+    int  absorbedFinalRoomId    = NO_LINKED_ROOM_ID;
+    int  absorbedBeyondRoomId   = NO_LINKED_ROOM_ID;
+    Map *p_absorbedFollowingMap = nullptr;
     {
         std::unique_lock<std::mutex> lock(p_absorbedMap_in->mapMutex);
-        p_absorbedStartingRoom = p_absorbedMap_in->p_startingRoom;
-        p_absorbedFinalRoom    = p_absorbedMap_in->p_finalRoom;
-        p_absorbedBeyondRoom   = p_absorbedMap_in->p_finalRoomBeyondPassage;
+        absorbedStartingRoomId = p_absorbedMap_in->startingRoom_id;
+        absorbedFinalRoomId    = p_absorbedMap_in->finalRoom_id;
+        absorbedBeyondRoomId   = p_absorbedMap_in->finalRoomBeyondPassage_id;
         p_absorbedFollowingMap = p_absorbedMap_in->p_followingMap;
     }
 
     /* The merged map starts where the earlier map started and ends where the
      * later map ended, with the later map's anchor candidates. Maps that are
      * not neighbours in the chain keep this map's links. */
-    std::unique_lock<std::mutex> lock(mapMutex);
-    if (p_absorbedFollowingMap == this)
+    bool isFollowingAbsorbedMap = false;
     {
-        p_startingRoom = p_absorbedStartingRoom;
+        std::unique_lock<std::mutex> lock(mapMutex);
+        if (p_absorbedFollowingMap == this)
+        {
+            startingRoom_id = absorbedStartingRoomId;
+        }
+        else if (p_followingMap == p_absorbedMap_in)
+        {
+            finalRoom_id              = absorbedFinalRoomId;
+            finalRoomBeyondPassage_id = absorbedBeyondRoomId;
+            isFollowingAbsorbedMap    = true;
+        }
     }
-    else if (p_followingMap == p_absorbedMap_in)
+
+    /* The map after the absorbed one now follows this map, in both
+     * directions. */
+    if (isFollowingAbsorbedMap && linkFollowingMap(p_absorbedFollowingMap) !=
+                                      MapStatus::MAP_STATUS_SUCCESS)
     {
-        p_finalRoom              = p_absorbedFinalRoom;
-        p_finalRoomBeyondPassage = p_absorbedBeyondRoom;
-        p_followingMap           = p_absorbedFollowingMap;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: linkFollowingMap returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return MapStatus::MAP_STATUS_SUCCESS;
 }

@@ -24,17 +24,14 @@
  */
 
 /*!
- * @file            setFinalRoom.cc
+ * @file            linkFollowingMap.cc
  *
- * @brief           Implements Map::setFinalRoom(), declared in
+ * @brief           Implements Map::linkFollowingMap(), declared in
  * map/objects/MapClass.h.
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
 
-#include <algorithm>
-#include <iterator>
 #include <mutex>
 
 namespace vs_graphs
@@ -44,14 +41,18 @@ namespace core
 namespace map
 {
 
-MapStatus Map::setFinalRoom(semantic::Room *p_room_in,
-                            semantic::Room *p_roomBeyondPassage_in)
+MapStatus Map::linkFollowingMap(Map *p_followingMap_in)
 {
-    std::unique_lock<std::mutex> lock(mapMutex);
-    p_finalRoom = p_room_in;
-    p_finalRoomBeyondPassage =
-        p_roomBeyondPassage_in == p_room_in ? nullptr : p_roomBeyondPassage_in;
-
+    /* Each map is written under its own lock, never both at once. */
+    {
+        std::unique_lock<std::mutex> lock(mapMutex);
+        p_followingMap = p_followingMap_in;
+    }
+    if (p_followingMap_in != nullptr && p_followingMap_in != this)
+    {
+        std::unique_lock<std::mutex> followingLock(p_followingMap_in->mapMutex);
+        p_followingMap_in->p_previousMap = this;
+    }
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

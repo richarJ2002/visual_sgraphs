@@ -155,17 +155,39 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     /* The anchor candidates are the map chain link: the earlier map's final
      * room (and the room beyond the passage in view at departure) with the
      * later map's starting room. */
-    std::vector<Room *> survivingLinkedRooms{};
-    std::vector<Room *> absorbedLinkedRooms{};
-    if (p_survivingMap_in->getLinkedRooms(p_absorbedMap_in,
-                                          survivingLinkedRooms,
-                                          absorbedLinkedRooms) !=
+    std::vector<int> survivingLinkedRoomIds{};
+    std::vector<int> absorbedLinkedRoomIds{};
+    if (p_survivingMap_in->getLinkedRoomIds(p_absorbedMap_in,
+                                            survivingLinkedRoomIds,
+                                            absorbedLinkedRoomIds) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getLinkedRooms returned a failure status although "
+                     "%s: getLinkedRoomIds returned a failure status although "
                      "it cannot fail; continuing as before.",
                      __func__);
+    }
+
+    /* Each id is resolved in its own map's graph; an id whose room was
+     * deleted or merged away drops out, and the gate then defers for a missing
+     * anchor if none is left. */
+    std::vector<Room *> survivingLinkedRooms{};
+    std::vector<Room *> absorbedLinkedRooms{};
+    if ((p_semanticsManager->getMapRoomsByIds(survivingMapId,
+                                              survivingLinkedRoomIds,
+                                              survivingLinkedRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapRoomsByIds(absorbedMapId,
+                                              absorbedLinkedRoomIds,
+                                              absorbedLinkedRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: the semantics manager has no scene graph for map "
+                     "%lu or %lu; continuing without the linked rooms.",
+                     __func__,
+                     survivingMapId,
+                     absorbedMapId);
     }
     std::vector<std::pair<Room *, Room *>> anchorCandidates{};
     for (Room *p_survivingLinkedRoom : survivingLinkedRooms)

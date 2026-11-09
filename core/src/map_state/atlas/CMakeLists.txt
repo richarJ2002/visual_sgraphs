@@ -46,6 +46,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/observeRoomIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/refreshRoomContextCache.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeBadMaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reserveFloorIdentity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reservePassageIdentity.cc
@@ -63,6 +64,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/unregisterSceneGraphs.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/advanceIdentityAllocator.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/captureMapRoomContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/captureRoomContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findRoomBeyondPassageInView.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageOpeningInView.cc

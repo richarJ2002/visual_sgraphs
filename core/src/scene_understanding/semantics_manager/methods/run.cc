@@ -1419,6 +1419,19 @@ void SemanticsManager::run(void)
                          __func__);
         }
 
+        /* Tracking never waits for the graph lock, so when it loses the map
+         * while a cycle runs it exports the room context cached here, as plain
+         * data, at the end of the last cycle. */
+        if (p_atlas->refreshRoomContextCache() !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: refreshRoomContextCache returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
         /* Unlock before any evaluation/serialization/caching/logging work --
          * the monitor must never hold the semantic-update lock while doing
          * read-only diagnostic work. */

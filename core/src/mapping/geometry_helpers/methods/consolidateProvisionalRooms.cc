@@ -468,8 +468,19 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         }
 
         /* Repoint the map's room chain before the candidate is retired. */
-        if (p_currentMap->replaceLinkedRoom(p_candidateRoom,
-                                            p_selectedRoom_inout) !=
+        int linkFusedRoomId{};
+        int linkKeptRoomId{};
+        if ((p_candidateRoom->getId(linkFusedRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS) ||
+            (p_selectedRoom_inout->getId(linkKeptRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->replaceLinkedRoom(linkFusedRoomId, linkKeptRoomId) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

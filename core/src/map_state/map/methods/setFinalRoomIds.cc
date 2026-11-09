@@ -24,17 +24,14 @@
  */
 
 /*!
- * @file            setStartingRoom.cc
+ * @file            setFinalRoomIds.cc
  *
- * @brief           Implements Map::setStartingRoom(), declared in
+ * @brief           Implements Map::setFinalRoomIds(), declared in
  * map/objects/MapClass.h.
  */
 
 #include "map_state/map/objects/MapClass.h"
-#include "scene_understanding/scene_graph/room/Room.h"
 
-#include <algorithm>
-#include <iterator>
 #include <mutex>
 
 namespace vs_graphs
@@ -44,11 +41,13 @@ namespace core
 namespace map
 {
 
-MapStatus Map::setStartingRoom(semantic::Room *p_room_in)
+MapStatus Map::setFinalRoomIds(int finalRoomId_in, int roomBeyondPassageId_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    p_startingRoom = p_room_in;
-
+    finalRoom_id              = finalRoomId_in;
+    finalRoomBeyondPassage_id = roomBeyondPassageId_in == finalRoomId_in
+                                    ? NO_LINKED_ROOM_ID
+                                    : roomBeyondPassageId_in;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

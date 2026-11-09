@@ -2366,6 +2366,32 @@ class SemanticsManager
         std::vector<semantic::Passage *> &passages_out) const;
 
     /*!
+     * @brief           Looks up rooms of a map by id, in the order of the ids;
+     *                  an id that no longer names a live room (deleted or
+     *                  merged away) is skipped, so the caller must handle a
+     *                  shorter result. Takes the graph lock shared once for
+     *                  the whole list.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       roomIds_in
+     *                  Ids of the rooms.
+     *
+     * @param[out]      rooms_out
+     *                  The rooms that resolved; borrowed, valid only while the
+     *                  caller holds a lock on the map's graph.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     *                  has no scene graph for the id.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getMapRoomsByIds(unsigned long                  mapId_in,
+                         const std::vector<int>        &roomIds_in,
+                         std::vector<semantic::Room *> &rooms_out) const;
+
+    /*!
      * @brief           Looks up a room of the active map by id, as
      *                  getMapRoomById().
      *

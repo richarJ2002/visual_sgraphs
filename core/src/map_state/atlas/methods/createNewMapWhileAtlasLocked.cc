@@ -161,11 +161,11 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
     if (p_previousMap != nullptr)
     {
         /* Link the new active map to the previous map to create a link */
-        if (p_previousMap->setFollowingMap(p_activeMap) !=
+        if (p_previousMap->linkFollowingMap(p_activeMap) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setFollowingMap returned a failure status "
+                         "%s: linkFollowingMap returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }

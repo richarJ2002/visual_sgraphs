@@ -31,23 +31,13 @@
  */
 
 #include "../private_functions/private_functions.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "map_state/keyframe/keyframe.h"
+#include "map_state/atlas/objects/RoomContextExportStruct.h"
+#include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/floor/Floor.h"
-#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/passage/Passage.h"
-#include "scene_understanding/scene_graph/passage/objects/KnownSideProvenanceStatusEnum.h"
-#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
+#include <iostream>
 #include <rclcpp/logging.hpp>
-#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -68,94 +58,17 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
     if (!p_exportMap)
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
-    unsigned long mapIdValue{};
-    if (p_exportMap->getId(mapIdValue) != map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long mapId{};
+    if (p_exportMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    /* Export BOTH confirmed detected rooms AND candidate/marker-based rooms.
-     * Candidate rooms (prospective/provisional) may not have full wall loops
-     * yet but still carry spatial identity needed for cross-restart matching.
-     */
-    std::vector<semantic::Room *> rooms{};
-    /* The rooms below are read, and the final-room link set, under the shared
-     * graph lock of the map: the cycle cannot edit or free them meanwhile.
-     * This runs on the tracking thread when a map is lost, so it waits for at
-     * most the cycle that is running. */
-    GraphLockScope                graphLockScope{};
-    if ((p_semanticsManager->lockGraphs({mapIdValue},
-                                        GraphLockMode::GRAPH_LOCK_MODE_SHARED,
-                                        graphLockScope) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
-    {
-        RCLCPP_ERROR(
-            rclcpp::get_logger("vs_graphs"),
-            "%s: lockGraphs/getMapDetectedRoomsInIdOrder found no scene graph "
-            "for the map; continuing without its detected rooms.",
-            __func__);
-    }
-    std::vector<semantic::Room *> candidateRooms{};
-    if (p_semanticsManager->getMapCandidateRoomsInIdOrder(mapIdValue,
-                                                          candidateRooms) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapCandidateRoomsInIdOrder found no scene graph "
-                     "for the map; continuing without its candidate rooms.",
-                     __func__);
-    }
-    rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
 
-    if (rooms.empty())
-        return AtlasStatus::ATLAS_STATUS_SUCCESS;
-
-    std::vector<semantic::RoomContextSnapshot> snapshots;
-    snapshots.reserve(rooms.size());
-
-    for (semantic::Room *p_room : rooms)
-    {
-        bool roomIsBad{};
-        if (!(!p_room) && p_room->isBad(roomIsBad) !=
-                              semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (!p_room || roomIsBad)
-            continue;
-
-        semantic::RoomContextSnapshot snap;
-        captureRoomContext(p_room, snap);
-        bool roomHasPreviouslyVisited{};
-        if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: hasPreviouslyVisited returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        snap.wasPreviouslyVisited = roomHasPreviouslyVisited;
-
-        snapshots.push_back(snap);
-    }
-
-    const std::size_t exportedRoomCount = snapshots.size();
-    {
-        std::lock_guard<std::mutex> contextLock(roomContextMutex);
-        roomContextHistory[mapId] = std::move(snapshots);
-    }
-
-    /* Record the departure room for mission-chain tracing: the room the UAV
-     * was following when this map was stranded. */
+    /* The room the UAV was following when this map was stranded, for the
+     * mission-chain trace. */
     int departureRoomId{};
     if (getCurrentSemanticRoomIdentity(departureRoomId) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -165,131 +78,75 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    if (departureRoomId >= 0)
-    {
-        /* The pose at departure is the last key frame's: the tracker's own
-         * frame is not handed to the atlas, and the lost frame has no pose. */
-        std::vector<keyframe::KeyFrame *> mapKeyFrames{};
-        if (p_exportMap->getAllKeyFrames(mapKeyFrames) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllKeyFrames returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        keyframe::KeyFrame *p_lastKeyFrame = nullptr;
-        for (keyframe::KeyFrame *p_keyFrame : mapKeyFrames)
-        {
-            bool keyFrameIsBad = true;
-            if (p_keyFrame != nullptr &&
-                p_keyFrame->isBad(keyFrameIsBad) !=
-                    keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (!keyFrameIsBad && (p_lastKeyFrame == nullptr ||
-                                   p_keyFrame->id > p_lastKeyFrame->id))
-            {
-                p_lastKeyFrame = p_keyFrame;
-            }
-        }
-        Eigen::Vector3d upDirection_world{};
-        bool            isUpFromImuGravity{};
-        if (p_exportMap->getUpDirection(upDirection_world,
-                                        isUpFromImuGravity) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getUpDirection returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        types::SystemParams *p_params = nullptr;
-        if (types::SystemParams::getParams(p_params) !=
-            types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getParams returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
 
-        for (semantic::Room *p_room : rooms)
+    /* This runs on the tracking thread when a map is lost, which never waits
+     * for a graph lock. While the semantic cycle holds the graph, the context
+     * the last cycle cached is exported instead of a fresh one. */
+    RoomContextExport            roomContext{};
+    GraphLockScope               graphLockScope{};
+    const SemanticsManagerStatus lockStatus = p_semanticsManager->lockGraphs(
+        {mapId},
+        GraphLockMode::GRAPH_LOCK_MODE_TRY_SHARED,
+        graphLockScope);
+    if (lockStatus == SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        captureMapRoomContext(*p_semanticsManager,
+                              *p_exportMap,
+                              departureRoomId,
+                              roomContext);
+    }
+    else if (lockStatus ==
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_BUSY)
+    {
+        std::lock_guard<std::mutex> contextLock(roomContextMutex);
+        if (cachedRoomContext.isCaptured && cachedRoomContext.mapId == mapId)
         {
-            bool roomIsBad2{};
-            if ((p_room != nullptr) &&
-                p_room->isBad(roomIsBad2) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int roomId4{};
-            if ((p_room != nullptr && !roomIsBad2) &&
-                p_room->getId(roomId4) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_room != nullptr && !roomIsBad2 && roomId4 == departureRoomId)
-            {
-                /* A passage whose whole opening was in view may have let
-                 * the camera see the room beyond; that room becomes the
-                 * second anchor candidate. */
-                semantic::Passage *p_passageInView = nullptr;
-                semantic::Room    *p_roomBeyondPassage =
-                    findRoomBeyondPassageInView(
-                        rooms,
-                        p_room,
-                        p_lastKeyFrame,
-                        upDirection_world,
-                        p_params->pointcloud.distanceThresh,
-                        p_passageInView);
-                int passageInViewId = -1;
-                int roomBeyondId    = -1;
-                if ((p_passageInView != nullptr &&
-                     p_passageInView->getId(passageInViewId) !=
-                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS) ||
-                    (p_roomBeyondPassage != nullptr &&
-                     p_roomBeyondPassage->getId(roomBeyondId) !=
-                         semantic::RoomStatus::ROOM_STATUS_SUCCESS))
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status "
-                                 "although it cannot fail; continuing as "
-                                 "before.",
-                                 __func__);
-                }
-                RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
-                            "[Atlas] Departure anchor: final_room=%d "
-                            "key_frame=%ld passage_in_view=%d "
-                            "room_beyond_passage=%d",
-                            departureRoomId,
-                            p_lastKeyFrame != nullptr
-                                ? static_cast<long>(p_lastKeyFrame->id)
-                                : -1L,
-                            passageInViewId,
-                            roomBeyondId);
-                if (p_exportMap->setFinalRoom(p_room, p_roomBeyondPassage) !=
-                    map::MapStatus::MAP_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setFinalRoom returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                break;
-            }
+            roomContext = cachedRoomContext;
+        }
+        RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                    "[Atlas] The semantic cycle holds the graph of map %lu; "
+                    "exporting the room context cached at its last cycle "
+                    "(%zu rooms).",
+                    mapId,
+                    roomContext.roomSnapshots.size());
+    }
+    else
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: lockGraphs found no scene graph for map %lu; "
+                     "continuing without its rooms.",
+                     __func__,
+                     mapId);
+    }
+    if (roomContext.roomSnapshots.empty())
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
+
+    const std::size_t exportedRoomCount = roomContext.roomSnapshots.size();
+    {
+        std::lock_guard<std::mutex> contextLock(roomContextMutex);
+        roomContextHistory[mapId] = std::move(roomContext.roomSnapshots);
+    }
+
+    /* The anchor rooms are recorded as ids; whoever needs the rooms resolves
+     * them through the map's graph, which can fail. */
+    if (roomContext.finalRoomId != map::Map::NO_LINKED_ROOM_ID)
+    {
+        RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
+                    "[Atlas] Departure anchor: final_room=%d "
+                    "key_frame=%ld passage_in_view=%d "
+                    "room_beyond_passage=%d",
+                    roomContext.finalRoomId,
+                    roomContext.lastKeyFrameId,
+                    roomContext.passageInViewId,
+                    roomContext.roomBeyondPassageId);
+        if (p_exportMap->setFinalRoomIds(roomContext.finalRoomId,
+                                         roomContext.roomBeyondPassageId) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFinalRoomIds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

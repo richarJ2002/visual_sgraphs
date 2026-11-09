@@ -671,8 +671,19 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 __func__,
                 currentMapId);
         }
-        if (p_currentMap->replaceLinkedRoom(p_duplicateRoom,
-                                            p_retainedRoom_inout) !=
+        int linkFusedRoomId{};
+        int linkKeptRoomId{};
+        if ((p_duplicateRoom->getId(linkFusedRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS) ||
+            (p_retainedRoom_inout->getId(linkKeptRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->replaceLinkedRoom(linkFusedRoomId, linkKeptRoomId) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
