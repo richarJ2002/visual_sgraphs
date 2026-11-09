@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            GraphLockScopeStruct.h
  *
  * @brief           Declares GraphLockScope, the RAII holder of per-map scene

@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            private_functions.h
  *
  * @brief           Declares the helpers of the SemanticsManager graph locking

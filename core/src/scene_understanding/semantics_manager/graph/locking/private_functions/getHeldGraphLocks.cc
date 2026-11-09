@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            getHeldGraphLocks.cc
  *
  * @brief           Implements getHeldGraphLocks(), declared in

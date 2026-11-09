@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            copySceneGraphs.cc
  *
  * @brief           Implements SemanticsManager::copySceneGraphs(), declared in

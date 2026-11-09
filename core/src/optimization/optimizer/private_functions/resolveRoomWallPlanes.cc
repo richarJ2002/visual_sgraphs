@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            resolveRoomWallPlanes.cc
  *
  * @brief           Implements resolveRoomWallPlanes(), declared in

@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            acquireGraphLocks.cc
  *
  * @brief           Implements acquireGraphLocks(), declared in

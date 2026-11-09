@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            indexPlanesById.cc
  *
  * @brief           Implements indexPlanesById(), declared in

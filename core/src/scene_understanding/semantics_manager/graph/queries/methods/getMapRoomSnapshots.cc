@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            getMapRoomSnapshots.cc
  *
  * @brief           Implements SemanticsManager::getMapRoomSnapshots(), declared

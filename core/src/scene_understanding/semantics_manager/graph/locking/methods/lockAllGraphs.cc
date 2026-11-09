@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            lockAllGraphs.cc
  *
  * @brief           Implements SemanticsManager::lockAllGraphs(), declared in

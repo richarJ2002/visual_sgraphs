@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            setRoomCentroid.cc
  *
  * @brief           Implements SemanticsManager::setRoomCentroid(), declared in

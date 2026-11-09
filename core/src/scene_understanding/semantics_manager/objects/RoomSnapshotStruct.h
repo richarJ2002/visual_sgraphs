@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            RoomSnapshotStruct.h
  *
  * @brief           Declares RoomSnapshot, the plain-data copy of a room that

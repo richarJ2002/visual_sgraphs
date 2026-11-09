@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            lockGraphs.cc
  *
  * @brief           Implements SemanticsManager::lockGraphs(), declared in

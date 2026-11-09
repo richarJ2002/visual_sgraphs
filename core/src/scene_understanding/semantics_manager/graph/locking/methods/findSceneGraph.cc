@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            findSceneGraph.cc
  *
  * @brief           Implements SemanticsManager::findSceneGraph(), declared in

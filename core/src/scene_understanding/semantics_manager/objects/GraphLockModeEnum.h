@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            GraphLockModeEnum.h
  *
  * @brief           Declares GraphLockMode, how a scene graph mutex is taken.

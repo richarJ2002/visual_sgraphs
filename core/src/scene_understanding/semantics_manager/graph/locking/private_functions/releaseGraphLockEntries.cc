@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            releaseGraphLockEntries.cc
  *
  * @brief           Implements releaseGraphLockEntries(), declared in
