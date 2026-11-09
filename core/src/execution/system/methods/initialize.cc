@@ -76,8 +76,6 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                                 const SensorType              sensor_in,
                                 const Verbose::VerbosityLevel verboseLevel_in)
 {
-    sensor = sensor_in;
-
     /* Output welcome message */
     std::cout << std::endl
               << "------------------------------------------------------"
@@ -95,6 +93,9 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
               << "------------------------------------------------------"
               << std::endl
               << std::endl;
+
+    /* Store sensor type in private member of object */
+    sensor = sensor_in;
 
     /* Output msg of what sensor is being used */
     std::cout << "[System] Input sensor is set to: ";
