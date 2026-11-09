@@ -36,6 +36,7 @@
 #include "map_state/map/map.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "../private_functions/private_functions.h"
 
@@ -167,10 +168,11 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     initializeInertialMap(p_tracker, p_currentMap);
 
     /* Load KFs and MPs from merge map */
-    MergeMapContents mergeMapContents;
+    MergeMapContents           mergeMapContents;
+    AbsorbedSceneGraphContents absorbedContents{};
     /* Both graphs are edited in place until the merge is committed: exclusive
      * locks, taken inside the block below after the map update mutexes. */
-    GraphLockScope   mergeGraphScope{};
+    GraphLockScope             mergeGraphScope{};
     {
         /*!
          * Acquire both map-update mutexes without imposing an unsafe order.
@@ -185,19 +187,26 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                         GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
                         mergeGraphScope);
 
-        collectMergeMapContents(p_atlas, p_mergeMap, mergeMapContents);
+        collectMergeMapContents(p_mergeMap, mergeMapContents);
         transferKeyFramesAndMapPoints(p_currentMap,
                                       p_mergeMap,
                                       mergeMapContents.keyFrames,
                                       mergeMapContents.mapPoints);
-        transferSemanticEntities(p_atlas,
-                                 p_currentMap,
-                                 p_mergeMap,
-                                 mergeMapContents,
-                                 true);
+        transferPlanes(p_currentMap, p_mergeMap, mergeMapContents.planes);
+        if (p_semanticsManager->transferSceneGraphContents(p_currentMap,
+                                                           p_mergeMap,
+                                                           true,
+                                                           absorbedContents) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: transferSceneGraphContents found no scene graph "
+                         "for a merged map; continuing as before.",
+                         __func__);
+        }
 
         /* Rebuild derived free-space topology in the corrected map frame. */
-        rebuildSemanticIndexes(p_atlas, p_currentMap);
+        clearDerivedSkeleton(p_currentMap);
 
         /* Save non corrected poses (already merged maps) */
         collectKeyFramePoses(p_currentMap, NonCorrectedSim3);
@@ -253,13 +262,21 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    reassociateMergedSemantics(p_atlas,
-                               p_currentMap,
-                               p_mergeMap,
-                               p_params,
-                               mergeMapContents,
-                               semanticMergeGate.p_survivingAnchorRoom,
-                               semanticMergeGate.p_absorbedAnchorRoom);
+    if (p_semanticsManager->reassociateMergedSceneGraph(
+            p_atlas,
+            p_currentMap,
+            p_mergeMap,
+            p_params,
+            absorbedContents,
+            semanticMergeGate.p_survivingAnchorRoom,
+            semanticMergeGate.p_absorbedAnchorRoom) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reassociateMergedSceneGraph found no scene graph "
+                     "for a merged map; continuing as before.",
+                     __func__);
+    }
 
     /*!
      * Inertial welding changes the same derived-map coordinate contract as a

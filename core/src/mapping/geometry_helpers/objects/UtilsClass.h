@@ -468,35 +468,6 @@ class Utils
     [[nodiscard]] static UtilsStatus reAssociateRooms(atlas::Atlas *p_atlas_in);
 
     /*!
-     * @brief           Fuses each duplicate room that a map merge brought in
-     *                  into the room it duplicates. The pairs come from the
-     *                  geometric room pairing (walls coplanar, same facing and
-     *                  overlapping; the anchor rooms by the map link); this
-     *                  function pairs nothing itself. The imported room's walls
-     *                  and passages move to the retained room, a wall behind a
-     *                  passable passage stays with the far-side room, passage
-     *                  and floor references are re-pointed, and the imported
-     *                  room is retired. A pair whose rooms lie on opposite
-     *                  sides of a passable passage opening is left alone.
-     *
-     * @param[in,out]   p_atlas_inout
-     *                  Atlas whose semantics manager lists the map's passages,
-     *                  rooms and floors and erases the retired rooms.
-     *
-     * @param[in,out]   p_map_inout
-     *                  Surviving map whose room graph is reconciled.
-     *
-     * @param[in]       duplicateRoomPairs_in
-     *                  Pairs (imported room, retained room). Borrowed; both
-     *                  rooms belong to p_map_inout.
-     */
-    [[nodiscard]] static UtilsStatus fuseDuplicateRoomsAfterMerge(
-        atlas::Atlas *p_atlas_inout,
-        map::Map     *p_map_inout,
-        const std::vector<std::pair<semantic::Room *, semantic::Room *>>
-            &duplicateRoomPairs_in);
-
-    /*!
      * @brief           Fuses duplicate passage entities after optimization or
      *                  map merge and rewires all room/keyframe associations.
      *

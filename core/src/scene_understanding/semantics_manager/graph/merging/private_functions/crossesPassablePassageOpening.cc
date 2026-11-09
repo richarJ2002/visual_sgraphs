@@ -17,15 +17,15 @@
  */
 
 /*!
- * @file            passageOpening.cc
+ * @file            crossesPassablePassageOpening.cc
  *
  * @brief           Implements crossesPassablePassageOpening(), declared
- *                  in Utils/Utils/private_functions.h.
+ *                  in graph/merging/private_functions.h.
  */
 
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 
 #include <cmath>
 #include <rclcpp/logging.hpp>
@@ -34,12 +34,8 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace utils
-{
-namespace utils
-{
 
-UtilsStatus crossesPassablePassageOpening(
+SemanticsManagerStatus crossesPassablePassageOpening(
     const Eigen::Vector3d              &segmentStart_world_m_in,
     const Eigen::Vector3d              &segmentEnd_world_m_in,
     vs_graphs::core::semantic::Passage *p_passage_in,
@@ -63,7 +59,7 @@ UtilsStatus crossesPassablePassageOpening(
         !segmentEnd_world_m_in.allFinite())
     {
         crossesOpening_out = false;
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D passage_inGlobalEquation{};
@@ -81,7 +77,7 @@ UtilsStatus crossesPassablePassageOpening(
     if (!passageEquation_world.allFinite() || passageNormalNorm < 1e-8)
     {
         crossesOpening_out = false;
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     passageEquation_world /= passageNormalNorm;
@@ -97,7 +93,7 @@ UtilsStatus crossesPassablePassageOpening(
         std::abs(endSide_m) < minimumSideDistance_m_in)
     {
         crossesOpening_out = false;
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double interpolation = startSide_m / (startSide_m - endSide_m);
@@ -106,7 +102,7 @@ UtilsStatus crossesPassablePassageOpening(
         interpolation > 1.0)
     {
         crossesOpening_out = false;
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d planeIntersection_world_m =
@@ -125,7 +121,7 @@ UtilsStatus crossesPassablePassageOpening(
     if (!passageCentroid_world_m.allFinite())
     {
         crossesOpening_out = false;
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     Eigen::Vector3d apertureOffset_world_m =
@@ -163,10 +159,8 @@ UtilsStatus crossesPassablePassageOpening(
     crossesOpening_out =
         horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in &&
         verticalOffset_m <= 0.5 * passage_inHeight + openingMargin_m_in;
-    return UtilsStatus::UTILS_STATUS_SUCCESS;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} /* namespace utils */
-} /* namespace utils */
 } /* namespace core */
 } /* namespace vs_graphs */

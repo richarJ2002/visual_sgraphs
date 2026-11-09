@@ -48,21 +48,15 @@ namespace map_point
 class MapPoint;
 } /* namespace map_point */
 
-namespace semantic
-{
-class Floor;
-class Passage;
-class Room;
-} /* namespace semantic */
-
 namespace loop_closing
 {
 
 /*!
- * @brief           Copies of every object list of the map that a merge
- *                  absorbs. The objects are borrowed from that map; the lists
- *                  stay valid while the objects are moved into the surviving
- *                  map.
+ * @brief           Copies of the plane, keyframe and map point lists of
+ *                  the map that a merge absorbs (its scene graph is handled
+ *                  by the SemanticsManager). The objects are borrowed from
+ *                  that map; the lists stay valid while the objects are moved
+ *                  into the surviving map.
  */
 struct MergeMapContents
 {
@@ -80,26 +74,6 @@ struct MergeMapContents
      * @brief           Map points of the absorbed map.
      */
     std::vector<map_point::MapPoint *> mapPoints;
-
-    /*!
-     * @brief           Passages of the absorbed map.
-     */
-    std::vector<semantic::Passage *> passages;
-
-    /*!
-     * @brief           Detected rooms of the absorbed map.
-     */
-    std::vector<semantic::Room *> detectedRooms;
-
-    /*!
-     * @brief           Marker-based rooms of the absorbed map.
-     */
-    std::vector<semantic::Room *> markerBasedRooms;
-
-    /*!
-     * @brief           Floors of the absorbed map.
-     */
-    std::vector<semantic::Floor *> floors;
 };
 
 } /* namespace loop_closing */

@@ -19,9 +19,8 @@
 /*!
  * @file            fuseDuplicateRoomsAfterMerge.cc
  *
- * @brief           Implements
- *                  Utils::fuseDuplicateRoomsAfterMerge(), declared in
- *                  Utils/Utils/objects/Utils.h.
+ * @brief           Implements fuseDuplicateRoomsAfterMerge(), declared in
+ *                  graph/merging/private_functions.h.
  */
 
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
@@ -32,8 +31,6 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
@@ -41,6 +38,7 @@
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
@@ -52,14 +50,10 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace utils
-{
-namespace utils
-{
 
-UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
-    atlas::Atlas *p_atlas_inout,
-    map::Map     *p_map_inout,
+void fuseDuplicateRoomsAfterMerge(
+    SemanticsManager *p_semanticsManager_inout,
+    map::Map         *p_map_inout,
     const std::vector<std::pair<semantic::Room *, semantic::Room *>>
         &duplicateRoomPairs_in)
 {
@@ -72,16 +66,13 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     mapId{};
-    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        ((p_map_inout != nullptr) &&
-         (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)))
+    unsigned long mapId{};
+    if ((p_map_inout != nullptr) &&
+        (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
 
@@ -253,7 +244,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Passage *> mergePassages{};
-        if (p_semanticsManager->getMapPassagesInIdOrder(mapId, mergePassages) !=
+        if (p_semanticsManager_inout->getMapPassagesInIdOrder(mapId,
+                                                              mergePassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -280,7 +272,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                   mergeOpeningMargin_m,
                                                   mergeMinimumSideDistance_m,
                                                   crossesOpening) !=
-                    UtilsStatus::UTILS_STATUS_SUCCESS)
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     /*!
                      * crossesPassablePassageOpening cannot fail; continue as
@@ -327,7 +319,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
         std::vector<semantic::Room *> mapRooms{};
-        if (p_semanticsManager->getMapRoomsInIdOrder(mapId, mapRooms) !=
+        if (p_semanticsManager_inout->getMapRoomsInIdOrder(mapId, mapRooms) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -383,7 +375,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                   mergeOpeningMargin_m,
                                                   mergeMinimumSideDistance_m,
                                                   crossesOpening) !=
-                        UtilsStatus::UTILS_STATUS_SUCCESS)
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     /*!
                      * crossesPassablePassageOpening cannot fail; continue as
@@ -595,8 +588,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-        if (p_semanticsManager->getMapPassagesInIdOrder(mapId,
-                                                        mapAllPassages) !=
+        if (p_semanticsManager_inout->getMapPassagesInIdOrder(mapId,
+                                                              mapAllPassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -759,7 +752,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Floor *> mapAllFloors{};
-        if (p_semanticsManager->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
+        if (p_semanticsManager_inout->getMapFloorsInIdOrder(mapId,
+                                                            mapAllFloors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -788,7 +782,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        if (p_semanticsManager->eraseRoom(mapId, p_importedRoom) !=
+        if (p_semanticsManager_inout->eraseRoom(mapId, p_importedRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -813,7 +807,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_semanticsManager->markRoomBad(mapId, p_importedRoom) !=
+        if (p_semanticsManager_inout->markRoomBad(mapId, p_importedRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -868,11 +862,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             << (retainedCentroid_world_m - importedCentroid_world_m).norm()
             << " m)." << std::endl;
     }
-
-    return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} /* namespace utils */
-} /* namespace utils */
 } /* namespace core */
 } /* namespace vs_graphs */

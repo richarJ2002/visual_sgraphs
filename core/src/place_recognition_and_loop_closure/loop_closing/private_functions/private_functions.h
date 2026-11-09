@@ -65,36 +65,6 @@ inline constexpr int COUNT_TEMPORAL_KEY_FRAMES = 25;
 inline constexpr int MAXIMUM_EXPANSION_ITERATIONS = 5;
 
 /*!
- * @brief           Merges duplicate floor evidence and rooms.
- *
- * @param[in,out]   p_retainedFloor_inout
- *                  TODO
- *
- * @param[in]       p_duplicateFloor_in
- *                  TODO
- *
- * @return          TODO
- */
-[[nodiscard]] loop_closing::LoopClosingStatus
-    mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
-                               semantic::Floor *p_duplicateFloor_in);
-
-/*!
- * @brief           Collapses duplicate floors in the surviving map.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantics manager lists and erases the floors.
- *
- * @param[in,out]   p_survivingMap_inout
- *                  TODO
- *
- * @return          TODO
- */
-[[nodiscard]] loop_closing::LoopClosingStatus
-    collapseMergedFloors(atlas::Atlas *p_atlas_inout,
-                         map::Map     *p_survivingMap_inout);
-
-/*!
  * @brief           Resolves the surviving and the absorbed map of a merge
  *                  candidate and checks that the candidate is still valid: both
  *                  keyframes exist and are not bad, the maps differ, are not
@@ -532,12 +502,8 @@ void optimizeMergeWindow(
     const std::vector<keyframe::KeyFrame *>    &currentWindowKeyFrames_in);
 
 /*!
- * @brief           Copies every object list of the absorbed map: planes,
- *                  keyframes, map points, passages, detected rooms,
- *                  marker-based rooms and floors.
- *
- * @param[in]       p_atlas_in
- *                  Atlas whose semantics manager lists the semantic objects.
+ * @brief           Copies the plane, keyframe and map point lists of the
+ *                  absorbed map.
  *
  * @param[in]       p_mergeMap_in
  *                  Absorbed map.
@@ -546,7 +512,6 @@ void optimizeMergeWindow(
  *                  Receives the object lists.
  */
 void collectMergeMapContents(
-    atlas::Atlas                   *p_atlas_in,
     map::Map                       *p_mergeMap_in,
     loop_closing::MergeMapContents &mergeMapContents_out);
 
@@ -701,195 +666,14 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
                     const std::vector<geometric::Plane *> &planes_in);
 
 /*!
- * @brief           Moves the passages of the absorbed map into the surviving
- *                  map. A passage that lies on the same plane as a passage of
- *                  the surviving map, with its centre close in that plane, is
- *                  merged into that passage (ids are never compared), the rooms
- *                  are re-pointed to the kept passage and the duplicate is
- *                  marked bad.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantics manager moves the passages.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in,out]   p_mergeMap_inout
- *                  Absorbed map.
- *
- * @param[in]       passages_in
- *                  Passages of the absorbed map; null ones are skipped.
- *
- * @param[in]       detectedRooms_in
- *                  Detected rooms whose passage associations are re-pointed.
- *
- * @param[in]       markerBasedRooms_in
- *                  Marker-based rooms whose passage associations are re-
- *                  pointed.
- *
- * @param[in]       configuration_in
- *                  Coplanar angle and wall plane offset for the passage
- *                  pairing.
- */
-void transferPassages(atlas::Atlas *p_atlas_inout,
-                      map::Map     *p_currentMap_inout,
-                      map::Map     *p_mergeMap_inout,
-                      const std::vector<semantic::Passage *> &passages_in,
-                      const std::vector<semantic::Room *>    &detectedRooms_in,
-                      const std::vector<semantic::Room *>  &markerBasedRooms_in,
-                      const semantic::SemanticVerifyConfig &configuration_in);
-
-/*!
- * @brief           Moves the detected rooms and the marker-based rooms of the
- *                  absorbed map into the surviving map. The RGB-D merge moves
- *                  every marker-based room; the inertial merge skips bad ones,
- *                  which skipBadMarkerBasedRooms_in preserves.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantics manager moves the rooms.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in,out]   p_mergeMap_inout
- *                  Absorbed map.
- *
- * @param[in]       detectedRooms_in
- *                  Detected rooms of the absorbed map; null and bad rooms are
- *                  skipped.
- *
- * @param[in]       markerBasedRooms_in
- *                  Marker-based rooms of the absorbed map; null ones are
- *                  skipped.
- *
- * @param[in]       skipBadMarkerBasedRooms_in
- *                  True to skip marker-based rooms that are bad, false to move
- *                  them too.
- */
-void transferRooms(atlas::Atlas                        *p_atlas_inout,
-                   map::Map                            *p_currentMap_inout,
-                   map::Map                            *p_mergeMap_inout,
-                   const std::vector<semantic::Room *> &detectedRooms_in,
-                   const std::vector<semantic::Room *> &markerBasedRooms_in,
-                   bool skipBadMarkerBasedRooms_in);
-
-/*!
- * @brief           Moves the floors of the absorbed map into the surviving map.
- *                  A floor whose plane is coplanar with a floor of the
- *                  surviving map (ids are never compared) has its evidence and
- *                  rooms folded into that floor; afterwards duplicate floors of
- *                  the surviving map are collapsed.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantics manager moves the floors.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in,out]   p_mergeMap_inout
- *                  Absorbed map.
- *
- * @param[in]       floors_in
- *                  Floors of the absorbed map; null ones are skipped.
- *
- * @param[in]       configuration_in
- *                  Coplanar angle and floor height tolerance for the floor
- *                  pairing.
- */
-void transferFloors(atlas::Atlas                         *p_atlas_inout,
-                    map::Map                             *p_currentMap_inout,
-                    map::Map                             *p_mergeMap_inout,
-                    const std::vector<semantic::Floor *> &floors_in,
-                    const semantic::SemanticVerifyConfig &configuration_in);
-
-/*!
- * @brief           Moves every semantic object of the absorbed map into the
- *                  surviving map in a fixed order: planes, passages, rooms,
- *                  floors. The caller holds both map update mutexes.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantics manager moves the semantic objects.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in,out]   p_mergeMap_inout
- *                  Absorbed map.
- *
- * @param[in]       mergeMapContents_in
- *                  Object lists of the absorbed map.
- *
- * @param[in]       skipBadMarkerBasedRooms_in
- *                  Forwarded to transferRooms().
- */
-void transferSemanticEntities(
-    atlas::Atlas                         *p_atlas_inout,
-    map::Map                             *p_currentMap_inout,
-    map::Map                             *p_mergeMap_inout,
-    const loop_closing::MergeMapContents &mergeMapContents_in,
-    bool                                  skipBadMarkerBasedRooms_in);
-
-/*!
  * @brief           Clears the derived free-space skeleton of the surviving map,
  *                  which the external Voxblox node rebuilds in the corrected
- *                  frame, and re-indexes the walls of every valid room.
- *
- * @param[in]       p_atlas_in
- *                  Atlas whose semantics manager lists the rooms.
+ *                  frame.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
  */
-void rebuildSemanticIndexes(atlas::Atlas *p_atlas_in,
-                            map::Map     *p_currentMap_inout);
-
-/*!
- * @brief           Reconciles the semantic graph after a merge: re-associates
- *                  semantic planes, fuses the imported rooms that duplicate a
- *                  room the surviving map already had (paired by wall
- *                  geometry; only the anchor rooms the gate chose from the
- *                  map chain link),
- *                  then re-associates rooms and passages. Before fusing, the
- *                  surviving map takes over the absorbed map's chain links
- *                  and every map that was followed by the absorbed map is
- *                  followed by the surviving map. After fusion every kept
- *                  imported room and passage is re-keyed from the Atlas
- *                  identity counters. Room fusion and the re-key always run;
- *                  the re-associations run only when enabled in the system
- *                  parameters.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas whose semantic entities are re-associated.
- *
- * @param[in,out]   p_currentMap_inout
- *                  Surviving map.
- *
- * @param[in]       p_mergeMap_in
- *                  Absorbed map, still in the atlas; its chain links are
- *                  read.
- *
- * @param[in]       p_systemParams_in
- *                  System parameters holding the re-association switch.
- *
- * @param[in]       mergeMapContents_in
- *                  Object lists of the absorbed map; its rooms are the imported
- *                  rooms.
- *
- * @param[in]       p_retainedAnchorRoom_in
- *                  Surviving map's room of the anchor pair the merge gate
- *                  accepted (SemanticMergeGateResult); borrowed, may be null.
- *
- * @param[in]       p_importedAnchorRoom_in
- *                  Absorbed map's room of that pair; borrowed, may be null.
- */
-void reassociateMergedSemantics(
-    atlas::Atlas                         *p_atlas_inout,
-    map::Map                             *p_currentMap_inout,
-    map::Map                             *p_mergeMap_in,
-    const types::SystemParams            *p_systemParams_in,
-    const loop_closing::MergeMapContents &mergeMapContents_in,
-    semantic::Room                       *p_retainedAnchorRoom_in,
-    semantic::Room                       *p_importedAnchorRoom_in);
+void clearDerivedSkeleton(map::Map *p_currentMap_inout);
 
 /*!
  * @brief           Commits a finished merge: links the two keyframes with merge

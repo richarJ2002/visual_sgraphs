@@ -27,13 +27,11 @@
  * @file            transferRooms.cc
  *
  * @brief           Implements transferRooms(), declared in
- *                  LoopClosing/private_functions.h.
+ *                  graph/merging/private_functions.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
@@ -47,26 +45,23 @@ namespace vs_graphs
 namespace core
 {
 
-void transferRooms(atlas::Atlas                        *p_atlas_inout,
-                   map::Map                            *p_currentMap_inout,
-                   map::Map                            *p_mergeMap_inout,
+void transferRooms(SemanticsManager *p_semanticsManager_inout,
+                   map::Map         *p_currentMap_inout,
+                   map::Map         *p_mergeMap_inout,
                    const std::vector<semantic::Room *> &detectedRooms_in,
                    const std::vector<semantic::Room *> &markerBasedRooms_in,
                    bool skipBadMarkerBasedRooms_in)
 {
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     currentMapId{};
-    unsigned long     mergeMapId{};
-    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_currentMap_inout->getId(currentMapId) !=
+    unsigned long currentMapId{};
+    unsigned long mergeMapId{};
+    if ((p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_mergeMap_inout->getId(mergeMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
 
@@ -100,10 +95,10 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
         }
 
         /* Hand the room from the merged map to the current map */
-        if (p_semanticsManager->moveRoom(mergeMapId,
-                                         currentMapId,
-                                         p_currentDetectedRoom,
-                                         RoomList::ROOM_LIST_DETECTED) !=
+        if (p_semanticsManager_inout->moveRoom(mergeMapId,
+                                               currentMapId,
+                                               p_currentDetectedRoom,
+                                               RoomList::ROOM_LIST_DETECTED) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -144,10 +139,10 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_semanticsManager->moveRoom(mergeMapId,
-                                         currentMapId,
-                                         pRoom,
-                                         RoomList::ROOM_LIST_CANDIDATE) !=
+        if (p_semanticsManager_inout->moveRoom(mergeMapId,
+                                               currentMapId,
+                                               pRoom,
+                                               RoomList::ROOM_LIST_CANDIDATE) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -34,11 +34,14 @@
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
+#include "scene_understanding/semantics_manager/objects/AbsorbedSceneGraphContentsStruct.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
 #include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
+#include "scene_understanding/semantics_manager/objects/PoseCorrectionFieldStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomListEnum.h"
 #include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
+#include "scene_understanding/semantics_manager/objects/SceneGraphSnapshotStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
@@ -67,6 +70,11 @@
 namespace vs_graphs::core::atlas
 {
 class Atlas;
+}
+
+namespace vs_graphs::core::map
+{
+class Map;
 }
 
 namespace vs_graphs
@@ -2084,6 +2092,40 @@ class SemanticsManager
                             std::vector<RoomSnapshot> &roomSnapshots_out) const;
 
     /*!
+     * @brief           Copies the live storeys, rooms and passages of one map
+     *                  into plain data under the map's shared graph lock,
+     *                  which is taken and released inside the call. The
+     *                  snapshot holds no pointer into the graph, so the caller
+     *                  holds no node and no graph lock afterwards. Used by the
+     *                  ROS publisher, the archive and the health report.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[out]      snapshot_out
+     *                  The copy; empty on failure.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getSceneGraphSnapshot(unsigned long       mapId_in,
+                              SceneGraphSnapshot &snapshot_out) const;
+
+    /*!
+     * @brief           Copies the scene graph of the active map into plain
+     *                  data, like getSceneGraphSnapshot().
+     *
+     * @param[out]      snapshot_out
+     *                  The copy; empty when no map is active.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, also when no map is
+     *                  active, or SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getActiveSceneGraphSnapshot(SceneGraphSnapshot &snapshot_out) const;
+
+    /*!
      * @brief           Sets a room's centroid, under the map's exclusive graph
      *                  lock. A room that no longer exists changes nothing.
      *
@@ -2103,6 +2145,49 @@ class SemanticsManager
         setRoomCentroid(unsigned long          mapId_in,
                         int                    roomId_in,
                         const Eigen::Vector3d &centroid_world_m_in);
+
+    /*!
+     * @brief           Moves the passages, rooms and storeys of a map by the
+     *                  corrections of a pose optimisation: each by its door
+     *                  plane, nearest wall or nearest room, else by the
+     *                  nearest key frame anchor. Takes the map's graph lock
+     *                  exclusive (re-entrant when the caller holds it).
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       p_map_in
+     *                  The map; borrowed. Only rooms of this map anchor a
+     *                  storey.
+     *
+     * @param[in]       field_in
+     *                  Corrections of the map's key frames and planes.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        applyPoseCorrectionField(unsigned long              mapId_in,
+                                 const map::Map            *p_map_in,
+                                 const PoseCorrectionField &field_in);
+
+    /*!
+     * @brief           Moves every passage, room and storey of a map by one
+     *                  similarity. Takes the map's graph lock exclusive
+     *                  (re-entrant when the caller holds it).
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       transform_oldWorldToNewWorld_in
+     *                  Similarity taking the old world frame to the new one.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        transformSceneGraph(unsigned long    mapId_in,
+                            const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     /*!
      * @brief           Locks the graphs of the listed maps, in ascending
@@ -2157,6 +2242,93 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         lockAllGraphs(GraphLockMode mode_in, GraphLockScope &scope_out) const;
+
+    /*!
+     * @brief           First half of a map merge: moves the passages, rooms
+     *                  and storeys of the absorbed map's scene graph into the
+     *                  surviving map's. Passages and storeys that duplicate
+     *                  one the surviving map has (paired by geometry with the
+     *                  merge thresholds) are merged into it and the duplicate
+     *                  leaves the graph; the surviving map's storeys are then
+     *                  collapsed into one, and the walls of every valid room
+     *                  are re-indexed in the surviving map. Takes both graph
+     *                  locks exclusive in ascending map-id order (re-entrant
+     *                  when the caller already holds them). The caller holds
+     *                  both map update mutexes and the semantic update lock,
+     *                  and has moved the planes of the absorbed map already.
+     *
+     * @param[in,out]   p_survivingMap_inout
+     *                  Surviving map; borrowed, must not be null.
+     *
+     * @param[in,out]   p_absorbedMap_inout
+     *                  Absorbed map, still registered; borrowed, must not be
+     *                  null.
+     *
+     * @param[in]       skipBadCandidateRooms_in
+     *                  True to leave candidate rooms flagged bad behind.
+     *
+     * @param[out]      absorbedContents_out
+     *                  The nodes the absorbed graph held before the move;
+     *                  pass it to reassociateMergedSceneGraph().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when a map has
+     *                  no registered scene graph (nothing is moved).
+     */
+    [[nodiscard]] SemanticsManagerStatus transferSceneGraphContents(
+        map::Map                   *p_survivingMap_inout,
+        map::Map                   *p_absorbedMap_inout,
+        bool                        skipBadCandidateRooms_in,
+        AbsorbedSceneGraphContents &absorbedContents_out);
+
+    /*!
+     * @brief           Second half of a map merge: the surviving map takes
+     *                  over the absorbed map's chain links, semantic planes
+     *                  are re-associated, imported rooms that duplicate a room
+     *                  the surviving map had are fused into it (paired by wall
+     *                  geometry; only the anchor rooms by the map chain link),
+     *                  every kept imported room and passage is re-keyed from
+     *                  the atlas identity counters, and rooms and passages are
+     *                  re-associated when enabled in the system parameters.
+     *                  Takes both graph locks exclusive in ascending map-id
+     *                  order (re-entrant when the caller already holds them).
+     *
+     * @param[in,out]   p_atlas_inout
+     *                  Atlas that owns both maps and the identity counters.
+     *
+     * @param[in,out]   p_survivingMap_inout
+     *                  Surviving map; borrowed, must not be null.
+     *
+     * @param[in]       p_absorbedMap_in
+     *                  Absorbed map, still in the atlas; its chain links are
+     *                  read. Borrowed, must not be null.
+     *
+     * @param[in]       p_systemParams_in
+     *                  System parameters holding the re-association switch.
+     *
+     * @param[in]       absorbedContents_in
+     *                  Result of transferSceneGraphContents().
+     *
+     * @param[in]       p_survivingAnchorRoom_in
+     *                  Surviving map's room of the anchor pair the merge gate
+     *                  accepted; borrowed, may be null.
+     *
+     * @param[in]       p_absorbedAnchorRoom_in
+     *                  Absorbed map's room of that pair; borrowed, may be
+     *                  null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when a map has
+     *                  no registered scene graph (nothing is changed).
+     */
+    [[nodiscard]] SemanticsManagerStatus reassociateMergedSceneGraph(
+        atlas::Atlas                     *p_atlas_inout,
+        map::Map                         *p_survivingMap_inout,
+        map::Map                         *p_absorbedMap_in,
+        const types::SystemParams        *p_systemParams_in,
+        const AbsorbedSceneGraphContents &absorbedContents_in,
+        semantic::Room                   *p_survivingAnchorRoom_in,
+        semantic::Room                   *p_absorbedAnchorRoom_in);
 
     /*!
      * @brief           Lists the detected and candidate rooms of a map in

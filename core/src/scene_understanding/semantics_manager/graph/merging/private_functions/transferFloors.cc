@@ -27,13 +27,11 @@
  * @file            transferFloors.cc
  *
  * @brief           Implements transferFloors(), declared in
- *                  LoopClosing/private_functions.h.
+ *                  graph/merging/private_functions.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
@@ -50,25 +48,22 @@ namespace vs_graphs
 namespace core
 {
 
-void transferFloors(atlas::Atlas                         *p_atlas_inout,
-                    map::Map                             *p_currentMap_inout,
-                    map::Map                             *p_mergeMap_inout,
+void transferFloors(SemanticsManager *p_semanticsManager_inout,
+                    map::Map         *p_currentMap_inout,
+                    map::Map         *p_mergeMap_inout,
                     const std::vector<semantic::Floor *> &floors_in,
                     const semantic::SemanticVerifyConfig &configuration_in)
 {
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     currentMapId{};
-    unsigned long     mergeMapId{};
-    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_currentMap_inout->getId(currentMapId) !=
+    unsigned long currentMapId{};
+    unsigned long mergeMapId{};
+    if ((p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_mergeMap_inout->getId(mergeMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
 
@@ -81,8 +76,9 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
 
         semantic::Floor               *p_retainedFloor = nullptr;
         std::vector<semantic::Floor *> currentMapAllFloors{};
-        if (p_semanticsManager->getMapFloorsInIdOrder(currentMapId,
-                                                      currentMapAllFloors) !=
+        if (p_semanticsManager_inout->getMapFloorsInIdOrder(
+                currentMapId,
+                currentMapAllFloors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -146,7 +142,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
         {
             /* The duplicate storey leaves the tree and is freed by a later
              * sweep. */
-            if (p_semanticsManager->eraseFloor(mergeMapId, p_floor) !=
+            if (p_semanticsManager_inout->eraseFloor(mergeMapId, p_floor) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -155,15 +151,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                              __func__,
                              mergeMapId);
             }
-            if (mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor) !=
-                loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: mergeFloorEvidenceAndRooms returned a failure "
-                    "status although it cannot fail; continuing as before.",
-                    __func__);
-            }
+            mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
             continue;
         }
         if (p_floor->setMap(p_currentMap_inout) !=
@@ -174,7 +162,9 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_semanticsManager->moveFloor(mergeMapId, currentMapId, p_floor) !=
+        if (p_semanticsManager_inout->moveFloor(mergeMapId,
+                                                currentMapId,
+                                                p_floor) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -186,14 +176,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
         }
     }
 
-    if (collapseMergedFloors(p_atlas_inout, p_currentMap_inout) !=
-        loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: collapseMergedFloors returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
+    collapseMergedFloors(p_semanticsManager_inout, p_currentMap_inout);
 }
 
 } /* namespace core */

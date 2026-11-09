@@ -33,7 +33,7 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildCurrentLocalWindow.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildMergeLocalWindow.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/calculateMergeMapTransform.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collapseMergedFloors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/clearDerivedSkeleton.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectKeyFramePoses.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectMergeMapContents.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectWindowMapPoints.cc
@@ -50,12 +50,9 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/initializeInertialMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockAndRevalidateMergeCandidate.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockMergeGraphs.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/mergeFloorEvidenceAndRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/optimizeMergeWindow.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/propagateInertialPoseCorrections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/propagateMergedPoseCorrections.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/reassociateMergedSemantics.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/rebuildSemanticIndexes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/recordAcceptedMerge.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/resumeMergeWorkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/reverseMergeSpanningTree.cc
@@ -63,13 +60,9 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/selectMergeMaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/shouldRelaunchGlobalBundleAdjustment.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/stopLocalMapping.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferKeyFramesAndMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferMergeWindow.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferSemanticEntities.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/updateKeyFrameConnections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/verifyLoopMergeFloors.cc
 )

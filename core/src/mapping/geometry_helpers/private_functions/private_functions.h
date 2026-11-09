@@ -247,48 +247,6 @@ struct ProjectedPlaneBounds
                           PlaneMatchVerdict        &candidateVerdict_out);
 
 /*!
- * @brief           Tests whether a segment traverses a passable passage
- *                  aperture.
- *
- *                  Mirrors the far-side wall-routing crossing test used by
- *                  the semantic manager so that the merge path can apply
- *                  the same rule when imported walls are copied into a
- *                  retained room.
- *
- * @param[in]       segmentStart_world_m_in
- *                  First endpoint in the active map frame.
- *
- * @param[in]       segmentEnd_world_m_in
- *                  Second endpoint in the active map frame.
- *
- * @param[in]       p_passage_in
- *                  Passable passage defining the finite aperture.
- *
- * @param[in]       groundNormal_world_in
- *                  Unit ground normal in the active map frame.
- *
- * @param[in]       openingMargin_m_in
- *                  Aperture expansion used for noisy geometry.
- *
- * @param[in]       minimumSideDistance_m_in
- *                  Required endpoint distance from plane.
- *
- * @param[out]      crossesOpening_out
- *                  True only when the segment crosses inside the finite
- *                  opening.
- *
- * @return          UTILS_STATUS_SUCCESS.
- */
-[[nodiscard]] UtilsStatus crossesPassablePassageOpening(
-    const Eigen::Vector3d              &segmentStart_world_m_in,
-    const Eigen::Vector3d              &segmentEnd_world_m_in,
-    vs_graphs::core::semantic::Passage *p_passage_in,
-    const Eigen::Vector3d              &groundNormal_world_in,
-    const double                        openingMargin_m_in,
-    const double                        minimumSideDistance_m_in,
-    bool                               &crossesOpening_out);
-
-/*!
  * @brief           Re-points every holder of a retired plane at the plane
  *                  that replaces it, in one function so no side can be
  *                  forgotten: the survivor absorbs the retired plane's

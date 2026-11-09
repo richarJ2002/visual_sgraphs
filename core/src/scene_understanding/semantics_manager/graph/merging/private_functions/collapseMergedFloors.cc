@@ -27,18 +27,17 @@
  * @file            collapseMergedFloors.cc
  *
  * @brief           Implements collapseMergedFloors(), declared in
- *                  LoopClosing/private_functions.h.
+ *                  graph/merging/private_functions.h.
  */
 
-#include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
@@ -47,29 +46,26 @@ namespace vs_graphs
 namespace core
 {
 
-loop_closing::LoopClosingStatus
-    collapseMergedFloors(atlas::Atlas *p_atlas_inout,
-                         map::Map     *p_survivingMap_inout)
+void collapseMergedFloors(SemanticsManager *p_semanticsManager_inout,
+                          map::Map         *p_survivingMap_inout)
 {
     if (p_survivingMap_inout == nullptr)
     {
-        return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
+        return;
     }
 
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     survivingMapId{};
-    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_survivingMap_inout->getId(survivingMapId) !=
-         map::MapStatus::MAP_STATUS_SUCCESS))
+    unsigned long survivingMapId{};
+    if (p_survivingMap_inout->getId(survivingMapId) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Floor *> allFloors{};
-    if (p_semanticsManager->getMapFloorsInIdOrder(survivingMapId, allFloors) !=
+    if (p_semanticsManager_inout->getMapFloorsInIdOrder(survivingMapId,
+                                                        allFloors) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(
@@ -81,7 +77,7 @@ loop_closing::LoopClosingStatus
     }
     if (allFloors.size() <= 1U)
     {
-        return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
+        return;
     }
 
     semantic::Floor *p_keeperFloor = nullptr;
@@ -95,7 +91,7 @@ loop_closing::LoopClosingStatus
     }
     if (p_keeperFloor == nullptr)
     {
-        return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
+        return;
     }
 
     for (semantic::Floor *p_duplicateFloor : allFloors)
@@ -140,7 +136,8 @@ loop_closing::LoopClosingStatus
             }
         }
 
-        if (p_semanticsManager->eraseFloor(survivingMapId, p_duplicateFloor) !=
+        if (p_semanticsManager_inout->eraseFloor(survivingMapId,
+                                                 p_duplicateFloor) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -174,7 +171,7 @@ loop_closing::LoopClosingStatus
     }
 
     std::vector<semantic::Room *> survivingMapAllDetectedMapRooms{};
-    if (p_semanticsManager->getMapDetectedRoomsInIdOrder(
+    if (p_semanticsManager_inout->getMapDetectedRoomsInIdOrder(
             survivingMapId,
             survivingMapAllDetectedMapRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -210,8 +207,6 @@ loop_closing::LoopClosingStatus
             }
         }
     }
-
-    return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } /* namespace core */

@@ -24,16 +24,14 @@
  */
 
 /*!
- * @file            rebuildSemanticIndexes.cc
+ * @file            indexAbsorbedRoomWalls.cc
  *
- * @brief           Implements rebuildSemanticIndexes(), declared in
- *                  LoopClosing/private_functions.h.
+ * @brief           Implements indexAbsorbedRoomWalls(), declared in
+ *                  graph/merging/private_functions.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
@@ -49,49 +47,22 @@ namespace vs_graphs
 namespace core
 {
 
-void rebuildSemanticIndexes(atlas::Atlas *p_atlas_in,
-                            map::Map     *p_currentMap_inout)
+void indexAbsorbedRoomWalls(SemanticsManager *p_semanticsManager_inout,
+                            map::Map         *p_currentMap_inout)
 {
-    /*
-     * Voxblox topology is derived from a TSDF/ESDF volume and is not an
-     * independently mergeable landmark set. Appending snapshots from two
-     * map frames creates disconnected duplicate edges and false wall
-     * crossings. The external Voxblox node receives the map-revision event,
-     * clears its volume, and supplies a fresh snapshot after reintegration.
-     */
-    if (p_currentMap_inout->setSkeletonClusterPoints({}) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setSkeletonClusterPoints returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_currentMap_inout->setSkeletonEdges({}) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setSkeletonEdges returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     /* Rebuild imported room-wall index entries before fusion. */
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     currentMapId{};
-    if ((p_atlas_in->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_currentMap_inout->getId(currentMapId) !=
-         map::MapStatus::MAP_STATUS_SUCCESS))
+    unsigned long currentMapId{};
+    if (p_currentMap_inout->getId(currentMapId) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Room *> currentMapAllRooms{};
-    if (p_semanticsManager->getMapRoomsInIdOrder(currentMapId,
-                                                 currentMapAllRooms) !=
+    if (p_semanticsManager_inout->getMapRoomsInIdOrder(currentMapId,
+                                                       currentMapAllRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(

@@ -295,7 +295,7 @@ LoopClosingStatus
 
     /* Everything that still belongs to the obsolete merge map. */
     MergeMapContents mergeMapContents;
-    collectMergeMapContents(p_atlas, p_mergeMap, mergeMapContents);
+    collectMergeMapContents(p_mergeMap, mergeMapContents);
     const bool hasValidRemainingMergeKeyFrame =
         hasMergeMapKeyFrame(mergeMapContents.keyFrames, p_mergeMap);
 
@@ -402,21 +402,37 @@ LoopClosingStatus
                                       p_mergeMap,
                                       mergeMapContents.keyFrames,
                                       mergeMapContents.mapPoints);
-        transferSemanticEntities(p_atlas,
-                                 p_currentMap,
-                                 p_mergeMap,
-                                 mergeMapContents,
-                                 false);
-        rebuildSemanticIndexes(p_atlas, p_currentMap);
+        transferPlanes(p_currentMap, p_mergeMap, mergeMapContents.planes);
+        AbsorbedSceneGraphContents absorbedContents{};
+        if (p_semanticsManager->transferSceneGraphContents(p_currentMap,
+                                                           p_mergeMap,
+                                                           false,
+                                                           absorbedContents) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: transferSceneGraphContents found no scene graph "
+                         "for a merged map; continuing as before.",
+                         __func__);
+        }
+        clearDerivedSkeleton(p_currentMap);
 
         /* Fuse only after every semantic relationship is visible. */
-        reassociateMergedSemantics(p_atlas,
-                                   p_currentMap,
-                                   p_mergeMap,
-                                   p_sysParams,
-                                   mergeMapContents,
-                                   semanticMergeGate.p_survivingAnchorRoom,
-                                   semanticMergeGate.p_absorbedAnchorRoom);
+        if (p_semanticsManager->reassociateMergedSceneGraph(
+                p_atlas,
+                p_currentMap,
+                p_mergeMap,
+                p_sysParams,
+                absorbedContents,
+                semanticMergeGate.p_survivingAnchorRoom,
+                semanticMergeGate.p_absorbedAnchorRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reassociateMergedSceneGraph found no scene graph "
+                         "for a merged map; continuing as before.",
+                         __func__);
+        }
     }
 
     /*

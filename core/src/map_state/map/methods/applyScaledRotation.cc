@@ -37,12 +37,6 @@
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/floor/Floor.h"
-#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/passage/Passage.h"
-#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <vs_graphs_g2o/types/sim3.h>
 
@@ -64,31 +58,15 @@ MapStatus Map::applyScaledRotation(
     const float         alignmentScale_in,
     const bool          isScaledVelocity_in)
 {
-    /* Rooms, passages and floors come from the semantics manager, read before
-     * mapMutex is held for the move (lock order: graph lock, then
-     * mapMutex). The exclusive graph lock stays held for the whole move. */
-    GraphLockScope                   graphLockScope{};
-    std::vector<semantic::Passage *> mapPassages{};
-    std::vector<semantic::Room *>    mapDetectedRooms{};
-    std::vector<semantic::Room *>    mapCandidateRooms{};
-    std::vector<semantic::Floor *>   mapFloors{};
+    /* The graph lock is taken before mapMutex (lock order: graph lock, then
+     * mapMutex) and stays held for the whole move, so the scene graph and the
+     * map geometry move together. */
+    GraphLockScope graphLockScope{};
     if ((p_semanticsManager_in == nullptr) ||
         (p_semanticsManager_in->lockGraphs(
              {id},
              GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
              graphLockScope) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapPassagesInIdOrder(id, mapPassages) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapDetectedRoomsInIdOrder(
-             id,
-             mapDetectedRooms) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapCandidateRoomsInIdOrder(
-             id,
-             mapCandidateRooms) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager_in->getMapFloorsInIdOrder(id, mapFloors) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(
@@ -236,86 +214,17 @@ MapStatus Map::applyScaledRotation(
         }
     }
 
-    for (vs_graphs::core::semantic::Passage *p_passage : mapPassages)
+    if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->transformSceneGraph(
+             id,
+             alignmentTransform_oldWorldToNewWorld) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        if (p_passage != nullptr)
-        {
-            if (p_passage->applyTransform(
-                    alignmentTransform_oldWorldToNewWorld) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: applyTransform returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
-    for (semantic::Room *p_room : mapDetectedRooms)
-    {
-        bool roomIsBad{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad)
-        {
-            if (p_room->applyTransform(alignmentTransform_oldWorldToNewWorld) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: applyTransform returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
-    for (semantic::Room *p_room : mapCandidateRooms)
-    {
-        bool roomIsBad2{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad2)
-        {
-            if (p_room->applyTransform(alignmentTransform_oldWorldToNewWorld) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: applyTransform returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
-    for (semantic::Floor *p_floor : mapFloors)
-    {
-        if (p_floor != nullptr)
-        {
-            if (p_floor->applyTransform(
-                    alignmentTransform_oldWorldToNewWorld) !=
-                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: applyTransform returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for this map; its "
+            "rooms, passages and floors are not moved.",
+            __func__);
     }
 
     for (std::vector<Eigen::Vector3d> &skeletonCluster_world :

@@ -27,14 +27,14 @@
  * @file            mergeFloorEvidenceAndRooms.cc
  *
  * @brief           Implements mergeFloorEvidenceAndRooms(), declared in
- *                  LoopClosing/private_functions.h.
+ *                  graph/merging/private_functions.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -42,14 +42,13 @@ namespace vs_graphs
 namespace core
 {
 
-loop_closing::LoopClosingStatus
-    mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
-                               semantic::Floor *p_duplicateFloor_in)
+void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
+                                semantic::Floor *p_duplicateFloor_in)
 {
     if (p_retainedFloor_inout == nullptr || p_duplicateFloor_in == nullptr ||
         p_retainedFloor_inout == p_duplicateFloor_in)
     {
-        return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
+        return;
     }
 
     semantic::Floor *p_bestFloor = nullptr;
@@ -142,8 +141,6 @@ loop_closing::LoopClosingStatus
             }
         }
     }
-
-    return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } /* namespace core */

@@ -32,11 +32,8 @@
 
 #include "place_recognition_and_loop_closure/loop_closing/private_functions/private_functions.h"
 
-#include "map_state/atlas/atlas.h"
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -46,7 +43,6 @@ namespace core
 {
 
 void collectMergeMapContents(
-    atlas::Atlas                   *p_atlas_in,
     map::Map                       *p_mergeMap_in,
     loop_closing::MergeMapContents &mergeMapContents_out)
 {
@@ -80,46 +76,6 @@ void collectMergeMapContents(
                      "%s: getAllMapPoints returned a failure status although "
                      "it cannot fail; continuing as before.",
                      __func__);
-    }
-
-    SemanticsManager *p_semanticsManager = nullptr;
-    unsigned long     mergeMapId{};
-    if ((p_atlas_in->getSemanticsManager(p_semanticsManager) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_mergeMap_in->getId(mergeMapId) !=
-         map::MapStatus::MAP_STATUS_SUCCESS))
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSemanticsManager/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    /* Copy the passages, detected rooms, candidate (marker-based) rooms and
-     * floors the semantics manager lists for the merge map. */
-    if ((p_semanticsManager->getMapPassagesInIdOrder(
-             mergeMapId,
-             mergeMapContents_out.passages) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager->getMapDetectedRoomsInIdOrder(
-             mergeMapId,
-             mergeMapContents_out.detectedRooms) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager->getMapCandidateRoomsInIdOrder(
-             mergeMapId,
-             mergeMapContents_out.markerBasedRooms) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
-        (p_semanticsManager->getMapFloorsInIdOrder(
-             mergeMapId,
-             mergeMapContents_out.floors) !=
-         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
-    {
-        RCLCPP_ERROR(
-            rclcpp::get_logger("vs_graphs"),
-            "%s: the semantics manager has no scene graph for map %lu; "
-            "continuing without its semantic objects.",
-            __func__,
-            mergeMapId);
     }
 }
 

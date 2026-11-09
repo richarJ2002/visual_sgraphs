@@ -14,7 +14,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateProvisionalRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/correctPlaneDirection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findMatchingPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/fuseDuplicateRoomsAfterMerge.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getClassIdFromPlaneType.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFacingPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneTypeFromClassId.cc
@@ -29,7 +28,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkOppositeFacePair.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteWallExtentsAreCompatible.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/observationSide.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/passageOpening.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneBounds.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/relinkRetiredPlane.cc
 )
