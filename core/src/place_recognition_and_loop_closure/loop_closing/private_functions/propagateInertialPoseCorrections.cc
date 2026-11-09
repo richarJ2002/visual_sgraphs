@@ -47,7 +47,8 @@ namespace core
 {
 
 void propagateInertialPoseCorrections(
-    map::Map *p_currentMap_inout,
+    map::Map         *p_currentMap_inout,
+    SemanticsManager *p_semanticsManager_in,
     const loop_closing::LoopClosing::KeyFrameAndPose
                                                &nonCorrectedKeyFramePoses_in,
     loop_closing::LoopClosing::KeyFrameAndPose &correctedKeyFramePoses_inout)
@@ -110,6 +111,7 @@ void propagateInertialPoseCorrections(
 
     if (utils::utils::Utils::propagateSemanticPoseCorrections(
             p_currentMap_inout,
+            p_semanticsManager_in,
             nonCorrectedKeyFramePoses_in,
             correctedKeyFramePoses_inout,
             identityTransform_worldToWorld) !=

@@ -103,6 +103,7 @@ namespace atlas
 {
 class Atlas;
 } /* namespace atlas */
+class SemanticsManager;
 namespace semantic
 {
 enum class SemanticMergeDecision;
@@ -119,6 +120,10 @@ enum class SemanticMergeDecision;
  *                  which is why this declaration lives here rather
  *                  than staying local to LoopClosing.cc's anonymous
  *                  namespace.
+ *
+ * @param[in]       p_semanticsManager_in
+ *                  Semantics manager that serves both maps' S-Graphs;
+ *                  borrowed.
  *
  * @param[in]       p_survivingMap_in
  *                  The map that remains active after the merge.
@@ -140,11 +145,12 @@ enum class SemanticMergeDecision;
  * @return          LOOP_CLOSING_STATUS_SUCCESS.
  */
 [[nodiscard]] loop_closing::LoopClosingStatus verifyLoopMergeFloors(
-    map::Map             *p_survivingMap_in,
-    map::Map             *p_absorbedMap_in,
-    const g2o::Sim3 &mergeTransform_absorbedWorldToSurvivingWorld_in,
-    std::string     &result_out,
-    bool            &isVerified_out);
+    SemanticsManager *p_semanticsManager_in,
+    map::Map         *p_survivingMap_in,
+    map::Map         *p_absorbedMap_in,
+    const g2o::Sim3  &mergeTransform_absorbedWorldToSurvivingWorld_in,
+    std::string      &result_out,
+    bool             &isVerified_out);
 
 /*!
  * @brief           The loop-closing thread: finds places the camera has seen

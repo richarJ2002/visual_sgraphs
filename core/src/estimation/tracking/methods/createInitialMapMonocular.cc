@@ -280,11 +280,21 @@ TrackingStatus Tracking::createInitialMapMonocular()
                      "cannot fail; continuing as before.",
                      __func__);
     }
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (optimizer::Optimizer::globalBundleAdjustment(p_atlasCurrentMap4,
-                                          20,
-                                          nullptr,
-                                          0,
-                                          true) !=
+                                                     p_semanticsManager,
+                                                     20,
+                                                     nullptr,
+                                                     0,
+                                                     true) !=
         optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

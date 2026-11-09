@@ -39,7 +39,7 @@
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -56,21 +56,21 @@ loop_closing::LoopClosingStatus
         return loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            survivingMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     survivingMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_survivingMap_inout->getId(survivingMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Floor *> allFloors{};
-    if (p_sceneGraph->getMapFloorsInIdOrder(survivingMapId, allFloors) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapFloorsInIdOrder(survivingMapId, allFloors) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -139,8 +139,8 @@ loop_closing::LoopClosingStatus
             }
         }
 
-        if (p_sceneGraph->eraseFloor(survivingMapId, p_duplicateFloor) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->eraseFloor(survivingMapId, p_duplicateFloor) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: eraseFloor found no scene map for map %lu; "
@@ -173,10 +173,10 @@ loop_closing::LoopClosingStatus
     }
 
     std::vector<semantic::Room *> survivingMapAllDetectedMapRooms{};
-    if (p_sceneGraph->getMapDetectedRoomsInIdOrder(
+    if (p_semanticsManager->getMapDetectedRoomsInIdOrder(
             survivingMapId,
             survivingMapAllDetectedMapRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "

@@ -37,7 +37,6 @@
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
@@ -116,16 +115,7 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     };
 
     std::vector<semantic::Room *> currentMapAllRooms{};
-    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    unsigned long currentMapId{};
+    unsigned long                 currentMapId{};
     if (p_currentMap->getId(currentMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -133,8 +123,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, currentMapAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getMapRoomsInIdOrder(currentMapId, currentMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapRoomsInIdOrder returned a failure status; "
@@ -161,8 +151,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         }
 
         std::vector<semantic::Passage *> activePassages{};
-        if (p_sceneGraph->getAllPassagesInIdOrder(activePassages) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (getAllPassagesInIdOrder(activePassages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getAllPassagesInIdOrder returned a failure "
@@ -414,9 +404,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             std::pair<semantic::Room *, std::vector<geometric::Plane *>>>
                                       wallSnapshots;
         std::vector<semantic::Room *> currentMapAllRooms2{};
-        if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId,
-                                               currentMapAllRooms2) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (getMapRoomsInIdOrder(currentMapId, currentMapAllRooms2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapRoomsInIdOrder returned a failure status; "
@@ -621,9 +610,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         }
 
         std::vector<semantic::Floor *> currentMapAllFloors{};
-        if (p_sceneGraph->getMapFloorsInIdOrder(currentMapId,
-                                                currentMapAllFloors) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (getMapFloorsInIdOrder(currentMapId, currentMapAllFloors) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapFloorsInIdOrder returned a failure status; "
@@ -649,8 +637,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             }
         }
 
-        if (p_sceneGraph->eraseRoom(currentMapId, p_duplicateRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (eraseRoom(currentMapId, p_duplicateRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: eraseRoom returned a failure status; continuing "
@@ -673,8 +661,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->markRoomBad(currentMapId, p_duplicateRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (markRoomBad(currentMapId, p_duplicateRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: markRoomBad found no scene map for map %lu; the "

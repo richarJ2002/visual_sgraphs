@@ -57,6 +57,8 @@ namespace vs_graphs
 namespace core
 {
 
+class SemanticsManager;
+
 namespace semantic
 {
 class Passage;
@@ -165,10 +167,13 @@ class SemanticVerify
      *                  what makes that combination correct: without it,
      *                  hasFloorGatePassed stays at its default false and
      *                  toVerificationVerdict() reports a false negative even
-     *                  when both gates genuinely passed.
+     *                  when both gates genuinely passed. The caller also
+     *                  supplies the semantics manager that serves both maps'
+     *                  S-Graphs (borrowed).
      */
     [[nodiscard]] static SemanticVerifyStatus runFloorGate(
         SemanticVerifyResult    &result_inout,
+        SemanticsManager        *p_semanticsManager_in,
         map::Map                *p_survivingMap_in,
         map::Map                *p_absorbedMap_in,
         const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,

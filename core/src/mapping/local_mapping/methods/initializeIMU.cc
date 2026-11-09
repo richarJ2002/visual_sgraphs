@@ -401,7 +401,18 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
             Sophus::SE3f alignmentPose_worldToGravity(
                 mRwg.cast<float>().transpose(),
                 Eigen::Vector3f::Zero());
-            if (p_activeMap->applyScaledRotation(alignmentPose_worldToGravity,
+            SemanticsManager *p_semanticsManager = nullptr;
+            if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getSemanticsManager returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_activeMap->applyScaledRotation(p_semanticsManager,
+                                                 alignmentPose_worldToGravity,
                                                  scale,
                                                  true) !=
                 map::MapStatus::MAP_STATUS_SUCCESS)

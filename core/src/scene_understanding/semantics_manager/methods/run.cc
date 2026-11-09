@@ -36,7 +36,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_axiom_evaluator/objects/SemanticAxiomEvaluatorStatusEnum.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidatesStatusEnum.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/SemanticGraphSnapshotStatusEnum.h"
@@ -54,7 +53,6 @@
 
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "mapping/geometry_helpers/utils.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
@@ -73,17 +71,8 @@ namespace core
 void SemanticsManager::run(void)
 {
     /* Declare object to point to memory address of the scene graph */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
 
     /* Extract the address of scene graph */
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
 
     /* Init counter to track summary cycle */
     std::size_t summaryCycle = 0U;
@@ -454,9 +443,8 @@ void SemanticsManager::run(void)
                              __func__);
             }
             std::vector<vs_graphs::core::semantic::Room *> candidateRooms{};
-            if (p_sceneGraph->getMapCandidateRoomsInIdOrder(activeMapId,
-                                                            candidateRooms) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (getMapCandidateRoomsInIdOrder(activeMapId, candidateRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapCandidateRoomsInIdOrder returned a "
@@ -464,8 +452,8 @@ void SemanticsManager::run(void)
                              __func__);
             }
             std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-            if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (getAllPassagesInIdOrder(allPassages) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getAllPassagesInIdOrder returned a failure "
@@ -706,10 +694,9 @@ void SemanticsManager::run(void)
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
-                        if (p_sceneGraph->eraseRoom(candidateMapId,
-                                                    p_candidate) !=
-                            scene_graph::SceneGraphStatus::
-                                SCENE_GRAPH_STATUS_SUCCESS)
+                        if (eraseRoom(candidateMapId, p_candidate) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: eraseRoom returned a failure "
@@ -1037,9 +1024,8 @@ void SemanticsManager::run(void)
         }
         std::vector<semantic::Room *> pipelineMapAllRooms{};
         if ((p_pipelineMap != nullptr) &&
-            p_sceneGraph->getMapRoomsInIdOrder(pipelineMapId,
-                                               pipelineMapAllRooms) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            getMapRoomsInIdOrder(pipelineMapId, pipelineMapAllRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapRoomsInIdOrder returned a failure status; "
@@ -1052,9 +1038,8 @@ void SemanticsManager::run(void)
         std::vector<vs_graphs::core::semantic::Passage *>
             pipelineMapAllPassages{};
         if ((p_pipelineMap != nullptr) &&
-            p_sceneGraph->getMapPassagesInIdOrder(pipelineMapId,
-                                                  pipelineMapAllPassages) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            getMapPassagesInIdOrder(pipelineMapId, pipelineMapAllPassages) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapPassagesInIdOrder returned a failure "
@@ -1066,9 +1051,8 @@ void SemanticsManager::run(void)
                                      : std::vector<semantic::Passage *>();
         std::vector<semantic::Floor *> pipelineMapAllFloors{};
         if ((p_pipelineMap != nullptr) &&
-            p_sceneGraph->getMapFloorsInIdOrder(pipelineMapId,
-                                                pipelineMapAllFloors) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            getMapFloorsInIdOrder(pipelineMapId, pipelineMapAllFloors) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapFloorsInIdOrder returned a failure status; "
@@ -1412,8 +1396,8 @@ void SemanticsManager::run(void)
         /* Deletion ends the cycle: flagged rooms, passages and storeys leave
          * the scene graph and are freed here, under the same lock that every
          * writer holds, so no cycle step can still use them. */
-        if (p_sceneGraph->sweepBadNodes() !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (sweepBadNodes() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: sweepBadNodes returned a failure status "

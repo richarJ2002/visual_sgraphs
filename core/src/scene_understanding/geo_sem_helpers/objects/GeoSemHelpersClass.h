@@ -170,9 +170,9 @@ class GeoSemHelpers
      *
      * @param[out]      p_blankRoomCandidate_out
      *                  The new room, owned by the caller until it is passed to
-     *                  SceneGraph::addCandidateRoom(); null when the Atlas is
-     *                  null or the map already holds one room more than its
-     *                  passable passages
+     *                  SemanticsManager::addCandidateRoom(); null when the
+     * Atlas is null or the map already holds one room more than its passable
+     * passages
      *
      * @param[in]       centroid_in
      *                  The centroid of the room (optional)

@@ -62,6 +62,7 @@
 #include <unordered_set>
 
 #include "execution/profiling/profiling.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 /* -------------------------------------------------------------------------- *
  * ORB-SLAM3 STATE
@@ -3443,14 +3444,15 @@ void maybeArchiveSGraph(
                 }
                 return firstId < secondId;
             });
-        vs_graphs::core::scene_graph::SceneGraph *p_sceneGraph = nullptr;
-        if (p_atlas->getSceneGraph(p_sceneGraph) !=
+        vs_graphs::core::SemanticsManager *p_semanticsManager = nullptr;
+        if (p_atlas->getSemanticsManager(p_semanticsManager) !=
             vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getSceneGraph returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getSemanticsManager returned a failure status although "
+                "it cannot fail; continuing as before.",
+                __func__);
         }
         for (vs_graphs::core::map::Map *p_map : atlasMaps)
         {
@@ -3503,9 +3505,10 @@ void maybeArchiveSGraph(
             }
             mapInput.worldFrameEpoch = mapWorldFrameEpoch;
             std::vector<vs_graphs::core::semantic::Floor *> mapAllFloors{};
-            if (p_sceneGraph->getMapFloorsInIdOrder(mapId2, mapAllFloors) !=
-                vs_graphs::core::scene_graph::SceneGraphStatus::
-                    SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapFloorsInIdOrder(mapId2,
+                                                          mapAllFloors) !=
+                vs_graphs::core::SemanticsManagerStatus::
+                    SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapFloorsInIdOrder found no scene map "
@@ -3515,9 +3518,9 @@ void maybeArchiveSGraph(
             }
             mapInput.floorsRaw = mapAllFloors;
             std::vector<vs_graphs::core::semantic::Room *> mapAllRooms{};
-            if (p_sceneGraph->getMapRoomsInIdOrder(mapId2, mapAllRooms) !=
-                vs_graphs::core::scene_graph::SceneGraphStatus::
-                    SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapRoomsInIdOrder(mapId2, mapAllRooms) !=
+                vs_graphs::core::SemanticsManagerStatus::
+                    SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapRoomsInIdOrder found no scene map "
@@ -3527,9 +3530,10 @@ void maybeArchiveSGraph(
             }
             mapInput.roomsRaw = mapAllRooms;
             std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-            if (p_sceneGraph->getMapPassagesInIdOrder(mapId2, mapAllPassages) !=
-                vs_graphs::core::scene_graph::SceneGraphStatus::
-                    SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapPassagesInIdOrder(mapId2,
+                                                            mapAllPassages) !=
+                vs_graphs::core::SemanticsManagerStatus::
+                    SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapPassagesInIdOrder found no scene map "
@@ -6743,17 +6747,18 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
     }
 
     /* Rooms, floors and passages of the active map, from the scene graph */
-    vs_graphs::core::atlas::Atlas            *p_atlas      = nullptr;
-    vs_graphs::core::scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    vs_graphs::core::atlas::Atlas     *p_atlas            = nullptr;
+    vs_graphs::core::SemanticsManager *p_semanticsManager = nullptr;
     if ((p_slamSystem->getAtlas(p_atlas) !=
          vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS) ||
-        (p_atlas->getSceneGraph(p_sceneGraph) !=
+        (p_atlas->getSemanticsManager(p_semanticsManager) !=
          vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAtlas/getSceneGraph returned a failure status "
-                     "although they cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAtlas/getSemanticsManager returned a failure status "
+            "although they cannot fail; continuing as before.",
+            __func__);
     }
 
     /*!
@@ -6761,10 +6766,10 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
      * on a thread that holds no semantic update lock: the guard keeps the scene
      * graph from freeing them meanwhile.
      */
-    std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
-    if (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
-        vs_graphs::core::scene_graph::SceneGraphStatus::
-            SCENE_GRAPH_STATUS_SUCCESS)
+    std::shared_lock<std::shared_mutex> graphReclaimGuard{};
+    if (p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
+        vs_graphs::core::SemanticsManagerStatus::
+            SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: acquireReclaimGuard returned a failure status "
@@ -6773,9 +6778,9 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
     }
 
     std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
-    if (p_sceneGraph->getAllRoomsInIdOrder(mappedRooms) !=
-        vs_graphs::core::scene_graph::SceneGraphStatus::
-            SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllRoomsInIdOrder(mappedRooms) !=
+        vs_graphs::core::SemanticsManagerStatus::
+            SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRoomsInIdOrder found no scene map for the "
@@ -6784,9 +6789,9 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
     }
 
     std::vector<vs_graphs::core::semantic::Floor *> mappedFloors{};
-    if (p_sceneGraph->getAllFloorsInIdOrder(mappedFloors) !=
-        vs_graphs::core::scene_graph::SceneGraphStatus::
-            SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllFloorsInIdOrder(mappedFloors) !=
+        vs_graphs::core::SemanticsManagerStatus::
+            SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllFloorsInIdOrder found no scene map for the "
@@ -6795,9 +6800,9 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
     }
 
     std::vector<vs_graphs::core::semantic::Passage *> mappedPassages{};
-    if (p_sceneGraph->getAllPassagesInIdOrder(mappedPassages) !=
-        vs_graphs::core::scene_graph::SceneGraphStatus::
-            SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllPassagesInIdOrder(mappedPassages) !=
+        vs_graphs::core::SemanticsManagerStatus::
+            SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPassagesInIdOrder found no scene map for the "

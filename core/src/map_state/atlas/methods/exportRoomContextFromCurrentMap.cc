@@ -45,7 +45,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 #include <shared_mutex>
 
@@ -77,11 +77,11 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
     std::vector<semantic::Room *>       rooms{};
     /* The tracking thread may call this without the semantic update lock: the
      * guard keeps the scene graph from freeing the rooms read below. */
-    std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
-    if ((p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    std::shared_lock<std::shared_mutex> graphReclaimGuard{};
+    if ((p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapDetectedRoomsInIdOrder found no scene map for "
@@ -89,9 +89,9 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                      __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
-    if (p_sceneGraph->getMapCandidateRoomsInIdOrder(mapIdValue,
-                                                    candidateRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapCandidateRoomsInIdOrder(mapIdValue,
+                                                          candidateRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapCandidateRoomsInIdOrder found no scene map "

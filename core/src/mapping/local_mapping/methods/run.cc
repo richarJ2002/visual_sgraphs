@@ -346,15 +346,27 @@ void LocalMapping::run()
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
+                        SemanticsManager *p_semanticsManager = nullptr;
+                        if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+                            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getSemanticsManager returned a "
+                                         "failure status "
+                                         "although it cannot fail; continuing "
+                                         "as before.",
+                                         __func__);
+                        }
                         if (optimizer::Optimizer::localBundleAdjustment(
                                 p_currentKeyFrame,
                                 &shouldAbortBa,
                                 p_currentKeyFrameMap4,
+                                p_semanticsManager,
                                 baFixedKeyFrameCount,
                                 baOptimizedKeyFrameCount,
                                 baMapPointCount,
-                                baEdgeCount) !=
-                            optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                                baEdgeCount) != optimizer::OptimizerStatus::
+                                                    OPTIMIZER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: localBundleAdjustment returned a "

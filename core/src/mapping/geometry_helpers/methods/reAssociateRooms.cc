@@ -30,7 +30,7 @@
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -51,18 +51,19 @@ UtilsStatus Utils::reAssociateRooms(atlas::Atlas *p_atlas_in)
      *                  allows a confirmed room or corridor to absorb redundant,
      *                  single-wall provisional structural elements.
      */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "

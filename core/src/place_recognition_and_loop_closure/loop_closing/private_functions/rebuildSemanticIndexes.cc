@@ -40,7 +40,7 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -77,21 +77,22 @@ void rebuildSemanticIndexes(atlas::Atlas *p_atlas_in,
     }
 
     /* Rebuild imported room-wall index entries before fusion. */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    if ((p_atlas_in->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Room *> currentMapAllRooms{};
-    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, currentMapAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapRoomsInIdOrder(currentMapId,
+                                                 currentMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "

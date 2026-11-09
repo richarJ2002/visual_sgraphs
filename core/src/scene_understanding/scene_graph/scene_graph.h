@@ -10,6 +10,6 @@
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #endif /* VS_GRAPHS_SCENE_GRAPH_H */

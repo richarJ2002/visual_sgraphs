@@ -102,6 +102,16 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     semantic::SemanticMergeGateResult semanticMergeGate{};
     evaluateSemanticMergeGate(p_atlas,
                               p_currentMap,
@@ -131,6 +141,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                               p_tracker,
                               p_currentKF,
                               p_currentMap,
+                              p_semanticsManager,
                               oldCorrectedPose);
 
     unsigned long keyFrameNewCountValue{};
@@ -209,6 +220,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                                          keyFrameNewCount))
     {
         propagateInertialPoseCorrections(p_currentMap,
+                                         p_semanticsManager,
                                          NonCorrectedSim3,
                                          CorrectedSim3);
     }

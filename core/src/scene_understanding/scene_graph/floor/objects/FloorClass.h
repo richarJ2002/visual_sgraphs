@@ -282,9 +282,8 @@ class Floor
 
     /*!
      * @brief           Flags this floor as invalid. Only
-     *                  SceneGraph::markFloorBad() should call it, because the
-     *                  rooms below the floor must be flagged in the same
-     *                  step.
+     *                  SemanticsManager::markFloorBad() should call it, because
+     * the rooms below the floor must be flagged in the same step.
      *
      * @return          FLOOR_STATUS_SUCCESS always.
      */

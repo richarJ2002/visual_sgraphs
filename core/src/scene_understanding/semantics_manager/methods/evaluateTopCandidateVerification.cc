@@ -237,6 +237,7 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
         bool hasPassed2{};
         if (semantic::SemanticVerify::runFloorGate(
                 result,
+                this,
                 p_roomBMap,
                 p_roomAMap,
                 result.roomTransform_roomAToRoomB,

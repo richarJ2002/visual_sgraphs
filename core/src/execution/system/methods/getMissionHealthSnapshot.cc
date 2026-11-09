@@ -47,7 +47,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
 #include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
@@ -297,20 +296,10 @@ SystemStatus System::getMissionHealthSnapshot(
 
         if (includeSemantics_in)
         {
-            scene_graph::SceneGraph *p_sceneGraph = nullptr;
-
-            if (p_atlas->getSceneGraph(p_sceneGraph) !=
-                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getSceneGraph returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
             std::vector<semantic::Room *> activeMapAllRooms{};
-            if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
-                                                   activeMapAllRooms) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapRoomsInIdOrder(activeMapId,
+                                                         activeMapAllRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapRoomsInIdOrder returned a failure "
@@ -394,9 +383,9 @@ SystemStatus System::getMissionHealthSnapshot(
             }
 
             std::vector<semantic::Floor *> activeMapAllFloors{};
-            if (p_sceneGraph->getMapFloorsInIdOrder(activeMapId,
-                                                    activeMapAllFloors) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapFloorsInIdOrder(activeMapId,
+                                                          activeMapAllFloors) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapFloorsInIdOrder returned a failure "
@@ -477,9 +466,10 @@ SystemStatus System::getMissionHealthSnapshot(
 
             std::vector<vs_graphs::core::semantic::Passage *>
                 activeMapAllPassages{};
-            if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId,
-                                                      activeMapAllPassages) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapPassagesInIdOrder(
+                    activeMapId,
+                    activeMapAllPassages) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapPassagesInIdOrder returned a failure "

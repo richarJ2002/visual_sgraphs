@@ -36,7 +36,6 @@
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -51,17 +50,8 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
      * non-FREE_SPACE roomSeg.method configurations and, as before, sets the
      * centre without damping. */
     std::vector<semantic::Room *> atlasAllRooms{};
-    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getAllRoomsInIdOrder(atlasAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRoomsInIdOrder returned a failure status; "

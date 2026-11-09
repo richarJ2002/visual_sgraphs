@@ -35,6 +35,7 @@
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
 #include "sensor_models/camera_models/geometric_camera/objects/GeometricCameraStatusEnum.h"
 #include <rclcpp/logging.hpp>
@@ -66,7 +67,9 @@ AtlasStatus Atlas::postLoad()
     }
 
     /* The loaded maps replace maps: the old scene maps go, and each loaded
-     * map gets an empty scene map once it has re-linked below. Rooms,
+     * map gets an empty scene map once it has re-linked below (while no
+     * semantics manager is attached, Atlas::setSemanticsManager() registers
+     * them). Rooms,
      * floors and passages are not part of a saved map, so there is nothing
      * to restore into it. */
     for (map::Map *p_map : maps)
@@ -74,8 +77,9 @@ AtlasStatus Atlas::postLoad()
         unsigned long replacedMapId{};
         if ((p_map->getId(replacedMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_sceneGraph->eraseSceneMap(replacedMapId) !=
-             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+            ((p_semanticsManager != nullptr) &&
+             (p_semanticsManager->eraseSceneMap(replacedMapId) !=
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId/eraseSceneMap returned a failure status "
@@ -96,8 +100,9 @@ AtlasStatus Atlas::postLoad()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->addSceneMap(*p_map) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if ((p_semanticsManager != nullptr) &&
+            (p_semanticsManager->addSceneMap(*p_map) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: addSceneMap returned a failure "

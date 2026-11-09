@@ -43,7 +43,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -72,8 +72,8 @@ AtlasStatus Atlas::copyRoomContextForMap(
                      __func__);
     }
     std::vector<semantic::Room *> rooms{};
-    if (p_sceneGraph->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapDetectedRoomsInIdOrder found no scene map for "
@@ -81,9 +81,9 @@ AtlasStatus Atlas::copyRoomContextForMap(
                      __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
-    if (p_sceneGraph->getMapCandidateRoomsInIdOrder(mapIdValue,
-                                                    candidateRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapCandidateRoomsInIdOrder(mapIdValue,
+                                                          candidateRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapCandidateRoomsInIdOrder found no scene map "

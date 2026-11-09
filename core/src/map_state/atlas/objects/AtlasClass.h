@@ -42,7 +42,6 @@
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
 #include "sensor_models/camera_models/kannala_brandt8/kannala_brandt8.h"
 #include "sensor_models/camera_models/pinhole/pinhole.h"
@@ -85,6 +84,8 @@ namespace vs_graphs
 {
 namespace core
 {
+
+class SemanticsManager;
 
 namespace semantic
 {
@@ -182,16 +183,6 @@ class Atlas
     {
         /* Init map and set current active map to null */
         p_activeMap = static_cast<map::Map *>(nullptr);
-
-        /* Find the address of the scene graph */
-        if (scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getSceneGraph returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
     }
 
     /*!
@@ -233,21 +224,16 @@ class Atlas
         mapsToDelete.insert(badMaps.begin(), badMaps.end());
         mapsToDelete.insert(retiredMaps.begin(), retiredMaps.end());
 
-        /* The maps own their S-Graphs and the scene graph is shared by the
-         * process, so every map leaves its registry before it is deleted. */
-        for (map::Map *p_map : mapsToDelete)
+        /* The maps own their S-Graphs and the semantics manager keeps a
+         * registry of them, so every map leaves the registry before it is
+         * deleted. */
+        if (unregisterSceneMaps(mapsToDelete) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
-            unsigned long mapId{};
-            if ((p_map != nullptr) && (p_sceneGraph != nullptr) &&
-                (p_map->getId(mapId) == map::MapStatus::MAP_STATUS_SUCCESS) &&
-                (p_sceneGraph->eraseSceneMap(mapId) !=
-                 scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: eraseSceneMap returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: unregisterSceneMaps returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         for (map::Map *p_map : mapsToDelete)
@@ -741,18 +727,34 @@ class Atlas
         std::unique_lock<std::mutex> &semanticUpdateLock_out);
 
     /*!
-     * @brief           Returns the scene graph operations for the maps this
-     *                  atlas holds. No lock is taken: the object is shared by
-     *                  the process and guards itself with its own graph mutex.
+     * @brief           Returns the semantics manager that serves the S-Graph of
+     *                  the maps this atlas holds. No lock is taken: the manager
+     *                  guards its graph with its own graph mutex.
      *
-     * @param[out]      p_sceneGraph_out
-     *                  Borrowed pointer to the process-wide scene graph; never
-     *                  null, valid for the life of the process.
+     * @param[out]      p_semanticsManager_out
+     *                  Borrowed pointer to the semantics manager; null only
+     *                  before setSemanticsManager() has been called.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus
-        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
+        getSemanticsManager(SemanticsManager *&p_semanticsManager_out);
+
+    /*!
+     * @brief           Attaches the semantics manager that serves the S-Graph
+     *                  of the maps and registers the maps the atlas already
+     *                  holds (and its current map as the manager's active map),
+     *                  because the first map is created before the manager
+     *                  exists. Takes atlasMutex, then the manager's graph lock.
+     *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager to attach; borrowed, never deleted.
+     *                  Must outlive the atlas.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus
+        setSemanticsManager(SemanticsManager *p_semanticsManager_in);
 
     /*!
      * @brief           Removes a map from the active Atlas and marks it
@@ -997,6 +999,20 @@ class Atlas
     [[nodiscard]] AtlasStatus createNewMapWhileAtlasLocked();
 
     /*!
+     * @brief           Removes the scene graph registry entry of every given
+     *                  map from the semantics manager; a no-op while no
+     *                  manager is attached.
+     *
+     * @param[in]       mapsToUnregister_in
+     *                  Maps leaving the atlas; borrowed, null entries are
+     *                  skipped.
+     *
+     * @return          ATLAS_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] AtlasStatus
+        unregisterSceneMaps(const std::set<map::Map *> &mapsToUnregister_in);
+
+    /*!
      * @brief           Active maps. The Atlas owns them and deletes them in its
      *                  destructor.
      */
@@ -1089,16 +1105,18 @@ class Atlas
     std::mutex semanticUpdateMutex;
 
     /*!
-     * @brief           Scene graph operations for the maps in maps; borrowed,
-     *                  the process-wide object from SceneGraph::getSceneGraph.
-     *                  The atlas owns no graph content: each map owns its
-     *                  S-Graph. A map's scene map is registered when the map
-     *                  is created or loaded and unregistered when the map
-     *                  leaves maps (setMapBad, clearAtlas, postLoad) or the
-     *                  atlas is destroyed. Guarded by its own graph mutex,
-     *                  taken after atlasMutex.
+     * @brief           Semantics manager that serves the S-Graph of the maps in
+     *                  maps; borrowed, owned by the system. The atlas owns no
+     *                  graph content: each map owns its S-Graph. A map's scene
+     *                  map is registered with the manager when the map is
+     *                  created or loaded and unregistered when the map leaves
+     *                  maps (setMapBad, clearAtlas, postLoad) or the atlas is
+     *                  destroyed. Null from construction until
+     *                  setSemanticsManager(), which registers the maps created
+     *                  or loaded before. The manager guards its graph with its
+     *                  own graph mutex, taken after atlasMutex.
      */
-    scene_graph::SceneGraph *p_sceneGraph{nullptr};
+    SemanticsManager *p_semanticsManager{nullptr};
 
     /*!
      * @brief           Snapshots of departed maps' room geometry, keyed by

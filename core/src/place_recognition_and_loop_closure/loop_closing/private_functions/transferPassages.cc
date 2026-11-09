@@ -40,7 +40,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
@@ -64,10 +64,10 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
      * Pair before anything moves: the surviving map's own passages are the
      * only candidates for a duplicate.
      */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    unsigned long            mergeMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    unsigned long     mergeMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
@@ -75,14 +75,14 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Passage *> currentMapAllPassages{};
-    if (p_sceneGraph->getMapPassagesInIdOrder(currentMapId,
-                                              currentMapAllPassages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapPassagesInIdOrder(currentMapId,
+                                                    currentMapAllPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -119,8 +119,8 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
         if (p_retainedPassage != nullptr)
         {
             /* The duplicate leaves the tree and is freed by a later sweep. */
-            if (p_sceneGraph->erasePassage(mergeMapId, p_passage) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->erasePassage(mergeMapId, p_passage) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: erasePassage found no scene map for map "
@@ -199,8 +199,10 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->movePassage(mergeMapId, currentMapId, p_passage) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->movePassage(mergeMapId,
+                                            currentMapId,
+                                            p_passage) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: movePassage found no scene map for maps %lu and "

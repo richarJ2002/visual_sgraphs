@@ -37,7 +37,7 @@
 #include "mapping/geometric/Plane/Plane.h"
 #include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 #include <shared_mutex>
 
@@ -52,6 +52,7 @@ namespace optimizer
 
 OptimizerStatus Optimizer::globalBundleAdjustment(
     map::Map               *p_map_in,
+    SemanticsManager       *p_semanticsManager_in,
     int                     iterationCount_in,
     bool                   *p_stopFlag_inout,
     const unsigned long     loopKeyFrameId_in,
@@ -60,19 +61,16 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
 {
     PROFILE_FUNCTION();
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    scene_graph::SceneGraph                       *p_sceneGraph = nullptr;
     unsigned long                                  mapId{};
     /* The rooms are used until the function ends, outside the semantic update
      * lock: the guard keeps the scene graph from freeing them meanwhile. */
-    std::shared_lock<std::shared_mutex>            sceneGraphReclaimGuard{};
-    if ((scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph == nullptr) ||
-        (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    std::shared_lock<std::shared_mutex>            graphReclaimGuard{};
+    if ((p_map_in->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->acquireReclaimGuard(graphReclaimGuard) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager_in->getMapRoomsInIdOrder(mapId, allRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for this map; "

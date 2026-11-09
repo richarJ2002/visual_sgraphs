@@ -35,7 +35,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
@@ -72,16 +71,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     }
 
     std::vector<semantic::Room *> activeRooms{};
-    scene_graph::SceneGraph      *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    unsigned long activeMapId{};
+    unsigned long                 activeMapId{};
     if (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -89,8 +79,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId, activeRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getMapRoomsInIdOrder(activeMapId, activeRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapRoomsInIdOrder returned a failure status; "
@@ -333,17 +323,16 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
             return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
-        if (p_sceneGraph->addCandidateRoom(activeMapId,
-                                           std::move(p_blankRoomCandidate)) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (addCandidateRoom(activeMapId, std::move(p_blankRoomCandidate)) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: addCandidateRoom returned a failure status; "
                          "continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->promoteCandidateRoom(activeMapId, p_bootstrapRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (promoteCandidateRoom(activeMapId, p_bootstrapRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: promoteCandidateRoom returned a failure status; "
@@ -404,8 +393,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     }
 
     std::vector<semantic::Floor *> floors{};
-    if (p_sceneGraph->getMapFloorsInIdOrder(activeMapId, floors) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getMapFloorsInIdOrder(activeMapId, floors) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapFloorsInIdOrder returned a failure status; "
@@ -433,9 +422,8 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          __func__);
         }
         std::vector<semantic::Floor *> activeMapAllFloors{};
-        if (p_sceneGraph->getMapFloorsInIdOrder(activeMapId,
-                                                activeMapAllFloors) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (getMapFloorsInIdOrder(activeMapId, activeMapAllFloors) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapFloorsInIdOrder returned a failure status; "
@@ -569,10 +557,10 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
              recoveryContext->passageContexts)
         {
             semantic::Passage *p_recoveryPassage = nullptr;
-            if (p_sceneGraph->getMapPassageById(activeMapId,
-                                                passageContext.id,
-                                                p_recoveryPassage) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (getMapPassageById(activeMapId,
+                                  passageContext.id,
+                                  p_recoveryPassage) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getMapPassageById returned a failure status; "
@@ -682,10 +670,9 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          */
                     }
                 }
-                if (p_sceneGraph->addPassage(
-                        activeMapId,
-                        std::move(p_recoveryPassageOwner)) !=
-                    scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+                if (addPassage(activeMapId,
+                               std::move(p_recoveryPassageOwner)) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                  "%s: addPassage returned a failure status; "

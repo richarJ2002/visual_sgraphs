@@ -38,7 +38,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
@@ -56,10 +56,10 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                     const std::vector<semantic::Floor *> &floors_in,
                     const semantic::SemanticVerifyConfig &configuration_in)
 {
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    unsigned long            mergeMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    unsigned long     mergeMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
@@ -67,7 +67,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
@@ -81,9 +81,9 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
 
         semantic::Floor               *p_retainedFloor = nullptr;
         std::vector<semantic::Floor *> currentMapAllFloors{};
-        if (p_sceneGraph->getMapFloorsInIdOrder(currentMapId,
-                                                currentMapAllFloors) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getMapFloorsInIdOrder(currentMapId,
+                                                      currentMapAllFloors) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: the scene graph has no scene map for map %lu; "
@@ -145,8 +145,8 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
         {
             /* The duplicate storey leaves the tree and is freed by a later
              * sweep. */
-            if (p_sceneGraph->eraseFloor(mergeMapId, p_floor) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->eraseFloor(mergeMapId, p_floor) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: eraseFloor found no scene map for map %lu; "
@@ -173,8 +173,8 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->moveFloor(mergeMapId, currentMapId, p_floor) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->moveFloor(mergeMapId, currentMapId, p_floor) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: moveFloor found no scene map for maps %lu and "

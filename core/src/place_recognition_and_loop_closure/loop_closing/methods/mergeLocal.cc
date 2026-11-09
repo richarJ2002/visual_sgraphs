@@ -309,6 +309,16 @@ LoopClosingStatus
         }
     }
 
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     const bool semanticGeometryWasOptimized =
         hasValidRemainingMergeKeyFrame &&
         p_tracker->sensor != system::System::MONOCULAR;
@@ -323,6 +333,7 @@ LoopClosingStatus
         if (optimizer::Optimizer::optimizeEssentialGraph(
                 p_mergeMatchedKF,
                 p_mergeMap,
+                p_semanticsManager,
                 localCurrentWindowKeyFrames,
                 vpMergeConnectedKFs,
                 mergeMapContents.keyFrames,
@@ -345,6 +356,7 @@ LoopClosingStatus
          * than receiving only the coarse map-level Sim3.
          */
         propagateMergedPoseCorrections(p_mergeMap,
+                                       p_semanticsManager,
                                        vNonCorrectedSim3,
                                        vCorrectedSim3,
                                        g2oSwCurrentWMerge);

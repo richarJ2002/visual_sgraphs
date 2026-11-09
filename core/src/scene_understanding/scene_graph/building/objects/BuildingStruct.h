@@ -52,7 +52,7 @@ namespace scene_graph
  *                  The building owns its storeys; the staircase passage
  *                  index is borrowed from the scene map. Containers are keyed
  *                  by id so iteration runs in id order. Owned by a SceneMap
- *                  and guarded by the SceneGraph graph mutex.
+ *                  and guarded by the SemanticsManager graph mutex.
  */
 struct Building
 {

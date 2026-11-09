@@ -38,8 +38,8 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -78,20 +78,20 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            activeMapId{};
-    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     activeMapId{};
+    if ((p_atlas_in->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_activeMap->getId(activeMapId) != map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Passage *> passages{};
-    if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId, passages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapPassagesInIdOrder(activeMapId, passages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -100,8 +100,8 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                      activeMapId);
     }
     std::vector<semantic::Room *> activeRooms{};
-    if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId, activeRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapRoomsInIdOrder(activeMapId, activeRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -654,9 +654,9 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
             }
 
             std::vector<semantic::Room *> activeMapAllRooms{};
-            if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
-                                                   activeMapAllRooms) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->getMapRoomsInIdOrder(activeMapId,
+                                                         activeMapAllRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),
@@ -733,8 +733,9 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                 }
             }
 
-            if (p_sceneGraph->erasePassage(activeMapId, p_candidatePassage) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            if (p_semanticsManager->erasePassage(activeMapId,
+                                                 p_candidatePassage) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: erasePassage found no scene map for map %lu; "

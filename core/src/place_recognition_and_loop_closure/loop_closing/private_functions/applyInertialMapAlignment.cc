@@ -55,6 +55,7 @@ void applyInertialMapAlignment(
     tracking::Tracking          *p_tracker_inout,
     keyframe::KeyFrame          *p_currentKeyFrame_in,
     map::Map                    *p_currentMap_inout,
+    SemanticsManager            *p_semanticsManager_in,
     const g2o::Sim3             &mapTransform_currentWorldToMergeWorld_in)
 {
     float        s_on = mapTransform_currentWorldToMergeWorld_in.scale();
@@ -77,7 +78,8 @@ void applyInertialMapAlignment(
     bool shouldScaleVelocity = false;
     if (s_on != 1)
         shouldScaleVelocity = true;
-    if (p_currentMap_inout->applyScaledRotation(T_on,
+    if (p_currentMap_inout->applyScaledRotation(p_semanticsManager_in,
+                                                T_on,
                                                 s_on,
                                                 shouldScaleVelocity) !=
         map::MapStatus::MAP_STATUS_SUCCESS)

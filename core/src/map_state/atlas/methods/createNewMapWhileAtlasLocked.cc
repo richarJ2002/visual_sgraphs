@@ -33,6 +33,7 @@
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -140,12 +141,16 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
      *      - Get id of the new active map
      *      - Add the scene map to the scene graph (to be renamed)
      *      - Set the active map in the scene graph (to be renamed)
+     *
+     * Before the semantics manager is attached the maps are not registered
+     * here; Atlas::setSemanticsManager() registers them.
      */
     if ((p_activeMap->getId(newMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->addSceneMap(*p_activeMap) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->setActiveMap(newMapId) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        ((p_semanticsManager != nullptr) &&
+         ((p_semanticsManager->addSceneMap(*p_activeMap) !=
+           SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+          (p_semanticsManager->setActiveMap(newMapId) !=
+           SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId/addSceneMap/setActiveMap returned "

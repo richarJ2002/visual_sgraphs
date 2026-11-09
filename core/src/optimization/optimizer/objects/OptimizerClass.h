@@ -60,6 +60,10 @@ namespace vs_graphs::core::keyframe { class KeyFrame; }
 namespace vs_graphs::core::loop_closing { class LoopClosing; }
 namespace vs_graphs::core::map { class Map; }
 namespace vs_graphs::core::map_point { class MapPoint; }
+namespace vs_graphs::core
+{
+class SemanticsManager;
+}
 
 namespace vs_graphs
 {
@@ -177,6 +181,10 @@ class Optimizer
      * @param[in]       p_map_in
      *                  map::Map to optimise; shall be non-null, borrowed.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph, whose
+     *                  rooms are optimised; borrowed.
+     *
      * @param[in]       iterationCount_in
      *                  Number of optimiser iterations.
      *
@@ -203,6 +211,7 @@ class Optimizer
      */
     [[nodiscard]] static OptimizerStatus globalBundleAdjustment(
         map::Map               *p_map_in,
+        SemanticsManager       *p_semanticsManager_in,
         int                     iterationCount_in  = 5,
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,
@@ -295,6 +304,10 @@ class Optimizer
      * @param[in,out]   p_map_inout
      *                  map::Map holding the keyframe; shall be non-null.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph, whose
+     *                  rooms are optimised; borrowed.
+     *
      * @param[out]      fixedKeyFrameCount_inout
      *                  Number of fixed keyframes in the problem; set to 0 on
      *                  entry, then overwritten.
@@ -315,6 +328,7 @@ class Optimizer
         localBundleAdjustment(keyframe::KeyFrame *p_keyFrame_inout,
                               bool               *p_pbStopFlag_in,
                               map::Map           *p_map_inout,
+                              SemanticsManager   *p_semanticsManager_in,
                               int                &fixedKeyFrameCount_inout,
                               int                &optKeyFrameCount_out,
                               int                &mapPointCount_out,
@@ -475,6 +489,10 @@ class Optimizer
      *                  Source map whose semantic graph follows the optimized
      *                  keyframe deformation.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the source map's S-Graph;
+     *                  borrowed.
+     *
      * @param[in]       fixedKeyFrames_in
      *                  Fixed KeyFrames
      *
@@ -494,6 +512,7 @@ class Optimizer
     [[nodiscard]] static OptimizerStatus optimizeEssentialGraph(
         vs_graphs::core::keyframe::KeyFrame *p_currentKeyFrame_in,
         vs_graphs::core::map::Map           *p_sourceMap_in,
+        vs_graphs::core::SemanticsManager   *p_semanticsManager_in,
         std::vector<vs_graphs::core::keyframe::KeyFrame *> &fixedKeyFrames_in,
         std::vector<vs_graphs::core::keyframe::KeyFrame *>
             &fixedCorrectedKeyFrames_in,

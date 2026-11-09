@@ -54,7 +54,6 @@
 #include <utility>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -66,17 +65,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
     PROFILE_FUNCTION();
     /* Extract all rooms from the current map */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    scene_graph::SceneGraph                       *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRoomsInIdOrder returned a failure status; "
@@ -86,8 +76,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
     /* Extract all passages from the current map */
     std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getAllPassagesInIdOrder(allPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPassagesInIdOrder returned a failure status; "
@@ -2164,11 +2154,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         }
                         std::vector<vs_graphs::core::semantic::Room *>
                             candidateRooms{};
-                        if (p_sceneGraph->getMapCandidateRoomsInIdOrder(
-                                activeMapId,
-                                candidateRooms) !=
-                            scene_graph::SceneGraphStatus::
-                                SCENE_GRAPH_STATUS_SUCCESS)
+                        if (getMapCandidateRoomsInIdOrder(activeMapId,
+                                                          candidateRooms) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),
@@ -2546,12 +2535,12 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
                                     /* Add to atlas as a candidate (not yet a
                                      * confirmed room) */
-                                    if (p_sceneGraph->addCandidateRoom(
+                                    if (addCandidateRoom(
                                             activeMapId,
                                             std::move(
                                                 p_prospectiveRoomOwner)) !=
-                                        scene_graph::SceneGraphStatus::
-                                            SCENE_GRAPH_STATUS_SUCCESS)
+                                        SemanticsManagerStatus::
+                                            SEMANTICS_MANAGER_STATUS_SUCCESS)
                                     {
                                         RCLCPP_ERROR(
                                             rclcpp::get_logger("vs_graphs"),
@@ -3271,10 +3260,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
-                        if (p_sceneGraph->eraseRoom(roomMapId,
-                                                    p_prospectiveRoom) !=
-                            scene_graph::SceneGraphStatus::
-                                SCENE_GRAPH_STATUS_SUCCESS)
+                        if (eraseRoom(roomMapId, p_prospectiveRoom) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: eraseRoom returned a failure "
@@ -3292,10 +3280,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (p_sceneGraph->markRoomBad(roomMapId,
-                                                  p_prospectiveRoom) !=
-                        scene_graph::SceneGraphStatus::
-                            SCENE_GRAPH_STATUS_SUCCESS)
+                    if (markRoomBad(roomMapId, p_prospectiveRoom) !=
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),

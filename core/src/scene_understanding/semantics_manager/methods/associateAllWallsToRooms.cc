@@ -38,7 +38,6 @@
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -85,17 +84,8 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
 
     /* Extract all current rooms and provisional structural elements */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRoomsInIdOrder returned a failure status; "
@@ -454,8 +444,8 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
          * than the current one (passage far-side precedence).
          */
         std::vector<semantic::Room *> atlasAllRooms{};
-        if (p_sceneGraph->getAllRoomsInIdOrder(atlasAllRooms) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (getAllRoomsInIdOrder(atlasAllRooms) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getAllRoomsInIdOrder returned a failure status; "

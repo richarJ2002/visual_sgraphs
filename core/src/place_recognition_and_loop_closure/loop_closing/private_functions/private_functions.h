@@ -606,6 +606,10 @@ void correctMergeMapMonocular(
  * @param[in,out]   p_mergeMap_inout
  *                  Absorbed map whose semantic geometry is corrected.
  *
+ * @param[in]       p_semanticsManager_in
+ *                  Semantics manager that serves the absorbed map's S-Graph;
+ *                  borrowed.
+ *
  * @param[in]       nonCorrectedKeyFramePoses_in
  *                  Keyframe poses before correction.
  *
@@ -618,7 +622,8 @@ void correctMergeMapMonocular(
  *                  current-map world frame.
  */
 void propagateMergedPoseCorrections(
-    map::Map *p_mergeMap_inout,
+    map::Map         *p_mergeMap_inout,
+    SemanticsManager *p_semanticsManager_in,
     const loop_closing::LoopClosing::KeyFrameAndPose
         &nonCorrectedKeyFramePoses_in,
     const loop_closing::LoopClosing::KeyFrameAndPose &correctedKeyFramePoses_in,
@@ -951,6 +956,10 @@ void recordAcceptedMerge(map::Map          *p_currentMap_inout,
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
  *
+ * @param[in]       p_semanticsManager_in
+ *                  Semantics manager that serves the surviving map's S-Graph;
+ *                  borrowed.
+ *
  * @param[in]       mapTransform_currentWorldToMergeWorld_in
  *                  Similarity from the current-map world frame to the merge-map
  *                  world frame; rotation, translation and scale are applied.
@@ -960,6 +969,7 @@ void applyInertialMapAlignment(
     tracking::Tracking          *p_tracker_inout,
     keyframe::KeyFrame          *p_currentKeyFrame_in,
     map::Map                    *p_currentMap_inout,
+    SemanticsManager            *p_semanticsManager_in,
     const g2o::Sim3             &mapTransform_currentWorldToMergeWorld_in);
 
 /*!
@@ -1059,6 +1069,10 @@ void gatherInertialFusionCandidates(
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map whose semantic geometry is corrected.
  *
+ * @param[in]       p_semanticsManager_in
+ *                  Semantics manager that serves the surviving map's S-Graph;
+ *                  borrowed.
+ *
  * @param[in]       nonCorrectedKeyFramePoses_in
  *                  Keyframe poses before the optimisation.
  *
@@ -1066,7 +1080,8 @@ void gatherInertialFusionCandidates(
  *                  Receives the keyframe poses after the optimisation.
  */
 void propagateInertialPoseCorrections(
-    map::Map *p_currentMap_inout,
+    map::Map         *p_currentMap_inout,
+    SemanticsManager *p_semanticsManager_in,
     const loop_closing::LoopClosing::KeyFrameAndPose
                                                &nonCorrectedKeyFramePoses_in,
     loop_closing::LoopClosing::KeyFrameAndPose &correctedKeyFramePoses_inout);

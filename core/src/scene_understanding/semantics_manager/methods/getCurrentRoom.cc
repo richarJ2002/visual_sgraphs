@@ -22,7 +22,6 @@
  *                  SemanticsManager.h.
  */
 
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 namespace vs_graphs
@@ -53,17 +52,8 @@ SemanticsManagerStatus
     semantic::Room *p_roomById = nullptr;
 
     /* Extract the room by id */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_sceneGraph->getRoomById(currentRoomIdSnapshot, p_roomById) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getRoomById(currentRoomIdSnapshot, p_roomById) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),

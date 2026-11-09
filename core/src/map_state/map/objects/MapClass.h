@@ -107,6 +107,7 @@ namespace atlas
 {
 class Atlas;
 } /* namespace atlas */
+class SemanticsManager;
 namespace map
 {
 
@@ -761,8 +762,8 @@ class Map
      *                  and the IMU initialisation and inertial bundle
      *                  adjustment flags are reset. The objects are not deleted.
      *                  The map's rooms, floors and passages are left to the
-     *                  caller (SceneGraph::clearSemantics()). Does not lock
-     *                  mapMutex.
+     *                  caller (SemanticsManager::clearSemantics()). Does not
+     * lock mapMutex.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
@@ -907,6 +908,11 @@ class Map
      *                  frame epoch each grow by one. Takes the scene graph
      *                  lock, released, then mapMutex.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves this map's S-Graph;
+     *                  borrowed. Without it (null) the rooms, passages and
+     *                  floors are not moved.
+     *
      * @param[in]       alignmentPose_oldWorldToNewWorld_in
      *                  Pose mapping points of the old world frame into the new
      *                  world frame; its translation is in the new world frame,
@@ -922,6 +928,7 @@ class Map
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus applyScaledRotation(
+        SemanticsManager   *p_semanticsManager_in,
         const Sophus::SE3f &alignmentPose_oldWorldToNewWorld_in,
         const float         alignmentScale_in,
         const bool          isScaledVelocity_in = false);

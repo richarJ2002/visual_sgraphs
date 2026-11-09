@@ -58,6 +58,7 @@ namespace optimizer
 OptimizerStatus Optimizer::optimizeEssentialGraph(
     vs_graphs::core::keyframe::KeyFrame                *p_currentKeyFrame_in,
     vs_graphs::core::map::Map                          *p_sourceMap_in,
+    vs_graphs::core::SemanticsManager                  *p_semanticsManager_in,
     std::vector<vs_graphs::core::keyframe::KeyFrame *> &fixedKeyFrames_in,
     std::vector<vs_graphs::core::keyframe::KeyFrame *>
         &fixedCorrectedKeyFrames_in,
@@ -887,6 +888,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     {
         if (utils::utils::Utils::propagateSemanticPoseCorrections(
                 p_sourceMap_in,
+                p_semanticsManager_in,
                 keyFramePosesBefore_worldToCamera,
                 keyFramePosesAfter_worldToCamera,
                 mergeTransform_mergeWorldToCurrentWorld_in) !=

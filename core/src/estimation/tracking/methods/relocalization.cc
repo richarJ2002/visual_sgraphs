@@ -45,7 +45,7 @@
 #include "place_recognition_and_loop_closure/keyframe_database/objects/KeyFrameDatabaseStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "visual_features/orb_matcher/objects/ORBmatcherStatusEnum.h"
 
 #include "estimation/mlpnp_solver/mlpnp_solver.h"
@@ -108,25 +108,27 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     if (p_currentMap)
     {
         std::vector<semantic::Room *>       rooms{};
-        scene_graph::SceneGraph            *p_sceneGraph = nullptr;
+        SemanticsManager                   *p_semanticsManager = nullptr;
         unsigned long                       currentMapId{};
         /* The tracking thread holds no semantic lock: the guard keeps the
          * scene graph from freeing these rooms while the loop below runs. */
-        std::shared_lock<std::shared_mutex> sceneGraphReclaimGuard{};
-        if ((p_atlas->getSceneGraph(p_sceneGraph) !=
+        std::shared_lock<std::shared_mutex> graphReclaimGuard{};
+        if ((p_atlas->getSemanticsManager(p_semanticsManager) !=
              atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
             (p_currentMap->getId(currentMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
-             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-            (p_sceneGraph->getMapDetectedRoomsInIdOrder(currentMapId, rooms) !=
-             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+            (p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+            (p_semanticsManager->getMapDetectedRoomsInIdOrder(currentMapId,
+                                                              rooms) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getSceneGraph/getId/getMapDetectedRoomsInIdOrder "
-                         "found no scene map for the current map; continuing "
-                         "without room priors.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getSemanticsManager/getId/getMapDetectedRoomsInIdOrder "
+                "found no scene map for the current map; continuing "
+                "without room priors.",
+                __func__);
         }
         for (semantic::Room *p_room : rooms)
         {

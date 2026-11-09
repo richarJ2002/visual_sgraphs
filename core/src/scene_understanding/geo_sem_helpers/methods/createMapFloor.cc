@@ -29,7 +29,7 @@
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <iostream>
 #include <memory>
@@ -133,19 +133,21 @@ GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->addFloor(currentMapId, std::move(p_newFloorOwner)) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        (p_semanticsManager->addFloor(currentMapId,
+                                      std::move(p_newFloorOwner)) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId/addFloor found no scene map for "
-                     "the floor's map; the floor was not added.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager/getId/addFloor found no scene map for "
+            "the floor's map; the floor was not added.",
+            __func__);
     }
 
     int newMapFloorId{};

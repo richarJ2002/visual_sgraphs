@@ -55,8 +55,8 @@ namespace scene_graph
  *                  frees them. A room or passage not yet linked to a storey
  *                  is reachable through these maps only. Bad-flagged objects
  *                  stay here, hidden from every query, until the sweep moves
- *                  them out. Owned by SceneGraph and guarded by its graph
- *                  mutex.
+ *                  them out. Owned by the Map and guarded by the
+ * SemanticsManager graph mutex.
  */
 struct SceneMap
 {
@@ -89,9 +89,9 @@ struct SceneMap
     std::map<int, std::unique_ptr<semantic::Passage>> passages;
 
     /*!
-     * @brief           Next storey id SceneGraph::addFloor() hands out when a
-     *                  storey's id is negative or taken; never lowered, so a
-     *                  freed id is not reused. Kept by clearSemantics().
+     * @brief           Next storey id SemanticsManager::addFloor() hands out
+     * when a storey's id is negative or taken; never lowered, so a freed id is
+     * not reused. Kept by clearSemantics().
      */
     int nextAvailableFloorId{0};
 };

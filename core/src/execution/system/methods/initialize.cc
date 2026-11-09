@@ -289,6 +289,18 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
                      __func__);
     }
 
+    /* Create the semantics manager before any thread that reaches the S-Graph
+     * through the atlas; the atlas registers the maps it already holds. */
+    p_semanticsManager = new SemanticsManager(p_atlas);
+    if (p_atlas->setSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     /* If the sensor is integrated with IMU, initialize the IMU first */
     if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
         sensor_in == IMU_RGBD)
@@ -402,10 +414,9 @@ SystemStatus System::initialize(const std::string            &vocabularyFile_in,
      * SEMANTIC MANAGER THREAD
      * ---------------------------------------------------------------------- */
 
-    /* Initialize the Semantic Manager thread */
-    p_semanticsManager = new SemanticsManager(p_atlas);
-
-    /* Launch the Semantic Manager thread */
+    /* Launch the Semantic Manager thread; the manager itself was created above
+     * because the loop-closing, local-mapping and tracking threads reach the
+     * S-Graph through it. */
     p_semanticsManagerThread =
         new std::thread(&SemanticsManager::run, p_semanticsManager);
 

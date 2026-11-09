@@ -43,7 +43,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <vs_graphs_g2o/types/sim3.h>
 
 #include <algorithm>
@@ -59,6 +59,7 @@ namespace map
 {
 
 MapStatus Map::applyScaledRotation(
+    SemanticsManager   *p_semanticsManager_in,
     const Sophus::SE3f &alignmentPose_oldWorldToNewWorld_in,
     const float         alignmentScale_in,
     const bool          isScaledVelocity_in)
@@ -66,23 +67,23 @@ MapStatus Map::applyScaledRotation(
     /* Rooms, passages and floors come from the scene graph, read before
      * mapMutex is held for the move (lock order: scene graph lock, then
      * mapMutex). Callers hold the semantic lock, so the lists stay put. */
-    scene_graph::SceneGraph         *p_mapSceneGraph = nullptr;
     std::vector<semantic::Passage *> mapPassages{};
     std::vector<semantic::Room *>    mapDetectedRooms{};
     std::vector<semantic::Room *>    mapCandidateRooms{};
     std::vector<semantic::Floor *>   mapFloors{};
-    if ((scene_graph::SceneGraph::getSceneGraph(p_mapSceneGraph) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_mapSceneGraph == nullptr) ||
-        (p_mapSceneGraph->getMapPassagesInIdOrder(id, mapPassages) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_mapSceneGraph->getMapDetectedRoomsInIdOrder(id, mapDetectedRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_mapSceneGraph->getMapCandidateRoomsInIdOrder(id,
-                                                        mapCandidateRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_mapSceneGraph->getMapFloorsInIdOrder(id, mapFloors) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->getMapPassagesInIdOrder(id, mapPassages) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager_in->getMapDetectedRoomsInIdOrder(
+             id,
+             mapDetectedRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager_in->getMapCandidateRoomsInIdOrder(
+             id,
+             mapCandidateRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager_in->getMapFloorsInIdOrder(id, mapFloors) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for this map; its "

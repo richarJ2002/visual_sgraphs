@@ -36,7 +36,7 @@
 #include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -173,20 +173,21 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 
     /* Extract all passages */
     std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllPassagesInIdOrder(allPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "
@@ -858,9 +859,9 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     unsigned long atlasCurrentMapId{};
     if ((p_atlasCurrentMap->getId(atlasCurrentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->addPassage(atlasCurrentMapId,
-                                  std::move(p_newPassageOwner)) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        (p_semanticsManager->addPassage(atlasCurrentMapId,
+                                        std::move(p_newPassageOwner)) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId/addPassage found no scene map for the "
@@ -871,8 +872,8 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     p_createdPassage_out = p_newMapPassage;
 
     std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
-    if (p_sceneGraph->getAllPassagesInIdOrder(atlasAllPassages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllPassagesInIdOrder(atlasAllPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "

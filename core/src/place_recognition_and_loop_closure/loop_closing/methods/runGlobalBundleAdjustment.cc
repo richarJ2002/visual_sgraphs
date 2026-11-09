@@ -89,6 +89,16 @@ LoopClosingStatus
      */
     bool optimizerStopRequested = false;
 
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     bool isImuInitialized{};
     if (p_activeMap_inout->isImuInitialized(isImuInitialized) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
@@ -103,6 +113,7 @@ LoopClosingStatus
     {
         if (optimizer::Optimizer::globalBundleAdjustment(
                 p_activeMap_inout,
+                p_semanticsManager,
                 10,
                 &optimizerStopRequested,
                 loopKeyFrameCount_in,
@@ -686,6 +697,7 @@ LoopClosingStatus
             /* Keep every semantic entity aligned with the corrected cameras. */
             if (utils::utils::Utils::propagateSemanticPoseCorrections(
                     p_activeMap_inout,
+                    p_semanticsManager,
                     keyFramePosesBefore_worldToCamera,
                     keyFramePosesAfter_worldToCamera,
                     identityTransform_worldToWorld) !=

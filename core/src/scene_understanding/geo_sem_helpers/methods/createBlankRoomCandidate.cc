@@ -31,7 +31,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <iostream>
@@ -58,20 +58,21 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 
     /* Extract the existing rooms from the map */
     std::vector<vs_graphs::core::semantic::Room *> existingRooms{};
-    if (p_sceneGraph->getAllRoomsInIdOrder(existingRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllRoomsInIdOrder(existingRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "
@@ -106,8 +107,8 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      * passable/blocked state alone.
      */
     std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages{};
-    if (p_sceneGraph->getAllPassagesInIdOrder(currentMapPassages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllPassagesInIdOrder(currentMapPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "
@@ -175,7 +176,7 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
 
     /*!
      * Fill the parameters of room. The caller owns the room until it hands
-     * it to the scene graph with SceneGraph::addCandidateRoom().
+     * it to the scene graph with SemanticsManager::addCandidateRoom().
      */
 
     if (p_newRoom->setId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)

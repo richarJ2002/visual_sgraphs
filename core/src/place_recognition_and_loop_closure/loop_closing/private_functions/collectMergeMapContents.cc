@@ -36,7 +36,7 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -82,35 +82,37 @@ void collectMergeMapContents(
                      __func__);
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            mergeMapId{};
-    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     mergeMapId{};
+    if ((p_atlas_in->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_mergeMap_in->getId(mergeMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
 
     /* Copy the passages, detected rooms, candidate (marker-based) rooms and
      * floors the scene graph lists for the merge map. */
-    if ((p_sceneGraph->getMapPassagesInIdOrder(mergeMapId,
-                                               mergeMapContents_out.passages) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapDetectedRoomsInIdOrder(
+    if ((p_semanticsManager->getMapPassagesInIdOrder(
+             mergeMapId,
+             mergeMapContents_out.passages) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapDetectedRoomsInIdOrder(
              mergeMapId,
              mergeMapContents_out.detectedRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapCandidateRoomsInIdOrder(
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapCandidateRoomsInIdOrder(
              mergeMapId,
              mergeMapContents_out.markerBasedRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapFloorsInIdOrder(mergeMapId,
-                                             mergeMapContents_out.floors) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapFloorsInIdOrder(
+             mergeMapId,
+             mergeMapContents_out.floors) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "

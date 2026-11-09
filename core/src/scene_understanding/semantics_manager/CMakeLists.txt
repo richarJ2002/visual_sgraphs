@@ -1,4 +1,7 @@
-# SemanticsManager object sources.
+# SemanticsManager object sources; the scene graph operations are built from
+# the graph subpackage.
+include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
+
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoomForTest.cc
@@ -102,6 +105,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc
+  ${VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES}
 )
 
 # The Eigen setFromTwoVectors diagnostic deviation (see the file header) only

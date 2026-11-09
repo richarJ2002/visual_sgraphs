@@ -32,6 +32,7 @@
 
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -50,8 +51,8 @@ AtlasStatus Atlas::clearAtlas()
         unsigned long retiredMapId{};
         if ((p_map->getId(retiredMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_sceneGraph->eraseSceneMap(retiredMapId) !=
-             scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+            (p_semanticsManager->eraseSceneMap(retiredMapId) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getId/eraseSceneMap returned a failure status "

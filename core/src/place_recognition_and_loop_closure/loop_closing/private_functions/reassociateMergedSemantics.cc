@@ -43,7 +43,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
@@ -132,21 +132,21 @@ void reassociateMergedSemantics(
                          mergeMapContents_in.markerBasedRooms.end());
 
     /* Rooms the surviving map had before the merge are the fusion targets. */
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<semantic::Room *> mapAllRooms{};
-    if (p_sceneGraph->getMapRoomsInIdOrder(currentMapId, mapAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapRoomsInIdOrder(currentMapId, mapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -238,13 +238,13 @@ void reassociateMergedSemantics(
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedRoom->setId(freshRoomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
-            p_sceneGraph->moveRoom(
-                currentMapId,
-                currentMapId,
-                p_importedRoom,
-                isDetectedRoom ? scene_graph::RoomList::ROOM_LIST_DETECTED
-                               : scene_graph::RoomList::ROOM_LIST_CANDIDATE) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            p_semanticsManager->moveRoom(currentMapId,
+                                         currentMapId,
+                                         p_importedRoom,
+                                         isDetectedRoom
+                                             ? RoomList::ROOM_LIST_DETECTED
+                                             : RoomList::ROOM_LIST_CANDIDATE) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: re-keying a room returned a failure status "
@@ -306,10 +306,10 @@ void reassociateMergedSemantics(
                 atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
             p_importedPassage->setId(freshPassageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-            p_sceneGraph->movePassage(currentMapId,
-                                      currentMapId,
-                                      p_importedPassage) !=
-                scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+            p_semanticsManager->movePassage(currentMapId,
+                                            currentMapId,
+                                            p_importedPassage) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: re-keying a passage returned a failure status "

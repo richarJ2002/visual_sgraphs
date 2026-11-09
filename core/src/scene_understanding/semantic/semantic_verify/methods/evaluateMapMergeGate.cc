@@ -11,8 +11,8 @@
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
@@ -66,8 +66,19 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     bool isVerified{};
-    if (verifyLoopMergeFloors(p_survivingMap_in,
+    if (verifyLoopMergeFloors(p_semanticsManager,
+                              p_survivingMap_in,
                               p_absorbedMap_in,
                               mergeTransform_absorbedToSurviving_in,
                               result.floorDecision,
@@ -92,25 +103,22 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            survivingMapId{};
-    unsigned long            absorbedMapId{};
-    if ((p_atlas_in->getSceneGraph(p_sceneGraph) !=
-         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
-        (p_survivingMap_in->getId(survivingMapId) !=
+    unsigned long survivingMapId{};
+    unsigned long absorbedMapId{};
+    if ((p_survivingMap_in->getId(survivingMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_absorbedMap_in->getId(absorbedMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<Room *> survivingMapAllRooms{};
-    if (p_sceneGraph->getMapRoomsInIdOrder(survivingMapId,
-                                           survivingMapAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapRoomsInIdOrder(survivingMapId,
+                                                 survivingMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "
@@ -119,9 +127,9 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
                      survivingMapId);
     }
     std::vector<Room *> absorbedMapAllRooms{};
-    if (p_sceneGraph->getMapRoomsInIdOrder(absorbedMapId,
-                                           absorbedMapAllRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getMapRoomsInIdOrder(absorbedMapId,
+                                                 absorbedMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for map %lu; "

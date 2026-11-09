@@ -520,6 +520,10 @@ class Utils
      * @param[in,out]   p_map_inout
      *                  Map whose semantic geometry is updated.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph;
+     *                  borrowed.
+     *
      * @param[in]       keyFramePosesBefore_worldToCamera_in
      *                  World-to-camera poses immediately before
      *                  optimization.
@@ -534,7 +538,8 @@ class Utils
      *                  identity for an in-place BA.
      */
     [[nodiscard]] static UtilsStatus propagateSemanticPoseCorrections(
-        map::Map                   *p_map_inout,
+        map::Map              *p_map_inout,
+        SemanticsManager      *p_semanticsManager_in,
         const KeyFramePoseMap &keyFramePosesBefore_worldToCamera_in,
         const KeyFramePoseMap &keyFramePosesAfter_worldToCamera_in,
         const g2o::Sim3       &fallbackTransform_oldWorldToNewWorld_in);

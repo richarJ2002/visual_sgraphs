@@ -36,7 +36,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -136,20 +136,21 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 
     /* Extract all rooms and provisional structural elements */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for the active map; "
@@ -179,8 +180,8 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         }
 
         std::vector<vs_graphs::core::semantic::Passage *> activePassages{};
-        if (p_sceneGraph->getAllPassagesInIdOrder(activePassages) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getAllPassagesInIdOrder(activePassages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
@@ -439,8 +440,8 @@ UtilsStatus Utils::consolidateProvisionalRooms(
 
         /* Preserve floor membership before retiring the provisional room. */
         std::vector<semantic::Floor *> atlasAllFloors{};
-        if (p_sceneGraph->getAllFloorsInIdOrder(atlasAllFloors) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getAllFloorsInIdOrder(atlasAllFloors) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
@@ -488,8 +489,8 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->markRoomBad(currentMapId, p_candidateRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->markRoomBad(currentMapId, p_candidateRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: markRoomBad found no scene map for map %lu; the "

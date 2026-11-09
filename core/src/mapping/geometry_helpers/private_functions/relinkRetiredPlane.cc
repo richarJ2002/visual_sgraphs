@@ -33,7 +33,7 @@
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 namespace vs_graphs
 {
@@ -48,14 +48,15 @@ UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
                                geometric::Plane *p_retiredPlane_inout,
                                geometric::Plane *p_retainedPlane_inout)
 {
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 
     /* The plane's own observation records move to the survivor in one locked
@@ -71,9 +72,9 @@ UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
 
     /* The rooms and passages that listed the retired plane list the survivor
      * instead; the scene graph writes both sides in one step. */
-    if (p_sceneGraph->replacePlane(p_retiredPlane_inout,
-                                   p_retainedPlane_inout) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (p_semanticsManager->replacePlane(p_retiredPlane_inout,
+                                         p_retainedPlane_inout) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: replacePlane returned a failure status although it "

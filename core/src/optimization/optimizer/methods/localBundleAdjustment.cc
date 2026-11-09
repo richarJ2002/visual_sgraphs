@@ -45,7 +45,7 @@
 #include "optimization/optimizer/objects/OptimizerClass.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "execution/system/system.h"
 #include "mapping/geometry_helpers/utils.h"
@@ -77,6 +77,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     vs_graphs::core::keyframe::KeyFrame *p_keyFrame_inout,
     bool                                *p_pbStopFlag_in,
     map::Map                            *p_map_inout,
+    SemanticsManager                    *p_semanticsManager_in,
     int                                 &fixedKeyFrameCount_inout,
     int                                 &optKeyFrameCount_out,
     int                                 &mapPointCount_out,
@@ -114,19 +115,16 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::list<vs_graphs::core::map_point::MapPoint *>  localMapPointList;
     std::vector<vs_graphs::core::keyframe::KeyFrame *> neighborKeyFrameVector;
     std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
-    scene_graph::SceneGraph                           *p_sceneGraph = nullptr;
     unsigned long                                      mapId{};
     /* The rooms are used until the function ends, outside the semantic update
      * lock: the guard keeps the scene graph from freeing them meanwhile. */
-    std::shared_lock<std::shared_mutex>                sceneGraphReclaimGuard{};
-    if ((scene_graph::SceneGraph::getSceneGraph(p_sceneGraph) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph == nullptr) ||
-        (p_sceneGraph->acquireReclaimGuard(sceneGraphReclaimGuard) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS) ||
-        (p_sceneGraph->getMapRoomsInIdOrder(mapId, allRooms) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+    std::shared_lock<std::shared_mutex>                graphReclaimGuard{};
+    if ((p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->acquireReclaimGuard(graphReclaimGuard) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager_in->getMapRoomsInIdOrder(mapId, allRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: the scene graph has no scene map for this map; "

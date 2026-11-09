@@ -40,8 +40,8 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <iostream>
@@ -72,15 +72,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            mapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     mapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         ((p_map_inout != nullptr) &&
          (p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
@@ -253,8 +253,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Passage *> mergePassages{};
-        if (p_sceneGraph->getMapPassagesInIdOrder(mapId, mergePassages) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getMapPassagesInIdOrder(mapId, mergePassages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: the scene graph has no scene map for map %lu; "
@@ -326,8 +326,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
         std::vector<semantic::Room *> mapRooms{};
-        if (p_sceneGraph->getMapRoomsInIdOrder(mapId, mapRooms) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getMapRoomsInIdOrder(mapId, mapRooms) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: the scene graph has no scene map for map %lu; "
@@ -593,8 +593,9 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-        if (p_sceneGraph->getMapPassagesInIdOrder(mapId, mapAllPassages) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getMapPassagesInIdOrder(mapId,
+                                                        mapAllPassages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: the scene graph has no scene map for map %lu; "
@@ -755,8 +756,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         }
 
         std::vector<semantic::Floor *> mapAllFloors{};
-        if (p_sceneGraph->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: the scene graph has no scene map for map %lu; "
@@ -783,8 +784,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        if (p_sceneGraph->eraseRoom(mapId, p_importedRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->eraseRoom(mapId, p_importedRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: eraseRoom found no scene map for map %lu; "
@@ -808,8 +809,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->markRoomBad(mapId, p_importedRoom) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->markRoomBad(mapId, p_importedRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: markRoomBad found no scene map for map %lu; the "

@@ -37,6 +37,7 @@ namespace semantic
 
 SemanticVerifyStatus SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
+    SemanticsManager        *p_semanticsManager_in,
     map::Map                *p_survivingMap_in,
     map::Map                *p_absorbedMap_in,
     const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,
@@ -48,7 +49,8 @@ SemanticVerifyStatus SemanticVerify::runFloorGate(
         1.0);
     std::string resultText;
     bool        passed{};
-    if (verifyLoopMergeFloors(p_survivingMap_in,
+    if (verifyLoopMergeFloors(p_semanticsManager_in,
+                              p_survivingMap_in,
                               p_absorbedMap_in,
                               transform,
                               resultText,

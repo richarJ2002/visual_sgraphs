@@ -48,7 +48,8 @@ namespace core
 {
 
 void propagateMergedPoseCorrections(
-    map::Map *p_mergeMap_inout,
+    map::Map         *p_mergeMap_inout,
+    SemanticsManager *p_semanticsManager_in,
     const loop_closing::LoopClosing::KeyFrameAndPose
         &nonCorrectedKeyFramePoses_in,
     const loop_closing::LoopClosing::KeyFrameAndPose &correctedKeyFramePoses_in,
@@ -119,6 +120,7 @@ void propagateMergedPoseCorrections(
 
     if (utils::utils::Utils::propagateSemanticPoseCorrections(
             p_mergeMap_inout,
+            p_semanticsManager_in,
             nonCorrectedKeyFramePoses_in,
             finalKeyFramePoses_worldToCamera,
             mapTransform_mergeWorldToCurrentWorld_in) !=

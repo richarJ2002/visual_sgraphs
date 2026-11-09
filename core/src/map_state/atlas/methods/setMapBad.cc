@@ -33,6 +33,7 @@
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -65,8 +66,8 @@ AtlasStatus Atlas::setMapBad(map::Map *p_map_inout)
     /* The map left maps, so its scene map goes too. */
     unsigned long badMapId{};
     if ((p_map_inout->getId(badMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_sceneGraph->eraseSceneMap(badMapId) !=
-         scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS))
+        (p_semanticsManager->eraseSceneMap(badMapId) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId/eraseSceneMap returned a failure status "

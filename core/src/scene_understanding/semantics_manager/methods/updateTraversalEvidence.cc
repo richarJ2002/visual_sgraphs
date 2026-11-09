@@ -48,7 +48,6 @@
 #include <unordered_map>
 
 #include "execution/profiling/profiling.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -84,15 +83,6 @@ SemanticsManagerStatus
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId returned a failure status although it cannot "
                      "fail; continuing as before.",
-                     __func__);
-    }
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    if (p_atlas_in->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
                      __func__);
     }
 
@@ -218,8 +208,8 @@ SemanticsManagerStatus
     const double minimumSideDistance_m = static_cast<double>(
         p_sysParams->roomSeg.passagePartition.minimumSideDistance_m);
     std::vector<semantic::Passage *> passages{};
-    if (p_sceneGraph->getMapPassagesInIdOrder(activeMapId, passages) !=
-        scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getMapPassagesInIdOrder(activeMapId, passages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getMapPassagesInIdOrder returned a failure status; "
@@ -528,9 +518,8 @@ SemanticsManagerStatus
                     p_reachedRoom = knownSide.p_room;
                 }
                 std::vector<semantic::Room *> activeRooms{};
-                if (p_sceneGraph->getMapRoomsInIdOrder(activeMapId,
-                                                       activeRooms) !=
-                    scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+                if (getMapRoomsInIdOrder(activeMapId, activeRooms) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                  "%s: getMapRoomsInIdOrder returned a failure "
@@ -579,10 +568,9 @@ SemanticsManagerStatus
                     if (reachedRoomRoomVariant ==
                         semantic::Room::RoomVariant::UNDEFINED)
                     {
-                        if (p_sceneGraph->promoteCandidateRoom(activeMapId,
-                                                               p_reachedRoom) !=
-                            scene_graph::SceneGraphStatus::
-                                SCENE_GRAPH_STATUS_SUCCESS)
+                        if (promoteCandidateRoom(activeMapId, p_reachedRoom) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),
@@ -643,11 +631,10 @@ SemanticsManagerStatus
 
                         semantic::Floor               *p_floor = nullptr;
                         std::vector<semantic::Floor *> activeMapAllFloors{};
-                        if (p_sceneGraph->getMapFloorsInIdOrder(
-                                activeMapId,
-                                activeMapAllFloors) !=
-                            scene_graph::SceneGraphStatus::
-                                SCENE_GRAPH_STATUS_SUCCESS)
+                        if (getMapFloorsInIdOrder(activeMapId,
+                                                  activeMapAllFloors) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),

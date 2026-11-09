@@ -42,7 +42,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
 
 namespace vs_graphs
 {
@@ -53,19 +52,10 @@ SemanticsManagerStatus SemanticsManager::enforcePassageTopologyInvariant(void)
 {
     std::vector<semantic::Passage *> allPassages{};
     std::vector<semantic::Room *>    allRooms{};
-    scene_graph::SceneGraph         *p_sceneGraph = nullptr;
-    if (p_atlas->getSceneGraph(p_sceneGraph) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_sceneGraph->getAllPassagesInIdOrder(allPassages) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS ||
-        p_sceneGraph->getAllRoomsInIdOrder(allRooms) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+    if (getAllPassagesInIdOrder(allPassages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+        getAllRoomsInIdOrder(allRooms) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllPassagesInIdOrder/getAllRoomsInIdOrder "

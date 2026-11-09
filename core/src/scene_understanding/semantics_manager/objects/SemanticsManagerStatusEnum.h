@@ -47,7 +47,13 @@ enum class SemanticsManagerStatus : std::uint8_t
     /*!
      * @brief           The operation returned an invalid current current room.
      */
-    SEMANTIC_MANAGER_STATUS_INVALID_CURRENT_ROOM = 1U
+    SEMANTIC_MANAGER_STATUS_INVALID_CURRENT_ROOM = 1U,
+
+    /*!
+     * @brief           The scene graph registry has no scene graph for the
+     *                  requested SLAM map id; nothing was written.
+     */
+    SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND = 2U
 };
 
 } /* namespace core */

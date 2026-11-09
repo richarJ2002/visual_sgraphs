@@ -38,7 +38,7 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_graph/SceneGraph.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <rclcpp/logging.hpp>
 
@@ -54,10 +54,10 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
                    const std::vector<semantic::Room *> &markerBasedRooms_in,
                    bool skipBadMarkerBasedRooms_in)
 {
-    scene_graph::SceneGraph *p_sceneGraph = nullptr;
-    unsigned long            currentMapId{};
-    unsigned long            mergeMapId{};
-    if ((p_atlas_inout->getSceneGraph(p_sceneGraph) !=
+    SemanticsManager *p_semanticsManager = nullptr;
+    unsigned long     currentMapId{};
+    unsigned long     mergeMapId{};
+    if ((p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
          atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
         (p_currentMap_inout->getId(currentMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||
@@ -65,7 +65,7 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
          map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneGraph/getId returned a failure status "
+                     "%s: getSemanticsManager/getId returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }
@@ -100,11 +100,11 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
         }
 
         /* Hand the room from the merged map to the current map */
-        if (p_sceneGraph->moveRoom(mergeMapId,
-                                   currentMapId,
-                                   p_currentDetectedRoom,
-                                   scene_graph::RoomList::ROOM_LIST_DETECTED) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->moveRoom(mergeMapId,
+                                         currentMapId,
+                                         p_currentDetectedRoom,
+                                         RoomList::ROOM_LIST_DETECTED) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: moveRoom found no scene map for maps %lu and "
@@ -144,12 +144,11 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_sceneGraph->moveRoom(
-                mergeMapId,
-                currentMapId,
-                pRoom,
-                scene_graph::RoomList::ROOM_LIST_CANDIDATE) !=
-            scene_graph::SceneGraphStatus::SCENE_GRAPH_STATUS_SUCCESS)
+        if (p_semanticsManager->moveRoom(mergeMapId,
+                                         currentMapId,
+                                         pRoom,
+                                         RoomList::ROOM_LIST_CANDIDATE) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: moveRoom found no scene map for maps %lu and "
