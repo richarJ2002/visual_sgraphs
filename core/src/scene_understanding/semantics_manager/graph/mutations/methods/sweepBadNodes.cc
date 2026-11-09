@@ -51,7 +51,7 @@ SemanticsManagerStatus SemanticsManager::sweepBadNodes()
     std::vector<map::Map *>       slamMaps{};
     std::vector<semantic::Room *> retiredRoomPointers{};
     {
-        std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+        std::unique_lock<std::shared_mutex> graphLock(registryMutex);
         for (std::pair<const unsigned long, scene_graph::SceneGraph *>
                  &sceneGraphEntry : sceneGraphs)
         {
@@ -90,7 +90,7 @@ SemanticsManagerStatus SemanticsManager::sweepBadNodes()
     /* Step 3, graph lock exclusive: every other holder lets go, then the batch
      * is freed unless a reader holds the reclaim guard. The try-lock never
      * waits, so a reader can never stall the cycle. */
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     unlinkRetiredNodes(sceneGraphs, retiredBatch);
     std::unique_lock<std::shared_mutex> reclaimLock(reclaimMutex,
                                                     std::try_to_lock);

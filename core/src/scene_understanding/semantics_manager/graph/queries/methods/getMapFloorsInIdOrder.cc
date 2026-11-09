@@ -43,7 +43,7 @@ SemanticsManagerStatus SemanticsManager::getMapFloorsInIdOrder(
     std::vector<semantic::Floor *> &floors_out) const
 {
     floors_out.clear();
-    std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
     std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator == sceneGraphs.end())

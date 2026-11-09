@@ -49,7 +49,7 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
 
     std::vector<semantic::Room *> floorRooms{};
     if (p_floor_inout->getRooms(floorRooms) !=

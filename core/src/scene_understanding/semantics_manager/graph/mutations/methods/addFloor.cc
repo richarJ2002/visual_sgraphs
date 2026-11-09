@@ -47,7 +47,7 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     std::map<unsigned long, scene_graph::SceneGraph *>::iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator == sceneGraphs.end())

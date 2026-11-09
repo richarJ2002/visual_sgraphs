@@ -31,6 +31,7 @@
 
 #include <map>
 #include <memory>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -61,6 +62,15 @@ namespace scene_graph
 struct SceneGraph
 {
   public:
+    /*!
+     * @brief           The one lock of this map's graph: shared to read any
+     *                  node, exclusive to edit or free one. Taken only by the
+     *                  SemanticsManager (see GraphLockScope), in ascending
+     *                  map-id order when several graphs are locked; never
+     *                  taken while a plane's geometry lock is held.
+     */
+    mutable std::shared_mutex graphMutex;
+
     /*!
      * @brief           SLAM map this scene graph mirrors; borrowed, the atlas
      *                  owns it.

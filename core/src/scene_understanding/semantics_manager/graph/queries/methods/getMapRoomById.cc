@@ -43,7 +43,7 @@ SemanticsManagerStatus
                                      semantic::Room *&p_room_out) const
 {
     p_room_out = nullptr;
-    std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+    std::shared_lock<std::shared_mutex> graphLock(registryMutex);
     std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator == sceneGraphs.end())

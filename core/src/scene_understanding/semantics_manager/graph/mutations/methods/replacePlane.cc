@@ -45,7 +45,7 @@ SemanticsManagerStatus
     SemanticsManager::replacePlane(geometric::Plane *p_retiredPlane_inout,
                                    geometric::Plane *p_retainedPlane_inout)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     if (!activeGraphMapId.has_value())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

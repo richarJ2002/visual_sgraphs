@@ -41,7 +41,7 @@ SemanticsManagerStatus SemanticsManager::getAllPassagesInIdOrder(
     passages_out.clear();
     std::optional<unsigned long> activeMapIdCopy{};
     {
-        std::shared_lock<std::shared_mutex> graphLock(graphMutex);
+        std::shared_lock<std::shared_mutex> graphLock(registryMutex);
         activeMapIdCopy = activeGraphMapId;
     }
     /* The lock is released before the by-map query takes it again: one

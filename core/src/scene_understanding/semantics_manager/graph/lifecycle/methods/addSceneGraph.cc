@@ -61,7 +61,7 @@ SemanticsManagerStatus SemanticsManager::addSceneGraph(map::Map &map_inout)
                      __func__);
     }
 
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
 
     /* A scene graph that held nodes may still be pointed at by other nodes:
      * its nodes are retired for the next sweep, not freed here. */

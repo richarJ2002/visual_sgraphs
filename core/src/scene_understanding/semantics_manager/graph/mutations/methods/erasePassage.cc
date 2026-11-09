@@ -41,7 +41,7 @@ SemanticsManagerStatus
     SemanticsManager::erasePassage(unsigned long      mapId_in,
                                    semantic::Passage *p_passage_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     std::map<unsigned long, scene_graph::SceneGraph *>::iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator == sceneGraphs.end())

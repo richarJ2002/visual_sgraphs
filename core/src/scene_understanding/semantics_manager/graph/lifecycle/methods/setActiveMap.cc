@@ -35,7 +35,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::setActiveMap(unsigned long mapId_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     activeGraphMapId = mapId_in;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

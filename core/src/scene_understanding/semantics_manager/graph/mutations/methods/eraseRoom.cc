@@ -40,7 +40,7 @@ namespace core
 SemanticsManagerStatus SemanticsManager::eraseRoom(unsigned long   mapId_in,
                                                    semantic::Room *p_room_in)
 {
-    std::unique_lock<std::shared_mutex> graphLock(graphMutex);
+    std::unique_lock<std::shared_mutex> graphLock(registryMutex);
     std::map<unsigned long, scene_graph::SceneGraph *>::iterator
         sceneGraphIterator = sceneGraphs.find(mapId_in);
     if (sceneGraphIterator == sceneGraphs.end())

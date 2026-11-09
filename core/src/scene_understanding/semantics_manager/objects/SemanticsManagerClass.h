@@ -33,6 +33,8 @@
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
+#include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
+#include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
 #include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
 #include "scene_understanding/semantics_manager/objects/RetiredNodesStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomListEnum.h"
@@ -1020,25 +1022,25 @@ class SemanticsManager
      *                  everything the scene graphs hold. Shared for queries,
      *                  exclusive for mutations.
      */
-    mutable std::shared_mutex graphMutex;
+    mutable std::shared_mutex registryMutex;
 
     /*!
      * @brief           Scene graphs by SLAM map id; borrowed. Each SLAM map
      *                  owns its scene graph as a member and is registered here
      *                  by addSceneGraph() until eraseSceneGraph(). Guarded by
-     *                  graphMutex.
+     *                  registryMutex.
      */
     std::map<unsigned long, scene_graph::SceneGraph *> sceneGraphs;
 
     /*!
      * @brief           Id of the atlas's current map; empty when there is
-     *                  none. Guarded by graphMutex.
+     *                  none. Guarded by registryMutex.
      */
     std::optional<unsigned long> activeGraphMapId;
 
     /*!
      * @brief           Nodes that left the tree and wait to be freed by the
-     *                  sweep. Guarded by graphMutex.
+     *                  sweep. Guarded by registryMutex.
      */
     RetiredNodes retiredNodes;
 
@@ -1049,6 +1051,29 @@ class SemanticsManager
      *                  without waiting.
      */
     mutable std::shared_mutex reclaimMutex;
+
+    /*!
+     * @brief           Looks a scene graph up by map id. Takes registryMutex
+     *                  shared; does not lock the graph itself.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @return          The map's scene graph; borrowed, owned by its Map; null
+     *                  when the registry has none.
+     */
+    [[nodiscard]] scene_graph::SceneGraph *
+        findSceneGraph(unsigned long mapId_in) const;
+
+    /*!
+     * @brief           Copies the registry, so a caller can walk the graphs
+     *                  without holding registryMutex. Takes it shared.
+     *
+     * @return          The registered scene graphs by map id, ascending;
+     *                  borrowed.
+     */
+    [[nodiscard]] std::map<unsigned long, scene_graph::SceneGraph *>
+        copySceneGraphs() const;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -2021,6 +2046,60 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus acquireReclaimGuard(
         std::shared_lock<std::shared_mutex> &reclaimGuard_out) const;
+
+    /*!
+     * @brief           Locks the graphs of the listed maps, in ascending
+     *                  map-id order whatever the order of the list. Every
+     *                  graph access goes through a lock taken here or inside
+     *                  a manager call: shared to read, exclusive to edit.
+     *                  Re-entrant per thread: while a thread holds a scope,
+     *                  every manager call it makes on those graphs re-enters
+     *                  without waiting, so a caller opens one scope around a
+     *                  whole edit or read and calls the manager inside it.
+     *                  Never request exclusive while the thread holds the same
+     *                  graph shared. Lock order: semantic update lock, then
+     *                  graph locks by map id, then atlas, map, plane-geometry
+     *                  and room-context mutexes. Tracking threads use
+     *                  GRAPH_LOCK_MODE_TRY_SHARED or no graph lock.
+     *
+     * @param[in]       mapIds_in
+     *                  Ids of the SLAM maps; duplicates allowed.
+     *
+     * @param[in]       mode_in
+     *                  How to lock them.
+     *
+     * @param[out]      scope_out
+     *                  Holds the locks until it goes out of scope; empty on
+     *                  failure.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when a map is not
+     *                  registered (nothing is locked), or
+     *                  SEMANTICS_MANAGER_STATUS_BUSY when
+     *                  GRAPH_LOCK_MODE_TRY_SHARED finds a writer (nothing is
+     *                  locked).
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        lockGraphs(const std::vector<unsigned long> &mapIds_in,
+                   GraphLockMode                     mode_in,
+                   GraphLockScope                   &scope_out) const;
+
+    /*!
+     * @brief           Locks the graphs of every registered map, in ascending
+     *                  map-id order. See lockGraphs() for the rules.
+     *
+     * @param[in]       mode_in
+     *                  How to lock them.
+     *
+     * @param[out]      scope_out
+     *                  Holds the locks until it goes out of scope.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_BUSY when
+     *                  GRAPH_LOCK_MODE_TRY_SHARED finds a writer.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        lockAllGraphs(GraphLockMode mode_in, GraphLockScope &scope_out) const;
 
     /*!
      * @brief           Lists the detected and candidate rooms of a map in
