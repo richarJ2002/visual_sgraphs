@@ -1,6 +1,7 @@
 set(VS_GRAPHS_FRONTEND_COMMON_SOURCES
   private_functions/keepFirstPointPerVoxel.cc
   public_functions/common.cc
+  public_functions/findMapPlaneById.cc
   public_functions/lookupWorldFromFrameTransform.cc
   public_functions/setupWallSlabProfileClient.cc
 )
