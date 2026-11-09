@@ -71,7 +71,7 @@ UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
     }
 
     /* The rooms and passages that listed the retired plane list the survivor
-     * instead; the scene graph writes both sides in one step. */
+     * instead; the semantics manager writes both sides in one step. */
     if (p_semanticsManager->replacePlane(p_retiredPlane_inout,
                                          p_retainedPlane_inout) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

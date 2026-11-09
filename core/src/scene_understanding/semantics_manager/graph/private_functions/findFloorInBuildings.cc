@@ -33,11 +33,12 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Floor *findFloorInBuildings(const scene_graph::SceneMap &sceneMap_in,
-                                      int                          floorId_in)
+semantic::Floor *
+    findFloorInBuildings(const scene_graph::SceneGraph &sceneGraph_in,
+                         int                            floorId_in)
 {
     for (const std::pair<const int, std::unique_ptr<scene_graph::Building>>
-             &buildingEntry : sceneMap_in.buildings)
+             &buildingEntry : sceneGraph_in.buildings)
     {
         std::map<int, std::unique_ptr<semantic::Floor>>::const_iterator
             floorIterator = buildingEntry.second->floors.find(floorId_in);

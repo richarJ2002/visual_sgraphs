@@ -34,33 +34,33 @@ namespace core
 {
 
 void unlinkRetiredNodes(
-    const std::map<unsigned long, scene_graph::SceneMap *> &sceneMaps_in,
-    const RetiredNodes                                     &retiredNodes_in)
+    const std::map<unsigned long, scene_graph::SceneGraph *> &sceneGraphs_in,
+    const RetiredNodes                                       &retiredNodes_in)
 {
     /* Everything still in the tree is live: retireBadNodes() ran first. */
     std::vector<semantic::Room *>    liveRooms{};
     std::vector<semantic::Passage *> livePassages{};
     std::vector<semantic::Floor *>   liveFloors{};
-    for (const std::pair<const unsigned long, scene_graph::SceneMap *>
-             &sceneMapEntry : sceneMaps_in)
+    for (const std::pair<const unsigned long, scene_graph::SceneGraph *>
+             &sceneGraphEntry : sceneGraphs_in)
     {
         for (const std::pair<const int, std::unique_ptr<semantic::Room>>
-                 &roomEntry : sceneMapEntry.second->detectedRooms)
+                 &roomEntry : sceneGraphEntry.second->detectedRooms)
         {
             liveRooms.push_back(roomEntry.second.get());
         }
         for (const std::pair<const int, std::unique_ptr<semantic::Room>>
-                 &roomEntry : sceneMapEntry.second->candidateRooms)
+                 &roomEntry : sceneGraphEntry.second->candidateRooms)
         {
             liveRooms.push_back(roomEntry.second.get());
         }
         for (const std::pair<const int, std::unique_ptr<semantic::Passage>>
-                 &passageEntry : sceneMapEntry.second->passages)
+                 &passageEntry : sceneGraphEntry.second->passages)
         {
             livePassages.push_back(passageEntry.second.get());
         }
         for (const std::pair<const int, std::unique_ptr<scene_graph::Building>>
-                 &buildingEntry : sceneMapEntry.second->buildings)
+                 &buildingEntry : sceneGraphEntry.second->buildings)
         {
             for (const std::pair<const int, std::unique_ptr<semantic::Floor>>
                      &floorEntry : buildingEntry.second->floors)

@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            addSceneMap.cc
+ * @file            addSceneGraph.cc
  *
- * @brief           Implements SemanticsManager::addSceneMap(), declared in
+ * @brief           Implements SemanticsManager::addSceneGraph(), declared in
  *                  semantics_manager/objects/SemanticsManagerClass.h.
  */
 
@@ -39,7 +39,7 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::addSceneMap(map::Map &map_inout)
+SemanticsManagerStatus SemanticsManager::addSceneGraph(map::Map &map_inout)
 {
     unsigned long mapId{};
     if (map_inout.getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)
@@ -50,30 +50,31 @@ SemanticsManagerStatus SemanticsManager::addSceneMap(map::Map &map_inout)
                      __func__);
     }
 
-    /* The map owns its scene map; only the registry entry is made here. */
-    scene_graph::SceneMap *p_sceneMap = nullptr;
-    if (map_inout.getSceneMap(p_sceneMap) != map::MapStatus::MAP_STATUS_SUCCESS)
+    /* The map owns its scene graph; only the registry entry is made here. */
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (map_inout.getSceneGraph(p_sceneGraph) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getSceneMap returned a failure status although it "
+                     "%s: getSceneGraph returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
 
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
 
-    /* A scene map that held nodes may still be pointed at by other nodes:
+    /* A scene graph that held nodes may still be pointed at by other nodes:
      * its nodes are retired for the next sweep, not freed here. */
-    retireSceneMapContents(*p_sceneMap, retiredNodes);
-    p_sceneMap->nextAvailableFloorId = 0;
-    p_sceneMap->p_map                = &map_inout;
+    retireSceneGraphContents(*p_sceneGraph, retiredNodes);
+    p_sceneGraph->nextAvailableFloorId = 0;
+    p_sceneGraph->p_map                = &map_inout;
 
     /* One building per map until buildings are detected. */
-    if (p_sceneMap->buildings.find(0) == p_sceneMap->buildings.end())
+    if (p_sceneGraph->buildings.find(0) == p_sceneGraph->buildings.end())
     {
-        p_sceneMap->buildings[0] = std::make_unique<scene_graph::Building>();
+        p_sceneGraph->buildings[0] = std::make_unique<scene_graph::Building>();
     }
-    sceneMaps[mapId] = p_sceneMap;
+    sceneGraphs[mapId] = p_sceneGraph;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

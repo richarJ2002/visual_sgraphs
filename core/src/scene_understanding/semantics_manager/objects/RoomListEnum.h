@@ -19,7 +19,7 @@
 /*!
  * @file            RoomListEnum.h
  *
- * @brief           Declares which of a scene map's two room lists a room
+ * @brief           Declares which of a scene graph's two room lists a room
  *                  belongs to.
  */
 
@@ -34,7 +34,7 @@ namespace core
 {
 
 /*!
- * @brief           List of a scene map that holds a room. Values are fixed
+ * @brief           List of a scene graph that holds a room. Values are fixed
  *                  and never reordered.
  */
 enum class RoomList : std::uint8_t

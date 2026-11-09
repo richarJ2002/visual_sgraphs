@@ -63,14 +63,14 @@ AtlasStatus Atlas::setMapBad(map::Map *p_map_inout)
 
     badMaps.insert(p_map_inout);
 
-    /* The map left maps, so its scene map goes too. */
+    /* The map left maps, so its scene graph goes too. */
     unsigned long badMapId{};
     if ((p_map_inout->getId(badMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
-        (p_semanticsManager->eraseSceneMap(badMapId) !=
+        (p_semanticsManager->eraseSceneGraph(badMapId) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/eraseSceneMap returned a failure status "
+                     "%s: getId/eraseSceneGraph returned a failure status "
                      "although they cannot fail; continuing as before.",
                      __func__);
     }

@@ -28,7 +28,7 @@
  *
  * @brief           Declares Map, one map of the atlas: its key frames, map
  *                  points and planes. Its rooms, floors and passages live in
- *                  the atlas's scene graph.
+ *                  its own scene graph.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_MAP_OBJECTS_MAP_CLASS_H
@@ -39,7 +39,7 @@
 #include "dependency_lineage/sophus/objects/se3.hpp"
 #include "map_state/map/objects/MapMergeRecordStruct.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/scene_graph/scene_map/objects/SceneMapStruct.h"
+#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
 #include "views_io/archive_support/objects/SerializationUtils.h"
 #include <Eigen/Core>
 #include <atomic>
@@ -114,7 +114,7 @@ namespace map
 /*!
  * @brief           One map of the atlas: the key frames, map points and
  *                  planes that share one world frame, and the S-Graph that
- *                  abstracts them (getSceneMap()): the building, its floors,
+ *                  abstracts them (getSceneGraph()): the building, its floors,
  *                  and the map's rooms and passages. The map owns that graph
  *                  as a member, so the graph is created, moved and freed with
  *                  the map. The other pointers it holds are borrowed:
@@ -854,17 +854,17 @@ class Map
 
     /*!
      * @brief           Returns the S-Graph this map owns (building, floors,
-     *                  rooms, passages). The scene graph's operations lock
-     *                  and edit it; read or write its content only through
-     *                  them. Does not lock mapMutex: the member lives as long
-     *                  as the map.
+     *                  rooms, passages). The semantics manager's graph
+     * operations lock and edit it; read or write its content only through them.
+     * Does not lock mapMutex: the member lives as long as the map.
      *
-     * @param[out]      p_sceneMap_out
+     * @param[out]      p_sceneGraph_out
      *                  S-Graph of this map; borrowed, never null.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
-    [[nodiscard]] MapStatus getSceneMap(scene_graph::SceneMap *&p_sceneMap_out);
+    [[nodiscard]] MapStatus
+        getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out);
 
     /*!
      * @brief           Returns this map's "up" direction. Takes mapMutex.
@@ -903,10 +903,10 @@ class Map
      *                  passages, rooms, floors and skeleton data are
      *                  scaled and transformed; bad planes and rooms are
      *                  skipped. Rooms, passages and floors are the ones the
-     *                  scene graph lists for this map (none when it has not
-     *                  been set). Afterwards the change counter and the world
-     *                  frame epoch each grow by one. Takes the scene graph
-     *                  lock, released, then mapMutex.
+     *                  semantics manager lists for this map (none when it has
+     * not been set). Afterwards the change counter and the world frame epoch
+     * each grow by one. Takes the semantics manager's graph lock, released,
+     * then mapMutex.
      *
      * @param[in]       p_semanticsManager_in
      *                  Semantics manager that serves this map's S-Graph;
@@ -1122,10 +1122,10 @@ class Map
     /*!
      * @brief           S-Graph of this map: its building, floors, rooms and
      *                  passages; owned. Starts empty (one building, id 0).
-     *                  Guarded by the scene graph's graph mutex, not by
+     *                  Guarded by the semantics manager's graph mutex, not by
      *                  mapMutex.
      */
-    scene_graph::SceneMap sceneMap;
+    scene_graph::SceneGraph sceneGraph;
 
     /*!
      * @brief           Cluster points of the map set by `voxblox_skeleton`, in

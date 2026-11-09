@@ -24,9 +24,9 @@
  */
 
 /*!
- * @file            unregisterSceneMaps.cc
+ * @file            unregisterSceneGraphs.cc
  *
- * @brief           Implements Atlas::unregisterSceneMaps(), declared in
+ * @brief           Implements Atlas::unregisterSceneGraphs(), declared in
  *                  atlas/objects/AtlasClass.h.
  */
 
@@ -43,19 +43,19 @@ namespace core
 namespace atlas
 {
 
-AtlasStatus
-    Atlas::unregisterSceneMaps(const std::set<map::Map *> &mapsToUnregister_in)
+AtlasStatus Atlas::unregisterSceneGraphs(
+    const std::set<map::Map *> &mapsToUnregister_in)
 {
     for (map::Map *p_map : mapsToUnregister_in)
     {
         unsigned long mapId{};
         if ((p_map != nullptr) && (p_semanticsManager != nullptr) &&
             (p_map->getId(mapId) == map::MapStatus::MAP_STATUS_SUCCESS) &&
-            (p_semanticsManager->eraseSceneMap(mapId) !=
+            (p_semanticsManager->eraseSceneGraph(mapId) !=
              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseSceneMap returned a failure status "
+                         "%s: eraseSceneGraph returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }

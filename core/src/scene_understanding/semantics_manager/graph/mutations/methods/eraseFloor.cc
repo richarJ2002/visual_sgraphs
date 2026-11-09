@@ -41,16 +41,16 @@ SemanticsManagerStatus SemanticsManager::eraseFloor(unsigned long    mapId_in,
                                                     semantic::Floor *p_floor_in)
 {
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    scene_graph::SceneMap &sceneMap = *sceneMapIterator->second;
+    scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
-             &buildingEntry : sceneMap.buildings)
+             &buildingEntry : sceneGraph.buildings)
     {
         retireEntryByPointer(buildingEntry.second->floors,
                              p_floor_in,

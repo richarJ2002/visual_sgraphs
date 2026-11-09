@@ -44,14 +44,14 @@ namespace scene_graph
 {
 
 /*!
- * @brief           One building of a scene map: its storeys and the passages
+ * @brief           One building of a scene graph: its storeys and the passages
  *                  that join rooms of different storeys. The rooms and
  *                  passages of a storey are read from the storey and its
  *                  rooms when queried, not stored here.
  *
  *                  The building owns its storeys; the staircase passage
- *                  index is borrowed from the scene map. Containers are keyed
- *                  by id so iteration runs in id order. Owned by a SceneMap
+ *                  index is borrowed from the scene graph. Containers are keyed
+ *                  by id so iteration runs in id order. Owned by a SceneGraph
  *                  and guarded by the SemanticsManager graph mutex.
  */
 struct Building

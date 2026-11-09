@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            retireSceneMapContents.cc
+ * @file            retireSceneGraphContents.cc
  *
- * @brief           Implements retireSceneMapContents(), declared in
+ * @brief           Implements retireSceneGraphContents(), declared in
  *                  semantics_manager/graph/private_functions/private_functions.h.
  */
 
@@ -32,31 +32,31 @@ namespace vs_graphs
 namespace core
 {
 
-void retireSceneMapContents(scene_graph::SceneMap &sceneMap_inout,
-                            RetiredNodes          &retiredNodes_inout)
+void retireSceneGraphContents(scene_graph::SceneGraph &sceneGraph_inout,
+                              RetiredNodes            &retiredNodes_inout)
 {
     for (std::pair<const int, std::unique_ptr<semantic::Room>> &roomEntry :
-         sceneMap_inout.detectedRooms)
+         sceneGraph_inout.detectedRooms)
     {
         retiredNodes_inout.rooms.push_back(std::move(roomEntry.second));
     }
     for (std::pair<const int, std::unique_ptr<semantic::Room>> &roomEntry :
-         sceneMap_inout.candidateRooms)
+         sceneGraph_inout.candidateRooms)
     {
         retiredNodes_inout.rooms.push_back(std::move(roomEntry.second));
     }
     for (std::pair<const int, std::unique_ptr<semantic::Passage>>
-             &passageEntry : sceneMap_inout.passages)
+             &passageEntry : sceneGraph_inout.passages)
     {
         retiredNodes_inout.passages.push_back(std::move(passageEntry.second));
     }
-    sceneMap_inout.detectedRooms.clear();
-    sceneMap_inout.candidateRooms.clear();
-    sceneMap_inout.passages.clear();
+    sceneGraph_inout.detectedRooms.clear();
+    sceneGraph_inout.candidateRooms.clear();
+    sceneGraph_inout.passages.clear();
 
-    /* Buildings stay: building 0 is part of every scene map. */
+    /* Buildings stay: building 0 is part of every scene graph. */
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
-             &buildingEntry : sceneMap_inout.buildings)
+             &buildingEntry : sceneGraph_inout.buildings)
     {
         for (std::pair<const int, std::unique_ptr<semantic::Floor>>
                  &floorEntry : buildingEntry.second->floors)

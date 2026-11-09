@@ -28,7 +28,7 @@
 
 #include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
-#include "scene_understanding/scene_graph/scene_map/objects/SceneMapStruct.h"
+#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
@@ -80,15 +80,13 @@ namespace core
  *                  It also serves the S-Graph of every SLAM map: map ->
  *                  building -> storey -> rooms and passages.
  *
- *                  Each Map owns its S-Graph content (Map::getSceneMap()); the
- *                  manager only finds it by map id and adds the shared lock.
- *                  The atlas registers a map's scene map when it creates or
- *                  loads the map and unregisters it when it drops the map. The
- *                  S-Graph is the only list of the map's rooms, storeys and
- *                  passages and it owns them: a scene map owns its rooms and
- *                  passages, a building owns its storeys. They are added and
- *                  removed through the graph mutations only, which also
- *                  enforce the id rules.
+ *                  Each Map owns its S-Graph content (Map::getSceneGraph());
+ * the manager only finds it by map id and adds the shared lock. The atlas
+ * registers a map's scene graph when it creates or loads the map and
+ * unregisters it when it drops the map. The S-Graph is the only list of the
+ * map's rooms, storeys and passages and it owns them: a scene graph owns its
+ * rooms and passages, a building owns its storeys. They are added and removed
+ * through the graph mutations only, which also enforce the id rules.
  *
  *                  Deletion. markRoomBad() flags a node; every query hides a
  *                  flagged node, so to readers it is gone at once. Nothing is
@@ -1018,19 +1016,19 @@ class SemanticsManager
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Guards sceneMaps, activeGraphMapId, retiredNodes and
-     *                  everything the scene maps hold. Shared for queries,
+     * @brief           Guards sceneGraphs, activeGraphMapId, retiredNodes and
+     *                  everything the scene graphs hold. Shared for queries,
      *                  exclusive for mutations.
      */
     mutable std::shared_mutex graphMutex;
 
     /*!
-     * @brief           Scene maps by SLAM map id; borrowed. Each SLAM map
-     *                  owns its scene map as a member and is registered here
-     *                  by addSceneMap() until eraseSceneMap(). Guarded by
+     * @brief           Scene graphs by SLAM map id; borrowed. Each SLAM map
+     *                  owns its scene graph as a member and is registered here
+     *                  by addSceneGraph() until eraseSceneGraph(). Guarded by
      *                  graphMutex.
      */
-    std::map<unsigned long, scene_graph::SceneMap *> sceneMaps;
+    std::map<unsigned long, scene_graph::SceneGraph *> sceneGraphs;
 
     /*!
      * @brief           Id of the atlas's current map; empty when there is
@@ -1639,23 +1637,23 @@ class SemanticsManager
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Adds an empty scene map for a SLAM map: one building
+     * @brief           Adds an empty scene graph for a SLAM map: one building
      *                  (id 0) and no storeys, rooms or passages, replacing any
-     *                  scene map it had (that map's nodes are retired for the
+     *                  scene graph it had (that map's nodes are retired for the
      *                  next sweep, not freed here). Used by the atlas when it
      *                  creates or loads a map. Takes this lock exclusive after
      *                  reading the map id.
      *
      * @param[in,out]   map_inout
-     *                  SLAM map the scene map belongs to; only its id is
-     *                  read. The scene map borrows it; the atlas owns it.
+     *                  SLAM map the scene graph belongs to; only its id is
+     *                  read. The scene graph borrows it; the atlas owns it.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
-    [[nodiscard]] SemanticsManagerStatus addSceneMap(map::Map &map_inout);
+    [[nodiscard]] SemanticsManagerStatus addSceneGraph(map::Map &map_inout);
 
     /*!
-     * @brief           Removes the scene map of a SLAM map the atlas dropped;
+     * @brief           Removes the scene graph of a SLAM map the atlas dropped;
      *                  when it was the active map there is no active map
      *                  afterwards. Takes this lock exclusive.
      *
@@ -1664,7 +1662,8 @@ class SemanticsManager
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
-    [[nodiscard]] SemanticsManagerStatus eraseSceneMap(unsigned long mapId_in);
+    [[nodiscard]] SemanticsManagerStatus
+        eraseSceneGraph(unsigned long mapId_in);
 
     /*!
      * @brief           Records which SLAM map the active-map queries read.
@@ -1694,8 +1693,8 @@ class SemanticsManager
      *                  room is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (the room is retired).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (the room is retired).
      */
     [[nodiscard]] SemanticsManagerStatus
         addCandidateRoom(unsigned long                   mapId_in,
@@ -1714,8 +1713,8 @@ class SemanticsManager
      *                  Room to promote; borrowed. A null room is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (nothing is written).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (nothing is written).
      */
     [[nodiscard]] SemanticsManagerStatus
         promoteCandidateRoom(unsigned long mapId_in, semantic::Room *p_room_in);
@@ -1733,15 +1732,15 @@ class SemanticsManager
      *                  Room to remove; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (nothing is written).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (nothing is written).
      */
     [[nodiscard]] SemanticsManagerStatus eraseRoom(unsigned long   mapId_in,
                                                    semantic::Room *p_room_in);
 
     /*!
-     * @brief           Moves a room, with its ownership, from one scene map
-     *                  to a list of another (or the same) scene map, keyed
+     * @brief           Moves a room, with its ownership, from one scene graph
+     *                  to a list of another (or the same) scene graph, keyed
      *                  by the id the room holds now. This is how merge hands
      *                  rooms over and how a room is re-keyed after a new id.
      *                  A room whose id the destination list already holds is
@@ -1763,7 +1762,7 @@ class SemanticsManager
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
      *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when either scene
-     * map is missing or the source map does not hold the room (nothing is
+     * graph is missing or the source map does not hold the room (nothing is
      * written).
      */
     [[nodiscard]] SemanticsManagerStatus
@@ -1789,8 +1788,8 @@ class SemanticsManager
      *                  passage is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (the passage is retired).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (the passage is retired).
      */
     [[nodiscard]] SemanticsManagerStatus
         addPassage(unsigned long                      mapId_in,
@@ -1807,15 +1806,15 @@ class SemanticsManager
      *                  Passage to remove; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (nothing is written).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (nothing is written).
      */
     [[nodiscard]] SemanticsManagerStatus
         erasePassage(unsigned long mapId_in, semantic::Passage *p_passage_in);
 
     /*!
      * @brief           Moves a passage, with its ownership, from one scene
-     *                  map to another (or re-keys it in the same one) under
+     *                  graph to another (or re-keys it in the same one) under
      *                  the id it holds now. A passage whose id the
      *                  destination already holds is retired. Takes this lock
      *                  exclusive.
@@ -1831,7 +1830,7 @@ class SemanticsManager
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
      *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when either scene
-     * map is missing or the source map does not hold the passage (nothing is
+     * graph is missing or the source map does not hold the passage (nothing is
      * written).
      */
     [[nodiscard]] SemanticsManagerStatus
@@ -1856,8 +1855,8 @@ class SemanticsManager
      *                  is then retired). A null storey is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (the storey is retired).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (the storey is retired).
      */
     [[nodiscard]] SemanticsManagerStatus
         addFloor(unsigned long                    mapId_in,
@@ -1875,15 +1874,15 @@ class SemanticsManager
      *                  Storey to remove; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (nothing is written).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (nothing is written).
      */
     [[nodiscard]] SemanticsManagerStatus
         eraseFloor(unsigned long mapId_in, semantic::Floor *p_floor_in);
 
     /*!
      * @brief           Moves a storey, with its ownership, from building 0 of
-     *                  one scene map to building 0 of another, under the id
+     *                  one scene graph to building 0 of another, under the id
      *                  it holds now; an id the destination holds gives it the
      *                  next free id there (as addFloor does). Takes this lock
      *                  exclusive.
@@ -1899,7 +1898,7 @@ class SemanticsManager
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
      *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when either scene
-     * map is missing or the source map does not hold the storey (nothing is
+     * graph is missing or the source map does not hold the storey (nothing is
      * written).
      */
     [[nodiscard]] SemanticsManagerStatus
@@ -1926,8 +1925,8 @@ class SemanticsManager
      *                  Room to flag; borrowed. A null room is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (the room is still flagged).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (the room is still flagged).
      */
     [[nodiscard]] SemanticsManagerStatus
         markRoomBad(unsigned long mapId_in, semantic::Room *p_room_inout);
@@ -1943,8 +1942,8 @@ class SemanticsManager
      *                  Storey to flag; borrowed. A null storey is ignored.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id (the storey is still flagged).
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id (the storey is still flagged).
      */
     [[nodiscard]] SemanticsManagerStatus
         markFloorBad(unsigned long mapId_in, semantic::Floor *p_floor_inout);
@@ -1997,8 +1996,8 @@ class SemanticsManager
      *                  Id of the SLAM map.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus clearSemantics(unsigned long mapId_in);
 
@@ -2035,8 +2034,8 @@ class SemanticsManager
      *                  Borrowed rooms; empty when the map is unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getMapRoomsInIdOrder(unsigned long                  mapId_in,
@@ -2053,8 +2052,8 @@ class SemanticsManager
      *                  Borrowed rooms; empty when the map is unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus getMapDetectedRoomsInIdOrder(
         unsigned long                  mapId_in,
@@ -2071,8 +2070,8 @@ class SemanticsManager
      *                  Borrowed rooms; empty when the map is unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus getMapCandidateRoomsInIdOrder(
         unsigned long                  mapId_in,
@@ -2089,8 +2088,8 @@ class SemanticsManager
      *                  Borrowed passages; empty when the map is unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus getMapPassagesInIdOrder(
         unsigned long                     mapId_in,
@@ -2107,8 +2106,8 @@ class SemanticsManager
      *                  Borrowed storeys; empty when the map is unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getMapFloorsInIdOrder(unsigned long                   mapId_in,
@@ -2129,8 +2128,8 @@ class SemanticsManager
      *                  The room, or nullptr when there is none; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getMapRoomById(unsigned long    mapId_in,
@@ -2151,8 +2150,8 @@ class SemanticsManager
      *                  The passage, or nullptr when there is none; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getMapPassageById(unsigned long       mapId_in,
@@ -2173,8 +2172,8 @@ class SemanticsManager
      *                  The storey, or nullptr when there is none; borrowed.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getMapFloorById(unsigned long     mapId_in,
@@ -2197,8 +2196,8 @@ class SemanticsManager
      *                  unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus
         getFloorRoomsInIdOrder(unsigned long                  mapId_in,
@@ -2222,8 +2221,8 @@ class SemanticsManager
      *                  unknown.
      *
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
-     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the tree has
-     * no scene map for the id.
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     * has no scene graph for the id.
      */
     [[nodiscard]] SemanticsManagerStatus getFloorPassagesInIdOrder(
         unsigned long                     mapId_in,

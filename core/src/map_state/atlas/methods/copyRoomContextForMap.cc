@@ -75,10 +75,11 @@ AtlasStatus Atlas::copyRoomContextForMap(
     if (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapDetectedRoomsInIdOrder found no scene map for "
-                     "the map; continuing without its detected rooms.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getMapDetectedRoomsInIdOrder found no scene graph for "
+            "the map; continuing without its detected rooms.",
+            __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
     if (p_semanticsManager->getMapCandidateRoomsInIdOrder(mapIdValue,
@@ -86,7 +87,7 @@ AtlasStatus Atlas::copyRoomContextForMap(
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapCandidateRoomsInIdOrder found no scene map "
+                     "%s: getMapCandidateRoomsInIdOrder found no scene graph "
                      "for the map; continuing without its candidate rooms.",
                      __func__);
     }

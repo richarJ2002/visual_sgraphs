@@ -50,16 +50,16 @@ SemanticsManagerStatus
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    const std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sceneMapIterator = sceneMaps.find(*activeGraphMapId);
-    if (sceneMapIterator == sceneMaps.end())
+    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sceneGraphIterator = sceneGraphs.find(*activeGraphMapId);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    scene_graph::SceneMap &sceneMap = *sceneMapIterator->second;
+    scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
     for (std::map<int, std::unique_ptr<semantic::Room>> *p_roomsById :
-         {&sceneMap.detectedRooms, &sceneMap.candidateRooms})
+         {&sceneGraph.detectedRooms, &sceneGraph.candidateRooms})
     {
         for (std::pair<const int, std::unique_ptr<semantic::Room>> &roomEntry :
              *p_roomsById)
@@ -89,7 +89,7 @@ SemanticsManagerStatus
     }
 
     for (std::pair<const int, std::unique_ptr<semantic::Passage>>
-             &passageEntry : sceneMap.passages)
+             &passageEntry : sceneGraph.passages)
     {
         bool passageWasAssociationReplaced{};
         if (isPassageLive(passageEntry.second.get()) &&

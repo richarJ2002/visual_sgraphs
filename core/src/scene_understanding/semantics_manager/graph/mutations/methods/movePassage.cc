@@ -49,19 +49,19 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sourceIterator = sceneMaps.find(sourceMapId_in);
-    const std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        destinationIterator = sceneMaps.find(destinationMapId_in);
-    if (sourceIterator == sceneMaps.end() ||
-        destinationIterator == sceneMaps.end())
+    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sourceIterator = sceneGraphs.find(sourceMapId_in);
+    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        destinationIterator = sceneGraphs.find(destinationMapId_in);
+    if (sourceIterator == sceneGraphs.end() ||
+        destinationIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     /* The passage is taken out by pointer, so it moves under the id it holds
      * now, which the caller may have changed. */
-    scene_graph::SceneMap             &sourceMap = *sourceIterator->second;
+    scene_graph::SceneGraph           &sourceMap = *sourceIterator->second;
     std::unique_ptr<semantic::Passage> p_movedPassage =
         extractEntryByPointer(sourceMap.passages, p_passage_in);
     if (p_movedPassage == nullptr)

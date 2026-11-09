@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void insertPassage(scene_graph::SceneMap             &sceneMap_inout,
+void insertPassage(scene_graph::SceneGraph           &sceneGraph_inout,
                    std::unique_ptr<semantic::Passage> p_passage_in,
                    RetiredNodes                      &retiredNodes_inout)
 {
@@ -61,8 +61,8 @@ void insertPassage(scene_graph::SceneMap             &sceneMap_inout,
             std::map<int, std::unique_ptr<semantic::Passage>>::iterator,
             bool>
             passageInsertion =
-                sceneMap_inout.passages.try_emplace(passageId,
-                                                    std::move(p_passage_in));
+                sceneGraph_inout.passages.try_emplace(passageId,
+                                                      std::move(p_passage_in));
         if (passageInsertion.second)
         {
             return;

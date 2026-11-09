@@ -96,7 +96,7 @@ void collectMergeMapContents(
     }
 
     /* Copy the passages, detected rooms, candidate (marker-based) rooms and
-     * floors the scene graph lists for the merge map. */
+     * floors the semantics manager lists for the merge map. */
     if ((p_semanticsManager->getMapPassagesInIdOrder(
              mergeMapId,
              mergeMapContents_out.passages) !=
@@ -114,11 +114,12 @@ void collectMergeMapContents(
              mergeMapContents_out.floors) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its semantic objects.",
-                     __func__,
-                     mergeMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its semantic objects.",
+            __func__,
+            mergeMapId);
     }
 }
 

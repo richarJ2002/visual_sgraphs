@@ -93,21 +93,23 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
     if (p_semanticsManager->getMapPassagesInIdOrder(activeMapId, passages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its passages.",
-                     __func__,
-                     activeMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its passages.",
+            __func__,
+            activeMapId);
     }
     std::vector<semantic::Room *> activeRooms{};
     if (p_semanticsManager->getMapRoomsInIdOrder(activeMapId, activeRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its rooms.",
-                     __func__,
-                     activeMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            activeMapId);
     }
     const std::unordered_set<semantic::Room *> activeRoomSet(
         activeRooms.begin(),
@@ -660,7 +662,7 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
             {
                 RCLCPP_ERROR(
                     rclcpp::get_logger("vs_graphs"),
-                    "%s: the scene graph has no scene map for map %lu; "
+                    "%s: the semantics manager has no scene graph for map %lu; "
                     "continuing without its rooms.",
                     __func__,
                     activeMapId);
@@ -737,11 +739,12 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
                                                  p_candidatePassage) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: erasePassage found no scene map for map %lu; "
-                             "continuing as before.",
-                             __func__,
-                             activeMapId);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: erasePassage found no scene graph for map %lu; "
+                    "continuing as before.",
+                    __func__,
+                    activeMapId);
             }
             if (p_candidatePassage->setProspectiveRoom(nullptr) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)

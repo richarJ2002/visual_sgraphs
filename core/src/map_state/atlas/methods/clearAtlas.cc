@@ -45,17 +45,17 @@ namespace atlas
 AtlasStatus Atlas::clearAtlas()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
-    /* The maps leave maps, so their scene maps go too. */
+    /* The maps leave maps, so their scene graphs go too. */
     for (map::Map *p_map : maps)
     {
         unsigned long retiredMapId{};
         if ((p_map->getId(retiredMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
-            (p_semanticsManager->eraseSceneMap(retiredMapId) !=
+            (p_semanticsManager->eraseSceneGraph(retiredMapId) !=
              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId/eraseSceneMap returned a failure status "
+                         "%s: getId/eraseSceneGraph returned a failure status "
                          "although they cannot fail; continuing as before.",
                          __func__);
         }

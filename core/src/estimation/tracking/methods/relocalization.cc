@@ -111,7 +111,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
         SemanticsManager                   *p_semanticsManager = nullptr;
         unsigned long                       currentMapId{};
         /* The tracking thread holds no semantic lock: the guard keeps the
-         * scene graph from freeing these rooms while the loop below runs. */
+         * semantics manager from freeing these rooms while the loop below runs.
+         */
         std::shared_lock<std::shared_mutex> graphReclaimGuard{};
         if ((p_atlas->getSemanticsManager(p_semanticsManager) !=
              atlas::AtlasStatus::ATLAS_STATUS_SUCCESS) ||
@@ -126,7 +127,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
                 "%s: getSemanticsManager/getId/getMapDetectedRoomsInIdOrder "
-                "found no scene map for the current map; continuing "
+                "found no scene graph for the current map; continuing "
                 "without room priors.",
                 __func__);
         }

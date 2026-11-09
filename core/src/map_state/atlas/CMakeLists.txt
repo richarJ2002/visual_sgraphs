@@ -61,7 +61,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSemanticsManager.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonClusterPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/unregisterSceneMaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unregisterSceneGraphs.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/advanceIdentityAllocator.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/captureRoomContext.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findRoomBeyondPassageInView.cc

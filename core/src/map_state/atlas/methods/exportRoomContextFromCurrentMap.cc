@@ -76,17 +76,18 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
      */
     std::vector<semantic::Room *>       rooms{};
     /* The tracking thread may call this without the semantic update lock: the
-     * guard keeps the scene graph from freeing the rooms read below. */
+     * guard keeps the semantics manager from freeing the rooms read below. */
     std::shared_lock<std::shared_mutex> graphReclaimGuard{};
     if ((p_semanticsManager->acquireReclaimGuard(graphReclaimGuard) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
         (p_semanticsManager->getMapDetectedRoomsInIdOrder(mapIdValue, rooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapDetectedRoomsInIdOrder found no scene map for "
-                     "the map; continuing without its detected rooms.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getMapDetectedRoomsInIdOrder found no scene graph for "
+            "the map; continuing without its detected rooms.",
+            __func__);
     }
     std::vector<semantic::Room *> candidateRooms{};
     if (p_semanticsManager->getMapCandidateRoomsInIdOrder(mapIdValue,
@@ -94,7 +95,7 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getMapCandidateRoomsInIdOrder found no scene map "
+                     "%s: getMapCandidateRoomsInIdOrder found no scene graph "
                      "for the map; continuing without its candidate rooms.",
                      __func__);
     }

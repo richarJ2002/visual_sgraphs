@@ -69,7 +69,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     }
     unsigned long                       mapId{};
     /* Not every caller holds the semantic update lock: the guard keeps the
-     * scene graph from freeing the nodes read below. */
+     * semantics manager from freeing the nodes read below. */
     std::shared_lock<std::shared_mutex> graphReclaimGuard{};
     if ((p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_semanticsManager_in == nullptr) ||
@@ -327,11 +327,12 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                                                         mapAllPassages) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: map %lu has no scene graph or no scene map in it; "
-                     "continuing without its passages.",
-                     __func__,
-                     mapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its passages.",
+            __func__,
+            mapId);
     }
     for (vs_graphs::core::semantic::Passage *p_passage : mapAllPassages)
     {
@@ -443,11 +444,12 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         (p_semanticsManager_in->getMapDetectedRoomsInIdOrder(mapId, rooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: map %lu has no scene graph or no scene map in it; "
-                     "continuing without its detected rooms.",
-                     __func__,
-                     mapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its detected rooms.",
+            __func__,
+            mapId);
     }
     std::vector<semantic::Room *> markerRooms{};
     if ((p_semanticsManager_in == nullptr) ||
@@ -455,11 +457,12 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                                                               markerRooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: map %lu has no scene graph or no scene map in it; "
-                     "continuing without its candidate rooms.",
-                     __func__,
-                     mapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its candidate rooms.",
+            __func__,
+            mapId);
     }
     rooms.insert(rooms.end(), markerRooms.begin(), markerRooms.end());
 
@@ -558,11 +561,12 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         (p_semanticsManager_in->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: map %lu has no scene graph or no scene map in it; "
-                     "continuing without its floors.",
-                     __func__,
-                     mapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its floors.",
+            __func__,
+            mapId);
     }
     for (semantic::Floor *p_floor : mapAllFloors)
     {

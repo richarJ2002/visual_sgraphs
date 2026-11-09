@@ -44,16 +44,17 @@ SemanticsManagerStatus
 {
     p_passage_out = nullptr;
     std::shared_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     std::map<int, std::unique_ptr<semantic::Passage>>::const_iterator
-        passageIterator = sceneMapIterator->second->passages.find(passageId_in);
-    if (passageIterator != sceneMapIterator->second->passages.end() &&
+        passageIterator =
+            sceneGraphIterator->second->passages.find(passageId_in);
+    if (passageIterator != sceneGraphIterator->second->passages.end() &&
         isPassageLive(passageIterator->second.get()))
     {
         p_passage_out = passageIterator->second.get();

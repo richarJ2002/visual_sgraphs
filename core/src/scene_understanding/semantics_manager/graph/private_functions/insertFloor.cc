@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void insertFloor(scene_graph::SceneMap           &sceneMap_inout,
+void insertFloor(scene_graph::SceneGraph         &sceneGraph_inout,
                  std::unique_ptr<semantic::Floor> p_floor_in)
 {
     if (p_floor_in == nullptr)
@@ -55,15 +55,16 @@ void insertFloor(scene_graph::SceneMap           &sceneMap_inout,
 
     /* A storey whose id is negative or held by another storey moves to the
      * next free id; ids handed out are never reused. */
-    if (floorId < 0 || findFloorInBuildings(sceneMap_inout, floorId) != nullptr)
+    if (floorId < 0 ||
+        findFloorInBuildings(sceneGraph_inout, floorId) != nullptr)
     {
-        while (findFloorInBuildings(sceneMap_inout,
-                                    sceneMap_inout.nextAvailableFloorId) !=
+        while (findFloorInBuildings(sceneGraph_inout,
+                                    sceneGraph_inout.nextAvailableFloorId) !=
                nullptr)
         {
-            sceneMap_inout.nextAvailableFloorId++;
+            sceneGraph_inout.nextAvailableFloorId++;
         }
-        const int replacementFloorId = sceneMap_inout.nextAvailableFloorId++;
+        const int replacementFloorId = sceneGraph_inout.nextAvailableFloorId++;
         std::cerr << "[Map] Floor ID collision for " << floorId
                   << "; reassigned to " << replacementFloorId << "."
                   << std::endl;
@@ -79,12 +80,12 @@ void insertFloor(scene_graph::SceneMap           &sceneMap_inout,
     }
     else
     {
-        sceneMap_inout.nextAvailableFloorId =
-            std::max(sceneMap_inout.nextAvailableFloorId, floorId + 1);
+        sceneGraph_inout.nextAvailableFloorId =
+            std::max(sceneGraph_inout.nextAvailableFloorId, floorId + 1);
     }
 
     std::unique_ptr<scene_graph::Building> &p_building =
-        sceneMap_inout.buildings[0];
+        sceneGraph_inout.buildings[0];
     if (p_building == nullptr)
     {
         p_building = std::make_unique<scene_graph::Building>();

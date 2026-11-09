@@ -32,37 +32,37 @@ namespace vs_graphs
 namespace core
 {
 
-void retireBadNodes(scene_graph::SceneMap &sceneMap_inout,
-                    RetiredNodes          &retiredNodes_inout)
+void retireBadNodes(scene_graph::SceneGraph &sceneGraph_inout,
+                    RetiredNodes            &retiredNodes_inout)
 {
-    retireDeadEntries(sceneMap_inout.detectedRooms,
+    retireDeadEntries(sceneGraph_inout.detectedRooms,
                       &isRoomLive,
                       retiredNodes_inout.rooms);
-    retireDeadEntries(sceneMap_inout.candidateRooms,
+    retireDeadEntries(sceneGraph_inout.candidateRooms,
                       &isRoomLive,
                       retiredNodes_inout.rooms);
 
     /* The staircase index borrows its passages: a retired passage leaves it
      * first, so the index never points at a retired object. */
     for (const std::pair<const int, std::unique_ptr<semantic::Passage>>
-             &passageEntry : sceneMap_inout.passages)
+             &passageEntry : sceneGraph_inout.passages)
     {
         if (!isPassageLive(passageEntry.second.get()))
         {
             for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
-                     &buildingEntry : sceneMap_inout.buildings)
+                     &buildingEntry : sceneGraph_inout.buildings)
             {
                 eraseEntriesByPointer(buildingEntry.second->passages,
                                       passageEntry.second.get());
             }
         }
     }
-    retireDeadEntries(sceneMap_inout.passages,
+    retireDeadEntries(sceneGraph_inout.passages,
                       &isPassageLive,
                       retiredNodes_inout.passages);
 
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
-             &buildingEntry : sceneMap_inout.buildings)
+             &buildingEntry : sceneGraph_inout.buildings)
     {
         retireDeadEntries(buildingEntry.second->floors,
                           &isFloorLive,

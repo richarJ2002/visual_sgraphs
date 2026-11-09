@@ -219,7 +219,8 @@ class SemanticVerify
      *                  anchor rooms of the candidate the decision rests on.
      *
      * @param[in]       p_atlas_in
-     *                  Atlas whose scene graph lists the rooms of both maps.
+     *                  Atlas whose semantics manager lists the rooms of both
+     * maps.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
         atlas::Atlas               *p_atlas_in,

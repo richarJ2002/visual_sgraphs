@@ -48,19 +48,19 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     /* A room that is not a candidate is already detected (or gone): there
      * is nothing to promote. */
-    scene_graph::SceneMap          &sceneMap = *sceneMapIterator->second;
+    scene_graph::SceneGraph        &sceneGraph = *sceneGraphIterator->second;
     std::unique_ptr<semantic::Room> p_promotedRoom =
-        extractEntryByPointer(sceneMap.candidateRooms, p_room_in);
-    insertRoom(sceneMap.detectedRooms,
+        extractEntryByPointer(sceneGraph.candidateRooms, p_room_in);
+    insertRoom(sceneGraph.detectedRooms,
                std::move(p_promotedRoom),
                mapId_in,
                retiredNodes);

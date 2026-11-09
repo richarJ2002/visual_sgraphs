@@ -27,7 +27,7 @@
 #ifndef VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_PRIVATE_FUNCTIONS_H
 
-#include "scene_understanding/scene_graph/scene_map/objects/SceneMapStruct.h"
+#include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
 #include "scene_understanding/semantics_manager/objects/RetiredNodesStruct.h"
 
 #include <map>
@@ -41,12 +41,12 @@ namespace core
 
 /*!
  * @brief           Looks up a storey by id across every building of a scene
- *                  map, buildings in id order. Finds flagged storeys too.
+ *                  graph, buildings in id order. Finds flagged storeys too.
  *                  Does not lock: the caller holds the SemanticsManager graph
  *                  mutex.
  *
- * @param[in]       sceneMap_in
- *                  Scene map to search.
+ * @param[in]       sceneGraph_in
+ *                  Scene graph to search.
  *
  * @param[in]       floorId_in
  *                  Id of the storey.
@@ -55,8 +55,8 @@ namespace core
  *                  building has one; borrowed.
  */
 [[nodiscard]] semantic::Floor *
-    findFloorInBuildings(const scene_graph::SceneMap &sceneMap_in,
-                         int                          floorId_in);
+    findFloorInBuildings(const scene_graph::SceneGraph &sceneGraph_in,
+                         int                            floorId_in);
 
 /*!
  * @brief           Tells whether a room is usable: not null and not flagged
@@ -205,13 +205,13 @@ void insertRoom(std::map<int, std::unique_ptr<semantic::Room>> &roomsById_inout,
                 RetiredNodes &retiredNodes_inout);
 
 /*!
- * @brief           Adds a passage to a scene map under the id it holds now. A
+ * @brief           Adds a passage to a scene graph under the id it holds now. A
  *                  passage with a negative id or an id the map already holds
  *                  is retired instead and a message is printed. Does not
  *                  lock: the caller holds the SemanticsManager graph mutex.
  *
- * @param[in,out]   sceneMap_inout
- *                  Scene map to add to.
+ * @param[in,out]   sceneGraph_inout
+ *                  Scene graph to add to.
  *
  * @param[in]       p_passage_in
  *                  Passage to add; ownership moves. A null passage is
@@ -220,84 +220,84 @@ void insertRoom(std::map<int, std::unique_ptr<semantic::Room>> &roomsById_inout,
  * @param[in,out]   retiredNodes_inout
  *                  Receives a passage that could not be added.
  */
-void insertPassage(scene_graph::SceneMap             &sceneMap_inout,
+void insertPassage(scene_graph::SceneGraph           &sceneGraph_inout,
                    std::unique_ptr<semantic::Passage> p_passage_in,
                    RetiredNodes                      &retiredNodes_inout);
 
 /*!
- * @brief           Adds a storey to building 0 of a scene map. A storey whose
+ * @brief           Adds a storey to building 0 of a scene graph. A storey whose
  *                  id is negative or already held in the map is given the
  *                  next free id (a message is printed). Does not lock: the
  *                  caller holds the SemanticsManager graph mutex.
  *
- * @param[in,out]   sceneMap_inout
- *                  Scene map to add to.
+ * @param[in,out]   sceneGraph_inout
+ *                  Scene graph to add to.
  *
  * @param[in]       p_floor_in
  *                  Storey to add; ownership moves, its id may change. A null
  *                  storey is ignored.
  */
-void insertFloor(scene_graph::SceneMap           &sceneMap_inout,
+void insertFloor(scene_graph::SceneGraph         &sceneGraph_inout,
                  std::unique_ptr<semantic::Floor> p_floor_in);
 
 /*!
  * @brief           Tells whether a passage still leads to a live room: its
  *                  known side or prospective room is live, or a live room of
- *                  the scene map lists it. Does not lock: the caller holds the
- *                  SemanticsManager graph mutex.
+ *                  the scene graph lists it. Does not lock: the caller holds
+ * the SemanticsManager graph mutex.
  *
- * @param[in]       sceneMap_in
- *                  Scene map whose rooms are searched.
+ * @param[in]       sceneGraph_in
+ *                  Scene graph whose rooms are searched.
  *
  * @param[in]       p_passage_in
  *                  Passage to test; borrowed, not null.
  *
  * @return          True when at least one live room is linked to it.
  */
-[[nodiscard]] bool hasLiveRoomLink(const scene_graph::SceneMap &sceneMap_in,
-                                   semantic::Passage           *p_passage_in);
+[[nodiscard]] bool hasLiveRoomLink(const scene_graph::SceneGraph &sceneGraph_in,
+                                   semantic::Passage             *p_passage_in);
 
 /*!
  * @brief           Flags a room bad and every passage that no longer leads to
  *                  a live room. Does not lock: the caller holds the
  * SemanticsManager graph mutex.
  *
- * @param[in]       sceneMap_in
- *                  Scene map the room belongs to.
+ * @param[in]       sceneGraph_in
+ *                  Scene graph the room belongs to.
  *
  * @param[in,out]   p_room_inout
  *                  Room to flag; borrowed. A null room is ignored.
  */
-void flagRoomBad(const scene_graph::SceneMap &sceneMap_in,
-                 semantic::Room              *p_room_inout);
+void flagRoomBad(const scene_graph::SceneGraph &sceneGraph_in,
+                 semantic::Room                *p_room_inout);
 
 /*!
  * @brief           Moves every flagged room, passage and storey of a scene
- *                  map into the retired list. Does not lock: the caller
+ *                  graph into the retired list. Does not lock: the caller
  *                  holds the SemanticsManager graph mutex.
  *
- * @param[in,out]   sceneMap_inout
- *                  Scene map to clean.
+ * @param[in,out]   sceneGraph_inout
+ *                  Scene graph to clean.
  *
  * @param[in,out]   retiredNodes_inout
  *                  Receives the ownership of the flagged nodes.
  */
-void retireBadNodes(scene_graph::SceneMap &sceneMap_inout,
-                    RetiredNodes          &retiredNodes_inout);
+void retireBadNodes(scene_graph::SceneGraph &sceneGraph_inout,
+                    RetiredNodes            &retiredNodes_inout);
 
 /*!
- * @brief           Moves every room, passage and storey of a scene map into
+ * @brief           Moves every room, passage and storey of a scene graph into
  *                  the retired list and leaves the buildings in place. Does
  *                  not lock: the caller holds the SemanticsManager graph mutex.
  *
- * @param[in,out]   sceneMap_inout
- *                  Scene map to empty.
+ * @param[in,out]   sceneGraph_inout
+ *                  Scene graph to empty.
  *
  * @param[in,out]   retiredNodes_inout
  *                  Receives the ownership of every node.
  */
-void retireSceneMapContents(scene_graph::SceneMap &sceneMap_inout,
-                            RetiredNodes          &retiredNodes_inout);
+void retireSceneGraphContents(scene_graph::SceneGraph &sceneGraph_inout,
+                              RetiredNodes            &retiredNodes_inout);
 
 /*!
  * @brief           Lets every live room, passage and storey drop its link to
@@ -306,15 +306,15 @@ void retireSceneMapContents(scene_graph::SceneMap &sceneMap_inout,
  *                  SemanticsManager graph mutex. The links held by SLAM maps
  * are cleared by the caller, outside the graph mutex.
  *
- * @param[in]       sceneMaps_in
- *                  Scene maps whose remaining nodes are live.
+ * @param[in]       sceneGraphs_in
+ *                  Scene graphs whose remaining nodes are live.
  *
  * @param[in]       retiredNodes_in
  *                  Nodes about to be freed.
  */
 void unlinkRetiredNodes(
-    const std::map<unsigned long, scene_graph::SceneMap *> &sceneMaps_in,
-    const RetiredNodes                                     &retiredNodes_in);
+    const std::map<unsigned long, scene_graph::SceneGraph *> &sceneGraphs_in,
+    const RetiredNodes                                       &retiredNodes_in);
 
 /*!
  * @brief           Lets live storeys and passages drop their links to retired

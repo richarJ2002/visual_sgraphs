@@ -145,7 +145,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapFloor(atlas::Atlas *p_atlas_inout)
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),
-            "%s: getSemanticsManager/getId/addFloor found no scene map for "
+            "%s: getSemanticsManager/getId/addFloor found no scene graph for "
             "the floor's map; the floor was not added.",
             __func__);
     }

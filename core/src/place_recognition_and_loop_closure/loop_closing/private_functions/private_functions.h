@@ -81,7 +81,7 @@ inline constexpr int MAXIMUM_EXPANSION_ITERATIONS = 5;
  * @brief           Collapses duplicate floors in the surviving map.
  *
  * @param[in,out]   p_atlas_inout
- *                  Atlas whose scene graph lists and erases the floors.
+ *                  Atlas whose semantics manager lists and erases the floors.
  *
  * @param[in,out]   p_survivingMap_inout
  *                  TODO
@@ -230,7 +230,7 @@ void resumeMergeWorkers(std::unique_lock<std::mutex> &semanticUpdateLock_inout,
  *                  element pairs and problems behind the decision.
  *
  * @param[in]       p_atlas_in
- *                  Atlas whose scene graph lists the rooms of both maps.
+ *                  Atlas whose semantics manager lists the rooms of both maps.
  *
  * @param[in]       p_currentMap_in
  *                  Surviving map.
@@ -507,7 +507,7 @@ void optimizeMergeWindow(
  *                  marker-based rooms and floors.
  *
  * @param[in]       p_atlas_in
- *                  Atlas whose scene graph lists the semantic objects.
+ *                  Atlas whose semantics manager lists the semantic objects.
  *
  * @param[in]       p_mergeMap_in
  *                  Absorbed map.
@@ -679,7 +679,7 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
  *                  marked bad.
  *
  * @param[in,out]   p_atlas_inout
- *                  Atlas whose scene graph moves the passages.
+ *                  Atlas whose semantics manager moves the passages.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -716,7 +716,7 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
  *                  which skipBadMarkerBasedRooms_in preserves.
  *
  * @param[in,out]   p_atlas_inout
- *                  Atlas whose scene graph moves the rooms.
+ *                  Atlas whose semantics manager moves the rooms.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -751,7 +751,7 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
  *                  the surviving map are collapsed.
  *
  * @param[in,out]   p_atlas_inout
- *                  Atlas whose scene graph moves the floors.
+ *                  Atlas whose semantics manager moves the floors.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -778,7 +778,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
  *                  floors. The caller holds both map update mutexes.
  *
  * @param[in,out]   p_atlas_inout
- *                  Atlas whose scene graph moves the semantic objects.
+ *                  Atlas whose semantics manager moves the semantic objects.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.
@@ -805,7 +805,7 @@ void transferSemanticEntities(
  *                  frame, and re-indexes the walls of every valid room.
  *
  * @param[in]       p_atlas_in
- *                  Atlas whose scene graph lists the rooms.
+ *                  Atlas whose semantics manager lists the rooms.
  *
  * @param[in,out]   p_currentMap_inout
  *                  Surviving map.

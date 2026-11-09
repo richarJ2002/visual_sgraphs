@@ -148,11 +148,12 @@ void reassociateMergedSemantics(
     if (p_semanticsManager->getMapRoomsInIdOrder(currentMapId, mapAllRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its rooms.",
-                     __func__,
-                     currentMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            currentMapId);
     }
     std::vector<semantic::Room *> retainedRooms{};
     for (semantic::Room *p_room : mapAllRooms)
@@ -223,7 +224,7 @@ void reassociateMergedSemantics(
             continue;
         }
 
-        /* The scene graph keys rooms by id: re-insert under the new key,
+        /* The semantics manager keys rooms by id: re-insert under the new key,
          * into the list the room came from. */
         const bool isDetectedRoom =
             std::find(mergeMapContents_in.detectedRooms.begin(),

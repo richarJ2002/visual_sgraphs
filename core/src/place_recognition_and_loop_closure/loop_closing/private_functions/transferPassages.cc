@@ -84,11 +84,12 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
                                                     currentMapAllPassages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its passages.",
-                     __func__,
-                     currentMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its passages.",
+            __func__,
+            currentMapId);
     }
     const std::vector<std::pair<semantic::Passage *, semantic::Passage *>>
         duplicatePairs = semantic::SemanticVerify::pairPassagesInSharedFrame(
@@ -123,7 +124,7 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: erasePassage found no scene map for map "
+                             "%s: erasePassage found no scene graph for map "
                              "%lu; continuing as before.",
                              __func__,
                              mergeMapId);
@@ -204,12 +205,13 @@ void transferPassages(atlas::Atlas *p_atlas_inout,
                                             p_passage) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: movePassage found no scene map for maps %lu and "
-                         "%lu or no such passage; continuing as before.",
-                         __func__,
-                         mergeMapId,
-                         currentMapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: movePassage found no scene graph for maps %lu and "
+                "%lu or no such passage; continuing as before.",
+                __func__,
+                mergeMapId,
+                currentMapId);
         }
     }
 }

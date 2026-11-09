@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            getSceneMap.cc
+ * @file            getSceneGraph.cc
  *
- * @brief           Implements Map::getSceneMap(), declared in
+ * @brief           Implements Map::getSceneGraph(), declared in
  *                  map/objects/MapClass.h.
  */
 
@@ -32,9 +32,9 @@ namespace core
 namespace map
 {
 
-MapStatus Map::getSceneMap(scene_graph::SceneMap *&p_sceneMap_out)
+MapStatus Map::getSceneGraph(scene_graph::SceneGraph *&p_sceneGraph_out)
 {
-    p_sceneMap_out = &sceneMap;
+    p_sceneGraph_out = &sceneGraph;
 
     return MapStatus::MAP_STATUS_SUCCESS;
 }

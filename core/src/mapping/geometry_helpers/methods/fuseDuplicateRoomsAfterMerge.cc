@@ -256,11 +256,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_semanticsManager->getMapPassagesInIdOrder(mapId, mergePassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: the scene graph has no scene map for map %lu; "
-                         "continuing without its passages.",
-                         __func__,
-                         mapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the semantics manager has no scene graph for map %lu; "
+                "continuing without its passages.",
+                __func__,
+                mapId);
         }
         const bool roomsAreSeparatedByPassage = std::any_of(
             mergePassages.begin(),
@@ -329,11 +330,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_semanticsManager->getMapRoomsInIdOrder(mapId, mapRooms) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: the scene graph has no scene map for map %lu; "
-                         "continuing without its rooms.",
-                         __func__,
-                         mapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the semantics manager has no scene graph for map %lu; "
+                "continuing without its rooms.",
+                __func__,
+                mapId);
         }
         std::sort(mapRooms.begin(),
                   mapRooms.end(),
@@ -597,11 +599,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                         mapAllPassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: the scene graph has no scene map for map %lu; "
-                         "continuing without its passages.",
-                         __func__,
-                         mapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the semantics manager has no scene graph for map %lu; "
+                "continuing without its passages.",
+                __func__,
+                mapId);
         }
         for (semantic::Passage *p_passage : mapAllPassages)
         {
@@ -759,11 +762,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_semanticsManager->getMapFloorsInIdOrder(mapId, mapAllFloors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: the scene graph has no scene map for map %lu; "
-                         "continuing without its floors.",
-                         __func__,
-                         mapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the semantics manager has no scene graph for map %lu; "
+                "continuing without its floors.",
+                __func__,
+                mapId);
         }
         for (semantic::Floor *p_floor : mapAllFloors)
         {
@@ -788,7 +792,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseRoom found no scene map for map %lu; "
+                         "%s: eraseRoom found no scene graph for map %lu; "
                          "continuing as before.",
                          __func__,
                          mapId);
@@ -812,11 +816,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_semanticsManager->markRoomBad(mapId, p_importedRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: markRoomBad found no scene map for map %lu; the "
-                         "room is flagged alone; continuing as before.",
-                         __func__,
-                         mapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: markRoomBad found no scene graph for map %lu; the "
+                "room is flagged alone; continuing as before.",
+                __func__,
+                mapId);
         }
         if (p_map_inout->replaceLinkedRoom(p_importedRoom,
                                            p_bestRetainedRoom) !=

@@ -33,8 +33,8 @@ namespace vs_graphs
 namespace core
 {
 
-void flagRoomBad(const scene_graph::SceneMap &sceneMap_in,
-                 semantic::Room              *p_room_inout)
+void flagRoomBad(const scene_graph::SceneGraph &sceneGraph_in,
+                 semantic::Room                *p_room_inout)
 {
     if (p_room_inout == nullptr)
     {
@@ -57,7 +57,7 @@ void flagRoomBad(const scene_graph::SceneMap &sceneMap_in,
     for (semantic::Passage *p_passage : roomPassages)
     {
         if (isPassageLive(p_passage) &&
-            !hasLiveRoomLink(sceneMap_in, p_passage) &&
+            !hasLiveRoomLink(sceneGraph_in, p_passage) &&
             p_passage->setBad() !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {

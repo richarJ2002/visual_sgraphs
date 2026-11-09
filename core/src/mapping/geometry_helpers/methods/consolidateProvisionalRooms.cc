@@ -152,10 +152,11 @@ UtilsStatus Utils::consolidateProvisionalRooms(
     if (p_semanticsManager->getAllRoomsInIdOrder(allRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for the active map; "
-                     "continuing without its rooms.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its rooms.",
+            __func__);
     }
 
     /* Iterate through every possible redundant structural element */
@@ -183,11 +184,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_semanticsManager->getAllPassagesInIdOrder(activePassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: the scene graph has no scene map for the active map; "
-                "continuing without its passages.",
-                __func__);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: the semantics manager has no scene graph for the "
+                         "active map; continuing without its passages.",
+                         __func__);
         }
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
@@ -443,11 +443,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_semanticsManager->getAllFloorsInIdOrder(atlasAllFloors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: the scene graph has no scene map for the active map; "
-                "continuing without its floors.",
-                __func__);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: the semantics manager has no scene graph for the "
+                         "active map; continuing without its floors.",
+                         __func__);
         }
         for (vs_graphs::core::semantic::Floor *p_floor : atlasAllFloors)
         {
@@ -492,11 +491,12 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_semanticsManager->markRoomBad(currentMapId, p_candidateRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: markRoomBad found no scene map for map %lu; the "
-                         "room is flagged alone; continuing as before.",
-                         __func__,
-                         currentMapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: markRoomBad found no scene graph for map %lu; the "
+                "room is flagged alone; continuing as before.",
+                __func__,
+                currentMapId);
         }
     }
 

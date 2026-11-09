@@ -74,10 +74,11 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
     if (p_semanticsManager->getAllRoomsInIdOrder(existingRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for the active map; "
-                     "continuing without its rooms.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its rooms.",
+            __func__);
     }
 
     /*!
@@ -110,10 +111,11 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
     if (p_semanticsManager->getAllPassagesInIdOrder(currentMapPassages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for the active map; "
-                     "continuing without its passages.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its passages.",
+            __func__);
     }
     const std::size_t passablePassageCount = std::count_if(
         currentMapPassages.begin(),

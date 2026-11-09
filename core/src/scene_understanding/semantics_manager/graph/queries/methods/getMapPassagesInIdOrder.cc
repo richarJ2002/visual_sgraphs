@@ -44,15 +44,15 @@ SemanticsManagerStatus SemanticsManager::getMapPassagesInIdOrder(
 {
     passages_out.clear();
     std::shared_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     for (const std::pair<const int, std::unique_ptr<semantic::Passage>>
-             &passageEntry : sceneMapIterator->second->passages)
+             &passageEntry : sceneGraphIterator->second->passages)
     {
         if (isPassageLive(passageEntry.second.get()))
         {

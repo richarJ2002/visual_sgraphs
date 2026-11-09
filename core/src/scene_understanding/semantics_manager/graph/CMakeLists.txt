@@ -16,7 +16,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageLive.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isRoomLive.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/retireBadNodes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/retireSceneMapContents.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/retireSceneGraphContents.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/unlinkRetiredFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/unlinkRetiredNodes.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/unlinkRetiredPassages.cc

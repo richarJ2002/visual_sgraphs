@@ -34,8 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool hasLiveRoomLink(const scene_graph::SceneMap &sceneMap_in,
-                     semantic::Passage           *p_passage_in)
+bool hasLiveRoomLink(const scene_graph::SceneGraph &sceneGraph_in,
+                     semantic::Passage             *p_passage_in)
 {
     semantic::Passage::KnownSideProvenance knownSideProvenance{};
     semantic::Room                        *p_prospectiveRoom = nullptr;
@@ -57,7 +57,7 @@ bool hasLiveRoomLink(const scene_graph::SceneMap &sceneMap_in,
 
     /* A live room that lists the passage still leads somewhere. */
     for (const std::map<int, std::unique_ptr<semantic::Room>> *p_roomsById :
-         {&sceneMap_in.detectedRooms, &sceneMap_in.candidateRooms})
+         {&sceneGraph_in.detectedRooms, &sceneGraph_in.candidateRooms})
     {
         for (const std::pair<const int, std::unique_ptr<semantic::Room>>
                  &roomEntry : *p_roomsById)

@@ -85,11 +85,12 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                                                       currentMapAllFloors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: the scene graph has no scene map for map %lu; "
-                         "continuing without its floors.",
-                         __func__,
-                         currentMapId);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: the semantics manager has no scene graph for map %lu; "
+                "continuing without its floors.",
+                __func__,
+                currentMapId);
         }
         /* A retained floor is a coplanar one, never one with the same id. */
         std::optional<semantic::Floor::PlaneIdentity> floorIdentity{};
@@ -149,7 +150,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: eraseFloor found no scene map for map %lu; "
+                             "%s: eraseFloor found no scene graph for map %lu; "
                              "continuing as before.",
                              __func__,
                              mergeMapId);
@@ -177,7 +178,7 @@ void transferFloors(atlas::Atlas                         *p_atlas_inout,
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: moveFloor found no scene map for maps %lu and "
+                         "%s: moveFloor found no scene graph for maps %lu and "
                          "%lu or no such storey; continuing as before.",
                          __func__,
                          mergeMapId,

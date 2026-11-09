@@ -107,7 +107,7 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: moveRoom found no scene map for maps %lu and "
+                         "%s: moveRoom found no scene graph for maps %lu and "
                          "%lu or no such room; continuing as before.",
                          __func__,
                          mergeMapId,
@@ -151,7 +151,7 @@ void transferRooms(atlas::Atlas                        *p_atlas_inout,
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: moveRoom found no scene map for maps %lu and "
+                         "%s: moveRoom found no scene graph for maps %lu and "
                          "%lu or no such room; continuing as before.",
                          __func__,
                          mergeMapId,

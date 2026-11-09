@@ -17,13 +17,13 @@
  */
 
 /*!
- * @file            SceneMapStruct.h
+ * @file            SceneGraphStruct.h
  *
- * @brief           Declares SceneMap, the scene-graph view of one SLAM map.
+ * @brief           Declares SceneGraph, the S-Graph of one SLAM map.
  */
 
-#ifndef VS_GRAPHS_SCENE_GRAPH_SCENE_MAP_STRUCT_H
-#define VS_GRAPHS_SCENE_GRAPH_SCENE_MAP_STRUCT_H
+#ifndef VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_STRUCT_H
+#define VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_STRUCT_H
 
 #include "scene_understanding/scene_graph/building/objects/BuildingStruct.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
@@ -50,19 +50,19 @@ namespace scene_graph
  *                  passages.
  *
  *                  This is the only list of the map's rooms, storeys and
- *                  passages. The scene map owns its rooms and passages and
+ *                  passages. The scene graph owns its rooms and passages and
  *                  its buildings own their storeys; nothing outside the tree
  *                  frees them. A room or passage not yet linked to a storey
  *                  is reachable through these maps only. Bad-flagged objects
  *                  stay here, hidden from every query, until the sweep moves
  *                  them out. Owned by the Map and guarded by the
- * SemanticsManager graph mutex.
+ *                  SemanticsManager graph mutex.
  */
-struct SceneMap
+struct SceneGraph
 {
   public:
     /*!
-     * @brief           SLAM map this scene map mirrors; borrowed, the atlas
+     * @brief           SLAM map this scene graph mirrors; borrowed, the atlas
      *                  owns it.
      */
     map::Map *p_map{nullptr};
@@ -90,8 +90,8 @@ struct SceneMap
 
     /*!
      * @brief           Next storey id SemanticsManager::addFloor() hands out
-     * when a storey's id is negative or taken; never lowered, so a freed id is
-     * not reused. Kept by clearSemantics().
+     *                  when a storey's id is negative or taken; never lowered,
+     *                  so a freed id is not reused. Kept by clearSemantics().
      */
     int nextAvailableFloorId{0};
 };
@@ -100,4 +100,4 @@ struct SceneMap
 } /* namespace core */
 } /* namespace vs_graphs */
 
-#endif /* VS_GRAPHS_SCENE_GRAPH_SCENE_MAP_STRUCT_H */
+#endif /* VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_STRUCT_H */

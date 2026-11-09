@@ -1829,7 +1829,7 @@ SemanticsManagerStatus
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),
-                            "%s: markRoomBad found no scene map for map %lu; "
+                            "%s: markRoomBad found no scene graph for map %lu; "
                             "the room is flagged alone; continuing as before.",
                             __func__,
                             currentMapId);

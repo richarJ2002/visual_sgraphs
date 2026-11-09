@@ -3511,7 +3511,7 @@ void maybeArchiveSGraph(
                     SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMapFloorsInIdOrder found no scene map "
+                             "%s: getMapFloorsInIdOrder found no scene graph "
                              "for map %lu; archiving it without its floors.",
                              __func__,
                              mapId2);
@@ -3523,7 +3523,7 @@ void maybeArchiveSGraph(
                     SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMapRoomsInIdOrder found no scene map "
+                             "%s: getMapRoomsInIdOrder found no scene graph "
                              "for map %lu; archiving it without its rooms.",
                              __func__,
                              mapId2);
@@ -3536,7 +3536,7 @@ void maybeArchiveSGraph(
                     SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMapPassagesInIdOrder found no scene map "
+                             "%s: getMapPassagesInIdOrder found no scene graph "
                              "for map %lu; archiving it without its passages.",
                              __func__,
                              mapId2);
@@ -6746,7 +6746,8 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                      __func__);
     }
 
-    /* Rooms, floors and passages of the active map, from the scene graph */
+    /* Rooms, floors and passages of the active map, from the semantics manager
+     */
     vs_graphs::core::atlas::Atlas     *p_atlas            = nullptr;
     vs_graphs::core::SemanticsManager *p_semanticsManager = nullptr;
     if ((p_slamSystem->getAtlas(p_atlas) !=
@@ -6783,7 +6784,7 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
             SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRoomsInIdOrder found no scene map for the "
+                     "%s: getAllRoomsInIdOrder found no scene graph for the "
                      "active map; continuing without rooms.",
                      __func__);
     }
@@ -6794,7 +6795,7 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
             SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloorsInIdOrder found no scene map for the "
+                     "%s: getAllFloorsInIdOrder found no scene graph for the "
                      "active map; continuing without floors.",
                      __func__);
     }
@@ -6805,7 +6806,7 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
             SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassagesInIdOrder found no scene map for the "
+                     "%s: getAllPassagesInIdOrder found no scene graph for the "
                      "active map; continuing without passages.",
                      __func__);
     }

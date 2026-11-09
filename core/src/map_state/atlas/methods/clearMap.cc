@@ -67,7 +67,7 @@ AtlasStatus Atlas::clearMap()
                      "fail; continuing as before.",
                      __func__);
     }
-    /* Map::clear emptied the semantic lists; the scene map follows. */
+    /* Map::clear emptied the semantic lists; the scene graph follows. */
     unsigned long activeMapId{};
     if ((p_activeMap->getId(activeMapId) !=
          map::MapStatus::MAP_STATUS_SUCCESS) ||

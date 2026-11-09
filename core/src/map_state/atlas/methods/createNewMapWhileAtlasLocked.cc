@@ -129,9 +129,9 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
     /* Insert the new active map into the atlas map list */
     maps.insert(p_activeMap);
 
-    /* The new map gets its empty scene map and becomes the scene graph's
-     * active map, so the tree always has one scene map per map in maps; the
-     * map's rooms, passages and floors live only in the graph. */
+    /* The new map gets its empty scene graph and becomes the semantics
+     * manager's active map, so the registry always has one scene graph per map
+     * in maps; the map's rooms, passages and floors live only in the graph. */
 
     /* Declare variable to hold the id of the new active map */
     unsigned long newMapId{};
@@ -139,21 +139,21 @@ AtlasStatus Atlas::createNewMapWhileAtlasLocked()
     /*!
      * 3 things are done here:
      *      - Get id of the new active map
-     *      - Add the scene map to the scene graph (to be renamed)
-     *      - Set the active map in the scene graph (to be renamed)
+     *      - Add the scene graph to the semantics manager's registry
+     *      - Set the active map in the semantics manager
      *
      * Before the semantics manager is attached the maps are not registered
      * here; Atlas::setSemanticsManager() registers them.
      */
     if ((p_activeMap->getId(newMapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         ((p_semanticsManager != nullptr) &&
-         ((p_semanticsManager->addSceneMap(*p_activeMap) !=
+         ((p_semanticsManager->addSceneGraph(*p_activeMap) !=
            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
           (p_semanticsManager->setActiveMap(newMapId) !=
            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/addSceneMap/setActiveMap returned "
+                     "%s: getId/addSceneGraph/setActiveMap returned "
                      "a failure status although they cannot fail; continuing "
                      "as before.",
                      __func__);

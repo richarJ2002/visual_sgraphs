@@ -66,8 +66,8 @@ AtlasStatus Atlas::postLoad()
         camerasById[cameraId] = p_camera;
     }
 
-    /* The loaded maps replace maps: the old scene maps go, and each loaded
-     * map gets an empty scene map once it has re-linked below (while no
+    /* The loaded maps replace maps: the old scene graphs go, and each loaded
+     * map gets an empty scene graph once it has re-linked below (while no
      * semantics manager is attached, Atlas::setSemanticsManager() registers
      * them). Rooms,
      * floors and passages are not part of a saved map, so there is nothing
@@ -78,11 +78,11 @@ AtlasStatus Atlas::postLoad()
         if ((p_map->getId(replacedMapId) !=
              map::MapStatus::MAP_STATUS_SUCCESS) ||
             ((p_semanticsManager != nullptr) &&
-             (p_semanticsManager->eraseSceneMap(replacedMapId) !=
+             (p_semanticsManager->eraseSceneGraph(replacedMapId) !=
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId/eraseSceneMap returned a failure status "
+                         "%s: getId/eraseSceneGraph returned a failure status "
                          "although they cannot fail; continuing as before.",
                          __func__);
         }
@@ -101,11 +101,11 @@ AtlasStatus Atlas::postLoad()
                          __func__);
         }
         if ((p_semanticsManager != nullptr) &&
-            (p_semanticsManager->addSceneMap(*p_map) !=
+            (p_semanticsManager->addSceneGraph(*p_map) !=
              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addSceneMap returned a failure "
+                         "%s: addSceneGraph returned a failure "
                          "status although it cannot fail; continuing as "
                          "before.",
                          __func__);

@@ -48,9 +48,9 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, scene_graph::SceneMap *>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    const std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         /* Without the map there are no other rooms to consult: flag the room
          * alone, which still hides it. */
@@ -64,7 +64,7 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    flagRoomBad(*sceneMapIterator->second, p_room_inout);
+    flagRoomBad(*sceneGraphIterator->second, p_room_inout);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

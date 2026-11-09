@@ -70,10 +70,6 @@ namespace core
 
 void SemanticsManager::run(void)
 {
-    /* Declare object to point to memory address of the scene graph */
-
-    /* Extract the address of scene graph */
-
     /* Init counter to track summary cycle */
     std::size_t summaryCycle = 0U;
 
@@ -1394,7 +1390,7 @@ void SemanticsManager::run(void)
         }
 
         /* Deletion ends the cycle: flagged rooms, passages and storeys leave
-         * the scene graph and are freed here, under the same lock that every
+         * the scene graphs and are freed here, under the same lock that every
          * writer holds, so no cycle step can still use them. */
         if (sweepBadNodes() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

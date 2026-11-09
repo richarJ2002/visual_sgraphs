@@ -297,7 +297,7 @@ struct ProjectedPlaneBounds
  *                  saw the retired plane see the survivor.
  *
  * @param[in]       p_atlas_in
- *                  Atlas that owns the scene graph and the keyframes; not
+ *                  Atlas that owns the maps and the keyframes; not
  *                  null.
  *
  * @param[in,out]   p_retiredPlane_inout

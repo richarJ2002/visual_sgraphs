@@ -50,15 +50,15 @@ AtlasStatus Atlas::setSemanticsManager(SemanticsManager *p_semanticsManager_in)
     p_semanticsManager = p_semanticsManager_in;
 
     /* Maps created or loaded before the manager existed have no registry
-     * entry yet: the tree gets one scene map per map in maps, and the current
+     * entry yet: the tree gets one scene graph per map in maps, and the current
      * map becomes the active map. */
     for (map::Map *p_map : maps)
     {
-        if (p_semanticsManager->addSceneMap(*p_map) !=
+        if (p_semanticsManager->addSceneGraph(*p_map) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: addSceneMap returned a failure status although "
+                         "%s: addSceneGraph returned a failure status although "
                          "it cannot fail; continuing as before.",
                          __func__);
         }

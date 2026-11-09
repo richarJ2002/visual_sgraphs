@@ -82,7 +82,7 @@ MapStatus Map::clear()
     hasImuInitialization = false;
     upDirection_world    = Eigen::Vector3d(0.0, -1.0, 0.0);
     isUpFromImuGravity   = false;
-    /* The rooms go with the map (the caller clears its scene map), so do
+    /* The rooms go with the map (the caller clears its scene graph), so do
      * the mission-chain ends that point at them; the next bootstrap sets the
      * starting room again. */
     p_startingRoom           = nullptr;

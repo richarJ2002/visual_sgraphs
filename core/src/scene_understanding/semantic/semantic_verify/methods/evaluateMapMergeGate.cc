@@ -120,22 +120,24 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
                                                  survivingMapAllRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its rooms.",
-                     __func__,
-                     survivingMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            survivingMapId);
     }
     std::vector<Room *> absorbedMapAllRooms{};
     if (p_semanticsManager->getMapRoomsInIdOrder(absorbedMapId,
                                                  absorbedMapAllRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its rooms.",
-                     __func__,
-                     absorbedMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            absorbedMapId);
     }
     std::vector<Room *>                    survivingAdmittedRooms{};
     std::vector<Room *>                    absorbedAdmittedRooms{};

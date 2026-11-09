@@ -227,11 +227,11 @@ class Atlas
         /* The maps own their S-Graphs and the semantics manager keeps a
          * registry of them, so every map leaves the registry before it is
          * deleted. */
-        if (unregisterSceneMaps(mapsToDelete) !=
+        if (unregisterSceneGraphs(mapsToDelete) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: unregisterSceneMaps returned a failure status "
+                         "%s: unregisterSceneGraphs returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
@@ -1010,7 +1010,7 @@ class Atlas
      * @return          ATLAS_STATUS_SUCCESS always.
      */
     [[nodiscard]] AtlasStatus
-        unregisterSceneMaps(const std::set<map::Map *> &mapsToUnregister_in);
+        unregisterSceneGraphs(const std::set<map::Map *> &mapsToUnregister_in);
 
     /*!
      * @brief           Active maps. The Atlas owns them and deletes them in its
@@ -1108,7 +1108,7 @@ class Atlas
      * @brief           Semantics manager that serves the S-Graph of the maps in
      *                  maps; borrowed, owned by the system. The atlas owns no
      *                  graph content: each map owns its S-Graph. A map's scene
-     *                  map is registered with the manager when the map is
+     *                  graph is registered with the manager when the map is
      *                  created or loaded and unregistered when the map leaves
      *                  maps (setMapBad, clearAtlas, postLoad) or the atlas is
      *                  destroyed. Null from construction until

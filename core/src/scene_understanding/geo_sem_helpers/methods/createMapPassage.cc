@@ -189,10 +189,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_semanticsManager->getAllPassagesInIdOrder(allPassages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for the active map; "
-                     "continuing without its passages.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its passages.",
+            __func__);
     }
 
     /* ---------------------------------------------------------------------- *
@@ -864,7 +865,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/addPassage found no scene map for the "
+                     "%s: getId/addPassage found no scene graph for the "
                      "passage's map; the passage was not added.",
                      __func__);
     }
@@ -875,10 +876,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_semanticsManager->getAllPassagesInIdOrder(atlasAllPassages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for the active map; "
-                     "continuing without its passages.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its passages.",
+            __func__);
     }
     std::cout << "[GeoSemHelper] Atlas now contains " << atlasAllPassages.size()
               << " passages." << std::endl;

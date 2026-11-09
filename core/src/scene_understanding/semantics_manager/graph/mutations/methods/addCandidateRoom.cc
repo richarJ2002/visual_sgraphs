@@ -48,15 +48,15 @@ SemanticsManagerStatus SemanticsManager::addCandidateRoom(
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         retiredNodes.rooms.push_back(std::move(p_room_in));
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
-    insertRoom(sceneMapIterator->second->candidateRooms,
+    insertRoom(sceneGraphIterator->second->candidateRooms,
                std::move(p_room_in),
                mapId_in,
                retiredNodes);

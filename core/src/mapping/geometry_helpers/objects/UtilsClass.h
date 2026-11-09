@@ -480,7 +480,7 @@ class Utils
      *                  sides of a passable passage opening is left alone.
      *
      * @param[in,out]   p_atlas_inout
-     *                  Atlas whose scene graph lists the map's passages,
+     *                  Atlas whose semantics manager lists the map's passages,
      *                  rooms and floors and erases the retired rooms.
      *
      * @param[in,out]   p_map_inout

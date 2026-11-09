@@ -75,7 +75,7 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),
-            "%s: map %lu has no semantics manager or no scene map in it; "
+            "%s: map %lu has no semantics manager or no scene graph in it; "
             "continuing without its floors.",
             __func__,
             survivingMapId);
@@ -98,7 +98,7 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     {
         RCLCPP_ERROR(
             rclcpp::get_logger("vs_graphs"),
-            "%s: map %lu has no semantics manager or no scene map in it; "
+            "%s: map %lu has no semantics manager or no scene graph in it; "
             "continuing without its floors.",
             __func__,
             absorbedMapId);

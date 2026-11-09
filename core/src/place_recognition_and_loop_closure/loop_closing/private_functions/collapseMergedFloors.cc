@@ -72,11 +72,12 @@ loop_closing::LoopClosingStatus
     if (p_semanticsManager->getMapFloorsInIdOrder(survivingMapId, allFloors) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its floors.",
-                     __func__,
-                     survivingMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its floors.",
+            __func__,
+            survivingMapId);
     }
     if (allFloors.size() <= 1U)
     {
@@ -143,7 +144,7 @@ loop_closing::LoopClosingStatus
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: eraseFloor found no scene map for map %lu; "
+                         "%s: eraseFloor found no scene graph for map %lu; "
                          "continuing as before.",
                          __func__,
                          survivingMapId);
@@ -178,11 +179,12 @@ loop_closing::LoopClosingStatus
             survivingMapAllDetectedMapRooms) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for map %lu; "
-                     "continuing without its detected rooms.",
-                     __func__,
-                     survivingMapId);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its detected rooms.",
+            __func__,
+            survivingMapId);
     }
     for (semantic::Room *p_room : survivingMapAllDetectedMapRooms)
     {

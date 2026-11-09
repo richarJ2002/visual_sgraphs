@@ -44,26 +44,26 @@ SemanticsManagerStatus
 {
     p_room_out = nullptr;
     std::shared_lock<std::shared_mutex> graphLock(graphMutex);
-    std::map<unsigned long, scene_graph::SceneMap *>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
     /* Detected rooms first, as getMapRoomsInIdOrder() keeps them; a flagged
      * room is hidden and lets the other list answer. */
-    const scene_graph::SceneMap &sceneMap = *sceneMapIterator->second;
+    const scene_graph::SceneGraph &sceneGraph = *sceneGraphIterator->second;
     std::map<int, std::unique_ptr<semantic::Room>>::const_iterator
-        roomIterator = sceneMap.detectedRooms.find(roomId_in);
-    if (roomIterator != sceneMap.detectedRooms.end() &&
+        roomIterator = sceneGraph.detectedRooms.find(roomId_in);
+    if (roomIterator != sceneGraph.detectedRooms.end() &&
         isRoomLive(roomIterator->second.get()))
     {
         p_room_out = roomIterator->second.get();
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    roomIterator = sceneMap.candidateRooms.find(roomId_in);
-    if (roomIterator != sceneMap.candidateRooms.end() &&
+    roomIterator = sceneGraph.candidateRooms.find(roomId_in);
+    if (roomIterator != sceneGraph.candidateRooms.end() &&
         isRoomLive(roomIterator->second.get()))
     {
         p_room_out = roomIterator->second.get();

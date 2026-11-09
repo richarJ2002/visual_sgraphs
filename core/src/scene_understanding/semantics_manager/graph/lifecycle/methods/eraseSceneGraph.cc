@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            eraseSceneMap.cc
+ * @file            eraseSceneGraph.cc
  *
- * @brief           Implements SemanticsManager::eraseSceneMap(), declared in
+ * @brief           Implements SemanticsManager::eraseSceneGraph(), declared in
  *                  semantics_manager/objects/SemanticsManagerClass.h.
  */
 
@@ -37,18 +37,18 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::eraseSceneMap(unsigned long mapId_in)
+SemanticsManagerStatus SemanticsManager::eraseSceneGraph(unsigned long mapId_in)
 {
     std::unique_lock<std::shared_mutex> graphLock(graphMutex);
-    const std::map<unsigned long, scene_graph::SceneMap *>::iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator != sceneMaps.end())
+    const std::map<unsigned long, scene_graph::SceneGraph *>::iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator != sceneGraphs.end())
     {
         /* Other maps may still link to this map's rooms (their starting and
          * final rooms), so the nodes are retired and freed by a sweep after
          * those links are cleared. */
-        retireSceneMapContents(*sceneMapIterator->second, retiredNodes);
-        sceneMaps.erase(sceneMapIterator);
+        retireSceneGraphContents(*sceneGraphIterator->second, retiredNodes);
+        sceneGraphs.erase(sceneGraphIterator);
     }
     if (activeGraphMapId == mapId_in)
     {

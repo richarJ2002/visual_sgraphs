@@ -117,7 +117,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::vector<vs_graphs::core::semantic::Room *>     allRooms{};
     unsigned long                                      mapId{};
     /* The rooms are used until the function ends, outside the semantic update
-     * lock: the guard keeps the scene graph from freeing them meanwhile. */
+     * lock: the guard keeps the semantics manager from freeing them meanwhile.
+     */
     std::shared_lock<std::shared_mutex>                graphReclaimGuard{};
     if ((p_currentMap->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
         (p_semanticsManager_in == nullptr) ||
@@ -126,10 +127,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         (p_semanticsManager_in->getMapRoomsInIdOrder(mapId, allRooms) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for this map; "
-                     "continuing without rooms.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for this map; "
+            "continuing without rooms.",
+            __func__);
     }
     /* Unorderd maps to keep track of the local entities */
     std::unordered_map<int, bool> localPlaneId;

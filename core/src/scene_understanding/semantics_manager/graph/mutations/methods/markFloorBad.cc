@@ -62,9 +62,9 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    const std::map<unsigned long, scene_graph::SceneMap *>::const_iterator
-        sceneMapIterator = sceneMaps.find(mapId_in);
-    if (sceneMapIterator == sceneMaps.end())
+    const std::map<unsigned long, scene_graph::SceneGraph *>::const_iterator
+        sceneGraphIterator = sceneGraphs.find(mapId_in);
+    if (sceneGraphIterator == sceneGraphs.end())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
@@ -73,7 +73,7 @@ SemanticsManagerStatus
      * and takes its dependent passages along. */
     for (semantic::Room *p_room : floorRooms)
     {
-        flagRoomBad(*sceneMapIterator->second, p_room);
+        flagRoomBad(*sceneGraphIterator->second, p_room);
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

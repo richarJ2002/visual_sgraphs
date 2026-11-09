@@ -64,8 +64,8 @@ MapStatus Map::applyScaledRotation(
     const float         alignmentScale_in,
     const bool          isScaledVelocity_in)
 {
-    /* Rooms, passages and floors come from the scene graph, read before
-     * mapMutex is held for the move (lock order: scene graph lock, then
+    /* Rooms, passages and floors come from the semantics manager, read before
+     * mapMutex is held for the move (lock order: graph lock, then
      * mapMutex). Callers hold the semantic lock, so the lists stay put. */
     std::vector<semantic::Passage *> mapPassages{};
     std::vector<semantic::Room *>    mapDetectedRooms{};
@@ -85,10 +85,11 @@ MapStatus Map::applyScaledRotation(
         (p_semanticsManager_in->getMapFloorsInIdOrder(id, mapFloors) !=
          SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: the scene graph has no scene map for this map; its "
-                     "rooms, passages and floors are not moved.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for this map; its "
+            "rooms, passages and floors are not moved.",
+            __func__);
     }
 
     std::unique_lock<std::mutex> lock(mapMutex);
