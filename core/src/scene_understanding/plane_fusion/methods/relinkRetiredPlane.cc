@@ -19,11 +19,9 @@
 /*!
  * @file            relinkRetiredPlane.cc
  *
- * @brief           Implements relinkRetiredPlane(), declared in
- *                  mapping/geometry_helpers/private_functions/private_functions.h.
+ * @brief           Implements SemanticsManager::relinkRetiredPlane(), declared
+ *                  in semantics_manager/objects/SemanticsManagerClass.h.
  */
-
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
 
 #include <rclcpp/logging.hpp>
 #include <vector>
@@ -39,26 +37,12 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace utils
-{
-namespace utils
-{
 
-UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
-                               geometric::Plane *p_retiredPlane_inout,
-                               geometric::Plane *p_retainedPlane_inout)
+SemanticsManagerStatus SemanticsManager::relinkRetiredPlane(
+    atlas::Atlas     *p_atlas_in,
+    geometric::Plane *p_retiredPlane_inout,
+    geometric::Plane *p_retainedPlane_inout)
 {
-    SemanticsManager *p_semanticsManager = nullptr;
-    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(
-            rclcpp::get_logger("vs_graphs"),
-            "%s: getSemanticsManager returned a failure status although it "
-            "cannot fail; continuing as before.",
-            __func__);
-    }
-
     /* The plane's own observation records move to the survivor in one locked
      * step. */
     if (p_retainedPlane_inout->absorb(p_retiredPlane_inout) !=
@@ -72,8 +56,7 @@ UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
 
     /* The rooms and passages that listed the retired plane list the survivor
      * instead; the semantics manager writes both sides in one step. */
-    if (p_semanticsManager->replacePlane(p_retiredPlane_inout,
-                                         p_retainedPlane_inout) !=
+    if (replacePlane(p_retiredPlane_inout, p_retainedPlane_inout) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -117,10 +100,8 @@ UtilsStatus relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
                         __func__);
         }
     }
-    return UtilsStatus::UTILS_STATUS_SUCCESS;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} /* namespace utils */
-} /* namespace utils */
 } /* namespace core */
 } /* namespace vs_graphs */

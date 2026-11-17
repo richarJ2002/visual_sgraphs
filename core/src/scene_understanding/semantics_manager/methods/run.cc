@@ -55,7 +55,6 @@
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
-#include <algorithm>
 #include <chrono>
 #include <map>
 #include <rclcpp/logging.hpp>
@@ -174,14 +173,14 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        /* Reset the current camera center */
-        if (refreshCurrentCameraCenter() !=
+        /* Stage 1, plane intake: camera centre and this cycle's planes */
+        std::vector<geometric::Plane *> intakePlanes{};
+        if (runPlaneIntake(intakePlanes) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: refreshCurrentCameraCenter returned a failure "
-                         "status although it cannot fail; continuing as "
-                         "before.",
+                         "%s: runPlaneIntake returned a failure status "
+                         "although it cannot fail; continuing as before.",
                          __func__);
         }
 
@@ -199,83 +198,24 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        /* Geometrically test planes to make sure normals are expected */
-        if (rejectMisorientedPlanes() !=
+        /* Stage 2, plane checks: the plane rule table on the intake planes */
+        if (runPlaneChecks(intakePlanes) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: rejectMisorientedPlanes returned a failure "
-                         "status although it cannot fail; continuing as "
-                         "before.",
-                         __func__);
-        }
-
-        /* Declare variable which will point to the main ground plane */
-        geometric::Plane *p_mainGroundPlane = nullptr;
-
-        /* Validate the low-level semantic planes */
-        if (p_atlas->getBiggestGroundPlane(p_mainGroundPlane) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getBiggestGroundPlane returned a failure status "
+                         "%s: runPlaneChecks returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
 
-        /* If there is a ground plane, find its transform and filter planes */
-        if (p_mainGroundPlane != nullptr)
+        /* Stage 3, plane fusion: duplicate planes fused before room edges */
+        if (runPlaneFusion() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            /* Declare variable which will track the transform from */
-            Eigen::Matrix4f plane2{};
-
-            /* Find the transform from ground plane to horizontal */
-            if (computePlaneToHorizontal(p_mainGroundPlane, plane2) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: computePlaneToHorizontal returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-
-            /* Store the plane transformation matrix */
-            groundPlanToHorizontalTransformation = plane2;
-
-            /* Drop ground planes past the step limit from the main floor */
-            if (filterGroundPlanes(p_mainGroundPlane) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: filterGroundPlanes returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-
-        /*!
-         * Reconcile duplicate semantic planes before constructing room edges.
-         *
-         * Plane hypotheses are created from individual keyframe observations,
-         * so one physical wall can initially exist as several overlapping or
-         * contiguous fragments. Associating those fragments with a room first
-         * creates duplicate graph edges and provisional structural elements.
-         * The reconciliation pass validates equation, finite extent, and
-         * observation-side compatibility before atomically rewiring every
-         * existing reference to the retained plane.
-         */
-        if (p_sysParams->semSeg.reassociate.enabled)
-        {
-            if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
-                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: reAssociateSemanticPlanes returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: runPlaneFusion returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*!
@@ -787,9 +727,10 @@ void SemanticsManager::run(void)
                 __func__);
         }
 
-        /* Link each wall's opposite-facing twin, now that ownership has
-         * settled for this cycle. Must run before validateRoomBoundaries()
-         * so boundary/corner logic can rely on current twin identity. */
+        /* Link each wall's opposite-facing twin (plane fusion stage), now
+         * that ownership has settled for this cycle. Must run before
+         * validateRoomBoundaries() so boundary/corner logic can rely on
+         * current twin identity. */
         if (reconcileWallFacePairs() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -1266,29 +1207,33 @@ void SemanticsManager::run(void)
         {
             skeletonVertexCount += cluster.size();
         }
-        const std::size_t pendingWallCount = std::count_if(
-            undefendedWalls.begin(),
-            undefendedWalls.end(),
-            [&ownedWallIds](
-                const std::pair<const int, UndefendedWallState> &entry)
-            { return ownedWallIds.count(entry.first) == 0U; });
-        const std::size_t livePassageCount = std::count_if(
-            pipelinePassages.begin(),
-            pipelinePassages.end(),
-            [](semantic::Passage *p_passage)
+        std::size_t pendingWallCount = 0U;
+        for (const std::pair<const int, UndefendedWallState> &undefendedWall :
+             undefendedWalls)
+        {
+            if (ownedWallIds.count(undefendedWall.first) == 0U)
             {
-                bool passageIsBad{};
-                if ((p_passage != nullptr) &&
-                    p_passage->isBad(passageIsBad) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return p_passage != nullptr && !passageIsBad;
-            });
+                pendingWallCount++;
+            }
+        }
+        std::size_t livePassageCount = 0U;
+        for (semantic::Passage *p_pipelinePassage : pipelinePassages)
+        {
+            bool passageIsBad{};
+            if ((p_pipelinePassage != nullptr) &&
+                p_pipelinePassage->isBad(passageIsBad) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_pipelinePassage != nullptr && !passageIsBad)
+            {
+                livePassageCount++;
+            }
+        }
         std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             pipelineMapSkeletonEdges{};
         if ((p_pipelineMap != nullptr) &&

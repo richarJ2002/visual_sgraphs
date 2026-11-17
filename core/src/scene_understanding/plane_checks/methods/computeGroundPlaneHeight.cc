@@ -34,8 +34,9 @@ namespace core
 {
 
 SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
-    geometric::Plane     *p_groundPlane_in,
-    std::optional<float> &groundPlaneHeight_out)
+    geometric::Plane      *p_groundPlane_in,
+    const Eigen::Vector3d &upDirection_world_in,
+    std::optional<float>  &groundPlaneHeight_down_m_out)
 {
     /* Transform the planeCloud according to the planePose */
     geometric::Plane::GeometrySnapshot groundPlaneGetGeometrySnapshot{};
@@ -55,15 +56,21 @@ SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
                              *p_transformedCloud,
                              groundPlanToHorizontalTransformation);
 
-    /* Not a median: partial_sort with std::greater keeps the lower half in
-       descending order, so [numPoint-1] is the upper edge of that half. */
-    std::vector<float> yValues;
-    for (const pcl::PointXYZRGBA &point : p_transformedCloud->points)
+    /* The transform turns the ground normal onto up, so a point's height
+       along down is minus its part along up (its y when up is the
+       map-start camera's -Y). Not a median: partial_sort with std::greater
+       keeps the lower half in descending order, so [numPoint-1] is the upper
+       edge of that half. */
+    const Eigen::Vector3f upDirection_horizontal =
+        upDirection_world_in.cast<float>();
+    std::vector<float> heightValues_down_m;
+    for (const pcl::PointXYZRGBA &cloudPoint : p_transformedCloud->points)
     {
-        yValues.push_back(point.y);
+        heightValues_down_m.push_back(
+            -upDirection_horizontal.dot(cloudPoint.getVector3fMap()));
     }
 
-    size_t lowerHalfPointCount = yValues.size() / 2;
+    size_t lowerHalfPointCount = heightValues_down_m.size() / 2;
 
     /* An empty (or single-point) support cloud -- plane created before its
        first refit, or cleared during replaceMapClouds -- makes numPoint == 0,
@@ -72,16 +79,16 @@ SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
        corrupt filterGroundPlanes' threshold. */
     if (lowerHalfPointCount == 0)
     {
-        groundPlaneHeight_out = std::nullopt;
+        groundPlaneHeight_down_m_out = std::nullopt;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    std::partial_sort(yValues.begin(),
-                      yValues.begin() + lowerHalfPointCount,
-                      yValues.end(),
+    std::partial_sort(heightValues_down_m.begin(),
+                      heightValues_down_m.begin() + lowerHalfPointCount,
+                      heightValues_down_m.end(),
                       std::greater<float>());
 
-    groundPlaneHeight_out = yValues[lowerHalfPointCount - 1];
+    groundPlaneHeight_down_m_out = heightValues_down_m[lowerHalfPointCount - 1];
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

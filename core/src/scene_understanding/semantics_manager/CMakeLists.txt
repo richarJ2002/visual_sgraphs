@@ -1,5 +1,6 @@
 # SemanticsManager object sources; the scene graph operations are built from
-# the graph and bootstrap subpackages.
+# the graph and bootstrap subpackages, the pipeline stages from the stage
+# packages (plane_intake, plane_checks, plane_fusion) next to this one.
 include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
@@ -15,9 +16,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/buildWallSlabQueries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/computeGroundPlaneHeight.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/computeGroundPlaneHeightForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/computePlaneToHorizontal.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateRoomsInFreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectDoorsAndDoorways.cc
@@ -32,7 +30,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerification.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/filterGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
@@ -57,12 +54,8 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/partitionFreeSpaceAtPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/processRoomTrackerPendingForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/recomputeRoomCentroidsFromWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/refreshCurrentCameraCenter.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanesForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileWallFacePairs.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileWallFacePairsForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/rejectMisorientedPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
@@ -87,7 +80,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomCentreFromWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomObservationGaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomWallFootprint.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRotationBetweenDirections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/crossProduct2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateWallAdmissionEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findWallRoom.cc
@@ -105,11 +97,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc
   ${VS_GRAPHS_SEMANTICSMANAGER_BOOTSTRAP_SOURCES}
   ${VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES}
-)
-
-# The Eigen setFromTwoVectors diagnostic deviation (see the file header) only
-# holds while Eigen is first included by this file, so never batch it.
-set_source_files_properties(
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRotationBetweenDirections.cc
-  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+  ${VS_GRAPHS_PLANEINTAKE_SOURCES}
+  ${VS_GRAPHS_PLANECHECKS_SOURCES}
+  ${VS_GRAPHS_PLANEFUSION_SOURCES}
 )

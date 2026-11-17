@@ -20,13 +20,15 @@
  * @file            rejectMisorientedPlanes.cc
  *
  * @brief           Implements SemanticsManager::rejectMisorientedPlanes(),
- * declared in SemanticsManager.h.
+ *                  declared in
+ * semantics_manager/objects/SemanticsManagerClass.h.
  */
 
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantic_constraints/plane_rules/plane_rules.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
+
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
@@ -37,34 +39,16 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
+SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(
+    const std::vector<geometric::Plane *> &intakePlanes_in,
+    const Eigen::Vector3d                 &upDirection_world_in)
 {
     PROFILE_FUNCTION();
-    /* Iterate through all the planes and reject the misoriented ones */
-    std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
-    if (p_atlas->getAllPlanes(atlasAllPlanes) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPlanes returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    Eigen::Vector3d upDirection_world{};
-    bool            isFromImuGravity{};
-    if (p_atlas->getUpDirection(upDirection_world, isFromImuGravity) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getUpDirection returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (geometric::Plane *const &plane : atlasAllPlanes)
+    for (geometric::Plane *p_intakePlane : intakePlanes_in)
     {
         /* Only ground and wall planes have an orientation to validate */
-        geometric::Plane::PlaneVariant planeExpectedPlaneType{};
-        if (plane->getExpectedPlaneType(planeExpectedPlaneType) !=
+        geometric::Plane::PlaneVariant expectedPlaneType{};
+        if (p_intakePlane->getExpectedPlaneType(expectedPlaneType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -72,19 +56,14 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const bool planeIsGround =
-            planeExpectedPlaneType ==
-            vs_graphs::core::geometric::Plane::PlaneVariant::GROUND;
-        const bool planeIsWall =
-            planeExpectedPlaneType ==
-            vs_graphs::core::geometric::Plane::PlaneVariant::WALL;
-        if (!planeIsGround && !planeIsWall)
+        if (expectedPlaneType != geometric::Plane::PlaneVariant::GROUND &&
+            expectedPlaneType != geometric::Plane::PlaneVariant::WALL)
         {
             continue;
         }
 
-        g2o::Plane3D planeGetGlobalEquation{};
-        if (plane->getGlobalEquation(planeGetGlobalEquation) !=
+        g2o::Plane3D globalPlaneEquation{};
+        if (p_intakePlane->getGlobalEquation(globalPlaneEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -95,7 +74,7 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
 
         /* Skip planes whose normal is unusable (non-finite or degenerate) */
         const Eigen::Vector4d planeEquation_world =
-            planeGetGlobalEquation.coeffs();
+            globalPlaneEquation.coeffs();
         const double planeNormalNorm = planeEquation_world.head<3>().norm();
         if (!planeEquation_world.allFinite() ||
             !std::isfinite(planeNormalNorm) || planeNormalNorm < 1e-6)
@@ -106,22 +85,20 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(void)
         /*!
          * Judging against the Atlas up direction (and not against the main
          * ground plane) stops a wall labelled as ground from becoming the
-         * reference that is never rejected. The tilt of a ground plane is its
-         * normal's horizontal part; the tilt of a wall is its normal's
-         * vertical part. The normal's sign is irrelevant.
+         * reference that is never rejected. The tilt rules of the plane rule
+         * table decide; no height is given, so the ground step rule waits for
+         * filterGroundPlanes().
          */
-        const Eigen::Vector3d planeNormal_world =
+        semantic_constraints::PlaneRuleInput planeRuleInput{};
+        planeRuleInput.planeLabel     = expectedPlaneType;
+        planeRuleInput.hasOrientation = true;
+        planeRuleInput.planeNormal_common =
             planeEquation_world.head<3>() / planeNormalNorm;
-        const double upComponent = planeNormal_world.dot(upDirection_world);
-        const double groundTilt =
-            (planeNormal_world - upComponent * upDirection_world).norm();
-        const double wallTilt = std::abs(upComponent);
-        if ((planeIsGround &&
-             groundTilt > p_sysParams->planeCheckpoint.maxTiltGround) ||
-            (planeIsWall &&
-             wallTilt > p_sysParams->planeCheckpoint.maxTiltWall))
+        planeRuleInput.upDirection_common = upDirection_world_in;
+        if (!semantic_constraints::arePlaneRulesSatisfied(planeRuleInput,
+                                                          *p_sysParams))
         {
-            if (plane->resetPlaneSemantics() !=
+            if (p_intakePlane->resetPlaneSemantics() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

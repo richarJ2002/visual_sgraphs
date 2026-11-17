@@ -17,7 +17,7 @@
 #include <Eigen/Geometry>
 #pragma GCC diagnostic pop
 
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+#include "scene_understanding/plane_checks/private_functions/private_functions.h"
 
 namespace vs_graphs
 {

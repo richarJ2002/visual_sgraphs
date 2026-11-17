@@ -17,14 +17,14 @@
  */
 
 /*!
- * @file            reconcileWallFacePairsForTest.cc
+ * @file            runPlaneFusion.cc
  *
- * @brief           Implements
- *                  SemanticsManager::reconcileWallFacePairsForTest(), declared
- *                  in SemanticsManager.h.
+ * @brief           Implements SemanticsManager::runPlaneFusion(), declared in
+ *                  semantics_manager/objects/SemanticsManagerClass.h.
  */
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
+
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -32,13 +32,26 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::reconcileWallFacePairsForTest(void)
+SemanticsManagerStatus SemanticsManager::runPlaneFusion(void)
 {
-    if (reconcileWallFacePairs() !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    /*!
+     * Reconcile duplicate semantic planes before constructing room edges.
+     *
+     * Plane hypotheses are created from individual keyframe observations,
+     * so one physical wall can initially exist as several overlapping or
+     * contiguous fragments. Associating those fragments with a room first
+     * creates duplicate graph edges and provisional structural elements.
+     * The reconciliation pass validates equation, finite extent, and
+     * observation-side compatibility before atomically rewiring every
+     * existing reference to the retained plane (findMatchingPlane, then
+     * relinkRetiredPlane and Plane::absorb, which thins the merged cloud).
+     */
+    if (p_sysParams->semSeg.reassociate.enabled &&
+        reAssociateSemanticPlanes(p_atlas) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: reconcileWallFacePairs returned a failure status "
+                     "%s: reAssociateSemanticPlanes returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }

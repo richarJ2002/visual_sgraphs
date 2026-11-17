@@ -19,26 +19,20 @@
 /*!
  * @file            reAssociateSemanticPlanes.cc
  *
- * @brief           Implements Utils::reAssociateSemanticPlanes(), declared in
- *                  Utils/Utils/objects/Utils.h.
+ * @brief           Implements SemanticsManager::reAssociateSemanticPlanes(),
+ *                  declared in
+ * semantics_manager/objects/SemanticsManagerClass.h.
  */
 
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "map_state/keyframe/keyframe.h"
-#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
-#include "scene_understanding/scene_graph/passage/Passage.h"
-#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
@@ -51,27 +45,16 @@ namespace vs_graphs
 {
 namespace core
 {
-namespace utils
-{
-namespace utils
-{
 
-UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
+SemanticsManagerStatus
+    SemanticsManager::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
 {
     if (p_atlas_in == nullptr)
     {
-        return UtilsStatus::UTILS_STATUS_SUCCESS;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    types::SystemParams *p_systemParams = nullptr;
-    if (types::SystemParams::getParams(p_systemParams) !=
-        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getParams returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
+    const types::SystemParams *p_systemParams = p_sysParams;
 
     bool mergedPlaneInPass = true;
 
@@ -150,7 +133,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                     __func__);
             }
 
-            PlaneEvidence candidatePlaneEvidence{};
+            utils::utils::PlaneEvidence candidatePlaneEvidence{};
             candidatePlaneEvidence.planeEquation_world =
                 candidateMatchGeometry.planeEquation_world;
             candidatePlaneEvidence.p_supportCloud_world_m =
@@ -178,8 +161,9 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                 candidatePlaneEvidence.observerSide = observingCameras;
             }
 
-            PlaneMatchSettings matchSettings{};
-            matchSettings.typeRule = PlaneTypeRule::CONFIRMED_TYPE_STRICT;
+            utils::utils::PlaneMatchSettings matchSettings{};
+            matchSettings.typeRule =
+                utils::utils::PlaneTypeRule::CONFIRMED_TYPE_STRICT;
             matchSettings.maximumAngle_rad = static_cast<double>(
                 p_systemParams->semSeg.reassociate.associationThresh);
             matchSettings.maximumPlaneDistance_m = static_cast<double>(
@@ -191,11 +175,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                                         .clusterSeparation.tolerance);
 
             int matchedPlaneId{};
-            if (findMatchingPlane(otherPlanes,
-                                  candidatePlaneEvidence,
-                                  matchSettings,
-                                  matchedPlaneId,
-                                  nullptr) != UtilsStatus::UTILS_STATUS_SUCCESS)
+            if (utils::utils::Utils::findMatchingPlane(otherPlanes,
+                                                       candidatePlaneEvidence,
+                                                       matchSettings,
+                                                       matchedPlaneId,
+                                                       nullptr) !=
+                utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: findMatchingPlane returned a failure status "
@@ -208,33 +193,31 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
                 continue;
             }
 
-            const std::vector<geometric::Plane *>::iterator
-                matchedPlaneIterator = std::find_if(
-                    otherPlanes.begin(),
-                    otherPlanes.end(),
-                    [matchedPlaneId](const geometric::Plane *p_plane)
-                    {
-                        int planeGetId{};
-                        if ((p_plane != nullptr) &&
-                            p_plane->getId(planeGetId) !=
-                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getId returned a failure status "
-                                         "although it "
-                                         "cannot fail; continuing as before.",
-                                         __func__);
-                        }
-                        return p_plane != nullptr &&
-                               planeGetId == matchedPlaneId;
-                    });
+            /* The first other plane carrying the matched id */
+            geometric::Plane *p_matchedPlane = nullptr;
+            for (geometric::Plane *p_otherPlane : otherPlanes)
+            {
+                int otherPlaneId{};
+                if ((p_otherPlane != nullptr) &&
+                    p_otherPlane->getId(otherPlaneId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_otherPlane != nullptr && otherPlaneId == matchedPlaneId)
+                {
+                    p_matchedPlane = p_otherPlane;
+                    break;
+                }
+            }
 
-            if (matchedPlaneIterator == otherPlanes.end())
+            if (p_matchedPlane == nullptr)
             {
                 continue;
             }
-
-            geometric::Plane *p_matchedPlane = *matchedPlaneIterator;
 
             geometric::Plane::GeometrySnapshot candidateGeometry{};
             if (p_candidatePlane->getGeometrySnapshot(candidateGeometry) !=
@@ -325,7 +308,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
             if (relinkRetiredPlane(p_atlas_in,
                                    p_retiredPlane,
                                    p_retainedPlane) !=
-                UtilsStatus::UTILS_STATUS_SUCCESS)
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: relinkRetiredPlane returned a failure "
@@ -442,10 +425,8 @@ UtilsStatus Utils::reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in)
         }
     }
 
-    return UtilsStatus::UTILS_STATUS_SUCCESS;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} /* namespace utils */
-} /* namespace utils */
 } /* namespace core */
 } /* namespace vs_graphs */

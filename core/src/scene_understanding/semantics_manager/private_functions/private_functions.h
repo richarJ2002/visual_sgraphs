@@ -54,31 +54,6 @@ class Passage;
 } /* namespace semantic */
 
 /*!
- * @brief           Computes Eigen's rotation between two directions in its
- *                  own translation unit.
- *
- * @param[in]       sourceDirection_in
- *                  Borrowed source direction; not modified or retained.
- *
- * @param[in]       targetDirection_in
- *                  Borrowed target direction; not modified or retained.
- *
- * @return          Double-precision quaternion from setFromTwoVectors.
- *
- * @note            Delegates unchanged to Eigen, including its normalization,
- *                  opposite-direction branch and degenerate/nonfinite behavior.
- *                  No additional validation or shared mutable state is added.
- *
- * @frame           Active source-to-target rotation, applied on the left of
- *                  column vectors; the caller supplies the frame conventions.
- *
- * @units           Dimensionless directions and quaternion coefficients.
- */
-Eigen::Quaterniond
-    computeRotationBetweenDirections(const Eigen::Vector3d &sourceDirection_in,
-                                     const Eigen::Vector3d &targetDirection_in);
-
-/*!
  * @brief           Tests whether an observed finite wall separates two
  *                  positions.
  *

@@ -453,16 +453,6 @@ class Utils
      *                  closer after optimization
      *
      * @param[in]       p_atlas_in
-     *                  A pointer to the Atlas
-     */
-    [[nodiscard]] static UtilsStatus
-        reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in);
-
-    /*!
-     * @brief           Re-associates semantically classified planes if they get
-     *                  closer after optimization
-     *
-     * @param[in]       p_atlas_in
      *                  a pointer to the Atlas
      */
     [[nodiscard]] static UtilsStatus reAssociateRooms(atlas::Atlas *p_atlas_in);

@@ -141,8 +141,8 @@ SemanticsManagerStatus SemanticsManager::reassociateMergedSceneGraph(
     /* Fuse only after every semantic relationship is visible. */
     if (p_systemParams_in->semSeg.reassociate.enabled)
     {
-        if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas_inout) !=
-            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        if (reAssociateSemanticPlanes(p_atlas_inout) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),

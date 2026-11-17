@@ -28,6 +28,7 @@
 
 #include "configuration/types/types.h"
 #include "map_state/atlas/atlas.h"
+#include "mapping/geometry_helpers/objects/TwinFaceCheckEnum.h"
 #include "scene_understanding/scene_graph/scene_graph/objects/RetiredNodesStruct.h"
 #include "scene_understanding/scene_graph/scene_graph/objects/SceneGraphStruct.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
@@ -698,6 +699,269 @@ class SemanticsManager
         const semantic::RoomContextSnapshot &recoveryContext_in,
         semantic::Room                      *p_room_inout);
 
+    /* ---------------------------------------------------------------------- *
+     * PLANE STAGES (pipeline stages 1-3, plane_intake/, plane_checks/ and
+     * plane_fusion/). Called by run() inside the cycle's exclusive graph lock;
+     * they hand no node pointer outside the manager.
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Stage 1, plane intake: refreshes the camera centre and
+     *                  collects the planes created or updated since the last
+     *                  cycle. Planes carry no change stamp and bundle
+     *                  adjustment may move any of them, so this is every plane
+     *                  of the active map (Atlas::getAllPlanes()), in id order.
+     *
+     * @param[out]      intakePlanes_out
+     *                  Planes of the active map in ascending id order;
+     *                  borrowed, owned by the map.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        runPlaneIntake(std::vector<geometric::Plane *> &intakePlanes_out);
+
+    /*!
+     * @brief           Sets currentCameraCenter_world_m to the camera centre of
+     *                  the newest usable key frame of the active map; called
+     *                  once at the start of each semantic cycle by
+     *                  runPlaneIntake().
+     *
+     *                  A key frame is usable when it is not bad and its centre
+     *                  is finite and not exactly zero (an exactly-zero centre
+     *                  marks an uninitialised first-frame pose).
+     *                  hasCameraCenter is false when there is no active map or
+     *                  no usable key frame.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus refreshCurrentCameraCenter(void);
+
+    /*!
+     * @brief           Stage 2, plane checks: applies the plane rule table
+     *                  (semantic_constraints/plane_rules) to the intake
+     *                  planes. Takes the up direction once from
+     *                  Atlas::getUpDirection(), resets misoriented ground and
+     *                  wall planes, then picks the main ground plane and
+     *                  resets the ground planes above its step limit.
+     *
+     * @param[in]       intakePlanes_in
+     *                  Planes from runPlaneIntake(); borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        runPlaneChecks(const std::vector<geometric::Plane *> &intakePlanes_in);
+
+    /*!
+     * @brief           Resets the semantics of the ground and wall planes that
+     *                  the tilt rules of the plane rule table reject. Judged
+     *                  against the up direction, not against the main ground
+     *                  plane, so that a misclassified plane cannot become the
+     *                  ground reference. Uses the plane_checkpoint.max_tilt_*
+     *                  tolerances, the same the plane checkpoint applies to
+     *                  each new patch; this map-level pass catches planes that
+     *                  turn after bundle adjustment or a map merge.
+     *
+     * @param[in]       intakePlanes_in
+     *                  Planes to judge, by expected type; borrowed.
+     *
+     * @param[in]       upDirection_world_in
+     *                  Unit up direction in the world frame
+     *                  (Atlas::getUpDirection()).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus rejectMisorientedPlanes(
+        const std::vector<geometric::Plane *> &intakePlanes_in,
+        const Eigen::Vector3d                 &upDirection_world_in);
+
+    /*!
+     * @brief           Resets the semantics of every ground plane, other than
+     *                  the main one, that the ground step rule rejects (higher
+     *                  than sem_seg.max_step_elevation above the main ground
+     *                  plane). Orientation is judged by
+     *                  rejectMisorientedPlanes().
+     *
+     * @param[in]       intakePlanes_in
+     *                  Planes to judge, by expected type; borrowed.
+     *
+     * @param[in]       p_mainGroundPlane_in
+     *                  The main ground plane that is the reference; borrowed,
+     *                  not null.
+     *
+     * @param[in]       upDirection_world_in
+     *                  Unit up direction in the world frame, the target of
+     *                  groundPlanToHorizontalTransformation.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus filterGroundPlanes(
+        const std::vector<geometric::Plane *> &intakePlanes_in,
+        geometric::Plane                      *p_mainGroundPlane_in,
+        const Eigen::Vector3d                 &upDirection_world_in);
+
+    /*!
+     * @brief           Gets the height of a ground plane: its support cloud is
+     *                  turned by groundPlanToHorizontalTransformation and the
+     *                  upper edge of the lower half of the point heights along
+     *                  down is taken (not quite a median).
+     *
+     * @param[in]       p_groundPlane_in
+     *                  The ground plane; borrowed, not null.
+     *
+     * @param[in]       upDirection_world_in
+     *                  Unit up direction the transformation turns the main
+     *                  ground normal onto; a point's height along down is
+     *                  minus its part along it.
+     *
+     * @param[out]      groundPlaneHeight_down_m_out
+     *                  Height in metres along down (larger is lower), or
+     *                  std::nullopt when the plane's support cloud has fewer
+     *                  than two points (must not be treated as 0.0, which is
+     *                  a valid real height).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus computeGroundPlaneHeight(
+        geometric::Plane      *p_groundPlane_in,
+        const Eigen::Vector3d &upDirection_world_in,
+        std::optional<float>  &groundPlaneHeight_down_m_out);
+
+    /*!
+     * @brief           Computes the rotation that turns a plane's normal onto
+     *                  the up direction, as a homogeneous matrix with zero
+     *                  translation.
+     *
+     * @param[in]       p_plane_in
+     *                  The plane; borrowed, not null.
+     *
+     * @param[in]       upDirection_world_in
+     *                  Unit up direction in the world frame
+     *                  (Atlas::getUpDirection(); the map-start camera's -Y in
+     *                  plain RGB-D).
+     *
+     * @param[out]      planeToHorizontal_out
+     *                  Rotation from the world frame to the horizontal frame.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        computePlaneToHorizontal(const geometric::Plane *p_plane_in,
+                                 const Eigen::Vector3d  &upDirection_world_in,
+                                 Eigen::Matrix4f        &planeToHorizontal_out);
+
+    /*!
+     * @brief           Stage 3, plane fusion: fuses duplicate planes with
+     *                  reAssociateSemanticPlanes() when
+     *                  sem_seg.reassociate.enabled. The wall face pairs
+     *                  (reconcileWallFacePairs()) belong to this stage but
+     *                  still run after the wall ownership pass, where run()
+     *                  calls them, until room association is one stage.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus runPlaneFusion(void);
+
+    /*!
+     * @brief           Fuses semantic planes of the active map that the plane
+     *                  matcher (Utils::findMatchingPlane(), confirmed-type
+     *                  strict rule) finds to be one surface; repeats until a
+     *                  pass fuses nothing. Planes are visited in id order; the
+     *                  plane with more observations, then more support
+     *                  points, then the lower id survives. Also called by the
+     *                  map merge.
+     *
+     * @param[in]       p_atlas_in
+     *                  Atlas holding the active map; borrowed, may be null
+     *                  (nothing is done).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in);
+
+    /*!
+     * @brief           Re-points every holder of a fused-away plane at the
+     *                  surviving one: the plane's own observations
+     *                  (Plane::absorb(), which thins the merged cloud), the
+     *                  rooms and passages (replacePlane()) and the key frames
+     *                  that saw it.
+     *
+     * @param[in]       p_atlas_in
+     *                  Atlas that owns the key frames; borrowed, not null.
+     *
+     * @param[in,out]   p_retiredPlane_inout
+     *                  Plane being fused away; borrowed, not null.
+     *
+     * @param[in,out]   p_retainedPlane_inout
+     *                  Plane that survives; borrowed, not null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
+                           geometric::Plane *p_retiredPlane_inout,
+                           geometric::Plane *p_retainedPlane_inout);
+
+    /*!
+     * @brief           Links each WALL Plane to the opposite-facing Plane
+     *                  hypothesis believed to be the other face of the same
+     *                  physical wall.
+     *
+     *                  A physical wall can produce two independent Plane
+     *                  objects, one per face, distinguished only by
+     *                  observationOrigin_world_m. This pass identifies
+     *                  plausible twin pairs (parallel, no thicker than the
+     *                  maximum plausible wall thickness, observed from
+     *                  opposite sides, overlapping in-plane footprint) and
+     *                  links them symmetrically via
+     *                  Plane::setTwinFace(), re-validating and unlinking pairs
+     *                  that stop being plausible (e.g. after a refit). Run
+     *                  after enforceUniqueWallOwnership() so both faces of a
+     *                  pair already have settled room ownership, and before
+     *                  validateRoomBoundaries() so boundary/corner logic can
+     *                  rely on twin identity being current.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus reconcileWallFacePairs(void);
+
+    /*!
+     * @brief           Writes one twin_face SG_PIPELINE record for a wall face
+     *                  pair when its state or deciding check differs from the
+     *                  one last written for that pair (loggedTwinFaceStates).
+     *
+     * @param[in]       recordMapId_in
+     *                  Active map id written in the record; -1 without an
+     *                  active map.
+     *
+     * @param[in]       p_firstWall_in
+     *                  One face of the pair; borrowed, not null.
+     *
+     * @param[in]       p_secondWall_in
+     *                  Other face of the pair; borrowed, not null.
+     *
+     * @param[in]       pairState_in
+     *                  LINKED, UNLINKED or REFUSED.
+     *
+     * @param[in]       decidingCheck_in
+     *                  Check that decided the pair.
+     *
+     * @param[in]       decidingValue_in
+     *                  Value the deciding check measured.
+     *
+     * @param[in]       faceSeparation_m_in
+     *                  Distance between the two faces in metres.
+     */
+    void logTwinFaceState(long long                   recordMapId_in,
+                          geometric::Plane           *p_firstWall_in,
+                          geometric::Plane           *p_secondWall_in,
+                          const char                 *pairState_in,
+                          utils::utils::TwinFaceCheck decidingCheck_in,
+                          double                      decidingValue_in,
+                          double                      faceSeparation_m_in);
+
     /*!
      * @brief           Advances the room-state machine once per semantic
      *                  cycle.
@@ -760,27 +1024,6 @@ class SemanticsManager
      *                  enforced even when passage detection is disabled.
      */
     [[nodiscard]] SemanticsManagerStatus enforceUniqueWallOwnership(void);
-
-    /*!
-     * @brief           Links each WALL Plane to the opposite-facing Plane
-     *                  hypothesis believed to be the other face of the same
-     *                  physical wall.
-     *
-     *                  A physical wall can produce two independent Plane
-     *                  objects, one per face, distinguished only by
-     *                  observationOrigin_world_m. This pass identifies
-     *                  plausible twin pairs (parallel, no thicker than the
-     *                  maximum plausible wall thickness, observed from
-     *                  opposite sides, overlapping in-plane footprint) and
-     *                  links them symmetrically via
-     *                  Plane::setTwinFace(), re-validating and unlinking pairs
-     *                  that stop being plausible (e.g. after a refit). Run
-     *                  after enforceUniqueWallOwnership() so both faces of a
-     *                  pair already have settled room ownership, and before
-     *                  validateRoomBoundaries() so boundary/corner logic can
-     *                  rely on twin identity being current.
-     */
-    [[nodiscard]] SemanticsManagerStatus reconcileWallFacePairs(void);
 
     /*!
      * @brief           Validates finite wall associations and updates room
@@ -871,21 +1114,6 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         detachWallsBeyondConfirmedPassages(void);
-
-    /*!
-     * @brief           Sets currentCameraCenter_world_m to the camera centre of
-     *                  the newest usable key frame of the active map; called
-     *                  once at the start of each semantic cycle.
-     *
-     *                  A key frame is usable when it is not bad and its centre
-     *                  is finite and not exactly zero (an exactly-zero centre
-     *                  marks an uninitialised first-frame pose).
-     *                  hasCameraCenter is false when there is no active map or
-     *                  no usable key frame.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus refreshCurrentCameraCenter(void);
 
     /*!
      * @brief           Gives the points a room is judged from: its centroid,
@@ -1332,33 +1560,6 @@ class SemanticsManager
         detectDoorsAndDoorways(atlas::Atlas *p_atlas_in);
 
     /*!
-     * @brief           Resets the semantics of ground planes whose normal is
-     *                  horizontal and of wall planes whose normal is vertical.
-     *                  Judged against Atlas::getUpDirection(), not
-     *                  against the main ground plane, so that a misclassified
-     *                  plane cannot become the ground reference. Uses the
-     *                  plane_checkpoint.max_tilt_ground and
-     *                  plane_checkpoint.max_tilt_wall parameters, the same
-     *                  tolerances the plane checkpoint applies to each new
-     *                  patch; this map-level pass catches planes that turn
-     *                  after bundle adjustment or a map merge.
-     */
-    [[nodiscard]] SemanticsManagerStatus rejectMisorientedPlanes(void);
-
-    /*!
-     * @brief           Resets the semantics of every ground plane, other
-     *                  than the main one, whose height passes the
-     *                  sem_seg.max_step_elevation limit from the main ground
-     *                  plane. Orientation is judged by
-     *                  rejectMisorientedPlanes().
-     *
-     * @param[in]       p_groundPlane_in
-     *                  The main ground plane that is the reference
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        filterGroundPlanes(geometric::Plane *p_groundPlane_in);
-
-    /*!
      * @brief           Updates the passages in the map based on the detected
      *                  doors and doorways.
      *
@@ -1455,41 +1656,6 @@ class SemanticsManager
      *                  clearing undelivered events.
      */
     [[nodiscard]] SemanticsManagerStatus onTrackingRecovered(void);
-
-    /*!
-     * @brief           Gets the median height of a ground plane after
-     *                  transformation to referece by mPlanePoseMat.
-     *
-     * @param[in]       p_groundPlane_in
-     *                  The ground plane
-     *
-     * @param[out]      groundPlaneHeight_out
-     *                  The median height of the ground plane, or std::nullopt
-     *                  when the plane's support cloud is empty (nothing to
-     *                  compute a height from -- must not be treated as 0.0,
-     *                  which is a valid real height).
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        computeGroundPlaneHeight(geometric::Plane     *p_groundPlane_in,
-                                 std::optional<float> &groundPlaneHeight_out);
-
-    /*!
-     * @brief           Computes the transformation matrix from the ground plane
-     *                  to the horizontal (y-inverted).
-     *
-     * @param[in]       p_plane_in
-     *                  The plane
-     *
-     * @param[out]      plane_out
-     *                  the transformation matrix
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        computePlaneToHorizontal(const geometric::Plane *p_plane_in,
-                                 Eigen::Matrix4f        &plane_out);
 
     /*!
      * @brief           Checks for the existing of a room with particular walls
@@ -1695,22 +1861,6 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         enforcePassageSideInvariantForTest(void);
-
-    /*!
-     * @brief           Test-only direct call into the private empty-cloud-safe
-     *                  ground plane height computation (B1 regression
-     *                  coverage).
-     */
-    [[nodiscard]] SemanticsManagerStatus computeGroundPlaneHeightForTest(
-        geometric::Plane     *p_groundPlane_in,
-        std::optional<float> &groundPlaneHeight_out);
-
-    /*!
-     * @brief           Test-only direct call into the private wall-twin-face
-     *                  reconciliation pass. Callers inspect the result via
-     *                  Plane::getTwinFace().
-     */
-    [[nodiscard]] SemanticsManagerStatus reconcileWallFacePairsForTest(void);
 
     /*!
      * @brief           Test-only direct call into the private floor-hierarchy

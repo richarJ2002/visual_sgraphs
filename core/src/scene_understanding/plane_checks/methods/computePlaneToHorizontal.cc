@@ -25,7 +25,7 @@
 
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+#include "scene_understanding/plane_checks/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
@@ -36,7 +36,8 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
     const geometric::Plane *p_plane_in,
-    Eigen::Matrix4f        &plane_out)
+    const Eigen::Vector3d  &upDirection_world_in,
+    Eigen::Matrix4f        &planeToHorizontal_out)
 {
     /* initialize the transformation with translation set to a zero vector */
     Eigen::Isometry3d planePose;
@@ -54,20 +55,16 @@ SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
     }
     Eigen::Vector3d planeNormal = planeGetGlobalEquation.coeffs().head<3>();
 
-    /*!
-     * get the rotation from the ground plane to the plane with y-facing
-     * vertical downwards
-     */
-    Eigen::Vector3d    verticalAxis = Eigen::Vector3d(0, -1, 0);
+    /* get the rotation that turns the ground plane's normal onto up */
     Eigen::Quaterniond rotationQuaternion =
-        computeRotationBetweenDirections(planeNormal, verticalAxis);
+        computeRotationBetweenDirections(planeNormal, upDirection_world_in);
     planePose.linear() = rotationQuaternion.toRotationMatrix();
 
     /* form homogenous transformation matrix */
     Eigen::Matrix4f planePoseMatrix = planePose.matrix().cast<float>();
     planePoseMatrix(3, 3)           = 1.0;
 
-    plane_out = planePoseMatrix;
+    planeToHorizontal_out = planePoseMatrix;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

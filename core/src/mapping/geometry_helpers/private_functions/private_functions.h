@@ -246,31 +246,6 @@ struct ProjectedPlaneBounds
                           const PlaneMatchSettings &matchSettings_in,
                           PlaneMatchVerdict        &candidateVerdict_out);
 
-/*!
- * @brief           Re-points every holder of a retired plane at the plane
- *                  that replaces it, in one function so no side can be
- *                  forgotten: the survivor absorbs the retired plane's
- *                  observation records, the rooms and passages that listed the
- *                  retired plane list the survivor, and the keyframes that
- *                  saw the retired plane see the survivor.
- *
- * @param[in]       p_atlas_in
- *                  Atlas that owns the maps and the keyframes; not
- *                  null.
- *
- * @param[in,out]   p_retiredPlane_inout
- *                  Plane being fused away; borrowed, not null.
- *
- * @param[in,out]   p_retainedPlane_inout
- *                  Plane that survives; borrowed, not null.
- *
- * @return          UTILS_STATUS_SUCCESS.
- */
-[[nodiscard]] UtilsStatus
-    relinkRetiredPlane(atlas::Atlas     *p_atlas_in,
-                       geometric::Plane *p_retiredPlane_inout,
-                       geometric::Plane *p_retainedPlane_inout);
-
 } /* namespace utils */
 } /* namespace utils */
 } /* namespace core */

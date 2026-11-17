@@ -20,7 +20,8 @@
  * @file            reconcileWallFacePairs.cc
  *
  * @brief           Implements SemanticsManager::reconcileWallFacePairs(),
- *                  declared in SemanticsManager.h.
+ *                  declared in
+ * semantics_manager/objects/SemanticsManagerClass.h.
  */
 
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
@@ -164,82 +165,9 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                      __func__);
     }
 
-    const auto twinFaceCheckName = [](TwinFaceCheck check_in) -> const char *
-    {
-        switch (check_in)
-        {
-        case TwinFaceCheck::PLAUSIBLE:
-            return "PLAUSIBLE";
-        case TwinFaceCheck::INVALID_PLANE:
-            return "INVALID_PLANE";
-        case TwinFaceCheck::NOT_PARALLEL:
-            return "NOT_PARALLEL";
-        case TwinFaceCheck::THICKNESS_OUT_OF_RANGE:
-            return "THICKNESS_OUT_OF_RANGE";
-        case TwinFaceCheck::NO_OBSERVATION_ORIGIN:
-            return "NO_OBSERVATION_ORIGIN";
-        case TwinFaceCheck::OBSERVATION_SIDE_UNRESOLVED:
-            return "OBSERVATION_SIDE_UNRESOLVED";
-        case TwinFaceCheck::OBSERVED_FROM_SAME_SIDE:
-            return "OBSERVED_FROM_SAME_SIDE";
-        case TwinFaceCheck::NO_FOOTPRINT_OVERLAP:
-            return "NO_FOOTPRINT_OVERLAP";
-        case TwinFaceCheck::LOW_OVERLAP:
-            return "LOW_OVERLAP";
-        }
-        return "UNKNOWN";
-    };
-
-    /* Emits the twin_face event when a pair's state or deciding check differs
-     * from the one last logged for it. */
-    const auto logTwinFaceState =
-        [this, &twinFaceCheckName, p_activeMap, activeMapId](
-            geometric::Plane *p_first_in,
-            geometric::Plane *p_second_in,
-            const char       *state_in,
-            TwinFaceCheck     check_in,
-            double            value_in,
-            double            thickness_m_in)
-    {
-        int firstId{};
-        if (p_first_in->getId(firstId) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        int secondId{};
-        if (p_second_in->getId(secondId) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        const std::pair<int, int> pairKey{std::min(firstId, secondId),
-                                          std::max(firstId, secondId)};
-        const std::string         stateKey =
-            std::string(state_in) + ":" + twinFaceCheckName(check_in);
-        std::string &loggedState = loggedTwinFaceStates[pairKey];
-        if (loggedState == stateKey)
-        {
-            return;
-        }
-        loggedState = stateKey;
-        std::cout << "SG_PIPELINE {\"event\":\"twin_face\",\"map_id\":"
-                  << (p_activeMap != nullptr
-                          ? static_cast<long long>(activeMapId)
-                          : -1)
-                  << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                  << ",\"first_wall_id\":" << pairKey.first
-                  << ",\"second_wall_id\":" << pairKey.second << ",\"state\":\""
-                  << state_in << "\",\"check\":\""
-                  << twinFaceCheckName(check_in) << "\",\"value\":" << value_in
-                  << ",\"thickness_m\":" << thickness_m_in << "}" << std::endl;
-    };
+    /* Map id written by the twin_face records; -1 without an active map */
+    const long long recordMapId =
+        p_activeMap != nullptr ? static_cast<long long>(activeMapId) : -1;
 
     for (geometric::Plane *p_wall : wallPlanes)
     {
@@ -312,7 +240,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
             /* Pairing is no longer plausible (e.g. one side drifted after a
              * refit) -- unlink both sides rather than leave a stale
              * one-directional pointer. */
-            logTwinFaceState(p_wall,
+            logTwinFaceState(recordMapId,
+                             p_wall,
                              p_existingTwin,
                              "UNLINKED",
                              twinVerdicts.front().decidingCheck,
@@ -338,7 +267,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
     }
 
     for (std::size_t firstIndex = 0; firstIndex < wallPlanes.size();
-         ++firstIndex)
+         firstIndex++)
     {
         geometric::Plane *p_first            = wallPlanes[firstIndex];
         geometric::Plane *p_firstGetTwinFace = nullptr;
@@ -359,7 +288,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
         std::vector<geometric::Plane *> candidateWalls;
         for (std::size_t secondIndex = firstIndex + 1;
              secondIndex < wallPlanes.size();
-             ++secondIndex)
+             secondIndex++)
         {
             geometric::Plane *p_second            = wallPlanes[secondIndex];
             geometric::Plane *p_secondGetTwinFace = nullptr;
@@ -406,7 +335,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
 
         for (std::size_t candidateIndex = 0;
              candidateIndex < candidateWalls.size();
-             ++candidateIndex)
+             candidateIndex++)
         {
             geometric::Plane *p_second = candidateWalls[candidateIndex];
             const utils::utils::PlaneMatchVerdict &candidateVerdict =
@@ -455,7 +384,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                     {std::min(firstGetId2, secondGetId),
                      std::max(firstGetId2, secondGetId)}) > 0U)
             {
-                logTwinFaceState(p_first,
+                logTwinFaceState(recordMapId,
+                                 p_first,
                                  p_second,
                                  "REFUSED",
                                  candidateVerdict.decidingCheck,
@@ -500,7 +430,8 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            logTwinFaceState(p_first,
+            logTwinFaceState(recordMapId,
+                             p_first,
                              p_bestMatch,
                              "LINKED",
                              TwinFaceCheck::PLAUSIBLE,
