@@ -2419,6 +2419,156 @@ bool writeArchiveFile(const std::filesystem::path &archiveFile_in,
     }
     return true;
 }
+
+/*!
+ * @brief           Names a start environment for the archive.
+ *
+ * @param[in]       startEnvironment_in
+ *                  Start environment of a scene graph.
+ *
+ * @return          "indoor" or "outdoor".
+ */
+const char *startEnvironmentName(
+    const vs_graphs::core::scene_graph::StartEnvironment startEnvironment_in)
+{
+    return startEnvironment_in ==
+                   vs_graphs::core::scene_graph::StartEnvironment::
+                       START_ENVIRONMENT_OUTDOOR
+               ? "outdoor"
+               : "indoor";
+}
+
+/*!
+ * @brief           Writes the environment node and the building level of one
+ *                  map's scene graph into its archive object (schema 3).
+ *
+ * @param[in]       sceneGraph_in
+ *                  Snapshot of the map's scene graph.
+ *
+ * @param[in,out]   mapJson_inout
+ *                  Archive object of the map; gets "environment" and
+ *                  "buildings".
+ *
+ * @param[in,out]   buildingIds_inout
+ *                  Receives the id of every building written.
+ */
+void archiveBuildingLevel(
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    Json                                      &mapJson_inout,
+    std::set<int>                             &buildingIds_inout)
+{
+    Json environmentJson;
+    environmentJson["environment_id"]   = sceneGraph_in.environment.id;
+    environmentJson["environment_name"] = sceneGraph_in.environment.name;
+    environmentJson["start_environment"] =
+        startEnvironmentName(sceneGraph_in.environment.startEnvironment);
+    mapJson_inout["environment"] = std::move(environmentJson);
+
+    /* Buildings own their floors; readers join a floor to its building
+     * through "floor_ids" and the floor's own "building_id". */
+    Json buildingsJson = Json::array();
+    for (const vs_graphs::core::SceneGraphBuildingEntry &buildingEntry :
+         sceneGraph_in.buildings)
+    {
+        Json buildingJson;
+        buildingJson["building_id"] = buildingEntry.id;
+        buildingJson["floor_ids"]   = buildingEntry.floorIds;
+        buildingsJson.push_back(std::move(buildingJson));
+        buildingIds_inout.insert(buildingEntry.id);
+    }
+    mapJson_inout["buildings"] = std::move(buildingsJson);
+}
+
+/*!
+ * @brief           Writes the id of the building that holds a floor into the
+ *                  floor's archive object (schema 3).
+ *
+ * @param[in]       sceneGraph_in
+ *                  Snapshot of the map's scene graph.
+ *
+ * @param[in]       p_floor_in
+ *                  The floor, or null for the synthetic floor an empty map is
+ *                  archived with.
+ *
+ * @param[in,out]   floorJson_inout
+ *                  Archive object of the floor; gets "building_id", -1 when no
+ *                  building holds the floor.
+ */
+void archiveFloorBuilding(
+    const vs_graphs::core::SceneGraphSnapshot   &sceneGraph_in,
+    const vs_graphs::core::SceneGraphFloorEntry *p_floor_in,
+    Json                                        &floorJson_inout)
+{
+    floorJson_inout["building_id"] = -1;
+    if (p_floor_in == nullptr)
+    {
+        return;
+    }
+    for (const vs_graphs::core::SceneGraphBuildingEntry &buildingEntry :
+         sceneGraph_in.buildings)
+    {
+        if (std::find(buildingEntry.floorIds.begin(),
+                      buildingEntry.floorIds.end(),
+                      p_floor_in->id) != buildingEntry.floorIds.end())
+        {
+            floorJson_inout["building_id"] = buildingEntry.id;
+            return;
+        }
+    }
+}
+
+/*!
+ * @brief           Builds the "metadata" object of an S-Graph archive.
+ *
+ * @param[in]       stampSeconds_in
+ *                  Whole seconds of the ROS time stamp.
+ *
+ * @param[in]       stampNanoseconds_in
+ *                  Nanoseconds part of the ROS time stamp.
+ *
+ * @param[in]       captureCycle_in
+ *                  Number of this capture.
+ *
+ * @param[in]       mapCount_in
+ *                  Number of maps archived.
+ *
+ * @param[in]       floorCount_in
+ *                  Number of distinct floor ids.
+ *
+ * @param[in]       buildingCount_in
+ *                  Number of distinct building ids.
+ *
+ * @param[in]       roomCount_in
+ *                  Number of distinct room ids.
+ *
+ * @param[in]       passageCount_in
+ *                  Number of distinct passage ids.
+ *
+ * @return          The metadata object, schema version 3.
+ */
+Json makeArchiveMetadata(const std::int64_t  stampSeconds_in,
+                         const std::int64_t  stampNanoseconds_in,
+                         const std::uint64_t captureCycle_in,
+                         const std::size_t   mapCount_in,
+                         const std::size_t   floorCount_in,
+                         const std::size_t   buildingCount_in,
+                         const std::size_t   roomCount_in,
+                         const std::size_t   passageCount_in)
+{
+    Json metadata;
+    metadata["schema_version"]        = 3;
+    metadata["sim_timestamp_sec"]     = stampSeconds_in;
+    metadata["sim_timestamp_nanosec"] = stampNanoseconds_in;
+    metadata["ros_node"]              = "vs_graphs";
+    metadata["capture_cycle"]         = captureCycle_in;
+    metadata["sensor_mode"]           = sensorModeName();
+    metadata["map_count"]             = mapCount_in;
+    metadata["floor_count_total"]     = floorCount_in;
+    metadata["building_count_total"]  = buildingCount_in;
+    metadata["room_count_total"]      = roomCount_in;
+    metadata["passage_count_total"]   = passageCount_in;
+    return metadata;
+}
 } /* namespace */
 
 void maybeArchiveSGraph(
@@ -2622,6 +2772,7 @@ void maybeArchiveSGraph(
      * per-map objects. */
     Json          archive;
     std::set<int> floorIds_all{};
+    std::set<int> buildingIds_all{};
     std::set<int> roomIds_all{};
     std::set<int> passageIds_all{};
 
@@ -2957,6 +3108,7 @@ void maybeArchiveSGraph(
         mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
         mapJson["keyframe_count"]    = keyFrameCount;
         mapJson["map_point_count"]   = mapPointCount;
+        archiveBuildingLevel(sceneGraph, mapJson, buildingIds_all);
 
         /* Merges this map survived; transforms map absorbed-map world points
          * into this map's world as p = scale * R(qxyzw) * p_absorbed + t. */
@@ -3017,6 +3169,7 @@ void maybeArchiveSGraph(
                 floorJson["floor_id"]   = -1;
                 floorJson["floor_name"] = "synthetic";
             }
+            archiveFloorBuilding(sceneGraph, p_floor, floorJson);
 
             for (std::size_t roomOrdinal = 0U;
                  roomOrdinal < floorRooms[floorIndex].size();
@@ -3286,18 +3439,14 @@ void maybeArchiveSGraph(
         archive["map" + std::to_string(mapOrdinal)] = std::move(mapJson);
     }
 
-    Json metadata;
-    metadata["schema_version"]        = 2;
-    metadata["sim_timestamp_sec"]     = stampSeconds;
-    metadata["sim_timestamp_nanosec"] = stampNanoseconds;
-    metadata["ros_node"]              = "vs_graphs";
-    metadata["capture_cycle"]         = captureCycle;
-    metadata["sensor_mode"]           = sensorModeName();
-    metadata["map_count"]             = mapInputs.size();
-    metadata["floor_count_total"]     = floorIds_all.size();
-    metadata["room_count_total"]      = roomIds_all.size();
-    metadata["passage_count_total"]   = passageIds_all.size();
-    archive["metadata"]               = std::move(metadata);
+    archive["metadata"] = makeArchiveMetadata(stampSeconds,
+                                              stampNanoseconds,
+                                              captureCycle,
+                                              mapInputs.size(),
+                                              floorIds_all.size(),
+                                              buildingIds_all.size(),
+                                              roomIds_all.size(),
+                                              passageIds_all.size());
 
     namespace filesystem = std::filesystem;
     const filesystem::path testRunDir(sgraphArchiveTestRunDir);
@@ -3332,11 +3481,12 @@ void maybeArchiveSGraph(
     writeArchiveFile(testRunDir / "output" / "sgraph_latest.json", archiveText);
 
     RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
-                "Archived SGraph #%llu to '%s' (%zu maps, %zu floors, "
-                "%zu rooms, %zu passages).",
+                "Archived SGraph #%llu to '%s' (%zu maps, %zu buildings, "
+                "%zu floors, %zu rooms, %zu passages).",
                 static_cast<unsigned long long>(captureCycle),
                 archiveFile.string().c_str(),
                 mapInputs.size(),
+                buildingIds_all.size(),
                 floorIds_all.size(),
                 roomIds_all.size(),
                 passageIds_all.size());
