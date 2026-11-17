@@ -42,8 +42,6 @@
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
-#include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 
@@ -475,15 +473,12 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
              * once the room count of the passage is known.
              */
             semantic::Passage *p_createdPassage = nullptr;
-            if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(
-                    p_atlas,
-                    nullptr,
-                    p_wall,
-                    p_createdPassage,
-                    true,
-                    wallGap.centre_world_m) !=
-                utils::geo_sem_helpers::GeoSemHelpersStatus::
-                    GEO_SEM_HELPERS_STATUS_SUCCESS)
+            if (createMapPassage(nullptr,
+                                 p_wall,
+                                 p_createdPassage,
+                                 true,
+                                 wallGap.centre_world_m) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: createMapPassage returned a failure status "

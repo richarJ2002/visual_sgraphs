@@ -17,22 +17,20 @@
  */
 
 /*!
- * @file            detectDoorsAndDoorways.cc
+ * @file            detectPassages.cc
  *
- * @brief           Implements SemanticsManager::detectDoorsAndDoorways(),
- *                  declared in SemanticsManager.h.
+ * @brief           Implements SemanticsManager::detectPassages(), declared in
+ *                  SemanticsManagerClass.h.
  */
 
-#include "mapping/geometry_helpers/utils.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
-#include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <cmath>
 #include <rclcpp/logging.hpp>
@@ -45,7 +43,7 @@ namespace core
 {
 
 SemanticsManagerStatus
-    SemanticsManager::detectDoorsAndDoorways(atlas::Atlas *p_atlas_in)
+    SemanticsManager::detectPassages(atlas::Atlas *p_atlas_in)
 {
     PROFILE_FUNCTION();
     /* Confirm that the Atlas is valid */
@@ -286,13 +284,12 @@ SemanticsManagerStatus
 
             /* Create a blocked passage associated with the supporting wall */
             semantic::Passage *p_createdPassage = nullptr;
-            if (utils::geo_sem_helpers::GeoSemHelpers::createMapPassage(
-                    p_atlas,
-                    p_door,
-                    p_wall,
-                    p_createdPassage,
-                    false) != utils::geo_sem_helpers::GeoSemHelpersStatus::
-                                  GEO_SEM_HELPERS_STATUS_SUCCESS)
+            if (createMapPassage(p_door,
+                                 p_wall,
+                                 p_createdPassage,
+                                 false,
+                                 Eigen::Vector3d::Zero()) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: createMapPassage returned a failure status "

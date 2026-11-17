@@ -218,48 +218,14 @@ void SemanticsManager::run(void)
                          __func__);
         }
 
-        /*!
-         * Detect/update passage GEOMETRY before any wall-to-room admission
-         * this cycle, so admitWallToRoom()'s far-side-passage backstop (and
-         * Pass 1's free-space clustering below) can route a wall to the
-         * correct side of a doorway the moment that doorway itself becomes
-         * observable, instead of only on the NEXT cycle once a stale
-         * passage list catches up. detectDoorsAndDoorways()/updatePassages()
-         * only read Plane/Passage data (no Room dependency), so this is safe
-         * to run ahead of any room detection or association below. Passage
-         * steps that DO need current room membership (traversal evidence,
-         * room association, wall detachment, prospective-room cleanup) stay
-         * below, after Pass 1's wall admission, where room data exists to
-         * work from.
-         */
-        if (p_sysParams->semSeg.enablePassageDetection)
+        /* Stage 4, passage detection: passage geometry before room edges */
+        if (runPassageDetection() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            if (detectDoorsAndDoorways(p_atlas) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: detectDoorsAndDoorways returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            if (updatePassages(p_atlas) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: updatePassages returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (mergeOverlappingPassages() !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: mergeOverlappingPassages returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: runPassageDetection returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*!

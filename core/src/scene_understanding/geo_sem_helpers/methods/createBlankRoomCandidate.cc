@@ -93,8 +93,8 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      *
      * Deliberately counts isPassable() passages only, not every registered
      * Passage object: a Passage can also be created "blocked" purely from a
-     * classified door plane sitting near a wall (detectDoorsAndDoorways(),
-     * GeoSemHelpers.cc's createMapPassage() called with isOpenPassage_in =
+     * classified door plane sitting near a wall (detectPassages(),
+     * SemanticsManager::createMapPassage() called with isOpenPassage_in =
      * false) -- no free-space evidence at all. Counting that toward the
      * budget would let a semantic door classification alone unlock a new
      * room the same way real passage evidence does, which is exactly the

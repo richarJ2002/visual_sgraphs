@@ -17,7 +17,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateRoomsInFreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/detectDoorsAndDoorways.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateWallsToRoomsFromFreeSpaceClusters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
@@ -45,7 +44,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isWallFaceForeignToRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/logSemanticDiagnostics.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeOverlappingPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingLost.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingRecovered.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/partitionFreeSpaceAtPassages.cc
@@ -64,7 +62,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWallsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/tryLockRoomTrackerPendingMutexForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/updatePassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateRoomTrackerState.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateTraversalEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/validateRoomBoundaries.cc

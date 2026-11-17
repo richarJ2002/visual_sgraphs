@@ -67,6 +67,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <vs_graphs_g2o/types/plane3d.h>
 
 namespace vs_graphs::core::atlas
 {
@@ -864,6 +865,18 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus runPlaneFusion(void);
 
     /*!
+     * @brief           Stage 4, passage detection: when
+     *                  sem_seg.enable_passage_detection, detects passages
+     *                  (detectPassages()), re-anchors them (updatePassages())
+     *                  and merges duplicates (mergeOverlappingPassages()).
+     *                  Runs before any wall-to-room admission of the cycle;
+     *                  the passage-to-room links still run later in run().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus runPassageDetection(void);
+
+    /*!
      * @brief           Fuses semantic planes of the active map that the plane
      *                  matcher (Utils::findMatchingPlane(), confirmed-type
      *                  strict rule) finds to be one surface; repeats until a
@@ -1550,24 +1563,214 @@ class SemanticsManager
         const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes_in);
 
     /*!
-     * @brief           Detects doors and doorways based on the detected planes
-     *                  and the mapped environment.
+     * @brief           Detects passages: a closed passage for each door plane
+     *                  close to a confirmed wall, and open passages from the
+     *                  Voxblox free space through the walls.
      *
      * @param[in]       p_atlas_in
      *                  The Atlas containing the mapped environment
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
     [[nodiscard]] SemanticsManagerStatus
-        detectDoorsAndDoorways(atlas::Atlas *p_atlas_in);
+        detectPassages(atlas::Atlas *p_atlas_in);
 
     /*!
-     * @brief           Updates the passages in the map based on the detected
-     *                  doors and doorways.
+     * @brief           Creates a passage in the active map, or refreshes the
+     *                  existing passage it duplicates. Logs and creates
+     *                  nothing when an input is missing or under-observed.
+     *
+     * @param[in]       p_doorPlane_in
+     *                  Door plane of a closed passage; null for an open one.
+     *
+     * @param[in]       p_wallPlane_in
+     *                  Wall holding the opening; must not be null.
+     *
+     * @param[out]      p_createdPassage_out
+     *                  The passage this call added to the Atlas; null when it
+     *                  updated an existing duplicate or created nothing.
+     *                  Borrowed: the Atlas owns it.
+     *
+     * @param[in]       isOpenPassage_in
+     *                  True when connected free-space evidence confirms that
+     *                  the opening is traversable.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  Open-passage centroid, world frame, metres; unused for
+     *                  a closed passage.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        createMapPassage(vs_graphs::core::geometric::Plane *p_doorPlane_in,
+                         vs_graphs::core::geometric::Plane *p_wallPlane_in,
+                         semantic::Passage    *&p_createdPassage_out,
+                         bool                   isOpenPassage_in,
+                         const Eigen::Vector3d &passageCentroid_world_m_in);
+
+    /*!
+     * @brief           Geometry of a new passage: the door plane gives size,
+     *                  centroid and plane for a closed passage; an open
+     *                  passage takes the given centroid and the wall plane.
+     *
+     * @param[in]       p_doorPlane_in
+     *                  Door plane of a closed passage; null for an open one.
+     *
+     * @param[in]       p_wallPlane_in
+     *                  Wall holding the opening.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  Requested open-passage centroid, world frame, metres.
+     *
+     * @param[out]      passageWidth_m_out
+     *                  Passage width, metres.
+     *
+     * @param[out]      passageHeight_m_out
+     *                  Passage height, metres.
+     *
+     * @param[out]      passageCentroid_world_m_out
+     *                  Passage centroid, world frame, metres.
+     *
+     * @param[out]      passageEquation_out
+     *                  Passage plane, world frame.
+     *
+     * @param[out]      isGeometryValid_out
+     *                  False when no usable geometry exists (logged).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus computeNewPassageGeometry(
+        vs_graphs::core::geometric::Plane *p_doorPlane_in,
+        vs_graphs::core::geometric::Plane *p_wallPlane_in,
+        const Eigen::Vector3d             &passageCentroid_world_m_in,
+        double                            &passageWidth_m_out,
+        double                            &passageHeight_m_out,
+        Eigen::Vector3d                   &passageCentroid_world_m_out,
+        g2o::Plane3D                      &passageEquation_out,
+        bool                              &isGeometryValid_out);
+
+    /*!
+     * @brief           Finds an existing passage that duplicates a new one
+     *                  (close centroid, aligned plane) and refreshes it with
+     *                  the new observation.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map, in id order.
+     *
+     * @param[in]       p_doorPlane_in
+     *                  Door plane of a closed passage; null for an open one.
+     *
+     * @param[in]       p_wallPlane_in
+     *                  Wall holding the opening.
+     *
+     * @param[in]       isOpenPassage_in
+     *                  True for an open passage.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  New passage centroid, world frame, metres.
+     *
+     * @param[in]       passageEquation_in
+     *                  New passage plane, world frame.
+     *
+     * @param[out]      isCreationNeeded_out
+     *                  True when no duplicate exists and the plane is usable.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus refreshDuplicatePassage(
+        const std::vector<vs_graphs::core::semantic::Passage *> &allPassages_in,
+        vs_graphs::core::geometric::Plane                       *p_doorPlane_in,
+        vs_graphs::core::geometric::Plane                       *p_wallPlane_in,
+        bool                   isOpenPassage_in,
+        const Eigen::Vector3d &passageCentroid_world_m_in,
+        const g2o::Plane3D    &passageEquation_in,
+        bool                  &isCreationNeeded_out);
+
+    /*!
+     * @brief           Allocates a passage with a mission-wide identity, fills
+     *                  it and adds it to the scene graph of the active map.
+     *
+     * @param[in]       p_doorPlane_in
+     *                  Door plane of a closed passage; null for an open one.
+     *
+     * @param[in]       p_wallPlane_in
+     *                  Wall holding the opening.
+     *
+     * @param[in]       isOpenPassage_in
+     *                  True for an open passage.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  Passage centroid, world frame, metres.
+     *
+     * @param[in]       passageEquation_in
+     *                  Passage plane, world frame.
+     *
+     * @param[in]       passageWidth_m_in
+     *                  Passage width, metres.
+     *
+     * @param[in]       passageHeight_m_in
+     *                  Passage height, metres.
+     *
+     * @param[out]      p_createdPassage_out
+     *                  The new passage. Borrowed: the scene graph owns it.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        addNewMapPassage(vs_graphs::core::geometric::Plane *p_doorPlane_in,
+                         vs_graphs::core::geometric::Plane *p_wallPlane_in,
+                         bool                               isOpenPassage_in,
+                         const Eigen::Vector3d &passageCentroid_world_m_in,
+                         const g2o::Plane3D    &passageEquation_in,
+                         double                 passageWidth_m_in,
+                         double                 passageHeight_m_in,
+                         semantic::Passage    *&p_createdPassage_out);
+
+    /*!
+     * @brief           Re-anchors every passage of the active map: a closed
+     *                  passage follows its door plane, an open passage its
+     *                  supporting walls.
      *
      * @param[in]       p_atlas_in
      *                  The Atlas containing the mapped environment
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
     [[nodiscard]] SemanticsManagerStatus
         updatePassages(atlas::Atlas *p_atlas_in);
+
+    /*!
+     * @brief           Sets the size, centroid and plane of a closed passage
+     *                  from its door plane.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Closed passage; not null.
+     *
+     * @param[in]       p_doorPlane_in
+     *                  Door plane of the passage; nothing changes when null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus refreshClosedPassageFromDoor(
+        semantic::Passage                 *p_passage_inout,
+        vs_graphs::core::geometric::Plane *p_doorPlane_in);
+
+    /*!
+     * @brief           Re-anchors an open passage to the mid-plane of its
+     *                  supporting wall faces and keeps it upright to the
+     *                  ground plane.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Open passage; not null.
+     *
+     * @param[in]       p_groundPlane_in
+     *                  Biggest ground plane of the map; not null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus reanchorOpenPassageToWalls(
+        semantic::Passage                 *p_passage_inout,
+        vs_graphs::core::geometric::Plane *p_groundPlane_in);
 
     /*!
      * @brief           Merges passages whose estimated 2D footprints (width x

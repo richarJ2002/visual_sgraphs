@@ -129,39 +129,6 @@ class GeoSemHelpers
         double confidence_in = 1.0);
 
     /*!
-     * @brief           Creates a new passage object to be added to the map
-     *
-     * @param[in,out]   p_atlas_inout
-     *                  The current map in Atlas
-     *
-     * @param[in]       p_doorPlane_in
-     *                  Optional semantic plane representing a closed door.
-     *
-     * @param[in]       p_wallPlane_in
-     *                  Plane representing the wall containing the opening.
-     *
-     * @param[out]      p_createdPassage_out
-     *                  The passage this call added to the Atlas; null when it
-     *                  updated an existing duplicate or created nothing.
-     *                  Borrowed: the Atlas owns it.
-     *
-     * @param[in]       isOpenPassage_in
-     *                  True when connected free-space evidence confirms that
-     *                  the opening is traversable.
-     *
-     * @param[in]       passageCentroid_world_m_in
-     *                  Open-passage centroid in the active map frame, in
-     *                  metres.
-     */
-    [[nodiscard]] static GeoSemHelpersStatus createMapPassage(
-        atlas::Atlas                      *p_atlas_inout,
-        vs_graphs::core::geometric::Plane *p_doorPlane_in,
-        vs_graphs::core::geometric::Plane *p_wallPlane_in,
-        semantic::Passage                *&p_createdPassage_out,
-        bool                               isOpenPassage_in = false,
-        Eigen::Vector3d passageCentroid_world_m_in = Eigen::Vector3d::Zero());
-
-    /*!
      * @brief           Creates a blank room object (undefined variant) to be
      *                  added to the map
      *
