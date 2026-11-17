@@ -30,10 +30,10 @@
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantic_constraints/plane_rules/plane_rules.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
 #include "scene_understanding/semantic_segmentation/private_functions/private_functions.h"
 
-#include <cmath>
 #include <rclcpp/logging.hpp>
 
 #include "execution/profiling/profiling.h"
@@ -95,12 +95,6 @@ SemanticSegmentationStatus SemanticSegmentation::applyPlaneCheckpoint(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        const bool isGroundLabel =
-            planeLabel == geometric::Plane::PlaneVariant::GROUND;
-        const bool isUprightLabel =
-            planeLabel == geometric::Plane::PlaneVariant::WALL ||
-            planeLabel == geometric::Plane::PlaneVariant::DOOR ||
-            planeLabel == geometric::Plane::PlaneVariant::WINDOW;
 
         std::vector<
             std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
@@ -127,26 +121,22 @@ SemanticSegmentationStatus SemanticSegmentation::applyPlaneCheckpoint(
                 hasEnoughPoints && fitRms_m <= checkpointParams.maximumFitRms_m;
 
             /*!
-             * Same tilt measures as the map-level re-check: a ground tilt is
-             * the normal's part across up, a wall tilt its part along up.
-             * The normal's sign is irrelevant.
+             * The tilt rules of the plane rule table, the same the map-level
+             * re-check applies, judge the patch in the camera frame. No
+             * height is given, so the ground step rule does not apply here.
              */
             bool isOrientedAsLabelled = false;
             if (hasGoodFit)
             {
-                const Eigen::Vector3d patchNormal_camera =
+                semantic_constraints::PlaneRuleInput patchRuleInput{};
+                patchRuleInput.planeLabel     = planeLabel;
+                patchRuleInput.hasOrientation = true;
+                patchRuleInput.planeNormal_common =
                     candidatePatch.second.head<3>().normalized();
-                const double upComponent =
-                    patchNormal_camera.dot(upDirection_camera);
-                const double groundTilt =
-                    (patchNormal_camera - upComponent * upDirection_camera)
-                        .norm();
-                const double wallTilt = std::abs(upComponent);
+                patchRuleInput.upDirection_common = upDirection_camera;
                 isOrientedAsLabelled =
-                    !(isGroundLabel &&
-                      groundTilt > checkpointParams.maxTiltGround) &&
-                    !(isUprightLabel &&
-                      wallTilt > checkpointParams.maxTiltWall);
+                    semantic_constraints::arePlaneRulesSatisfied(patchRuleInput,
+                                                                 *p_sysParams);
             }
 
             bool isLargeEnough = isOrientedAsLabelled;
