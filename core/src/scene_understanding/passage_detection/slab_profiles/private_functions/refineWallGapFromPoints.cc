@@ -155,14 +155,8 @@ SemanticsManagerStatus refineWallGapFromPoints(
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const auto median = [](std::vector<double> values)
-    {
-        const std::size_t middle = values.size() / 2U;
-        std::nth_element(values.begin(), values.begin() + middle, values.end());
-        return values[middle];
-    };
-    const double alongStart_m = median(rowStarts_m);
-    const double alongEnd_m   = median(rowEnds_m);
+    const double alongStart_m = computeMedianValue(rowStarts_m);
+    const double alongEnd_m   = computeMedianValue(rowEnds_m);
     const double width_m      = alongEnd_m - alongStart_m;
     if (!(width_m > 0.0))
     {
@@ -201,11 +195,11 @@ SemanticsManagerStatus refineWallGapFromPoints(
     }
     if (2U * observedTops_m.size() >= columnCount)
     {
-        wallGap_inout.topHeight_m = median(observedTops_m);
+        wallGap_inout.topHeight_m = computeMedianValue(observedTops_m);
     }
 
     /* The along extent stays the slab's coarse aperture for the verdicts. */
-    wallGap_inout.width_m      = width_m;
+    wallGap_inout.width_m = width_m;
     wallGap_inout.centre_world_m =
         wallQuery_in.origin_world_m +
         0.5 * (alongStart_m + alongEnd_m) * wallQuery_in.alongAxis_world +

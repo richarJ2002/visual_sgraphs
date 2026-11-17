@@ -25,7 +25,8 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "../private_functions/private_functions.h"
+#include "scene_understanding/passage_detection/slab_profiles/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,6 +34,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <rclcpp/logging.hpp>
@@ -124,14 +126,6 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
             groundNormal_world = groundNormal.normalized();
         }
     }
-    const auto horizontalDistance_m =
-        [&groundNormal_world](const Eigen::Vector3d &first_world_m,
-                              const Eigen::Vector3d &second_world_m)
-    {
-        Eigen::Vector3d difference = first_world_m - second_world_m;
-        difference -= difference.dot(groundNormal_world) * groundNormal_world;
-        return difference.norm();
-    };
 
     std::vector<semantic::Room *> allRooms{};
     if (getAllRoomsInIdOrder(allRooms) !=
@@ -167,7 +161,8 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
 
     for (const WallSlabProfile &wallProfile : freshProfiles)
     {
-        const auto wallEntry = wallsById.find(wallProfile.query.wallId);
+        const std::unordered_map<int, geometric::Plane *>::const_iterator
+            wallEntry = wallsById.find(wallProfile.query.wallId);
         if (wallEntry == wallsById.end())
         {
             continue;
@@ -247,20 +242,20 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
             }
         }
         /* Wall points crossing a free-space gap mean it is no door. */
-        wallGaps.erase(
-            std::remove_if(
-                wallGaps.begin(),
-                wallGaps.end(),
-                [&passageParameters](const WallGap &wallGap)
-                {
-                    return wallGap.width_m <
-                               static_cast<double>(
-                                   passageParameters.minimumOpeningWidth_m) ||
-                           wallGap.width_m >
-                               static_cast<double>(
-                                   passageParameters.maximumOpeningWidth_m);
-                }),
-            wallGaps.end());
+        std::vector<WallGap> doorSizedGaps{};
+        for (const WallGap &wallGap : wallGaps)
+        {
+            if (!(wallGap.width_m <
+                      static_cast<double>(
+                          passageParameters.minimumOpeningWidth_m) ||
+                  wallGap.width_m >
+                      static_cast<double>(
+                          passageParameters.maximumOpeningWidth_m)))
+            {
+                doorSizedGaps.push_back(wallGap);
+            }
+        }
+        wallGaps = std::move(doorSizedGaps);
 
         semantic::Room *p_wallRoom = nullptr;
         if (findWallRoom(allRooms, p_wall, p_wallRoom) !=
@@ -322,8 +317,9 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
                 const Eigen::Vector3d passageNormal =
                     passageEquation.coeffs().head<3>();
                 const double gapDistance_m =
-                    horizontalDistance_m(passageCentroid_world_m,
-                                         wallGap.centre_world_m);
+                    computeHorizontalDistance_m(passageCentroid_world_m,
+                                                wallGap.centre_world_m,
+                                                groundNormal_world);
                 if (!passageCentroid_world_m.allFinite() ||
                     !passageNormal.allFinite() || passageNormal.norm() < 1e-8 ||
                     gapDistance_m > matchingDistance_m ||
@@ -456,8 +452,9 @@ SemanticsManagerStatus SemanticsManager::detectPassagesFromFreeSpace(
             for (const PendingOpening &previousOpening : pendingOpenings)
             {
                 if (previousOpening.wallId == pendingOpening.wallId &&
-                    horizontalDistance_m(previousOpening.centre_world_m,
-                                         wallGap.centre_world_m) <=
+                    computeHorizontalDistance_m(previousOpening.centre_world_m,
+                                                wallGap.centre_world_m,
+                                                groundNormal_world) <=
                         duplicatePassageDistance_m)
                 {
                     pendingOpening.consecutiveOpenVerdicts =

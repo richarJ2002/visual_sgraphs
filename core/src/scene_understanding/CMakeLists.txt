@@ -1,5 +1,6 @@
 # scene_understanding capability dispatcher: each module declares its own sources.
 include(${CMAKE_CURRENT_LIST_DIR}/geo_sem_helpers/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/passage_detection/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/plane_checks/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/plane_fusion/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/plane_intake/CMakeLists.txt)

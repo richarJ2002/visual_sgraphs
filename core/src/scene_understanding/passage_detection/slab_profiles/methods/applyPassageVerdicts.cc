@@ -25,6 +25,8 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include "scene_understanding/passage_detection/slab_profiles/private_functions/private_functions.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -85,94 +87,6 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
             __func__);
     }
 
-    /*
-     * Wall support points inside an along/height window of the slab, counted
-     * only where the slab is not FREE: the TSDF is integrated at the poses of
-     * the moment, so after a SLAM correction current wall points can land in
-     * free space carved at a stale pose and must not close the door.
-     */
-    const auto countWallPoints = [&](double alongStart_m, double alongEnd_m)
-    {
-        std::size_t pointCount = 0U;
-        if (wallGeometry.supportCloud == nullptr)
-        {
-            return pointCount;
-        }
-        for (const pcl::PointXYZRGBA &supportPoint :
-             wallGeometry.supportCloud->points)
-        {
-            const Eigen::Vector3d offset_world_m =
-                Eigen::Vector3d(supportPoint.x,
-                                supportPoint.y,
-                                supportPoint.z) -
-                wallQuery.origin_world_m;
-            const double along_m =
-                offset_world_m.dot(wallQuery.alongAxis_world);
-            const double height_m = offset_world_m.dot(wallQuery.upAxis_world) *
-                                    wallQuery.upAxisRise;
-            if (!pcl::isFinite(supportPoint) || along_m < 0.0 ||
-                along_m < alongStart_m || along_m > alongEnd_m ||
-                height_m < doorBandMinimum_m || height_m > doorBandMaximum_m)
-            {
-                continue;
-            }
-            const std::size_t column =
-                static_cast<std::size_t>(along_m / wallQuery.cellSize_m);
-            const std::size_t row = static_cast<std::size_t>(
-                height_m / (wallQuery.cellSize_m * wallQuery.upAxisRise));
-            if (column < wallQuery.columnCount && row < wallQuery.rowCount &&
-                wallProfile_in.cellStates[row * wallQuery.columnCount +
-                                          column] != SlabCellState::FREE)
-            {
-                pointCount++;
-            }
-        }
-        return pointCount;
-    };
-
-    /* Fraction of door-band cells with any TSDF observation; the free and
-     * total cell counts of the last call are kept for the closed log. */
-    std::size_t lastFreeCount = 0U, lastCellCount = 0U;
-    const auto  observedFraction = [&](double alongStart_m, double alongEnd_m)
-    {
-        std::size_t cellCount = 0U, observedCount = 0U, freeCount = 0U;
-        for (std::size_t row = 0U; row < wallQuery.rowCount; row++)
-        {
-            const double height_m = (static_cast<double>(row) + 0.5) *
-                                    wallQuery.cellSize_m * wallQuery.upAxisRise;
-            if (height_m < doorBandMinimum_m || height_m > doorBandMaximum_m)
-            {
-                continue;
-            }
-            for (std::size_t column = 0U; column < wallQuery.columnCount;
-                 column++)
-            {
-                const double along_m =
-                    (static_cast<double>(column) + 0.5) * wallQuery.cellSize_m;
-                if (along_m < alongStart_m || along_m > alongEnd_m)
-                {
-                    continue;
-                }
-                cellCount++;
-                if (wallProfile_in.cellStates[row * wallQuery.columnCount +
-                                              column] != SlabCellState::UNKNOWN)
-                {
-                    observedCount++;
-                }
-                if (wallProfile_in.cellStates[row * wallQuery.columnCount +
-                                              column] == SlabCellState::FREE)
-                {
-                    freeCount++;
-                }
-            }
-        }
-        lastFreeCount = freeCount;
-        lastCellCount = cellCount;
-        return cellCount == 0U ? 0.0
-                               : static_cast<double>(observedCount) /
-                                     static_cast<double>(cellCount);
-    };
-
     for (semantic::Passage *p_passage : allPassages)
     {
         bool passageIsBad = true;
@@ -221,7 +135,8 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
         }
 
         /* Aperture in slab coordinates: the measured gap, else the passage. */
-        const auto   openGap = openGaps_in.find(p_passage);
+        const std::unordered_map<semantic::Passage *, WallGap>::const_iterator
+                     openGap = openGaps_in.find(p_passage);
         const double passageAlong_m =
             (passageCentroid_world_m - wallQuery.origin_world_m)
                 .dot(wallQuery.alongAxis_world);
@@ -240,15 +155,26 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
             OPEN,
             CLOSED
         };
-        PassageVerdict passageVerdict = PassageVerdict::CLOSED;
-        if (observedFraction(apertureStart_m, apertureEnd_m) <
+        PassageVerdict passageVerdict        = PassageVerdict::CLOSED;
+        std::size_t    apertureFreeCellCount = 0U, apertureBandCellCount = 0U;
+        if (computeObservedApertureFraction(wallProfile_in,
+                                            doorBandMinimum_m,
+                                            doorBandMaximum_m,
+                                            apertureStart_m,
+                                            apertureEnd_m,
+                                            apertureFreeCellCount,
+                                            apertureBandCellCount) <
             static_cast<double>(passageParameters.minimumObservedFraction))
         {
             passageVerdict = PassageVerdict::NO_EVIDENCE;
         }
         else
         {
-            const std::size_t apertureWallPoints = countWallPoints(
+            const std::size_t apertureWallPoints = countApertureWallPoints(
+                wallGeometry.supportCloud,
+                wallProfile_in,
+                doorBandMinimum_m,
+                doorBandMaximum_m,
                 apertureStart_m +
                     apertureShrinkFraction * (apertureEnd_m - apertureStart_m),
                 apertureEnd_m -
@@ -278,8 +204,9 @@ SemanticsManagerStatus SemanticsManager::applyPassageVerdicts(
                     << passageId << ",\"gap\":"
                     << (openGap != openGaps_in.end() ? "true" : "false")
                     << ",\"wall_points\":" << apertureWallPoints
-                    << ",\"free_cells\":" << lastFreeCount
-                    << ",\"band_cells\":" << lastCellCount << "}" << std::endl;
+                    << ",\"free_cells\":" << apertureFreeCellCount
+                    << ",\"band_cells\":" << apertureBandCellCount << "}"
+                    << std::endl;
             }
         }
         if (passageVerdict == PassageVerdict::NO_EVIDENCE)

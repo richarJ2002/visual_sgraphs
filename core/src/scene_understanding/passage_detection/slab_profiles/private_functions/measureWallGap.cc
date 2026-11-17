@@ -58,45 +58,6 @@ SemanticsManagerStatus measureWallGap(
     }
     const double rowHeight_m = cellSize_m * upAxisRise;
 
-    const auto cellIndex = [columnCount](std::size_t row, std::size_t column)
-    { return row * columnCount + column; };
-    const auto isFreeCell = [&](std::size_t row, std::size_t column)
-    {
-        return wallProfile_in.cellStates[cellIndex(row, column)] ==
-               SlabCellState::FREE;
-    };
-    const auto rowCentreHeight_m = [rowHeight_m](std::size_t row)
-    { return (static_cast<double>(row) + 0.5) * rowHeight_m; };
-    const auto columnCentreAlong_m = [cellSize_m](std::size_t column)
-    { return (static_cast<double>(column) + 0.5) * cellSize_m; };
-
-    /*
-     * Zero crossing between a free cell and its OCCUPIED neighbour, as an
-     * offset from the free cell centre towards the neighbour; half a cell
-     * when the neighbour is unknown, missing or the distances are unusable.
-     */
-    const auto surfaceOffset_m = [&](std::size_t freeIndex,
-                                     std::size_t neighbourIndex,
-                                     bool        hasNeighbour)
-    {
-        if (!hasNeighbour || wallProfile_in.cellStates[neighbourIndex] !=
-                                 SlabCellState::OCCUPIED)
-        {
-            return 0.5 * cellSize_m;
-        }
-        const double freeDistance_m =
-            static_cast<double>(wallProfile_in.cellDistances_m[freeIndex]);
-        const double wallDistance_m =
-            static_cast<double>(wallProfile_in.cellDistances_m[neighbourIndex]);
-        const double distanceStep_m = freeDistance_m - wallDistance_m;
-        if (!std::isfinite(distanceStep_m) || distanceStep_m <= 0.0)
-        {
-            return 0.5 * cellSize_m;
-        }
-        return cellSize_m *
-               std::clamp(freeDistance_m / distanceStep_m, 0.0, 1.0);
-    };
-
     const double doorBandMinimum_m =
         static_cast<double>(passageParameters_in.doorBandMinHeight_m);
     const double doorBandMaximum_m =
@@ -104,7 +65,7 @@ SemanticsManagerStatus measureWallGap(
     std::vector<std::size_t> doorBandRows{};
     for (std::size_t row = 0U; row < rowCount; row++)
     {
-        const double rowHeight = rowCentreHeight_m(row);
+        const double rowHeight = (static_cast<double>(row) + 0.5) * rowHeight_m;
         if (rowHeight >= doorBandMinimum_m && rowHeight <= doorBandMaximum_m)
         {
             doorBandRows.push_back(row);
@@ -124,15 +85,17 @@ SemanticsManagerStatus measureWallGap(
         for (std::size_t seedColumn = 0U; seedColumn < columnCount;
              seedColumn++)
         {
-            if (!isFreeCell(seedRow, seedColumn) ||
-                componentLabels[cellIndex(seedRow, seedColumn)] != 0U)
+            if (wallProfile_in.cellStates[seedRow * columnCount + seedColumn] !=
+                    SlabCellState::FREE ||
+                componentLabels[seedRow * columnCount + seedColumn] != 0U)
             {
                 continue;
             }
 
             /* 4-connected flood fill over FREE cells of the whole slab. */
             const std::size_t        componentLabel = ++componentCount;
-            std::vector<std::size_t> openCells{cellIndex(seedRow, seedColumn)};
+            std::vector<std::size_t> openCells{seedRow * columnCount +
+                                               seedColumn};
             componentLabels[openCells.front()] = componentLabel;
             std::size_t topRow = seedRow, bottomRow = seedRow;
             while (!openCells.empty())
@@ -143,33 +106,37 @@ SemanticsManagerStatus measureWallGap(
                 const std::size_t column = index % columnCount;
                 topRow                   = std::max(topRow, row);
                 bottomRow                = std::min(bottomRow, row);
-                const auto visit =
-                    [&](std::size_t nextRow, std::size_t nextColumn)
-                {
-                    const std::size_t nextIndex =
-                        cellIndex(nextRow, nextColumn);
-                    if (isFreeCell(nextRow, nextColumn) &&
-                        componentLabels[nextIndex] == 0U)
-                    {
-                        componentLabels[nextIndex] = componentLabel;
-                        openCells.push_back(nextIndex);
-                    }
-                };
                 if (row > 0U)
                 {
-                    visit(row - 1U, column);
+                    visitFreeSlabCell(wallProfile_in,
+                                      (row - 1U) * columnCount + column,
+                                      componentLabel,
+                                      componentLabels,
+                                      openCells);
                 }
                 if (row + 1U < rowCount)
                 {
-                    visit(row + 1U, column);
+                    visitFreeSlabCell(wallProfile_in,
+                                      (row + 1U) * columnCount + column,
+                                      componentLabel,
+                                      componentLabels,
+                                      openCells);
                 }
                 if (column > 0U)
                 {
-                    visit(row, column - 1U);
+                    visitFreeSlabCell(wallProfile_in,
+                                      row * columnCount + column - 1U,
+                                      componentLabel,
+                                      componentLabels,
+                                      openCells);
                 }
                 if (column + 1U < columnCount)
                 {
-                    visit(row, column + 1U);
+                    visitFreeSlabCell(wallProfile_in,
+                                      row * columnCount + column + 1U,
+                                      componentLabel,
+                                      componentLabels,
+                                      openCells);
                 }
             }
 
@@ -185,7 +152,7 @@ SemanticsManagerStatus measureWallGap(
                 std::size_t memberCount = 0U;
                 for (std::size_t column = 0U; column < columnCount; column++)
                 {
-                    if (componentLabels[cellIndex(row, column)] ==
+                    if (componentLabels[row * columnCount + column] ==
                         componentLabel)
                     {
                         firstColumn = std::min(firstColumn, column);
@@ -199,19 +166,22 @@ SemanticsManagerStatus measureWallGap(
                     continue;
                 }
                 const double start_m =
-                    columnCentreAlong_m(firstColumn) -
-                    surfaceOffset_m(cellIndex(row, firstColumn),
-                                    firstColumn > 0U
-                                        ? cellIndex(row, firstColumn - 1U)
-                                        : 0U,
-                                    firstColumn > 0U);
+                    (static_cast<double>(firstColumn) + 0.5) * cellSize_m -
+                    computeSurfaceOffset_m(
+                        wallProfile_in,
+                        row * columnCount + firstColumn,
+                        firstColumn > 0U ? row * columnCount + firstColumn - 1U
+                                         : 0U,
+                        firstColumn > 0U);
                 const double end_m =
-                    columnCentreAlong_m(lastColumn) +
-                    surfaceOffset_m(cellIndex(row, lastColumn),
-                                    lastColumn + 1U < columnCount
-                                        ? cellIndex(row, lastColumn + 1U)
-                                        : 0U,
-                                    lastColumn + 1U < columnCount);
+                    (static_cast<double>(lastColumn) + 0.5) * cellSize_m +
+                    computeSurfaceOffset_m(wallProfile_in,
+                                           row * columnCount + lastColumn,
+                                           lastColumn + 1U < columnCount
+                                               ? row * columnCount +
+                                                     lastColumn + 1U
+                                               : 0U,
+                                           lastColumn + 1U < columnCount);
                 rowStarts_m.push_back(start_m);
                 rowEnds_m.push_back(end_m);
                 rowWidths_m.push_back(end_m - start_m);
@@ -229,14 +199,6 @@ SemanticsManagerStatus measureWallGap(
                 continue;
             }
 
-            const auto median = [](std::vector<double> values)
-            {
-                const std::size_t middle = values.size() / 2U;
-                std::nth_element(values.begin(),
-                                 values.begin() + middle,
-                                 values.end());
-                return values[middle];
-            };
             std::nth_element(runCentreColumns.begin(),
                              runCentreColumns.begin() +
                                  runCentreColumns.size() / 2U,
@@ -247,24 +209,26 @@ SemanticsManagerStatus measureWallGap(
             /* Lintel: highest component cell of the median run column. */
             std::size_t lintelRow = topRow;
             while (lintelRow > bottomRow &&
-                   componentLabels[cellIndex(lintelRow, lintelColumn)] !=
+                   componentLabels[lintelRow * columnCount + lintelColumn] !=
                        componentLabel)
             {
                 lintelRow--;
             }
             const double topHeight_m =
-                rowCentreHeight_m(lintelRow) +
-                upAxisRise * surfaceOffset_m(
-                                 cellIndex(lintelRow, lintelColumn),
-                                 lintelRow + 1U < rowCount
-                                     ? cellIndex(lintelRow + 1U, lintelColumn)
-                                     : 0U,
-                                 lintelRow + 1U < rowCount);
+                (static_cast<double>(lintelRow) + 0.5) * rowHeight_m +
+                upAxisRise *
+                    computeSurfaceOffset_m(
+                        wallProfile_in,
+                        lintelRow * columnCount + lintelColumn,
+                        lintelRow + 1U < rowCount
+                            ? (lintelRow + 1U) * columnCount + lintelColumn
+                            : 0U,
+                        lintelRow + 1U < rowCount);
 
             WallGap wallGap{};
-            wallGap.width_m      = median(rowWidths_m);
-            wallGap.alongStart_m = median(rowStarts_m);
-            wallGap.alongEnd_m   = median(rowEnds_m);
+            wallGap.width_m      = computeMedianValue(rowWidths_m);
+            wallGap.alongStart_m = computeMedianValue(rowStarts_m);
+            wallGap.alongEnd_m   = computeMedianValue(rowEnds_m);
             wallGap.bottomHeight_m =
                 static_cast<double>(bottomRow) * rowHeight_m;
             wallGap.topHeight_m = topHeight_m;

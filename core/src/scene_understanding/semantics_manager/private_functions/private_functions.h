@@ -29,9 +29,7 @@
 #include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "scene_understanding/semantics_manager/objects/WallAdmissionEvidenceStruct.h"
-#include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallLoopClosureStruct.h"
-#include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 
 namespace vs_graphs::core::map
 {
@@ -490,28 +488,6 @@ class Passage;
     utils::utils::PlaneMatchSettings &matchSettings_out);
 
 /*!
- * @brief           Measures the openings through one wall from its Voxblox
- *                  free-space slab: FREE door-band cells seed 4-connected
- *                  components, each end is refined at the TSDF zero crossing,
- *                  and only openings of door size are kept.
- *
- * @param[in]       wallProfile_in
- *                  Slab profile of the wall, world frame, metres.
- *
- * @param[in]       passageParameters_in
- *                  Door band, size limits and bounded-row fraction.
- *
- * @param[out]      wallGaps_out
- *                  Accepted openings; empty when there is none.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus measureWallGap(
-    const WallSlabProfile                               &wallProfile_in,
-    const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
-    std::vector<WallGap>                                &wallGaps_out);
-
-/*!
  * @brief           Names a plane variant for log and pipeline output.
  *
  * @param[in]       planeVariant_in
@@ -577,34 +553,6 @@ class Passage;
                            semantic::Room *p_prospectiveRoom_in,
                            bool           &isPassageTopologyValid_out,
                            std::string    &violationReason_out);
-
-/*!
- * @brief           Refines a slab gap at the wall's own points: per door-band
- *                  row the point-free run around the coarse gap centre gives
- *                  the two wall ends, the medians give width and centre, and
- *                  the lowest point above the band inside them the lintel.
- *                  The along extent stays the coarse slab aperture; the gap
- *                  is left unchanged when too few rows are bounded.
- *
- * @param[in]       wallQuery_in
- *                  Slab query of the wall, world frame, metres.
- *
- * @param[in]       wallCloud_in
- *                  Support points of the wall, world frame, metres.
- *
- * @param[in]       passageParameters_in
- *                  Door band and bounded-row fraction.
- *
- * @param[in,out]   wallGap_inout
- *                  Coarse gap from measureWallGap(); refined in place.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus refineWallGapFromPoints(
-    const WallSlabQuery                                 &wallQuery_in,
-    const pcl::PointCloud<pcl::PointXYZRGBA>            &wallCloud_in,
-    const types::SystemParams::SemSeg::PassageDetection &passageParameters_in,
-    WallGap                                             &wallGap_inout);
 
 /*!
  * @brief           Computes the floor-plane box that holds every wall-extent

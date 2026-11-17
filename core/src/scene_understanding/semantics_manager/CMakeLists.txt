@@ -1,25 +1,23 @@
 # SemanticsManager object sources; the scene graph operations are built from
 # the graph and bootstrap subpackages, the pipeline stages from the stage
-# packages (plane_intake, plane_checks, plane_fusion) next to this one.
+# packages (plane_intake, plane_checks, plane_fusion, passage_detection)
+# next to this one.
 include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/admitWallToRoomForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/applyPassageVerdicts.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/buildWallSlabQueries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateRoomsInFreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detectDoorsAndDoorways.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/detectPassagesFromFreeSpace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateWallsToRoomsFromFreeSpaceClusters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
@@ -42,7 +40,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomViewpoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloors.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getWallSlabQueries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloorsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
@@ -62,7 +59,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentRoomIdForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomTrackerPendingPublishHookForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setWallSlabProfiles.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/sortWallsByCameraDistance.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/submitVerificationVerdict.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/suppressUndefendedWalls.cc
@@ -88,9 +84,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPointOnForeignSideOfWallFace.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/measureWallGap.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/refineWallGapFromPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
@@ -100,4 +94,5 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${VS_GRAPHS_PLANEINTAKE_SOURCES}
   ${VS_GRAPHS_PLANECHECKS_SOURCES}
   ${VS_GRAPHS_PLANEFUSION_SOURCES}
+  ${VS_GRAPHS_PASSAGEDETECTION_SOURCES}
 )
