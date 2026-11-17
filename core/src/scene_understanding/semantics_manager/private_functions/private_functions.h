@@ -16,6 +16,8 @@
 #include <cmath>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <Eigen/Geometry>
@@ -24,6 +26,7 @@
 
 #include "configuration/types/types.h"
 #include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include "scene_understanding/semantics_manager/objects/FiniteWallSegment2dStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
@@ -652,6 +655,97 @@ class Passage;
     isPointOnForeignSideOfWallFace(geometric::Plane      *p_wall_in,
                                    const Eigen::Vector3d &point_world_m_in,
                                    bool                  &isOnForeignSide_out);
+
+/*!
+ * @brief           Tests whether a room wall frames a passage opening: it is
+ *                  one of the passage's supporting walls, or a wall surface
+ *                  aligned with the passage plane, close to it, whose support
+ *                  points reach the opening frame.
+ *
+ * @param[in]       p_roomWall_in
+ *                  Room wall, non-owning; null or bad gives false.
+ *
+ * @param[in]       supportingWalls_in
+ *                  Walls the passage is linked to.
+ *
+ * @param[in]       passageEquation_world_in
+ *                  Unit-normal passage plane, world frame.
+ *
+ * @param[in]       passageCentroid_world_m_in
+ *                  Passage centroid, world frame, metres.
+ *
+ * @param[in]       passageWidth_m_in
+ *                  Passage width, metres; a non-positive width gives false.
+ *
+ * @param[in]       openingFrameReach_m_in
+ *                  Largest distance in the wall plane from the passage
+ *                  centroid to a wall point that frames the opening, metres.
+ *
+ * @param[out]      isAtPassageOpening_out
+ *                  True when the wall frames the opening.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus isWallAtPassageOpening(
+    geometric::Plane                      *p_roomWall_in,
+    const std::vector<geometric::Plane *> &supportingWalls_in,
+    const Eigen::Vector4d                 &passageEquation_world_in,
+    const Eigen::Vector3d                 &passageCentroid_world_m_in,
+    double                                 passageWidth_m_in,
+    double                                 openingFrameReach_m_in,
+    bool                                  &isAtPassageOpening_out);
+
+/*!
+ * @brief           Tests whether a room centroid lies on the known side of a
+ *                  passage plane.
+ *
+ * @param[in]       p_room_in
+ *                  Room, non-owning; null gives false.
+ *
+ * @param[in]       passageEquation_world_in
+ *                  Unit-normal passage plane, world frame.
+ *
+ * @param[in]       knownSide_in
+ *                  Known-side provenance of the passage; without a direction
+ *                  the result is false.
+ *
+ * @param[in]       knownSideSign_in
+ *                  Sign of the known-side direction along the passage
+ *                  normal; near 0 gives false.
+ *
+ * @param[out]      isOnKnownSide_out
+ *                  True when the room centroid is on the known side.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus isRoomOnKnownSide(
+    semantic::Room                               *p_room_in,
+    const Eigen::Vector4d                        &passageEquation_world_in,
+    const semantic::Passage::KnownSideProvenance &knownSide_in,
+    double                                        knownSideSign_in,
+    bool                                         &isOnKnownSide_out);
+
+/*!
+ * @brief           Links a passage to a room unless a passage with the same
+ *                  id is already linked, and logs links the room did not
+ *                  hold before this pass.
+ *
+ * @param[in,out]   p_room_inout
+ *                  Room to link; null does nothing.
+ *
+ * @param[in]       p_passage_in
+ *                  Passage to link; not null.
+ *
+ * @param[in]       previousPassageIdsByRoom_in
+ *                  Passage ids each room held before this pass.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus linkRoomToPassage(
+    semantic::Room    *p_room_inout,
+    semantic::Passage *p_passage_in,
+    const std::unordered_map<semantic::Room *, std::unordered_set<int>>
+        &previousPassageIdsByRoom_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

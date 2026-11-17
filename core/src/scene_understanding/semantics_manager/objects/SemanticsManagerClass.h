@@ -38,6 +38,7 @@
 #include "scene_understanding/semantics_manager/objects/AbsorbedSceneGraphContentsStruct.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
+#include "scene_understanding/semantics_manager/objects/PassageRoomLinkStateStruct.h"
 #include "scene_understanding/semantics_manager/objects/PendingOpeningStruct.h"
 #include "scene_understanding/semantics_manager/objects/PoseCorrectionFieldStruct.h"
 #include "scene_understanding/semantics_manager/objects/RoomListEnum.h"
@@ -1924,6 +1925,372 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus associatePassagesToRooms(void);
 
     /*!
+     * @brief           First step of associatePassagesToRooms() for one
+     *                  passage: keeps the room edges of a recovery proxy,
+     *                  reads the supporting walls, unit plane, centroid and
+     *                  width, and stamps the known-side direction from the
+     *                  supporting wall's observation origin when missing.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage of the active map; may be null or bad.
+     *
+     * @param[in,out]   linkState_inout
+     *                  Fresh state; isPassageLinkable is set only when the
+     *                  later steps may run.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        readPassageLinkGeometry(semantic::Passage    *p_passage_inout,
+                                PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Finds the nearest room on each side of the passage
+     *                  plane among the rooms that own a wall at the opening,
+     *                  and the rooms that own a supporting wall exactly.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State from readPassageLinkGeometry(); the side rooms
+     *                  and distances are written.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findPassageSideRooms(const std::vector<semantic::Room *> &allRooms_in,
+                             semantic::Passage    *p_passage_inout,
+                             PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Drops the farther side room when the two side rooms
+     *                  stand on different floors: a passage links rooms of
+     *                  one floor only.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State with both side rooms; one may be cleared.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        dropCrossFloorSideRoom(semantic::Passage    *p_passage_inout,
+                               PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Links the passage to its side rooms, revokes it from
+     *                  every other room, counts the linked rooms and sets the
+     *                  known-side room when only the direction was known.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in]       previousPassageIdsByRoom_in
+     *                  Passage ids each room held before this pass; only new
+     *                  links are logged.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State with the side rooms; the room counts and the
+     *                  known-side sign are written.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus linkPassageToSideRooms(
+        const std::vector<semantic::Room *> &allRooms_in,
+        const std::unordered_map<semantic::Room *, std::unordered_set<int>>
+                             &previousPassageIdsByRoom_in,
+        semantic::Passage    *p_passage_inout,
+        PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Passage detection part of associatePassagesToRooms():
+     *                  keeps the far-side room handle of a passage right. It
+     *                  clears a stale handle, resolves it to a confirmed room
+     *                  when one is known, else creates a prospective room on
+     *                  the far side, restores a lost handle, and warns when a
+     *                  confirmed side has no handle.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after linkPassageToSideRooms().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus createFarSideRoomHypotheses(
+        const std::vector<semantic::Room *>    &allRooms_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        semantic::Passage                      *p_passage_inout,
+        PassageRoomLinkState                   &linkState_inout);
+
+    /*!
+     * @brief           Clears a far-side handle that is bad, that is the only
+     *                  confirmed room on the near side, or that is a third
+     *                  room once two others hold both sides; a promoted
+     *                  handle keeps its passage link.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after linkPassageToSideRooms();
+     *                  hadProspectiveHandle and isSoleRoomOnFarSide are
+     *                  written.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        clearStaleFarSideHandle(semantic::Passage    *p_passage_inout,
+                                PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           With two confirmed side rooms, makes the one opposite
+     *                  the known side the far-side handle; with one confirmed
+     *                  and one undefined room, the undefined one.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after clearStaleFarSideHandle().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        resolveConfirmedFarSideRoom(semantic::Passage    *p_passage_inout,
+                                    PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           For a passage with one confirmed room (or a known side
+     *                  and none) and no handle: links a confirmed room already
+     *                  on the far side, else creates a prospective room
+     *                  there.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after resolveConfirmedFarSideRoom().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus createProspectiveFarSideRoom(
+        const std::vector<semantic::Room *>    &allRooms_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        semantic::Passage                      *p_passage_inout,
+        PassageRoomLinkState                   &linkState_inout);
+
+    /*!
+     * @brief           Anti-churn gate of createProspectiveFarSideRoom():
+     *                  finds a confirmed room on the far side whose centroid
+     *                  segment to the known room threads this passage's
+     *                  opening and crosses no foreign wall.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in]       p_knownRoom_in
+     *                  Room on the known side; may be null.
+     *
+     * @param[out]      farSideConfirmedRoomExists_out
+     *                  True when such a room exists.
+     *
+     * @param[out]      p_existingFarSideRoom_out
+     *                  That room; null when none. Borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus findConfirmedFarSideRoom(
+        const std::vector<semantic::Room *> &allRooms_in,
+        semantic::Passage                   *p_passage_inout,
+        semantic::Room                      *p_knownRoom_in,
+        bool                                &farSideConfirmedRoomExists_out,
+        semantic::Room                     *&p_existingFarSideRoom_out);
+
+    /*!
+     * @brief           Creates the prospective far-side room of a passage
+     *                  just past the opening, or reuses a prospective room
+     *                  already there, within the prospective room limit.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage without a far-side handle.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after resolveConfirmedFarSideRoom().
+     *
+     * @param[in]       passageEquation_world_in
+     *                  Passage plane, world frame.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  Passage centroid, world frame, metres.
+     *
+     * @param[in]       farSideNormal_world_in
+     *                  Unit normal towards the far side, world frame.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus createProspectiveRoom(
+        const std::vector<semantic::Passage *> &allPassages_in,
+        semantic::Passage                      *p_passage_inout,
+        PassageRoomLinkState                   &linkState_inout,
+        const Eigen::Vector4d                  &passageEquation_world_in,
+        const Eigen::Vector3d                  &passageCentroid_world_m_in,
+        const Eigen::Vector3d                  &farSideNormal_world_in);
+
+    /*!
+     * @brief           Reuses a prospective room near the planned centroid
+     *                  when it is already the far-side handle of a passage at
+     *                  the same opening (a duplicate passage), linking it as
+     *                  this passage's handle.
+     *
+     * @param[in]       candidateRooms_in
+     *                  Candidate rooms of the active map, in id order.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage without a far-side handle.
+     *
+     * @param[in]       passageEquation_world_in
+     *                  Passage plane, world frame.
+     *
+     * @param[in]       passageCentroid_world_m_in
+     *                  Passage centroid, world frame, metres.
+     *
+     * @param[in]       prospectiveCentroid_world_m_in
+     *                  Planned prospective room centroid, world frame,
+     *                  metres.
+     *
+     * @param[in,out]   prospectiveExists_inout
+     *                  Set to true when a room is reused.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus findReusableProspectiveRoom(
+        const std::vector<semantic::Room *>    &candidateRooms_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        semantic::Passage                      *p_passage_inout,
+        const Eigen::Vector4d                  &passageEquation_world_in,
+        const Eigen::Vector3d                  &passageCentroid_world_m_in,
+        const Eigen::Vector3d                  &prospectiveCentroid_world_m_in,
+        bool                                   &prospectiveExists_inout);
+
+    /*!
+     * @brief           Restores a lost far-side handle when exactly one
+     *                  confirmed room lists the passage and lies opposite the
+     *                  known side.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State after createProspectiveFarSideRoom().
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        restoreFarSideHandle(const std::vector<semantic::Room *> &allRooms_in,
+                             semantic::Passage    *p_passage_inout,
+                             PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Retires the prospective far-side room of a passage
+     *                  once a distinct confirmed room with real walls borders
+     *                  the passage on that side.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus resolveProspectiveRoomPromotion(
+        const std::vector<semantic::Room *> &allRooms_in,
+        semantic::Passage                   *p_passage_inout);
+
+    /*!
+     * @brief           Finds the confirmed room on the far side of a passage
+     *                  whose centroid segment to the prospective room threads
+     *                  the passage opening and crosses no foreign wall; the
+     *                  near-side room is never chosen.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage with a prospective far-side room.
+     *
+     * @param[in]       p_prospectiveRoom_in
+     *                  The prospective room; has at least one wall.
+     *
+     * @param[out]      p_farSideConfirmedRoom_out
+     *                  The confirmed room; null when none. Borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus findPromotionFarSideRoom(
+        const std::vector<semantic::Room *> &allRooms_in,
+        semantic::Passage                   *p_passage_inout,
+        semantic::Room                      *p_prospectiveRoom_in,
+        semantic::Room                     *&p_farSideConfirmedRoom_out);
+
+    /*!
+     * @brief           Makes the confirmed room the passage's far-side
+     *                  handle, offers the prospective room's walls to it
+     *                  (admitWallToRoom()) and marks the prospective room
+     *                  bad.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage with a prospective far-side room.
+     *
+     * @param[in,out]   p_prospectiveRoom_inout
+     *                  The prospective room to retire.
+     *
+     * @param[in]       p_farSideConfirmedRoom_in
+     *                  Confirmed far-side room; receives the passage link.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        retireProspectiveRoom(semantic::Passage *p_passage_inout,
+                              semantic::Room    *p_prospectiveRoom_inout,
+                              semantic::Room    *p_farSideConfirmedRoom_in);
+
+    /*!
      * @brief           Associates cluster-supported walls with rooms using
      *                  passage-partitioned free-space evidence, maintaining
      *                  matched rooms and promoting supported candidates.
@@ -2092,12 +2459,6 @@ class SemanticsManager
      * @brief           Test-only direct ordinary-wall association pass.
      */
     [[nodiscard]] SemanticsManagerStatus associateAllWallsToRoomsForTest(void);
-
-    /*!
-     * @brief           Test-only direct passage/room reciprocity and lifecycle
-     *                  pass.
-     */
-    [[nodiscard]] SemanticsManagerStatus associatePassagesToRoomsForTest(void);
 
     /*!
      * @brief           Test-only direct bounded pending-wall retirement pass.

@@ -11,13 +11,13 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateAllWallsToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/associatePassagesToRoomsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/associateRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/associateWallsToRoomsFromFreeSpaceClusters.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateRoomsInFreeSpaceCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/associateWallsToRoomsFromFreeSpaceClusters.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/dropCrossFloorSideRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageApertureBackstop.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariantForTest.cc
@@ -27,6 +27,8 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerification.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findPassageSideRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findPromotionFarSideRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
@@ -43,16 +45,20 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isWallFaceForeignToRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/linkPassageToSideRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/logSemanticDiagnostics.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingLost.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingRecovered.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/partitionFreeSpaceAtPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/processRoomTrackerPendingForTest.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/readPassageLinkGeometry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/recomputeRoomCentroidsFromWalls.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanesForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resolveProspectiveRoomPromotion.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/retireProspectiveRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentRoomIdForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
@@ -81,6 +87,9 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/intersectSupportingLines.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageTopologyValid.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPointOnForeignSideOfWallFace.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isRoomOnKnownSide.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isWallAtPassageOpening.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/linkRoomToPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/pointToSegmentDistance_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
