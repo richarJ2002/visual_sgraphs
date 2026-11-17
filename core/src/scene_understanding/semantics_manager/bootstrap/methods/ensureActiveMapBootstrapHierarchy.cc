@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            ensureActiveMapBootstrapHierarchy.cc
  *
  * @brief           Implements

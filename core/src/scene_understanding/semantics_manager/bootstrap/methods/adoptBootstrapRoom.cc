@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            adoptBootstrapRoom.cc
  *
  * @brief           Implements SemanticsManager::adoptBootstrapRoom(), declared

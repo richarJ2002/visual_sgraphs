@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            captureBuildingEntry.cc
  *
  * @brief           Implements captureBuildingEntry(), declared in

@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            createRecoveryPassage.cc
  *
  * @brief           Implements createRecoveryPassage(), declared in

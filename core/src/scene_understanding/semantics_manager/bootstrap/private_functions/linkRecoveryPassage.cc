@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            linkRecoveryPassage.cc
  *
  * @brief           Implements linkRecoveryPassage(), declared in

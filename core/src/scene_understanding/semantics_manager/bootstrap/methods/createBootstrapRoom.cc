@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            createBootstrapRoom.cc
  *
  * @brief           Implements SemanticsManager::createBootstrapRoom(),

@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            findLiveRoomById.cc
  *
  * @brief           Implements findLiveRoomById(), declared in

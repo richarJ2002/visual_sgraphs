@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            isLiveConfirmedRoom.cc
  *
  * @brief           Implements isLiveConfirmedRoom(), declared in

@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            SceneGraphBuildingEntryStruct.h
  *
  * @brief           Declares SceneGraphBuildingEntry, the plain-data copy of a

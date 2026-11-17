@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            restoreRecoveryPassages.cc
  *
  * @brief           Implements SemanticsManager::restoreRecoveryPassages(),

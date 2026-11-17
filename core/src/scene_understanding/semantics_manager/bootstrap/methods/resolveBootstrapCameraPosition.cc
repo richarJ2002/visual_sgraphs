@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            resolveBootstrapCameraPosition.cc
  *
  * @brief           Implements

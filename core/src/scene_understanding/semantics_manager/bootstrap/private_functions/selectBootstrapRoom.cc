@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            selectBootstrapRoom.cc
  *
  * @brief           Implements selectBootstrapRoom(), declared in

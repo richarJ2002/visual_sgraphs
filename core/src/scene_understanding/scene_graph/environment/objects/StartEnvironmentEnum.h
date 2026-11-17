@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            StartEnvironmentEnum.h
  *
  * @brief           Declares StartEnvironment, the kind of place a mission

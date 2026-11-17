@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            EnvironmentStruct.h
  *
  * @brief           Declares Environment, the top node of a scene graph.

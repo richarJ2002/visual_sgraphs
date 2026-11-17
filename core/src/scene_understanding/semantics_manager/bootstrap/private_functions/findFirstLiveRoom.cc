@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            findFirstLiveRoom.cc
  *
  * @brief           Implements findFirstLiveRoom(), declared in

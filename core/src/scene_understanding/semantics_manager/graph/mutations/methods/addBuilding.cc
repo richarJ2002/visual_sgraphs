@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            addBuilding.cc
  *
  * @brief           Implements SemanticsManager::addBuilding(), declared in

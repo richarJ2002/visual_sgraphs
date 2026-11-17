@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            ensureBootstrapFloor.cc
  *
  * @brief           Implements SemanticsManager::ensureBootstrapFloor(),

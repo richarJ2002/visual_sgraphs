@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            ensureBuilding.cc
  *
  * @brief           Implements ensureBuilding(), declared in

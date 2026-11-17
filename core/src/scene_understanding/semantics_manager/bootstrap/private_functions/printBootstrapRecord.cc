@@ -17,8 +17,6 @@
  */
 
 /*!
-
-/*!
  * @file            printBootstrapRecord.cc
  *
  * @brief           Implements printBootstrapRecord(), declared in
