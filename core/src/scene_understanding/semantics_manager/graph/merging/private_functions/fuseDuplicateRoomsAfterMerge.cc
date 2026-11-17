@@ -577,13 +577,14 @@ void fuseDuplicateRoomsAfterMerge(
         for (vs_graphs::core::semantic::Passage *p_importedPassage :
              importedRoomPassages)
         {
-            if (p_bestRetainedRoom->setDoorways(p_importedPassage) !=
+            if (p_bestRetainedRoom->addPassageAssociation(p_importedPassage) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setDoorways returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: addPassageAssociation returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
 

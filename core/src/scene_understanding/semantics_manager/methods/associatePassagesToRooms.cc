@@ -227,14 +227,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             }
             if (knownSide.p_room != nullptr && !isBad2)
             {
-                if (knownSide.p_room->setDoorways(p_passage) !=
+                if (knownSide.p_room->addPassageAssociation(p_passage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
             }
             bool farSideRoomIsBad{};
@@ -249,14 +249,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             }
             if (p_farSideRoom != nullptr && !farSideRoomIsBad)
             {
-                if (p_farSideRoom->setDoorways(p_passage) !=
+                if (p_farSideRoom->addPassageAssociation(p_passage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
             }
             continue;
@@ -1051,14 +1051,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             /* Add the relationship if required */
             if (!alreadyAssociated)
             {
-                if (p_room_inout->setDoorways(p_passage) !=
+                if (p_room_inout->addPassageAssociation(p_passage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
 
                 const std::unordered_map<semantic::Room *,
@@ -1435,13 +1435,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                 p_existingProspective != p_negativeSideRoom &&
                 p_existingProspective != p_positiveSideRoom;
             if (!areBothSidesHeldByOthers &&
-                p_existingProspective->setDoorways(p_passage) !=
+                p_existingProspective->addPassageAssociation(p_passage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setDoorways returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: addPassageAssociation returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             int existingProspectiveId{};
             if (p_existingProspective->getId(existingProspectiveId) !=
@@ -1613,14 +1614,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                if (p_farSideConfirmedRoom->setDoorways(p_passage) !=
+                if (p_farSideConfirmedRoom->addPassageAssociation(p_passage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_previousFarSideHandle != p_farSideConfirmedRoom)
                 {
@@ -2065,12 +2066,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                     {
                         if (p_existingFarSideRoom != nullptr)
                         {
-                            if (p_existingFarSideRoom->setDoorways(p_passage) !=
+                            if (p_existingFarSideRoom->addPassageAssociation(
+                                    p_passage) !=
                                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                             {
                                 RCLCPP_ERROR(
                                     rclcpp::get_logger("vs_graphs"),
-                                    "%s: setDoorways returned a failure status "
+                                    "%s: addPassageAssociation returned a "
+                                    "failure status "
                                     "although it cannot fail; continuing as "
                                     "before.",
                                     __func__);
@@ -2429,13 +2432,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                             "fail; continuing as before.",
                                             __func__);
                                     }
-                                    if (p_candidate->setDoorways(p_passage) !=
+                                    if (p_candidate->addPassageAssociation(
+                                            p_passage) !=
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
                                         /*!
-                                         * setDoorways cannot fail; continue as
-                                         * before.
+                                         * addPassageAssociation cannot fail;
+                                         * continue as before.
                                          */
                                     }
                                     prospectiveExists = true;
@@ -2563,14 +2567,15 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                             "fail; continuing as before.",
                                             __func__);
                                     }
-                                    if (p_prospectiveRoom->setDoorways(
-                                            p_passage) !=
+                                    if (p_prospectiveRoom
+                                            ->addPassageAssociation(
+                                                p_passage) !=
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
                                         /*!
-                                         * setDoorways cannot fail; continue as
-                                         * before.
+                                         * addPassageAssociation cannot fail;
+                                         * continue as before.
                                          */
                                     }
 
@@ -3292,12 +3297,14 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             roomMapId);
                     }
 
-                    if (p_farSideConfirmedRoom->setDoorways(p_passage) !=
+                    if (p_farSideConfirmedRoom->addPassageAssociation(
+                            p_passage) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
                             rclcpp::get_logger("vs_graphs"),
-                            "%s: setDoorways returned a failure status "
+                            "%s: addPassageAssociation returned a failure "
+                            "status "
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }

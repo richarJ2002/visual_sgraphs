@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            setDoorways.cc
+ * @file            addPassageAssociation.cc
  *
- * @brief           Implements Room::setDoorways(), declared in
+ * @brief           Implements Room::addPassageAssociation(), declared in
  * scene_graph/room/objects/RoomClass.h.
  */
 
@@ -27,7 +27,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageClass.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/objects/RoomClass.h"
-#include <algorithm>
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
@@ -38,41 +37,43 @@ namespace core
 namespace semantic
 {
 
-RoomStatus Room::setDoorways(vs_graphs::core::semantic::Passage *p_passage_in)
+RoomStatus Room::addPassageAssociation(
+    vs_graphs::core::semantic::Passage *p_passage_in)
 {
     if (p_passage_in == nullptr)
     {
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    const bool isAlreadyPresent = std::any_of(
-        passages.begin(),
-        passages.end(),
-        [p_passage_in](vs_graphs::core::semantic::Passage *p_existingPassage)
+    int passageIdentity{};
+    if (p_passage_in->getId(passageIdentity) !=
+        PassageStatus::PASSAGE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool isAlreadyPresent = false;
+    for (vs_graphs::core::semantic::Passage *p_existingPassage : passages)
+    {
+        int existingPassageId{};
+        if ((p_existingPassage != nullptr) &&
+            p_existingPassage->getId(existingPassageId) !=
+                PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            int existingPassageId{};
-            if ((p_existingPassage != nullptr) &&
-                p_existingPassage->getId(existingPassageId) !=
-                    PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int passage_inId{};
-            if ((p_existingPassage != nullptr) &&
-                p_passage_in->getId(passage_inId) !=
-                    PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return p_existingPassage != nullptr &&
-                   existingPassageId == passage_inId;
-        });
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_existingPassage != nullptr &&
+            existingPassageId == passageIdentity)
+        {
+            isAlreadyPresent = true;
+            break;
+        }
+    }
 
     if (!isAlreadyPresent)
     {

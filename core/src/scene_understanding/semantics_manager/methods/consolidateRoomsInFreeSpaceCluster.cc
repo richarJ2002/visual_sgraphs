@@ -505,13 +505,14 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
 
         for (semantic::Passage *p_passage : duplicatePassages)
         {
-            if (p_retainedRoom_inout->setDoorways(p_passage) !=
+            if (p_retainedRoom_inout->addPassageAssociation(p_passage) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setDoorways returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: addPassageAssociation returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
 

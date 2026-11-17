@@ -95,13 +95,14 @@ void linkRecoveryPassage(const semantic::PassageContext &passageContext_in,
                          __func__);
         }
     }
-    if (p_room_inout->setDoorways(p_passage_inout) !=
+    if (p_room_inout->addPassageAssociation(p_passage_inout) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setDoorways returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: addPassageAssociation returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 }
 

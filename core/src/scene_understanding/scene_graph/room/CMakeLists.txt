@@ -1,5 +1,6 @@
 # Room object sources: exactly this object's translation units.
 set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addPassageAssociation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearWalls.cc
@@ -36,7 +37,6 @@ set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setBoundaryCorners_world_m.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setBoundaryStatus.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setDoorways.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFloor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setGroundPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setHasKnownLabel.cc

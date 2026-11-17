@@ -426,14 +426,15 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             /* Copy the passage relationship if required */
             if (!alreadyPresent)
             {
-                if (p_selectedRoom_inout->setDoorways(p_candidatePassage) !=
+                if (p_selectedRoom_inout->addPassageAssociation(
+                        p_candidatePassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
             }
         }

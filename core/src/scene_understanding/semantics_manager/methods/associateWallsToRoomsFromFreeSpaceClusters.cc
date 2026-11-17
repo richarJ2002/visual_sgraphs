@@ -2217,14 +2217,14 @@ SemanticsManagerStatus
                 }
                 prospectiveRoomCycles.erase(confirmedCycleRoomId);
 
-                if (p_room->setDoorways(p_clusterPassage) !=
+                if (p_room->addPassageAssociation(p_clusterPassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_clusterPassage->setProspectiveRoom(p_room) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)

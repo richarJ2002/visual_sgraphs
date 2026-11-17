@@ -146,7 +146,7 @@ struct RoomRecord
 
     /*!
      * @brief           One EntityRef per non-null Room::getPassages() entry
-     *                  (the Room::doorways side of the relationship), sorted
+     *                  (the Room::passages side of the relationship), sorted
      *                  deterministically. Captured independently of each
      *                  Passage's own knownSideProvenance/ p_prospectiveRoom
      *                  fields -- the two directions are not kept synchronized

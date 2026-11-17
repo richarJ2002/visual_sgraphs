@@ -431,14 +431,15 @@ UtilsStatus Utils::reAssociatePassages(atlas::Atlas *p_atlas_in)
             }
             if (p_survivingHandle != nullptr)
             {
-                if (p_survivingHandle->setDoorways(p_retainedPassage) !=
+                if (p_survivingHandle->addPassageAssociation(
+                        p_retainedPassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setDoorways returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addPassageAssociation returned a failure "
+                                 "status although it "
+                                 "cannot fail; continuing as before.",
+                                 __func__);
                 }
             }
 

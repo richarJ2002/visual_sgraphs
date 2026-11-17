@@ -572,7 +572,7 @@ class Room
      *                  ignored.
      */
     [[nodiscard]] RoomStatus
-        setDoorways(vs_graphs::core::semantic::Passage *p_passage_in);
+        addPassageAssociation(vs_graphs::core::semantic::Passage *p_passage_in);
 
     /*!
      * @brief           Returns the passages associated with the room.
