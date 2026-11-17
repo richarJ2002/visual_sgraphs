@@ -26,6 +26,7 @@
 #define VS_GRAPHS_SCENE_GRAPH_SCENE_GRAPH_STRUCT_H
 
 #include "scene_understanding/scene_graph/building/objects/BuildingStruct.h"
+#include "scene_understanding/scene_graph/environment/objects/EnvironmentStruct.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/scene_graph/objects/RetiredNodesStruct.h"
@@ -47,9 +48,9 @@ namespace scene_graph
 {
 
 /*!
- * @brief           The scene graph of one SLAM map: its buildings and id
- *                  indexes of its detected rooms, candidate rooms and
- *                  passages.
+ * @brief           The scene graph of one SLAM map: its environment, its
+ *                  buildings and id indexes of its detected rooms, candidate
+ *                  rooms and passages.
  *
  *                  This is the only list of the map's rooms, storeys and
  *                  passages. The scene graph owns its rooms and passages and
@@ -79,8 +80,16 @@ struct SceneGraph
     map::Map *p_map{nullptr};
 
     /*!
+     * @brief           Top node of the graph; its children are the buildings
+     *                  below. Set by SemanticsManager::addSceneGraph().
+     */
+    Environment environment;
+
+    /*!
      * @brief           Buildings of this map by building id; owned. Holds
-     *                  exactly one building, id 0.
+     *                  building 0 once SemanticsManager::addBuilding() has
+     *                  created it, none before (an outdoor start has no
+     *                  building until the first room is detected).
      */
     std::map<int, std::unique_ptr<Building>> buildings;
 

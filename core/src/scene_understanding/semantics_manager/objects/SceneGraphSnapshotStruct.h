@@ -29,6 +29,8 @@
 
 #include <vector>
 
+#include "scene_understanding/scene_graph/environment/objects/EnvironmentStruct.h"
+#include "scene_understanding/semantics_manager/objects/SceneGraphBuildingEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphFloorEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphPassageEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphRoomEntryStruct.h"
@@ -39,10 +41,11 @@ namespace core
 {
 
 /*!
- * @brief           The live storeys, rooms and passages of one map, each list
- *                  in ascending id order, copied out under the map's graph
- *                  lock by SemanticsManager::getSceneGraphSnapshot(). Holds no
- *                  pointer into the graph, so it stays valid after the lock is
+ * @brief           The environment, buildings, live storeys, rooms and
+ *                  passages of one map, each list in ascending id order,
+ *                  copied out under the map's graph lock by
+ *                  SemanticsManager::getSceneGraphSnapshot(). Holds no pointer
+ *                  into the graph, so it stays valid after the lock is
  *                  released. Thread safety: a plain value owned by its caller.
  */
 struct SceneGraphSnapshot
@@ -52,6 +55,17 @@ struct SceneGraphSnapshot
      * @brief           Id of the SLAM map the graph belongs to.
      */
     unsigned long mapId{0UL};
+
+    /*!
+     * @brief           Top node of the map's graph (copy).
+     */
+    scene_graph::Environment environment;
+
+    /*!
+     * @brief           Buildings of the map, empty until the first one is
+     *                  created.
+     */
+    std::vector<SceneGraphBuildingEntry> buildings;
 
     /*!
      * @brief           Storeys of the map.

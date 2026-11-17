@@ -1,6 +1,7 @@
 # SemanticsManager graph mutation methods: exactly this subpackage's
 # translation units.
 set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_MUTATIONS_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addBuilding.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addCandidateRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addFloor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addPassage.cc

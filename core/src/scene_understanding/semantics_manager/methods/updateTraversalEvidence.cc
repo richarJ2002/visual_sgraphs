@@ -95,15 +95,6 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    if (seedCurrentRoomFromActiveMap(p_activeMap) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: seedCurrentRoomFromActiveMap returned a failure "
-                     "status although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     std::vector<keyframe::KeyFrame *> orderedKeyFrames{};
     if (p_activeMap->getAllKeyFrames(orderedKeyFrames) !=
         map::MapStatus::MAP_STATUS_SUCCESS)

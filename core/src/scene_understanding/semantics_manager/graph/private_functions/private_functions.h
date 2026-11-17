@@ -225,7 +225,26 @@ void insertPassage(scene_graph::SceneGraph           &sceneGraph_inout,
                    scene_graph::RetiredNodes         &retiredNodes_inout);
 
 /*!
- * @brief           Adds a storey to building 0 of a scene graph. A storey whose
+ * @brief           Returns the building of a scene graph with the given id,
+ *                  creating an empty one when the graph has none. Does not
+ *                  lock: the caller holds the SemanticsManager graph mutex.
+ *
+ * @param[in,out]   sceneGraph_inout
+ *                  Scene graph that holds the building.
+ *
+ * @param[in]       buildingId_in
+ *                  Id of the building.
+ *
+ * @return          The building; owned by the scene graph, valid until the
+ *                  graph is cleared.
+ */
+[[nodiscard]] scene_graph::Building &
+    ensureBuilding(scene_graph::SceneGraph &sceneGraph_inout,
+                   int                      buildingId_in);
+
+/*!
+ * @brief           Adds a storey to building 0 of a scene graph, creating the
+ *                  building when the graph has none. A storey whose
  *                  id is negative or already held in the map is given the
  *                  next free id (a message is printed). Does not lock: the
  *                  caller holds the SemanticsManager graph mutex.

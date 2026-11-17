@@ -10,6 +10,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/queries/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/snapshots/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/ensureBuilding.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findFloorInBuildings.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/flagRoomBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasLiveRoomLink.cc

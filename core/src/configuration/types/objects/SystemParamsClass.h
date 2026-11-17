@@ -30,6 +30,7 @@
  */
 
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "scene_understanding/scene_graph/environment/objects/StartEnvironmentEnum.h"
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -1051,7 +1052,8 @@ class SystemParams
     RoomTracking roomTracking;
 
     /*!
-     * @brief           Timing of the semantics manager's cycle.
+     * @brief           Settings of the semantics manager: cycle timing and the
+     *                  kind of place the mission starts in.
      */
     struct SemanticsManager
     {
@@ -1060,10 +1062,17 @@ class SystemParams
          *                  a cycle that runs longer is followed by the next
          *                  one after a 1 ms yield.
          */
-        double runInterval_s = 3.0;
+        double                        runInterval_s = 3.0;
+        /*!
+         * @brief           Where the robot starts. Indoor creates building 0,
+         *                  floor 0 and room 0 at the start; outdoor creates
+         *                  the environment node only.
+         */
+        scene_graph::StartEnvironment startEnvironment =
+            scene_graph::StartEnvironment::START_ENVIRONMENT_INDOOR;
     };
     /*!
-     * @brief           Semantics manager cycle settings.
+     * @brief           Semantics manager settings.
      */
     SemanticsManager semanticsManager;
 

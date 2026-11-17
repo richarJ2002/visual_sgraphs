@@ -87,6 +87,25 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
     }
     if (currentMapAllFloors.empty())
     {
+        /* An outdoor start has no storey until a room exists to put in it. */
+        std::vector<semantic::Room *> detectedRooms{};
+        if (p_sysParams->semanticsManager.startEnvironment ==
+            scene_graph::StartEnvironment::START_ENVIRONMENT_OUTDOOR)
+        {
+            if (getMapDetectedRoomsInIdOrder(currentMapId, detectedRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapDetectedRoomsInIdOrder returned a "
+                             "failure status; continuing as before.",
+                             __func__);
+            }
+            if (detectedRooms.empty())
+            {
+                return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+            }
+        }
+
         /* A reset can reach this update before the new map has a usable
          * camera pose. The new floor takes a fresh identity and carries no
          * prior-map geometry. */

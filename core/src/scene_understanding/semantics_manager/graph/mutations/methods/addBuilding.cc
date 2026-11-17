@@ -17,34 +17,42 @@
  */
 
 /*!
- * @file            seedCurrentRoomFromActiveMapForTest.cc
+
+/*!
+ * @file            addBuilding.cc
  *
- * @brief           Implements
- *                  SemanticsManager::seedCurrentRoomFromActiveMapForTest(),
- *                  declared in SemanticsManager.h.
+ * @brief           Implements SemanticsManager::addBuilding(), declared in
+ *                  semantics_manager/objects/SemanticsManagerClass.h.
  */
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
-#include "map_state/map/map.h"
-#include <rclcpp/logging.hpp>
+
+#include <map>
+#include <mutex>
+#include <shared_mutex>
+
+#include "scene_understanding/semantics_manager/graph/private_functions/private_functions.h"
 
 namespace vs_graphs
 {
 namespace core
 {
 
-SemanticsManagerStatus
-    SemanticsManager::seedCurrentRoomFromActiveMapForTest(map::Map *p_activeMap_in)
+SemanticsManagerStatus SemanticsManager::addBuilding(unsigned long mapId_in,
+                                                     int buildingId_in)
 {
-    if (seedCurrentRoomFromActiveMap(p_activeMap_in) !=
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(mapId_in,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: seedCurrentRoomFromActiveMap returned a failure "
-                     "status although it cannot fail; continuing as before.",
-                     __func__);
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND;
     }
 
+    static_cast<void>(ensureBuilding(*p_sceneGraph, buildingId_in));
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

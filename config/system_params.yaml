@@ -10,7 +10,7 @@
 # sem_seg:                      Semantic segmentation parameters               #
 # room_seg:                     Room segmentation parameters                 #
 # room_tracking:                Room-tracking state machine                    #
-# semantics_manager:            Semantic cycle timing                          #
+# semantics_manager:            Semantic cycle timing, start environment       #
 # candidate_gen:                Candidate generation & topology              #
 # verification:                 Geometric verification gates                   #
 # factor:                     Edge-plane transform noise model                 #
@@ -374,6 +374,10 @@ semantics_manager:
   # Wall-clock period of one semantic cycle (seconds); a cycle that runs
   # longer starts the next one after a 1 ms yield.
   run_interval_s: 3.0
+  # Where the robot starts: "indoor" creates building 0, floor 0 and room 0 at
+  # the start; "outdoor" creates the environment node only, and the building,
+  # floor and room appear when the first room is detected.
+  start_environment: indoor
 
 candidate_gen:
   top_k: 10

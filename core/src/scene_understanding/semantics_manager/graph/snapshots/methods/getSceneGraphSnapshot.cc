@@ -26,6 +26,9 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include <map>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "scene_understanding/semantics_manager/graph/snapshots/private_functions/private_functions.h"
@@ -68,7 +71,16 @@ SemanticsManagerStatus SemanticsManager::getSceneGraphSnapshot(
                      __func__);
     }
 
-    snapshot_out.mapId = mapId_in;
+    snapshot_out.mapId       = mapId_in;
+    snapshot_out.environment = p_sceneGraph->environment;
+    for (const std::pair<const int, std::unique_ptr<scene_graph::Building>>
+             &buildingEntry : p_sceneGraph->buildings)
+    {
+        snapshot_out.buildings.emplace_back();
+        captureBuildingEntry(buildingEntry.first,
+                             *buildingEntry.second,
+                             snapshot_out.buildings.back());
+    }
     snapshot_out.floors.resize(floors.size());
     for (std::size_t floorIndex = 0U; floorIndex < floors.size(); ++floorIndex)
     {

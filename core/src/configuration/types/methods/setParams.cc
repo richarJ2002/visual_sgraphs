@@ -423,6 +423,31 @@ SystemParamsStatus
         semanticsManager.runInterval_s =
             config["semantics_manager"]["run_interval_s"].as<double>();
 
+        /* Absent key: the mission starts indoors. Any other text than
+         * "indoor" or "outdoor" is rejected here, at the boundary. */
+        const YAML::Node startEnvironmentNode =
+            config["semantics_manager"]["start_environment"];
+        const std::string startEnvironmentText =
+            startEnvironmentNode ? startEnvironmentNode.as<std::string>()
+                                 : std::string("indoor");
+        if (startEnvironmentText == "indoor")
+        {
+            semanticsManager.startEnvironment =
+                scene_graph::StartEnvironment::START_ENVIRONMENT_INDOOR;
+        }
+        else if (startEnvironmentText == "outdoor")
+        {
+            semanticsManager.startEnvironment =
+                scene_graph::StartEnvironment::START_ENVIRONMENT_OUTDOOR;
+        }
+        else
+        {
+            throw std::invalid_argument(
+                "semantics_manager.start_environment must be 'indoor' or "
+                "'outdoor', got '" +
+                startEnvironmentText + "'");
+        }
+
         this->candidateGen.topK =
             config["candidate_gen"]["top_k"].as<unsigned int>();
         this->candidateGen.candidatePairCap =

@@ -27,9 +27,11 @@
 #ifndef VS_GRAPHS_SEMANTICS_MANAGER_GRAPH_SNAPSHOTS_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_SEMANTICS_MANAGER_GRAPH_SNAPSHOTS_PRIVATE_FUNCTIONS_H
 
+#include "scene_understanding/scene_graph/building/objects/BuildingStruct.h"
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/semantics_manager/objects/SceneGraphBuildingEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphFloorEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphPassageEntryStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphRoomEntryStruct.h"
@@ -78,6 +80,23 @@ void capturePassageEntry(semantic::Passage      *p_passage_inout,
  */
 void captureFloorEntry(const semantic::Floor *p_floor_in,
                        SceneGraphFloorEntry  &floorEntry_out);
+
+/*!
+ * @brief           Copies one building into plain data. The caller holds the
+ *                  building's graph lock.
+ *
+ * @param[in]       buildingId_in
+ *                  Id the building is keyed by.
+ *
+ * @param[in]       building_in
+ *                  Building to copy.
+ *
+ * @param[out]      buildingEntry_out
+ *                  The copy; storeys flagged bad are left out.
+ */
+void captureBuildingEntry(int                          buildingId_in,
+                          const scene_graph::Building &building_in,
+                          SceneGraphBuildingEntry     &buildingEntry_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

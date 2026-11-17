@@ -84,13 +84,8 @@ void insertFloor(scene_graph::SceneGraph         &sceneGraph_inout,
             std::max(sceneGraph_inout.nextAvailableFloorId, floorId + 1);
     }
 
-    std::unique_ptr<scene_graph::Building> &p_building =
-        sceneGraph_inout.buildings[0];
-    if (p_building == nullptr)
-    {
-        p_building = std::make_unique<scene_graph::Building>();
-    }
-    p_building->floors.insert_or_assign(floorId, std::move(p_floor_in));
+    ensureBuilding(sceneGraph_inout, 0)
+        .floors.insert_or_assign(floorId, std::move(p_floor_in));
 }
 
 } /* namespace core */

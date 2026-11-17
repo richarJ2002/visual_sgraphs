@@ -1,5 +1,6 @@
 # SemanticsManager object sources; the scene graph operations are built from
-# the graph subpackage.
+# the graph and bootstrap subpackages.
+include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
@@ -27,7 +28,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariantForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageTopologyInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforceUniqueWallOwnership.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/ensureActiveMapBootstrapHierarchy.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/ensureActiveMapBootstrapHierarchyForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerification.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
@@ -66,8 +66,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/seedCurrentRoomFromActiveMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/seedCurrentRoomFromActiveMapForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentRoomIdForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomTrackerPendingPublishHookForTest.cc
@@ -105,6 +103,7 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc
+  ${VS_GRAPHS_SEMANTICSMANAGER_BOOTSTRAP_SOURCES}
   ${VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES}
 )
 

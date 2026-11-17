@@ -504,7 +504,8 @@ class SemanticsManager
         NO_ACTIVE_MAP,
         NO_USABLE_CAMERA_POSE,
         ROOM_CREATION_FAILED,
-        FLOOR_CREATION_FAILED
+        FLOOR_CREATION_FAILED,
+        AWAITING_FIRST_ROOM
     };
 
     /*!
@@ -573,7 +574,11 @@ class SemanticsManager
     /*!
      * @brief           Ensures one real bootstrap room and canonical floor for
      *                  the active map before any semantic inference is
-     *                  performed.
+     *                  performed. After a tracking loss it restores the last
+     *                  known room and its passages. An outdoor start
+     *                  (semantics_manager.start_environment) creates nothing
+     *                  until a room has been detected; the building, storey
+     *                  and current room then follow.
      *
      * @param[out]      bootstrapResult_out
      *                  Typed initialization result, also emitted through
@@ -592,14 +597,106 @@ class SemanticsManager
             &cameraPositionOverride_world_m_in = std::nullopt);
 
     /*!
-     * @brief           Seeds currentRoomId from the first confirmed room of the
-     *                  active map, only while no current room is resolved yet.
+     * @brief           Chooses where the bootstrap of a map without a room
+     *                  places its first room: the explicit override, else the
+     *                  active map's camera centre, else the centroid of the
+     *                  room the robot was lost in.
      *
      * @param[in]       p_activeMap_in
-     *                  Active map whose room set provides the seed room.
+     *                  Active map; the camera centre counts only when it was
+     *                  taken in this map; borrowed.
+     *
+     * @param[in]       cameraPositionOverride_world_m_in
+     *                  Explicit position in the map frame, metres; ignored
+     *                  when absent or not finite.
+     *
+     * @param[in]       recoveryContext_in
+     *                  Saved context of the room the robot was lost in, when
+     *                  there is one.
+     *
+     * @return          Position in the map frame, metres, or nullopt when no
+     *                  usable position exists yet.
      */
-    [[nodiscard]] SemanticsManagerStatus
-        seedCurrentRoomFromActiveMap(map::Map *p_activeMap_in);
+    [[nodiscard]] std::optional<Eigen::Vector3d> resolveBootstrapCameraPosition(
+        map::Map                             *p_activeMap_in,
+        const std::optional<Eigen::Vector3d> &cameraPositionOverride_world_m_in,
+        const std::optional<semantic::RoomContextSnapshot> &recoveryContext_in)
+        const;
+
+    /*!
+     * @brief           Creates the first room of a map: a confirmed room with
+     *                  a fresh id, added to the graph, unobserved boundary, and
+     *                  the visited state of the lost room when it recovers one.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       cameraPosition_world_m_in
+     *                  Where the room is placed, in the map frame, metres.
+     *
+     * @param[in]       recoveryContext_in
+     *                  Saved context of the room the robot was lost in, when
+     *                  this room replaces it.
+     *
+     * @return          The new room; borrowed, owned by the scene graph.
+     *                  nullptr when it could not be created.
+     */
+    [[nodiscard]] semantic::Room *createBootstrapRoom(
+        unsigned long          mapId_in,
+        const Eigen::Vector3d &cameraPosition_world_m_in,
+        const std::optional<semantic::RoomContextSnapshot> &recoveryContext_in);
+
+    /*!
+     * @brief           Returns the canonical storey of a map. When the map has
+     *                  none, creates building 0 and then the storey.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @return          The storey; borrowed, owned by the scene graph. nullptr
+     *                  when no storey exists and none could be created.
+     */
+    [[nodiscard]] semantic::Floor *ensureBootstrapFloor(unsigned long mapId_in);
+
+    /*!
+     * @brief           Makes a room the current room of the manager and of the
+     *                  atlas, marks it visited and, once per map, records it
+     *                  as the room the map started with.
+     *
+     * @param[in,out]   p_activeMap_inout
+     *                  Active map that records its starting room; borrowed.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Room to adopt; borrowed, must not be null.
+     */
+    void adoptBootstrapRoom(map::Map       *p_activeMap_inout,
+                            semantic::Room *p_room_inout);
+
+    /*!
+     * @brief           Restores the passages of the room the robot was lost in
+     *                  into the new map: a passage that exists is reused, any
+     *                  other is created as a recovery proxy, and each is linked
+     *                  to the recovered room.
+     *
+     * @param[in,out]   p_activeMap_inout
+     *                  Active map; borrowed.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       recoveryContext_in
+     *                  Saved context of the lost room.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Recovered room in the new map; borrowed.
+     *
+     * @return          Number of passages restored.
+     */
+    [[nodiscard]] std::size_t restoreRecoveryPassages(
+        map::Map                            *p_activeMap_inout,
+        unsigned long                        mapId_in,
+        const semantic::RoomContextSnapshot &recoveryContext_in,
+        semantic::Room                      *p_room_inout);
 
     /*!
      * @brief           Advances the room-state machine once per semantic
@@ -1600,14 +1697,6 @@ class SemanticsManager
         enforcePassageSideInvariantForTest(void);
 
     /*!
-     * @brief           Test-only direct call into the private current-room
-     *                  fallback seed. Callers inspect the result via
-     *                  getCurrentRoomId().
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        seedCurrentRoomFromActiveMapForTest(map::Map *p_activeMap_in);
-
-    /*!
      * @brief           Test-only direct call into the private empty-cloud-safe
      *                  ground plane height computation (B1 regression
      *                  coverage).
@@ -1697,12 +1786,13 @@ class SemanticsManager
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Adds an empty scene graph for a SLAM map: one building
-     *                  (id 0) and no storeys, rooms or passages, replacing any
+     * @brief           Adds an empty scene graph for a SLAM map: its
+     *                  environment node (start type from the configuration) and
+     *                  no buildings, storeys, rooms or passages, replacing any
      *                  scene graph it had (that map's nodes are retired for the
      *                  next sweep, not freed here). Used by the atlas when it
      *                  creates or loads a map. Takes the new graph's lock
-     * exclusive before registering it, so it never waits.
+     *                  exclusive before registering it, so it never waits.
      *
      * @param[in,out]   map_inout
      *                  SLAM map the scene graph belongs to; only its id is
@@ -1900,6 +1990,24 @@ class SemanticsManager
         movePassage(unsigned long      sourceMapId_in,
                     unsigned long      destinationMapId_in,
                     semantic::Passage *p_passage_in);
+
+    /*!
+     * @brief           Creates an empty building in a map's scene graph when it
+     *                  has none with that id; an existing building is left as
+     *                  it is. Takes the graph lock exclusive.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       buildingId_in
+     *                  Id of the building; the graph holds building 0 only.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the registry
+     *                  has no scene graph for the id (nothing is written).
+     */
+    [[nodiscard]] SemanticsManagerStatus addBuilding(unsigned long mapId_in,
+                                                     int buildingId_in);
 
     /*!
      * @brief           Adds a new storey to building 0 of a map, keyed by its

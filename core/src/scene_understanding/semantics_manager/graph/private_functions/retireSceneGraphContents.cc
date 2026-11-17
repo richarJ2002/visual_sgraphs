@@ -54,7 +54,7 @@ void retireSceneGraphContents(scene_graph::SceneGraph   &sceneGraph_inout,
     sceneGraph_inout.candidateRooms.clear();
     sceneGraph_inout.passages.clear();
 
-    /* Buildings stay: building 0 is part of every scene graph. */
+    /* Buildings stay: a building, once created, is part of the graph. */
     for (std::pair<const int, std::unique_ptr<scene_graph::Building>>
              &buildingEntry : sceneGraph_inout.buildings)
     {

@@ -84,12 +84,11 @@ SemanticsManagerStatus SemanticsManager::addSceneGraph(map::Map &map_inout)
         p_sceneGraph->nextAvailableFloorId = 0;
         p_sceneGraph->p_map                = &map_inout;
 
-        /* One building per map until buildings are detected. */
-        if (p_sceneGraph->buildings.find(0) == p_sceneGraph->buildings.end())
-        {
-            p_sceneGraph->buildings[0] =
-                std::make_unique<scene_graph::Building>();
-        }
+        /* The environment is the top node of every graph. Its buildings are
+         * created by the bootstrap, so an outdoor start has none yet. */
+        p_sceneGraph->environment = scene_graph::Environment{};
+        p_sceneGraph->environment.startEnvironment =
+            p_sysParams->semanticsManager.startEnvironment;
     }
     std::unique_lock<std::shared_mutex> registryLock(registryMutex);
     sceneGraphs[mapId] = p_sceneGraph;
