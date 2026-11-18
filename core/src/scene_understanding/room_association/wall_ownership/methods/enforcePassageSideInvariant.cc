@@ -301,25 +301,25 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const bool holdsRoomPassage = std::any_of(
-                roomPassages.begin(),
-                roomPassages.end(),
-                [p_wall](semantic::Passage *p_roomPassage)
+            bool holdsRoomPassage = false;
+            for (semantic::Passage *p_roomPassage : roomPassages)
+            {
+                bool                            roomPassageIsBad{true};
+                std::vector<geometric::Plane *> associateWalls{};
+                if (p_roomPassage != nullptr &&
+                    p_roomPassage->isBad(roomPassageIsBad) ==
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS &&
+                    !roomPassageIsBad &&
+                    p_roomPassage->getAssociateWalls(associateWalls) ==
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS &&
+                    std::find(associateWalls.begin(),
+                              associateWalls.end(),
+                              p_wall) != associateWalls.end())
                 {
-                    bool                            roomPassageIsBad{true};
-                    std::vector<geometric::Plane *> associateWalls{};
-                    return p_roomPassage != nullptr &&
-                           p_roomPassage->isBad(roomPassageIsBad) ==
-                               semantic::PassageStatus::
-                                   PASSAGE_STATUS_SUCCESS &&
-                           !roomPassageIsBad &&
-                           p_roomPassage->getAssociateWalls(associateWalls) ==
-                               semantic::PassageStatus::
-                                   PASSAGE_STATUS_SUCCESS &&
-                           std::find(associateWalls.begin(),
-                                     associateWalls.end(),
-                                     p_wall) != associateWalls.end();
-                });
+                    holdsRoomPassage = true;
+                    break;
+                }
+            }
 
             bool isWallFaceForeignToRoom2{};
             if (!holdsRoomPassage &&

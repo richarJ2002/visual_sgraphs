@@ -53,6 +53,9 @@ SemanticsManagerStatus tryCloseWallLoop(
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
+    /* Lambda kept: std::sort needs a comparator that reads the room
+     * centroid, and an unstable sort over precomputed angle keys could order
+     * equal-angle walls differently, which changes the closed loop. */
     std::sort(
         wallSegments_in.begin(),
         wallSegments_in.end(),
@@ -142,15 +145,19 @@ SemanticsManagerStatus tryCloseWallLoop(
                  {currentWall.wallEnd_world_m, nextWall.wallStart_world_m},
                  {currentWall.wallEnd_world_m, nextWall.wallEnd_world_m}}};
 
+        /* First endpoint pair with the smallest gap. */
         const std::pair<Eigen::Vector2d, Eigen::Vector2d>
-            *p_nearestEndpointPair = std::min_element(
-                endpointPairs.begin(),
-                endpointPairs.end(),
-                [](const auto &firstPair, const auto &secondPair)
-                {
-                    return (firstPair.first - firstPair.second).squaredNorm() <
-                           (secondPair.first - secondPair.second).squaredNorm();
-                });
+            *p_nearestEndpointPair = &endpointPairs[0];
+        for (const std::pair<Eigen::Vector2d, Eigen::Vector2d> &endpointPair :
+             endpointPairs)
+        {
+            if ((endpointPair.first - endpointPair.second).squaredNorm() <
+                (p_nearestEndpointPair->first - p_nearestEndpointPair->second)
+                    .squaredNorm())
+            {
+                p_nearestEndpointPair = &endpointPair;
+            }
+        }
 
         if ((p_nearestEndpointPair->first - p_nearestEndpointPair->second)
                 .norm() <= topologyParameters_in.maximumCornerGap_m)

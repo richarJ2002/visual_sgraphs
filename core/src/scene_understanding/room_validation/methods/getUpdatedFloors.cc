@@ -232,25 +232,26 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
     }
 
     /* Remove all invalid rooms */
-    confirmedRooms.erase(
-        std::remove_if(
-            confirmedRooms.begin(),
-            confirmedRooms.end(),
-            [](vs_graphs::core::semantic::Room *p_room)
-            {
-                bool roomIsBad{};
-                if (!(p_room == nullptr) &&
-                    p_room->isBad(roomIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return p_room == nullptr || roomIsBad;
-            }),
-        confirmedRooms.end());
+    std::vector<vs_graphs::core::semantic::Room *> liveRooms{};
+    liveRooms.reserve(confirmedRooms.size());
+    for (vs_graphs::core::semantic::Room *p_room : confirmedRooms)
+    {
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!(p_room == nullptr || roomIsBad))
+        {
+            liveRooms.push_back(p_room);
+        }
+    }
+    confirmedRooms.swap(liveRooms);
 
     /* Keep hierarchy backlinks current even when no valid rooms remain. */
     if (confirmedRooms.empty())
