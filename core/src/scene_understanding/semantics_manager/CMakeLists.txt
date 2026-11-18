@@ -7,15 +7,20 @@ include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/captureMonitorSnapshot.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/logPipelineHeartbeat.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/logSemanticDiagnostics.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reportMonitorEvaluation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/runCycleStages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/verifyMergeCandidates.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildFiniteWallSegment2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceMatchSettings.cc

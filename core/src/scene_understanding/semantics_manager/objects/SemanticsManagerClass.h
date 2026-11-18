@@ -34,6 +34,7 @@
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
 #include "scene_understanding/semantic/semantic_candidates/semantic_candidates.h"
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
+#include "scene_understanding/semantic/semantic_graph_snapshot/objects/SemanticGraphSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include "scene_understanding/semantics_manager/objects/AbsorbedSceneGraphContentsStruct.h"
 #include "scene_understanding/semantics_manager/objects/FarSideProspectiveMatchStruct.h"
@@ -959,6 +960,79 @@ class SemanticsManager
                           utils::utils::TwinFaceCheck decidingCheck_in,
                           double                      decidingValue_in,
                           double                      faceSeparation_m_in);
+
+    /* ---------------------------------------------------------------------- *
+     * CYCLE SECTIONS (semantics_manager/methods/). Called by run() in this
+     * order; all but reportMonitorEvaluation() run inside the cycle's
+     * exclusive graph lock.
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Runs the cycle's stages in pipeline order: temporal
+     *                  map reset, plane intake, bootstrap hierarchy, plane
+     *                  checks, plane fusion, passage detection, traversal
+     *                  evidence, room association, wall face pairs, room
+     *                  validation and the room-state machine.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus runCycleStages(void);
+
+    /*!
+     * @brief           Generates merge candidates from the room context
+     *                  history and verifies the best one; the verdict goes to
+     *                  the room tracker and never triggers a merge.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus verifyMergeCandidates(void);
+
+    /*!
+     * @brief           Prints the SG_PIPELINE heartbeat record of the current
+     *                  map: plane, wall, room, passage, floor and skeleton
+     *                  counts of this completed cycle.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus logPipelineHeartbeat(void);
+
+    /*!
+     * @brief           Captures the pointer-free semantic snapshot with the
+     *                  manager's unresolved wall hypotheses, and the change
+     *                  index of the current map when the snapshot names it.
+     *
+     * @param[out]      snapshot_out
+     *                  Snapshot of the atlas.
+     *
+     * @param[out]      currentMapRevision_out
+     *                  Change index of the snapshot's current map, or empty.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        captureMonitorSnapshot(semantic::SemanticGraphSnapshot &snapshot_out,
+                               std::optional<int> &currentMapRevision_out);
+
+    /*!
+     * @brief           Evaluates the snapshot outside the graph lock: axiom
+     *                  report, map completeness and digests, then updates the
+     *                  report cache and logs the diagnostics.
+     *
+     * @param[in]       snapshot_in
+     *                  Snapshot captured at the end of the cycle.
+     *
+     * @param[in]       semanticCycle_in
+     *                  Number of the cycle.
+     *
+     * @param[in]       currentMapRevision_in
+     *                  Change index of the snapshot's current map, or empty.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus reportMonitorEvaluation(
+        const semantic::SemanticGraphSnapshot &snapshot_in,
+        std::uint64_t                          semanticCycle_in,
+        const std::optional<int>              &currentMapRevision_in);
 
     /* ---------------------------------------------------------------------- *
      * ROOM ASSOCIATION STAGE (pipeline stage 5, room_association/). Called
