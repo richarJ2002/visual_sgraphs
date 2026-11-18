@@ -24,7 +24,6 @@
  * semantic_segmentation/objects/SemanticSegmentationClass.h.
  */
 
-#include "mapping/geometry_helpers/utils.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
@@ -42,20 +41,11 @@ namespace semantic_segmentation
 
 SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_classCloudPtrs_in,
-    std::vector<std::vector<
-        std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
-        &planesFromClassClouds_out)
+    std::vector<PlanePatch> &planesFromClassClouds_out)
 {
     PROFILE_FUNCTION();
-    /*!
-     * We have a vector, where each element in the vector represents a class.
-     * Then, for each class we have a vector of pairs. These pairs store
-     * the pointer to a point clouds points, and the equation of the plane that
-     * makes the plane.
-     */
-    std::vector<std::vector<
-        std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
-        p_clsPlanes;
+    /* Patches in class order, each carrying its class as the label guess */
+    std::vector<PlanePatch> planePatches;
 
     /* For each class of points, iterate through them */
     for (size_t classCloudPtrIndex = 0;
@@ -117,16 +107,10 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
         p_filteredCloud->width = static_cast<uint32_t>(p_filteredCloud->size());
         p_filteredCloud->height = 1;
 
-        /*!
-         * Skip point clouds which are empty or have invalid width/height. The
-         * class still gets an empty entry: the output index is the class id,
-         * and a missing entry would shift every later class down by one (for
-         * example, walls read as ground in a frame with no floor in view).
-         */
+        /* Skip point clouds which are empty or have invalid width/height */
         if (p_filteredCloud->width == 0 || p_filteredCloud->height == 0 ||
             p_filteredCloud->empty())
         {
-            p_clsPlanes.emplace_back();
             continue;
         }
 
@@ -158,9 +142,25 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
                              __func__);
             }
         }
-        p_clsPlanes.push_back(p_extractedPlanes);
+
+        geometric::Plane::PlaneVariant classLabel{};
+        if (utils::utils::Utils::getPlaneTypeFromClassId(
+                static_cast<int>(classCloudPtrIndex),
+                classLabel) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            /* getPlaneTypeFromClassId cannot fail; continue as before. */
+        }
+        for (std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>
+                 &extractedPlane : p_extractedPlanes)
+        {
+            PlanePatch planePatch{};
+            planePatch.p_supportCloud_camera_m = extractedPlane.first;
+            planePatch.planeEquation_camera    = extractedPlane.second;
+            planePatch.planeLabel              = classLabel;
+            planePatches.push_back(planePatch);
+        }
     }
-    planesFromClassClouds_out = p_clsPlanes;
+    planesFromClassClouds_out = std::move(planePatches);
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 

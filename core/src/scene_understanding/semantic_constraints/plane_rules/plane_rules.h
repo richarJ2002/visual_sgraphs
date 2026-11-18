@@ -20,7 +20,8 @@
  * @file            plane_rules.h
  *
  * @brief           Module header of the plane rules: the checks that judge a
- *                  plane's label against its geometry.
+ *                  plane's label against its geometry, and the rules that
+ *                  give a plane its label from its geometry.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_CONSTRAINTS_PLANE_RULES_H

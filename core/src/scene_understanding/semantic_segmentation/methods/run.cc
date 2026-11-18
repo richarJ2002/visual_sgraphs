@@ -397,13 +397,11 @@ void SemanticSegmentation::run()
         /*!
          * Extract planes from segmented point cloud.
          *
-         * @note            Does not define the semantic type the plane is
+         * @note            Each patch carries its class only as a guess;
+         *                  applyPlaneCheckpoint() decides the label.
          */
-        std::vector<
-            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                  Eigen::Vector4d>>>
-            p_clsPlanes{};
-        if (getPlanesFromClassClouds(p_clsCloudPtrs, p_clsPlanes) !=
+        std::vector<PlanePatch> planePatches{};
+        if (getPlanesFromClassClouds(p_clsCloudPtrs, planePatches) !=
             SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -414,11 +412,11 @@ void SemanticSegmentation::run()
         }
 
         /*!
-         * Drop failed patches (points, fit, orientation, wall size) before
-         * the semantic lock, so they can neither match a mapped plane nor
-         * vote.
+         * Label the patches from geometry and drop failed ones (points, fit,
+         * no label, wall size) before the semantic lock, so they can neither
+         * match a mapped plane nor vote.
          */
-        if (applyPlaneCheckpoint(p_thisKeyFrame, p_clsPlanes) !=
+        if (applyPlaneCheckpoint(p_thisKeyFrame, planePatches) !=
             SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -515,7 +513,7 @@ void SemanticSegmentation::run()
             }
 
             /* Add the planes to Atlas. */
-            if (updatePlaneData(p_thisKeyFrame, p_clsPlanes) !=
+            if (updatePlaneData(p_thisKeyFrame, planePatches) !=
                 SemanticSegmentationStatus::
                     SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
             {

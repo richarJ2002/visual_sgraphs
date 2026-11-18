@@ -19,19 +19,25 @@
 /*!
  * @file            public_functions.h
  *
- * @brief           Declares the plane rules (one check per file, listed in
- *                  plane_rule_table.h) and the function that applies them.
+ * @brief           Declares the plane rules (one check per file): the reject
+ *                  rules listed in plane_rule_table.h, the label rules listed
+ *                  in plane_label_rule_table.h, and the functions that apply
+ *                  each table.
  *
- * @note            Every rule is an infallible predicate with the PlaneRule
- *                  signature. A rule accepts a plane its label does not
- *                  concern and a plane whose evidence for it is missing. The
- *                  comparisons are written as "not over the limit" so that a
- *                  NaN measure is accepted, as the checks always did.
+ * @note            Every reject rule is an infallible predicate with the
+ *                  PlaneRule signature. A reject rule accepts a plane its
+ *                  label does not concern and a plane whose evidence for it
+ *                  is missing; its comparisons are written as "not over the
+ *                  limit" so that a NaN measure is accepted, as the checks
+ *                  always did. Every label rule has the PlaneLabelRule
+ *                  signature and gives no label for a NaN measure.
  *                  Thread-safe: the rules read only their arguments.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_CONSTRAINTS_PLANE_RULES_PUBLIC_FUNCTIONS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_CONSTRAINTS_PLANE_RULES_PUBLIC_FUNCTIONS_H
+
+#include <optional>
 
 #include "configuration/types/types.h"
 #include "scene_understanding/semantic_constraints/plane_rules/objects/PlaneRuleInputStruct.h"
@@ -95,6 +101,65 @@ namespace semantic_constraints
 [[nodiscard]] bool
     isGroundWithinMainStep(const PlaneRuleInput      &planeInput_in,
                            const types::SystemParams &systemParams_in);
+
+/*!
+ * @brief           Upright label rule: a plane whose normal leans along up by
+ *                  at most plane_checkpoint.max_tilt_wall (absolute part of
+ *                  the normal along up) is upright.
+ *
+ * @param[in]       planeInput_in
+ *                  Plane evidence; needs hasOrientation. planeLabel is the
+ *                  segmenter's guess.
+ *
+ * @param[in]       systemParams_in
+ *                  System parameters (planeCheckpoint.maxTiltWall).
+ *
+ * @return          DOOR or WINDOW when that is the guess, otherwise WALL, for
+ *                  an upright plane; no value for any other plane.
+ */
+[[nodiscard]] std::optional<geometric::Plane::PlaneVariant>
+    labelUprightPlane(const PlaneRuleInput      &planeInput_in,
+                      const types::SystemParams &systemParams_in);
+
+/*!
+ * @brief           Level label rule: a plane whose normal leans off up by at
+ *                  most plane_checkpoint.max_tilt_ground (length of the
+ *                  normal's part across up) is level.
+ *
+ * @param[in]       planeInput_in
+ *                  Plane evidence; needs hasOrientation and a normal facing
+ *                  the observing camera.
+ *
+ * @param[in]       systemParams_in
+ *                  System parameters (planeCheckpoint.maxTiltGround).
+ *
+ * @return          GROUND when the normal points along up, CEILING when it
+ *                  points against up, for a level plane; no value for any
+ *                  other plane.
+ */
+[[nodiscard]] std::optional<geometric::Plane::PlaneVariant>
+    labelLevelPlane(const PlaneRuleInput      &planeInput_in,
+                    const types::SystemParams &systemParams_in);
+
+/*!
+ * @brief           Gives a plane its label from its geometry with the plane
+ *                  label rule table: geometry decides, the segmenter's label
+ *                  is only the guess.
+ *
+ * @param[in]       planeInput_in
+ *                  Plane evidence; planeLabel is the segmenter's guess
+ *                  (UNDEFINED without a segmenter).
+ *
+ * @param[in]       systemParams_in
+ *                  System parameters the rules read.
+ *
+ * @return          The first label a rule gives, in table order; UNDEFINED
+ *                  when no rule gives one (a slanted plane or no
+ *                  orientation).
+ */
+[[nodiscard]] geometric::Plane::PlaneVariant
+    assignPlaneLabel(const PlaneRuleInput      &planeInput_in,
+                     const types::SystemParams &systemParams_in);
 
 /*!
  * @brief           Applies every rule of the plane rule table, in table

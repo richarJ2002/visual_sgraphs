@@ -28,8 +28,6 @@
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
-#include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/semantic_constraints/plane_rules/plane_rules.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
 #include "scene_understanding/semantic_segmentation/private_functions/private_functions.h"
@@ -46,9 +44,8 @@ namespace semantic_segmentation
 {
 
 SemanticSegmentationStatus SemanticSegmentation::applyPlaneCheckpoint(
-    keyframe::KeyFrame                                   *p_keyFrame_in,
-    std::vector<std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                      Eigen::Vector4d>>> &p_clsPlanes_inout)
+    keyframe::KeyFrame      *p_keyFrame_in,
+    std::vector<PlanePatch> &planePatches_inout)
 {
     PROFILE_FUNCTION();
     const types::SystemParams::PlaneCheckpoint &checkpointParams =
@@ -81,83 +78,77 @@ SemanticSegmentationStatus SemanticSegmentation::applyPlaneCheckpoint(
         cameraPose_worldToCamera.rotationMatrix().cast<double>() *
         upDirection_world;
 
-    for (std::size_t classId = 0U; classId < p_clsPlanes_inout.size();
-         classId++)
+    std::vector<PlanePatch> keptPatches{};
+    for (PlanePatch &candidatePatch : planePatches_inout)
     {
-        geometric::Plane::PlaneVariant planeLabel{};
-        if (utils::utils::Utils::getPlaneTypeFromClassId(
-                static_cast<int>(classId),
-                planeLabel) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        const std::size_t patchPointCount =
+            candidatePatch.p_supportCloud_camera_m == nullptr
+                ? 0U
+                : candidatePatch.p_supportCloud_camera_m->size();
+        const bool hasEnoughPoints =
+            patchPointCount >= checkpointParams.minimumPointCount;
+
+        double fitRms_m = 0.0;
+        if (hasEnoughPoints &&
+            computePlaneFitRms(candidatePatch.p_supportCloud_camera_m,
+                               candidatePatch.planeEquation_camera,
+                               fitRms_m) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: getPlaneTypeFromClassId returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
+            /* computePlaneFitRms cannot fail; continue as before. */
+        }
+        const bool hasGoodFit =
+            hasEnoughPoints && fitRms_m <= checkpointParams.maximumFitRms_m;
+        if (!hasGoodFit)
+        {
+            continue;
         }
 
-        std::vector<
-            std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>
-            keptPatches{};
-        for (std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>
-                 &candidatePatch : p_clsPlanes_inout[classId])
+        /*!
+         * Geometry decides the label; the incoming one is only the guess.
+         * The label rules use the same tilts as the reject rules, so a
+         * labelled patch also passes the tilt rules for its label. The
+         * normal faces the camera (d >= 0, camera at the origin), which the
+         * level rule needs to tell ground from ceiling.
+         */
+        Eigen::Vector3d planeNormal_camera =
+            candidatePatch.planeEquation_camera.head<3>().normalized();
+        if (candidatePatch.planeEquation_camera(3) < 0.0)
         {
-            const std::size_t patchPointCount =
-                candidatePatch.first == nullptr ? 0U
-                                                : candidatePatch.first->size();
-            const bool hasEnoughPoints =
-                patchPointCount >= checkpointParams.minimumPointCount;
-
-            double fitRms_m = 0.0;
-            if (hasEnoughPoints && computePlaneFitRms(candidatePatch.first,
-                                                      candidatePatch.second,
-                                                      fitRms_m) !=
-                                       SemanticSegmentationStatus::
-                                           SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-            {
-                /* computePlaneFitRms cannot fail; continue as before. */
-            }
-            const bool hasGoodFit =
-                hasEnoughPoints && fitRms_m <= checkpointParams.maximumFitRms_m;
-
-            /*!
-             * The tilt rules of the plane rule table, the same the map-level
-             * re-check applies, judge the patch in the camera frame. No
-             * height is given, so the ground step rule does not apply here.
-             */
-            bool isOrientedAsLabelled = false;
-            if (hasGoodFit)
-            {
-                semantic_constraints::PlaneRuleInput patchRuleInput{};
-                patchRuleInput.planeLabel     = planeLabel;
-                patchRuleInput.hasOrientation = true;
-                patchRuleInput.planeNormal_common =
-                    candidatePatch.second.head<3>().normalized();
-                patchRuleInput.upDirection_common = upDirection_camera;
-                isOrientedAsLabelled =
-                    semantic_constraints::arePlaneRulesSatisfied(patchRuleInput,
-                                                                 *p_sysParams);
-            }
-
-            bool isLargeEnough = isOrientedAsLabelled;
-            if (isOrientedAsLabelled &&
-                planeLabel == geometric::Plane::PlaneVariant::WALL &&
-                checkWallPatchSize(checkpointParams.wallSize,
-                                   candidatePatch.first,
-                                   isLargeEnough) !=
-                    SemanticSegmentationStatus::
-                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-            {
-                /* checkWallPatchSize cannot fail; continue as before. */
-            }
-
-            if (isLargeEnough)
-            {
-                keptPatches.push_back(candidatePatch);
-            }
+            planeNormal_camera = -planeNormal_camera;
         }
-        p_clsPlanes_inout[classId] = std::move(keptPatches);
+        semantic_constraints::PlaneRuleInput patchRuleInput{};
+        patchRuleInput.planeLabel         = candidatePatch.planeLabel;
+        patchRuleInput.hasOrientation     = true;
+        patchRuleInput.planeNormal_common = planeNormal_camera;
+        patchRuleInput.upDirection_common = upDirection_camera;
+        const geometric::Plane::PlaneVariant geometryLabel =
+            semantic_constraints::assignPlaneLabel(patchRuleInput,
+                                                   *p_sysParams);
+        if (geometryLabel == geometric::Plane::PlaneVariant::UNDEFINED)
+        {
+            continue;
+        }
+        candidatePatch.planeLabel = geometryLabel;
+
+        bool isLargeEnough = true;
+        if (geometryLabel == geometric::Plane::PlaneVariant::WALL &&
+            checkWallPatchSize(checkpointParams.wallSize,
+                               candidatePatch.p_supportCloud_camera_m,
+                               isLargeEnough) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            /* checkWallPatchSize cannot fail; continue as before. */
+        }
+
+        if (isLargeEnough)
+        {
+            keptPatches.push_back(candidatePatch);
+        }
     }
+    planePatches_inout = std::move(keptPatches);
 
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }

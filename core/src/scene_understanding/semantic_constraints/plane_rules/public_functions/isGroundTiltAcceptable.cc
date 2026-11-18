@@ -22,6 +22,7 @@
  * @brief           Implements the ground tilt plane rule.
  */
 
+#include "scene_understanding/semantic_constraints/plane_rules/private_functions/private_functions.h"
 #include "scene_understanding/semantic_constraints/plane_rules/public_functions/public_functions.h"
 
 namespace vs_graphs
@@ -42,13 +43,9 @@ bool isGroundTiltAcceptable(const PlaneRuleInput      &planeInput_in,
         return true;
     }
 
-    /* The tilt of a level plane is the length of its normal's part across
-     * up; the normal's sign is irrelevant. */
-    const double upComponent =
-        planeInput_in.planeNormal_common.dot(planeInput_in.upDirection_common);
-    const double groundTilt = (planeInput_in.planeNormal_common -
-                               upComponent * planeInput_in.upDirection_common)
-                                  .norm();
+    const double groundTilt =
+        computeLevelTilt(planeInput_in.planeNormal_common,
+                         planeInput_in.upDirection_common);
     return !(groundTilt > systemParams_in.planeCheckpoint.maxTiltGround);
 }
 

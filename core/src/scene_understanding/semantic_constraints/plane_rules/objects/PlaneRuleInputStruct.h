@@ -48,7 +48,8 @@ struct PlaneRuleInput
 {
   public:
     /*!
-     * @brief           Label to be checked against the geometry.
+     * @brief           Label to be checked against the geometry by the reject
+     *                  rules; the segmenter's guess for the label rules.
      */
     geometric::Plane::PlaneVariant planeLabel =
         geometric::Plane::PlaneVariant::UNDEFINED;
@@ -60,9 +61,11 @@ struct PlaneRuleInput
     bool hasOrientation = false;
 
     /*!
-     * @brief           Unit plane normal; its sign is irrelevant. Expressed in
-     *                  the same frame as upDirection_common (the caller's
-     *                  choice: world for map planes, camera for patches).
+     * @brief           Unit plane normal, expressed in the same frame as
+     *                  upDirection_common (the caller's choice: world for map
+     *                  planes, camera for patches). The reject rules ignore
+     *                  its sign; the label rules need it to face the
+     *                  observing camera.
      */
     Eigen::Vector3d planeNormal_common = Eigen::Vector3d::Zero();
 
