@@ -3848,6 +3848,20 @@ void publishKeyFrameImages(
         return;
     }
 
+    vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
+        vs_graphs::core::types::SystemParamsStatus::
+            SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    const bool isSegmenterOff =
+        p_systemParams->general.modeOfOperation ==
+        vs_graphs::core::types::SystemParams::General::ModeOfOperation::GEO;
+
     /* Inspect every available keyframe */
     for (vs_graphs::core::keyframe::KeyFrame *keyFrame : keyFrames_in)
     {
@@ -3863,49 +3877,56 @@ void publishKeyFrameImages(
             continue;
         }
 
-        /* Skip keyframes that do not contain a valid image */
-        if (keyFrame->colorImg.empty())
+        /*!
+         * With the segmenter off nothing is sent to it, so no stage waits on
+         * segmenter output; the keyframe goes to plane extraction below.
+         */
+        if (!isSegmenterOff)
         {
-            continue;
+            /* Skip keyframes that do not contain a valid image */
+            if (keyFrame->colorImg.empty())
+            {
+                continue;
+            }
+
+            /* Initialise the common ROS message header */
+            std_msgs::msg::Header messageHeader;
+
+            messageHeader.stamp = msgTime_s_in;
+
+            messageHeader.frame_id = frameWorld;
+
+            /* Convert the OpenCV keyframe image into a ROS image message */
+            const sensor_msgs::msg::Image::SharedPtr keyFrameImageMessage =
+                cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->colorImg)
+                    .toImageMsg();
+
+            /* Confirm that the image conversion succeeded */
+            if (keyFrameImageMessage == nullptr)
+            {
+                RCLCPP_WARN(
+                    rclcpp::get_logger("visual_sgraphs"),
+                    "Failed to convert KeyFrame#%lu image into a ROS message.",
+                    static_cast<unsigned long>(keyFrame->id));
+
+                continue;
+            }
+
+            /* Create the persistent keyframe identifier message */
+            std_msgs::msg::UInt64 keyFrameIdMessage;
+
+            keyFrameIdMessage.data = keyFrame->id;
+
+            /* Package the keyframe identifier and image for segmentation */
+            segmenter_ros::msg::VSGraphDataMsg segmentationInputMessage;
+
+            segmentationInputMessage.header          = messageHeader;
+            segmentationInputMessage.key_frame_id    = keyFrameIdMessage;
+            segmentationInputMessage.key_frame_image = *keyFrameImageMessage;
+
+            /* Publish the keyframe image for semantic segmentation */
+            pubKFImage->publish(segmentationInputMessage);
         }
-
-        /* Initialise the common ROS message header */
-        std_msgs::msg::Header messageHeader;
-
-        messageHeader.stamp = msgTime_s_in;
-
-        messageHeader.frame_id = frameWorld;
-
-        /* Convert the OpenCV keyframe image into a ROS image message */
-        const sensor_msgs::msg::Image::SharedPtr keyFrameImageMessage =
-            cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->colorImg)
-                .toImageMsg();
-
-        /* Confirm that the image conversion succeeded */
-        if (keyFrameImageMessage == nullptr)
-        {
-            RCLCPP_WARN(
-                rclcpp::get_logger("visual_sgraphs"),
-                "Failed to convert KeyFrame#%lu image into a ROS message.",
-                static_cast<unsigned long>(keyFrame->id));
-
-            continue;
-        }
-
-        /* Create the persistent keyframe identifier message */
-        std_msgs::msg::UInt64 keyFrameIdMessage;
-
-        keyFrameIdMessage.data = keyFrame->id;
-
-        /* Package the keyframe identifier and image for segmentation */
-        segmenter_ros::msg::VSGraphDataMsg segmentationInputMessage;
-
-        segmentationInputMessage.header          = messageHeader;
-        segmentationInputMessage.key_frame_id    = keyFrameIdMessage;
-        segmentationInputMessage.key_frame_image = *keyFrameImageMessage;
-
-        /* Publish the keyframe image for semantic segmentation */
-        pubKFImage->publish(segmentationInputMessage);
 
         /* Prevent the same keyframe from being published again */
         keyFrame->isPublished = true;
@@ -3921,6 +3942,23 @@ void publishKeyFrameImages(
                              "a failure status although it cannot fail; "
                              "continuing as before.",
                              __func__);
+            }
+
+            /* Hand the keyframe over without a segmentation result */
+            if (isSegmenterOff)
+            {
+                std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr>
+                    geometryOnlyItem(keyFrame->id, cv::Mat(), nullptr);
+                if (p_slamSystem->addSegmentedImage(&geometryOnlyItem) !=
+                    vs_graphs::core::system::SystemStatus::
+                        SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addSegmentedImage returned a failure "
+                                 "status although it cannot fail; continuing "
+                                 "as before.",
+                                 __func__);
+                }
             }
         }
     }

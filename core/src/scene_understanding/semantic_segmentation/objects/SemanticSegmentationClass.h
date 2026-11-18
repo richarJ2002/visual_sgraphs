@@ -187,11 +187,12 @@ class SemanticSegmentation
     static constexpr std::size_t MAX_BUFFERED_WORK_ITEMS = 32U;
 
     /*!
-     * @brief           False only in the semantic-only mode of operation; run()
-     *                  then decides itself whether a plane observation is large
-     *                  enough to become a new map plane.
+     * @brief           True when general.mode_of_operation is GEO: keyframes
+     *                  arrive without a segmentation result, the whole
+     *                  keyframe cloud is extracted and labels come from
+     *                  geometry alone. Set once by the constructor.
      */
-    bool isGeometricSegmentationRunning;
+    bool isSegmenterOff;
 
     /*!
      * @brief           Borrowed pointer to the atlas that holds the maps and
@@ -362,10 +363,8 @@ class SemanticSegmentation
         }
         p_sysParams = p_params;
 
-        /* Set the booleans according to the mode of operation */
-        isGeometricSegmentationRunning =
-            !(p_sysParams->general.modeOfOperation ==
-              types::SystemParams::General::ModeOfOperation::SEM);
+        isSegmenterOff = p_sysParams->general.modeOfOperation ==
+                         types::SystemParams::General::ModeOfOperation::GEO;
     }
 
     /* Semantic segmentation frame buffer processing */
@@ -424,6 +423,41 @@ class SemanticSegmentation
             &p_thisKeyFramePointCloud_in);
 
     /*!
+     * @brief           Turns a keyframe's cloud into the clouds planes are
+     *                  extracted from: per class with the segmenter on
+     *                  (threshSeparatePointCloud(), logging a near-empty wall
+     *                  class), the whole cloud in one slot with it off, each
+     *                  point weighted by its depth.
+     *
+     * @param[in]       p_keyFrame_in
+     *                  Borrowed keyframe the cloud belongs to; non-null.
+     *
+     * @param[in]       p_segmentationCloud_in
+     *                  Per-pixel class probabilities; unused (may be null)
+     *                  with the segmenter off.
+     *
+     * @param[in]       uncertaintyImage_in
+     *                  Per-pixel uncertainty image; unused with the segmenter
+     *                  off.
+     *
+     * @param[in]       p_keyFrameCloud_in
+     *                  The keyframe's organised camera-frame cloud; non-null.
+     *
+     * @param[out]      p_clsCloudPtrs_out
+     *                  One cloud per class with the segmenter on, exactly one
+     *                  with it off; alpha holds the point weight.
+     *
+     * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticSegmentationStatus separateKeyFrameCloud(
+        keyframe::KeyFrame                           *p_keyFrame_in,
+        const pcl::PCLPointCloud2::Ptr               &p_segmentationCloud_in,
+        const cv::Mat                                &uncertaintyImage_in,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_keyFrameCloud_in,
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
+            &p_clsCloudPtrs_out);
+
+    /*!
      * @brief           Extracts the planes of every class point cloud with
      *                  RANSAC, after filtering each cloud by depth and thinning
      *                  it with a voxel grid. The plane semantics are not set
@@ -437,7 +471,8 @@ class SemanticSegmentation
      * @param[out]      planesFromClassClouds_out
      *                  The extracted camera-frame patches of every class, in
      *                  class order; each patch's label is its class
-     *                  (Utils::getPlaneTypeFromClassId()) as a guess. Planes
+     *                  (Utils::getPlaneTypeFromClassId()) as a guess, or
+     *                  UNDEFINED with the segmenter off. Planes
      *                  are searched only in clouds with more than
      *                  seg.pointcloudsThresh points.
      *

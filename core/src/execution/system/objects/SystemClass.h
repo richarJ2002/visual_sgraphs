@@ -1767,8 +1767,11 @@ class System
      *                  SemanticSegmentation
      *
      * @param[in]       p_tuple_in
-     *                  The address of the tuple of segmented image and
-     *                  pointcloud
+     *                  The address of the tuple of keyframe id, segmented
+     *                  image and pointcloud; with the segmenter off
+     *                  (mode_of_operation 2) the image is empty and the
+     *                  pointcloud null, and the keyframe cloud is extracted
+     *                  whole.
      */
     [[nodiscard]] SystemStatus addSegmentedImage(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
@@ -2154,10 +2157,8 @@ class System
      *                               segmenter; `mSegmentationReturnedCount` and
      *                               `mLastReturnedKeyFrameId` increment/advance
      *                               in `addSegmentedImage` once the result
-     *                               comes back, on every code path -- including
-     *                               the GEO-mode early return, which does not
-     *                               reach the semantic buffer but still ends
-     *                               that keyframe's time in flight.
+     *                               comes back (with the segmenter off, at
+     *                               once from the publish site).
      *                               `std::atomic` rather than a mutex: written
      *                               from the publish thread and the
      *                               segmentation-callback

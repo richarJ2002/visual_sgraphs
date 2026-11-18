@@ -16,6 +16,7 @@
 #include "configuration/types/types.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include <Eigen/Core>
@@ -97,6 +98,32 @@ struct WallComponentSupport
     const types::SystemParams::PlaneCheckpoint::WallSize &wallSize_in,
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr              &p_wallCloud_inout,
     bool                                                 &isLargeEnough_out);
+
+/*!
+ * @brief           Weights a point by its depth: 255 nearer than the near
+ *                  threshold, 45 beyond the far one, and in between falling
+ *                  with the square root of the depth fraction.
+ *
+ * @param[in]       depth_m_in
+ *                  Point depth along the camera axis, metres.
+ *
+ * @param[in]       nearDepth_m_in
+ *                  Near threshold (pointcloud.distance_thresh first), metres.
+ *
+ * @param[in]       farDepth_m_in
+ *                  Far threshold (pointcloud.distance_thresh second), metres;
+ *                  greater than nearDepth_m_in.
+ *
+ * @param[out]      depthWeight_out
+ *                  Weight in [45, 255].
+ *
+ * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticSegmentationStatus
+    computeDepthWeight(const float   depth_m_in,
+                       const float   nearDepth_m_in,
+                       const float   farDepth_m_in,
+                       std::uint8_t &depthWeight_out);
 
 } /* namespace semantic_segmentation */
 } /* namespace core */

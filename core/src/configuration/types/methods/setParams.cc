@@ -62,8 +62,20 @@ SystemParamsStatus
     try
     {
         /* General Parameters */
-        general.modeOfOperation = static_cast<General::ModeOfOperation>(
-            config["general"]["mode_of_operation"].as<int>());
+        const int modeOfOperationValue =
+            config["general"]["mode_of_operation"].as<int>();
+        if (modeOfOperationValue !=
+                static_cast<int>(General::ModeOfOperation::SEM) &&
+            modeOfOperationValue !=
+                static_cast<int>(General::ModeOfOperation::GEO))
+        {
+            throw std::invalid_argument(
+                "general.mode_of_operation must be 1 (segmenter on) or 2 "
+                "(segmenter off), got " +
+                std::to_string(modeOfOperationValue));
+        }
+        general.modeOfOperation =
+            static_cast<General::ModeOfOperation>(modeOfOperationValue);
 
         /* Tracking Refinement Parameters */
         refineMapPoints.enabled =

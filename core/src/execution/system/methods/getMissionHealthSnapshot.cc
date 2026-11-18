@@ -30,8 +30,6 @@
  *                  System.h.
  */
 
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
 #include "estimation/tracking/tracking.h"
 #include "execution/system/objects/SystemClass.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
@@ -134,22 +132,8 @@ SystemStatus System::getMissionHealthSnapshot(
     snapshot.lastReturnedKeyFrameId =
         lastReturnedKeyFrameId.load(std::memory_order_relaxed);
 
-    types::SystemParams *p_params = nullptr;
-    if (types::SystemParams::getParams(p_params) !=
-        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getParams returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (p_params->general.modeOfOperation ==
-        types::SystemParams::General::ModeOfOperation::GEO)
-    {
-        snapshot.segmentationTerminalCount = snapshot.segmentationReturnedCount;
-        snapshot.lastTerminalKeyFrameId    = snapshot.lastReturnedKeyFrameId;
-    }
-    else if (p_semanticSegmentation != nullptr)
+    /* Both modes run every keyframe through the segmentation thread */
+    if (p_semanticSegmentation != nullptr)
     {
         semantic_segmentation::SemanticSegmentation::ProcessingStats
             processingStats{};

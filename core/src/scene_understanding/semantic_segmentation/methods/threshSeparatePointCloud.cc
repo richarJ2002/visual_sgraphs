@@ -25,9 +25,9 @@
  */
 
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
+#include "scene_understanding/semantic_segmentation/private_functions/private_functions.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -160,28 +160,15 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 point.g = origPoint.g;
                 point.b = origPoint.b;
 
-                /*!
-                 * Depth weight as the squared inverse depth - interpolated
-                 * between near and far thresholds: 255 for near, 45 for far,
-                 * and interpolated according to squared distance
-                 */
                 uint8_t depthWeight = 0;
-                if (point.z < distanceThresholdNear)
+                if (computeDepthWeight(point.z,
+                                       distanceThresholdNear,
+                                       distanceThresholdFar,
+                                       depthWeight) !=
+                    SemanticSegmentationStatus::
+                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
                 {
-                    depthWeight = 255;
-                }
-                else if (point.z > distanceThresholdFar)
-                {
-                    depthWeight = 45;
-                }
-                else
-                {
-                    depthWeight = static_cast<uint8_t>(
-                        255 -
-                        static_cast<int>(
-                            210 * std::sqrt((point.z - distanceThresholdNear) /
-                                            (distanceThresholdFar -
-                                             distanceThresholdNear))));
+                    /* computeDepthWeight cannot fail; continue as before. */
                 }
 
                 /*!

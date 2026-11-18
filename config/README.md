@@ -8,7 +8,7 @@ These parameters are grouped under the `general` category and define system-wide
 
 | Category  | Parameter           | Description                                                                                                      |
 | --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `general` | `mode_of_operation` | Operating mode: <br> `0` = SemSeg + GeoSeg <br> `1` = SemSeg only (default - recommended) <br> `2` = GeoSeg only |
+| `general` | `mode_of_operation` | Segmentation switch (geometry always decides the plane label): <br> `1` = segmenter on, planes extracted per class (default) <br> `2` = segmenter off, planes extracted from the whole keyframe cloud |
 
 ## 🧮 Optimization Parameters
 

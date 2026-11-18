@@ -143,8 +143,11 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
             }
         }
 
-        geometric::Plane::PlaneVariant classLabel{};
-        if (utils::utils::Utils::getPlaneTypeFromClassId(
+        /* With the segmenter off the one slot is not a class */
+        geometric::Plane::PlaneVariant classLabel =
+            geometric::Plane::PlaneVariant::UNDEFINED;
+        if (!isSegmenterOff &&
+            utils::utils::Utils::getPlaneTypeFromClassId(
                 static_cast<int>(classCloudPtrIndex),
                 classLabel) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {

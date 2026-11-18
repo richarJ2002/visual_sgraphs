@@ -9,10 +9,12 @@ set(VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/recordTerminalOutcome.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/separateKeyFrameCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/threshSeparatePointCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneData.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkWallPatchSize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeDepthWeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computePlaneFitRms.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/findLargestWallComponent.cc
 )

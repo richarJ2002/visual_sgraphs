@@ -125,24 +125,32 @@ class SystemParams
     struct General
     {
         /*!
-         * @brief           Which segmentation pipelines run. SEM_GEO runs
-         *                  semantic segmentation together with geometric
-         *                  segmentation, SEM runs semantic alone, GEO runs
-         *                  geometric alone. The values match the YAML integers
-         *                  0, 1 and 2.
+         * @brief           Whether the segmenter is used. The values match the
+         *                  YAML integers 1 and 2; 0 (segmenter plus a separate
+         *                  geometric pipeline) was removed, since geometry
+         *                  always decides the label.
          */
         enum class ModeOfOperation : std::uint8_t
         {
-            SEM_GEO = 0U,
-            SEM     = 1U,
-            GEO     = 2U
+            /*!
+             * @brief           Segmenter on: its class is the label guess and
+             *                  planes are extracted per class.
+             */
+            SEM = 1U,
+
+            /*!
+             * @brief           Segmenter off: planes are extracted from the
+             *                  whole keyframe cloud and labelled by geometry
+             *                  alone.
+             */
+            GEO = 2U
         };
         /*!
          * @brief           Selected pipeline, read from the YAML key
-         *                  mode_of_operation as a raw integer (not
-         *                  range-checked).
+         *                  mode_of_operation; setParams() rejects any other
+         *                  integer.
          */
-        ModeOfOperation modeOfOperation = ModeOfOperation::SEM_GEO;
+        ModeOfOperation modeOfOperation = ModeOfOperation::SEM;
     };
     /*!
      * @brief           Run mode settings.

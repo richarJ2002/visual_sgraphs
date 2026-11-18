@@ -208,129 +208,41 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
          */
         if (matchedPlaneId == -1)
         {
-            if (!isGeometricSegmentationRunning)
+            /* Create a new mapped plane */
+            vs_graphs::core::geometric::Plane *p_newMapPlane = nullptr;
+            if (utils::geo_sem_helpers::GeoSemHelpers::createMapPlane(
+                    p_atlas,
+                    p_keyFrame_in,
+                    detectedPlane,
+                    p_planeCloud,
+                    p_newMapPlane,
+                    semanticType,
+                    confidence) != utils::geo_sem_helpers::GeoSemHelpersStatus::
+                                       GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                /* Create a new mapped plane */
-                vs_graphs::core::geometric::Plane *p_newMapPlane = nullptr;
-                if (utils::geo_sem_helpers::GeoSemHelpers::createMapPlane(
-                        p_atlas,
-                        p_keyFrame_in,
-                        detectedPlane,
-                        p_planeCloud,
-                        p_newMapPlane,
-                        semanticType,
-                        confidence) !=
-                    utils::geo_sem_helpers::GeoSemHelpersStatus::
-                        GEO_SEM_HELPERS_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: createMapPlane returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         else
         {
-            /* Update matched mapped plane with the current observation
-             */
-            if (!isGeometricSegmentationRunning)
+            /* Update matched mapped plane with the current observation */
+            if (utils::geo_sem_helpers::GeoSemHelpers::updateMapPlane(
+                    p_atlas,
+                    p_keyFrame_in,
+                    detectedPlane,
+                    p_planeCloud,
+                    matchedPlaneId,
+                    semanticType,
+                    confidence) != utils::geo_sem_helpers::GeoSemHelpersStatus::
+                                       GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                if (utils::geo_sem_helpers::GeoSemHelpers::updateMapPlane(
-                        p_atlas,
-                        p_keyFrame_in,
-                        detectedPlane,
-                        p_planeCloud,
-                        matchedPlaneId,
-                        semanticType,
-                        confidence) !=
-                    utils::geo_sem_helpers::GeoSemHelpersStatus::
-                        GEO_SEM_HELPERS_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: updateMapPlane returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-            }
-            else
-            {
-                /*!
-                 * Geometric segmentation already created the plane.
-                 * Transform the current observation into the global
-                 * frame
-                 * and append it to the matched mapped plane.
-                 *
-                 * @note            No keyframe observation is recorded
-                 *                  here, so this branch adds no label
-                 *                  evidence: a plane's label comes only
-                 *                  from its keyframe observations.
-                 */
-                Sophus::SE3f keyFramePoseInverse3{};
-                if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse3) !=
-                    keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPoseInverse returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                pcl::transformPointCloud(
-                    *p_planeCloud,
-                    *p_planeCloud,
-                    keyFramePoseInverse3.matrix().cast<float>());
-
-                vs_graphs::core::geometric::Plane *p_matchedPlane = nullptr;
-                if (p_atlas->getPlaneById(matchedPlaneId, p_matchedPlane) !=
-                    atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneById returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-
-                bool matchedPlaneIsBad{};
-                if ((p_matchedPlane != nullptr) &&
-                    p_matchedPlane->isBad(matchedPlaneIsBad) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: isBad returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (p_matchedPlane != nullptr && !matchedPlaneIsBad &&
-                    !p_planeCloud->empty())
-                {
-                    if (p_matchedPlane->setMapClouds(p_planeCloud) !=
-                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: setMapClouds returned a failure "
-                                     "status although it cannot fail; "
-                                     "continuing as before.",
-                                     __func__);
-                    }
-
-                    bool wasPlaneRefit{};
-                    if (utils::geo_sem_helpers::GeoSemHelpers::
-                            refitMappedPlaneFromCloud(p_matchedPlane,
-                                                      wasPlaneRefit) !=
-                        utils::geo_sem_helpers::GeoSemHelpersStatus::
-                            GEO_SEM_HELPERS_STATUS_SUCCESS)
-                    {
-                        /*!
-                         * refitMappedPlaneFromCloud cannot fail; continue
-                         * as before.
-                         */
-                    }
-                }
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

@@ -19,11 +19,9 @@
 
 ################################ General Parameters #############################################
 general:
-  # Specify the mode of operation for the segmentation pipeline
-  # 0: Semantic Segmentation runs in conjunction with Geometric Segmentation
-  # 1: Semantic Segmentation runs independently
-  # 2: Geometric Segmentation runs independently
-  # run with 2 if semantic segmentation is not running - this clears the pointclouds
+  # Segmentation switch; geometry always decides the plane label
+  # 1: segmenter on - its class is the label guess, planes are extracted per class
+  # 2: segmenter off - planes are extracted from the whole keyframe cloud
   mode_of_operation: 1
 
 ################################## Optimization Parameters #######################################
