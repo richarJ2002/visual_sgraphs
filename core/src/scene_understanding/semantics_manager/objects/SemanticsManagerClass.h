@@ -1730,8 +1730,7 @@ class SemanticsManager
      *                  getUpdatedFloors() selects one canonical Floor plane
      *                  identity from the strongest-observed ground plane, but
      *                  different rooms can independently hold different ground
-     *                  Plane objects
-     *                  (GeoSemHelpers::associateGroundPlaneToRoom). Nothing
+     *                  Plane objects. Nothing
      *                  previously checked those against each other or against
      *                  the canonical identity -- this is the front-end
      *                  floor-flatness reconciliation Optimizer.cc's dead "moved

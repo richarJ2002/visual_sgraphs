@@ -156,38 +156,6 @@ class GeoSemHelpers
         bool                             isRecoveryRoom_in = false);
 
     /*!
-     * @brief           Chooses a ground plane from the Atlas to be associated
-     *                  with the room
-     *
-     * @param[in]       p_atlas_in
-     *                  The current map in Atlas
-     *
-     * @param[in,out]   p_givenRoom_inout
-     *                  The address of the detected room
-     */
-    [[nodiscard]] static GeoSemHelpersStatus associateGroundPlaneToRoom(
-        atlas::Atlas                    *p_atlas_in,
-        vs_graphs::core::semantic::Room *p_givenRoom_inout);
-
-    /*!
-     * @brief           Counts the number of points in the ground plane that are
-     *                  within the walls of the room
-     *
-     * @param[in]       roomWalls_in
-     *                  The vector of walls detected in the room
-     *
-     * @param[in]       p_groundPlane_in
-     *                  The ground plane associated with the room
-     *
-     * @param[out]      groundPlanePoints_out
-     *                  Number of ground-plane points within the walls
-     */
-    [[nodiscard]] static GeoSemHelpersStatus countGroundPlanePointsWithinWalls(
-        std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
-        vs_graphs::core::geometric::Plane                *p_groundPlane_in,
-        size_t &groundPlanePoints_out);
-
-    /*!
      * @brief           Creates a new floor object to be added to the map; its
      *                  identity is reserved fresh from the Atlas
      *

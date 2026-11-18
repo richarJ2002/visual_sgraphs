@@ -102,25 +102,6 @@ class Utils
                                    double &euclideanDistance_out);
 
     /*!
-     * @brief           Calculate the distance between a point and a plane.
-     *
-     * @param[in]       plane_in
-     *                  Plane equation.
-     *
-     * @param[in]       point_in
-     *                  Given point.
-     *
-     * @param[out]      distance_out
-     *                  Absolute distance in the input length units.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
-                                      const Eigen::Vector3d &point_in,
-                                      double                &distance_out);
-
-    /*!
      * @brief           Calculates the intersection point of a line and a
      *                  plane. The line shall not be parallel to the plane.
      *
@@ -143,31 +124,6 @@ class Utils
                             const Eigen::Vector3d &lineStart_in,
                             const Eigen::Vector3d &lineEnd_in,
                             Eigen::Vector3d       &intersection_out);
-
-    /*!
-     * @brief           Checks to see if two planes are apart enough from
-     *                  each other, given a threshold.
-     *
-     * @param[in]       p_plane1_in
-     *                  First plane; may be null.
-     *
-     * @param[in]       p_plane2_in
-     *                  Second plane; may be null.
-     *
-     * @param[in]       threshold_in
-     *                  Threshold value for perpendicularity, in metres.
-     *
-     * @param[out]      arePlanesApartEnough_out
-     *                  True when both planes are valid and their perpendicular
-     *                  separation exceeds the threshold.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        arePlanesApartEnough(const geometric::Plane *p_plane1_in,
-                             const geometric::Plane *p_plane2_in,
-                             const double           &threshold_in,
-                             bool                   &arePlanesApartEnough_out);
 
     /*!
      * @brief           Checks to see if two planes are perpendicular to each
@@ -231,43 +187,6 @@ class Utils
         const vs_graphs::core::geometric::Plane *p_plane1_in,
         const vs_graphs::core::geometric::Plane *p_plane2_in,
         bool                                    &arePlanesFacingEachOther_out);
-
-    /*!
-     * @brief           Returns the planes that are facing each other from
-     *                  the given list.
-     *
-     * @param[in]       planes_in
-     *                  List of planes to be checked.
-     *
-     * @param[out]      facingPlanes_out
-     *                  Facing plane pairs whose separation passes the
-     *                  configured minimum. Pointers are borrowed from the input
-     *                  list.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus getFacingPlanes(
-        const std::vector<geometric::Plane *> &planes_in,
-        std::vector<std::pair<vs_graphs::core::geometric::Plane *,
-                              vs_graphs::core::geometric::Plane *>>
-            &facingPlanes_out);
-
-    /*!
-     * @brief           Corrects the given plane equations to apply
-     *                  calculations.
-     *
-     * @param[in]       plane_in
-     *                  Input plane.
-     *
-     * @param[out]      planeDirection_out
-     *                  Plane with negated coefficients when the offset is
-     *                  positive; unchanged otherwise.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        correctPlaneDirection(const Eigen::Vector4d &plane_in,
-                              Eigen::Vector4d       &planeDirection_out);
 
     /*!
      * @brief           Converts the plane equation from local to global.
@@ -435,20 +354,6 @@ class Utils
         std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out);
 
     /*!
-     * @brief           Clusters the point cloud into separate clouds based
-     *                  on the plane detection.
-     *
-     * @param[in]       p_cloud_in
-     *                  Point cloud to be clustered.
-     *
-     * @param[in,out]   clusterIndices_inout
-     *                  Vector of point indices for each cluster.
-     */
-    [[nodiscard]] static UtilsStatus clusterPlaneClouds(
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
-        std::vector<pcl::PointIndices>                &clusterIndices_inout);
-
-    /*!
      * @brief           Re-associates semantically classified planes if they get
      *                  closer after optimization
      *
@@ -551,22 +456,6 @@ class Utils
     [[nodiscard]] static UtilsStatus getClassIdFromPlaneType(
         vs_graphs::core::geometric::Plane::PlaneVariant planeType_in,
         int &classIdFromPlaneType_out);
-
-    /*!
-     * @brief           Calculates the soft-min approximation of the given
-     *                  values. Soft-min estimates segment quality from
-     *                  per-pixel uncertainties.
-     *
-     * @param[in]       values_in
-     *                  Input values; shall hold at least one value.
-     *
-     * @param[out]      softMin_out
-     *                  Soft-min value.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus calcSoftMin(std::vector<double> &values_in,
-                                                 double &softMin_out);
 };
 } /* namespace utils */
 } /* namespace utils */

@@ -1,21 +1,15 @@
 # utils module sources.
 set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyPoseToPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesApartEnough.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesFacingEachOther.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesParallel.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/arePlanesPerpendicular.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/calcSoftMin.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/calculateDistancePointToPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateEuclideanDistance.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/clusterPlaneClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/computeCentroidFromPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/computePlaneWidthHeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateProvisionalRooms.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/correctPlaneDirection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findMatchingPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getClassIdFromPlaneType.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFacingPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneTypeFromClassId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/lineIntersectsPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDistanceFilter.cc

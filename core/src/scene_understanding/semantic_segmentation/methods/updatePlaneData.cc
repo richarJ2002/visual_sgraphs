@@ -115,15 +115,8 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
             /*!
              * Find the average confidence across all the points.
              *
-             * @note:       There are two different ways to find the confidences
-             *              with a summary below:
-             *
-             *                  use softmin when dealing with semantic
-             *                  confidences double conf =
-             *                  utils::utils::Utils::calcSoftMin(confidences);
-             *
-             *                  use average when dealing with geometric (in this
-             *                  case depth) confidences
+             * @note:       The average is used for geometric (in this case
+             *              depth) confidences.
              */
             if (!confidences.empty())
             {
