@@ -23,12 +23,12 @@
  *                  mapping/geometry_helpers/objects/UtilsClass.h.
  */
 
-#include "mapping/geometry_helpers/private_functions/private_functions.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -63,61 +63,17 @@ UtilsStatus Utils::findMatchingPlane(
 
     if (matchSettings_in.matchMode == PlaneMatchMode::OPPOSITE_FACE)
     {
-        /* Most observations wins; the earliest candidate wins a tie. */
-        matchedPlaneId_out = -1;
-
-        std::size_t bestObservationCount = 0U;
-
-        for (geometric::Plane *p_mappedPlane : mappedPlanes_in)
+        if (findOppositeFaceMatch(mappedPlanes_in,
+                                  observedPlane_in,
+                                  matchSettings_in,
+                                  matchedPlaneId_out,
+                                  p_candidateVerdicts_out) !=
+            UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            PlaneMatchVerdict candidateVerdict{};
-            if (checkOppositeFacePair(observedPlane_in,
-                                      p_mappedPlane,
-                                      matchSettings_in,
-                                      candidateVerdict) !=
-                UtilsStatus::UTILS_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: checkOppositeFacePair returned a failure "
-                             "status although it cannot fail; continuing as "
-                             "before.",
-                             __func__);
-            }
-            if (p_candidateVerdicts_out != nullptr)
-            {
-                p_candidateVerdicts_out->push_back(candidateVerdict);
-            }
-            if (candidateVerdict.decidingCheck != TwinFaceCheck::PLAUSIBLE)
-            {
-                continue;
-            }
-
-            std::size_t observationCount{};
-            if (p_mappedPlane->getObservationCount(observationCount) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getObservationCount returned a failure "
-                             "status although it cannot fail; continuing as "
-                             "before.",
-                             __func__);
-            }
-            if (matchedPlaneId_out < 0 ||
-                observationCount > bestObservationCount)
-            {
-                int mappedPlaneId{};
-                if (p_mappedPlane->getId(mappedPlaneId) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status "
-                                 "although it cannot fail; continuing as "
-                                 "before.",
-                                 __func__);
-                }
-                matchedPlaneId_out   = mappedPlaneId;
-                bestObservationCount = observationCount;
-            }
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findOppositeFaceMatch returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
@@ -371,59 +327,27 @@ UtilsStatus Utils::findMatchingPlane(
          */
         if (checkObserverSide)
         {
-            ObservationSideEvidence mappedObservationSide{};
-            if (getMedianObservationSide_world_m(p_mappedPlane,
-                                                 mappedEquation,
-                                                 mappedObservationSide) !=
+            bool isOppositeSide{};
+            if (checkObserverSideAgreement(p_mappedPlane,
+                                           mappedEquation,
+                                           p_cameraCentre_world_m,
+                                           hasCameraCentre,
+                                           p_observingCameras,
+                                           minimumReliableSideDistance_m,
+                                           isOppositeSide,
+                                           observerSide_m) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMedianObservationSide_world_m returned a "
-                             "failure status although it cannot fail; "
-                             "continuing as before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: checkObserverSideAgreement returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
-
-            std::optional<double> givenObservationSide_m{};
-            bool                  givenSideIsAmbiguous = false;
-
-            if (hasCameraCentre)
-            {
-                const double cameraSide_m =
-                    mappedEquation.head<3>().dot(*p_cameraCentre_world_m) +
-                    mappedEquation(3);
-
-                if (std::abs(cameraSide_m) >= minimumReliableSideDistance_m)
-                {
-                    givenObservationSide_m = cameraSide_m;
-                }
-            }
-            else
-            {
-                givenObservationSide_m =
-                    p_observingCameras->medianSignedDistance_m;
-                givenSideIsAmbiguous =
-                    p_observingCameras->face ==
-                    geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS;
-            }
-
-            if (givenSideIsAmbiguous || mappedObservationSide.isAmbiguous)
+            if (isOppositeSide)
             {
                 continue;
             }
-
-            if (givenObservationSide_m.has_value() &&
-                mappedObservationSide.medianSignedDistance_m.has_value() &&
-                givenObservationSide_m.value() *
-                        mappedObservationSide.medianSignedDistance_m.value() <
-                    0.0)
-            {
-                continue;
-            }
-
-            observerSide_m =
-                mappedObservationSide.medianSignedDistance_m.value_or(
-                    givenObservationSide_m.value_or(0.0));
         }
 
         /* Calculate the angular difference between the plane normals */
@@ -499,57 +423,23 @@ UtilsStatus Utils::findMatchingPlane(
          * This prevents distant coplanar surfaces from being merged while
          * allowing neighbouring fragments of the same physical wall to join.
          */
-        pcl::KdTreeFLANN<pcl::PointXYZRGBA> mappedCloudSearch;
-
-        mappedCloudSearch.setInputCloud(p_mappedCloud);
-
-        const std::size_t samplingStride =
-            std::max<std::size_t>(1,
-                                  p_observedCloud->size() / maximumSampleCount);
-
-        std::size_t sampledPointCount     = 0;
-        std::size_t overlappingPointCount = 0;
-
-        double minimumCloudDistance = std::numeric_limits<double>::max();
-
-        std::vector<int> nearestPointIndex(1);
-
-        std::vector<float> nearestSquaredDistance(1);
-
-        for (std::size_t pointIndex = 0; pointIndex < p_observedCloud->size();
-             pointIndex += samplingStride)
+        std::size_t sampledPointCount{};
+        std::size_t overlappingPointCount{};
+        double      minimumCloudDistance{};
+        if (measureFiniteCloudOverlap(p_observedCloud,
+                                      p_mappedCloud,
+                                      maximumSampleCount,
+                                      maximumFiniteCloudDistance,
+                                      sampledPointCount,
+                                      overlappingPointCount,
+                                      minimumCloudDistance) !=
+            UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            const pcl::PointXYZRGBA &queryPoint =
-                p_observedCloud->points[pointIndex];
-
-            if (!pcl::isFinite(queryPoint))
-            {
-                continue;
-            }
-
-            sampledPointCount++;
-
-            const int neighbourCount =
-                mappedCloudSearch.nearestKSearch(queryPoint,
-                                                 1,
-                                                 nearestPointIndex,
-                                                 nearestSquaredDistance);
-
-            if (neighbourCount <= 0)
-            {
-                continue;
-            }
-
-            const double cloudDistance =
-                std::sqrt(static_cast<double>(nearestSquaredDistance.front()));
-
-            minimumCloudDistance =
-                std::min(minimumCloudDistance, cloudDistance);
-
-            if (cloudDistance <= maximumFiniteCloudDistance)
-            {
-                overlappingPointCount++;
-            }
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: measureFiniteCloudOverlap returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         const double finiteOverlapRatio =

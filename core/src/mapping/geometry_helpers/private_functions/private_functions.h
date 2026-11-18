@@ -321,6 +321,110 @@ struct ProjectedPlaneBounds
     const Eigen::Vector3d &retainedCentroid_world_m_in,
     const Eigen::Vector3d &candidateCentroid_world_m_in);
 
+/*!
+ * @brief           Runs the OPPOSITE_FACE pass of Utils::findMatchingPlane()
+ *                  over all mapped planes.
+ *
+ * @param[in]       mappedPlanes_in
+ *                  Mapped candidate planes, non-owning.
+ *
+ * @param[in]       observedPlane_in
+ *                  Observed plane evidence.
+ *
+ * @param[in]       matchSettings_in
+ *                  Match thresholds and ground normal.
+ *
+ * @param[out]      matchedPlaneId_out
+ *                  Id of the matched plane, unchanged when none matches.
+ *
+ * @param[out]      p_candidateVerdicts_out
+ *                  Per-candidate verdicts; may be null.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus findOppositeFaceMatch(
+    const std::vector<geometric::Plane *> &mappedPlanes_in,
+    const PlaneEvidence                   &observedPlane_in,
+    const PlaneMatchSettings              &matchSettings_in,
+    int                                   &matchedPlaneId_out,
+    std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out);
+
+/*!
+ * @brief           Checks that the observer and the mapped plane's
+ *                  observing cameras are on the same side of the plane.
+ *
+ * @param[in]       p_mappedPlane_in
+ *                  Candidate plane, non-owning.
+ *
+ * @param[in]       mappedEquation_in
+ *                  Candidate plane equation.
+ *
+ * @param[in]       p_cameraCentre_world_m_in
+ *                  Observer camera centre in the world frame, metres.
+ *
+ * @param[in]       hasCameraCentre_in
+ *                  True when the camera centre is valid.
+ *
+ * @param[in]       p_observingCameras_in
+ *                  Observation-side snapshot of the plane; may be null.
+ *
+ * @param[in]       minimumReliableSideDistance_m_in
+ *                  Smallest distance, metres, at which a side is reliable.
+ *
+ * @param[out]      isOppositeSide_out
+ *                  True when the candidate must be rejected.
+ *
+ * @param[out]      observerSide_m_out
+ *                  Signed observer distance to the plane, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus checkObserverSideAgreement(
+    geometric::Plane                                *p_mappedPlane_in,
+    const Eigen::Vector4d                           &mappedEquation_in,
+    const Eigen::Vector3d                           *p_cameraCentre_world_m_in,
+    bool                                             hasCameraCentre_in,
+    const geometric::Plane::ObservationSideSnapshot *p_observingCameras_in,
+    double  minimumReliableSideDistance_m_in,
+    bool   &isOppositeSide_out,
+    double &observerSide_m_out);
+
+/*!
+ * @brief           Samples the observed cloud and counts points within the
+ *                  maximum distance of the mapped cloud.
+ *
+ * @param[in]       p_observedCloud_in
+ *                  Observed plane cloud.
+ *
+ * @param[in]       p_mappedCloud_in
+ *                  Mapped plane cloud.
+ *
+ * @param[in]       maximumSampleCount_in
+ *                  Largest number of observed points sampled.
+ *
+ * @param[in]       maximumFiniteCloudDistance_in
+ *                  Overlap distance, metres.
+ *
+ * @param[out]      sampledPointCount_out
+ *                  Number of sampled points.
+ *
+ * @param[out]      overlappingPointCount_out
+ *                  Number of sampled points within the overlap distance.
+ *
+ * @param[out]      minimumCloudDistance_out
+ *                  Smallest sampled point distance, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus measureFiniteCloudOverlap(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_observedCloud_in,
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_mappedCloud_in,
+    std::size_t                                         maximumSampleCount_in,
+    double       maximumFiniteCloudDistance_in,
+    std::size_t &sampledPointCount_out,
+    std::size_t &overlappingPointCount_out,
+    double      &minimumCloudDistance_out);
+
 } /* namespace utils */
 } /* namespace utils */
 } /* namespace core */
