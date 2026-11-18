@@ -55,47 +55,6 @@ class Passage;
 } /* namespace semantic */
 
 /*!
- * @brief           Tests whether an observed finite wall separates two
- *                  positions.
- *
- *                  The infinite plane performs the side test, while the mapped
- *                  cloud bounds reject unrelated coplanar wall segments. This
- *                  is used as a veto when connected free-space evidence
- *                  suggests two room hypotheses may describe the same physical
- *                  room.
- *
- * @param[in]       wallList_world_in
- *                  Candidate wall surfaces expressed in the active map frame.
- *
- * @param[in]       firstPoint_world_m_in
- *                  First position expressed in the active map frame, in metres.
- *
- * @param[in]       secondPoint_world_m_in
- *                  Second position expressed in the active map frame, in
- *                  metres.
- *
- * @param[in]       finiteBoundsMargin_m_in
- *                  Margin applied around the observed wall-cloud bounds.
- *
- * @param[in]       isLeadingWallVoteAccepted_in
- *                  When true, a plane whose type is not yet WALL but whose
- *                  leading semantic vote is WALL also counts as a wall;
- *                  when false, only planes of confirmed type WALL count.
- *
- * @param[out]      hasSeparatingFiniteWall_out
- *                  True when the segment crosses an observed finite wall patch.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus hasSeparatingFiniteWall(
-    const std::vector<geometric::Plane *> &wallList_world_in,
-    const Eigen::Vector3d                 &firstPoint_world_m_in,
-    const Eigen::Vector3d                 &secondPoint_world_m_in,
-    const double                           finiteBoundsMargin_m_in,
-    const bool                             isLeadingWallVoteAccepted_in,
-    bool                                  &hasSeparatingFiniteWall_out);
-
-/*!
  * @brief           Decides whether a wall has enough evidence to join a room,
  *                  and records the evidence behind that decision.
  *

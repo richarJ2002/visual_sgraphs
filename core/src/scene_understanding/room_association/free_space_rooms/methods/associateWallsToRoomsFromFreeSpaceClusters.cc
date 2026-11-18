@@ -55,6 +55,7 @@
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantic_constraints/visibility_rules/visibility_rules.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 namespace vs_graphs
@@ -799,24 +800,15 @@ SemanticsManagerStatus
                     return p_prospectiveWall != nullptr &&
                            !prospectiveWallIsBad;
                 });
-            bool isSeedSeparatedFromCluster{};
-            if (!hasProspectiveWall &&
-                hasSeparatingFiniteWall(
+            const bool isSeedSeparatedFromCluster =
+                !hasProspectiveWall &&
+                semantic_constraints::hasSeparatingFiniteWall(
                     allPlanes,
                     prospectiveCentroid_world_m,
                     clusterCentroid,
                     static_cast<double>(
                         p_sysParams->roomSeg.finiteWallBoundsMargin_m),
-                    false,
-                    isSeedSeparatedFromCluster) !=
-                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: hasSeparatingFiniteWall returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
+                    false);
 
             if ((hasProspectiveWall && !sharesWallEvidence) ||
                 isSeedSeparatedFromCluster ||

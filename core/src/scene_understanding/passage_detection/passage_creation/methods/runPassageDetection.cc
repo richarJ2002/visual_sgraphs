@@ -42,8 +42,8 @@ SemanticsManagerStatus SemanticsManager::runPassageDetection(void)
      * observable, instead of only on the next cycle. These steps only read
      * Plane/Passage data (no Room dependency). The passage steps that need
      * current room membership (traversal evidence, room association, wall
-     * detachment, prospective-room cleanup) run later in run(), after the
-     * wall admission.
+     * detachment, prospective-room cleanup) run later, in run() and
+     * runRoomAssociation().
      */
     if (!p_sysParams->semSeg.enablePassageDetection)
     {

@@ -20,14 +20,13 @@
  * @file            hasSeparatingFiniteWall.cc
  *
  * @brief           Implements hasSeparatingFiniteWall(), declared in
- *                  SemanticsManager/private_functions.h.
+ *                  visibility_rules/public_functions/public_functions.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "scene_understanding/semantic_constraints/visibility_rules/public_functions/public_functions.h"
+
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-
-#include "private_functions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -38,14 +37,15 @@ namespace vs_graphs
 {
 namespace core
 {
+namespace semantic_constraints
+{
 
-SemanticsManagerStatus hasSeparatingFiniteWall(
+bool hasSeparatingFiniteWall(
     const std::vector<geometric::Plane *> &wallList_world_in,
     const Eigen::Vector3d                 &firstPoint_world_m_in,
     const Eigen::Vector3d                 &secondPoint_world_m_in,
     const double                           finiteBoundsMargin_m_in,
-    const bool                             isLeadingWallVoteAccepted_in,
-    bool                                  &hasSeparatingFiniteWall_out)
+    const bool                             isLeadingWallVoteAccepted_in)
 {
     constexpr double minimumSideDistance_m = 0.10;
 
@@ -190,14 +190,13 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
             intersectionV_m >= minimumWallV_m - finiteBoundsMargin_m_in &&
             intersectionV_m <= maximumWallV_m + finiteBoundsMargin_m_in)
         {
-            hasSeparatingFiniteWall_out = true;
-            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+            return true;
         }
     }
 
-    hasSeparatingFiniteWall_out = false;
-    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    return false;
 }
 
+} /* namespace semantic_constraints */
 } /* namespace core */
 } /* namespace vs_graphs */

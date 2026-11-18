@@ -35,6 +35,7 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantic_constraints/visibility_rules/visibility_rules.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
@@ -352,23 +353,15 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             !std::isfinite(centroidDistance_m) ||
             distanceToCluster_m(duplicateCentroid_world_m) >
                 maximumClusterSupportDistance_m;
-        bool hasSeparatingFiniteWall2{};
-        if (!(isDuplicateOutsideCluster) &&
-            hasSeparatingFiniteWall(wallList_world_in,
-                                    retainedCentroid_world_m,
-                                    duplicateCentroid_world_m,
-                                    finiteWallBoundsMargin_m,
-                                    false,
-                                    hasSeparatingFiniteWall2) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: hasSeparatingFiniteWall returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-        if (isDuplicateOutsideCluster || hasSeparatingFiniteWall2)
+        const bool isSeparatedByFiniteWall =
+            !isDuplicateOutsideCluster &&
+            semantic_constraints::hasSeparatingFiniteWall(
+                wallList_world_in,
+                retainedCentroid_world_m,
+                duplicateCentroid_world_m,
+                finiteWallBoundsMargin_m,
+                false);
+        if (isDuplicateOutsideCluster || isSeparatedByFiniteWall)
         {
             continue;
         }

@@ -28,6 +28,7 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantic_constraints/visibility_rules/visibility_rules.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
@@ -135,23 +136,14 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        bool roomSeparatedFromCluster{};
-        if (hasSeparatingFiniteWall(
+        const bool roomSeparatedFromCluster =
+            semantic_constraints::hasSeparatingFiniteWall(
                 atlasAllPlanes,
                 roomCenter_world,
                 clusterCentroid_world_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.finiteWallBoundsMargin_m),
-                false,
-                roomSeparatedFromCluster) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: hasSeparatingFiniteWall returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
+                false);
 
         /* Extract the walls from the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWallsList{};

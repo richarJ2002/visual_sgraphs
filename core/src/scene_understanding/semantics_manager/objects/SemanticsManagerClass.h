@@ -992,6 +992,30 @@ class SemanticsManager
         REROUTED
     };
 
+    /* Association cycle (room_association/association_cycle/). */
+
+    /*!
+     * @brief           Stage 5, room association, run once per cycle: the
+     *                  passage-room steps (passage links, wall detachment
+     *                  beyond confirmed passages, passage side and topology
+     *                  rules, orphaned prospective rooms), then the free-space
+     *                  and current-room wall association, provisional room
+     *                  consolidation and unique wall ownership.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus runRoomAssociation(void);
+
+    /*!
+     * @brief           Retires every prospective room whose far-side passage
+     *                  reference is gone or whose room or passage geometry is
+     *                  invalid; a valid referenced prospective room is kept
+     *                  whatever its wall count or age.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus retireOrphanedProspectiveRooms(void);
+
     /* Wall admission (room_association/wall_admission/). */
 
     /*!
@@ -1011,7 +1035,8 @@ class SemanticsManager
      *                  retry the association. A candidate seen through a
      *                  nearer wall from the camera (room the camera is in),
      *                  or beyond a passage wall from the room centre (any
-     *                  other room), is refused.
+     *                  other room), is refused by the visibility rule table
+     *                  (semantic_constraints/visibility_rules/).
      *
      * @param[in,out]   p_room_inout
      *                  Room whose wall set may be updated.
@@ -1029,6 +1054,73 @@ class SemanticsManager
         admitWallToRoom(semantic::Room   *p_room_inout,
                         geometric::Plane *p_candidateWall_in,
                         bool             &wasAdmitted_out);
+
+    /*!
+     * @brief           Boundary-topology check of admitWallToRoom(): a
+     *                  candidate whose finite segment decisively crosses the
+     *                  interior of a wall of this room is refused unless it
+     *                  is decisively stronger, in which case the weaker
+     *                  clashing walls are removed from the room; a candidate
+     *                  crossing another room's admitted wall is refused. The
+     *                  candidate's twin face never clashes.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Room the candidate is offered to; may lose weaker
+     *                  clashing walls.
+     *
+     * @param[in]       p_candidateWall_in
+     *                  Candidate wall.
+     *
+     * @param[in]       roomWalls_in
+     *                  Walls the room owned before this admission.
+     *
+     * @param[out]      isClashFree_out
+     *                  True when the candidate may join the room (also when
+     *                  topology checks are disabled or no ground plane or
+     *                  candidate segment exists).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus checkWallBoundaryTopology(
+        semantic::Room                        *p_room_inout,
+        geometric::Plane                      *p_candidateWall_in,
+        const std::vector<geometric::Plane *> &roomWalls_in,
+        bool                                  &isClashFree_out);
+
+    /*!
+     * @brief           Adds an admitted wall to the room. For the camera's
+     *                  room with the see-through gate on, a farther wall of
+     *                  the room that the camera sees through the new wall is
+     *                  detached again, unless the new wall carries a passage.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Room receiving the wall.
+     *
+     * @param[in]       p_candidateWall_in
+     *                  Admitted wall.
+     *
+     * @param[in]       roomWalls_in
+     *                  Walls the room owned before this admission.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the active map in id order.
+     *
+     * @param[in]       roomViewpoint_world_m_in
+     *                  Point the room is seen from, in the active map frame,
+     *                  in metres.
+     *
+     * @param[in]       isCameraViewpoint_in
+     *                  True when the viewpoint is the camera.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus attachAdmittedWall(
+        semantic::Room                         *p_room_inout,
+        geometric::Plane                       *p_candidateWall_in,
+        const std::vector<geometric::Plane *>  &roomWalls_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        const Eigen::Vector3d                  &roomViewpoint_world_m_in,
+        const bool                              isCameraViewpoint_in);
 
     /*!
      * @brief           Shared far-side-passage backstop: a wall whose centroid
