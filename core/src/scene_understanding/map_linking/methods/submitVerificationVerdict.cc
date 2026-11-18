@@ -23,8 +23,8 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 namespace vs_graphs
 {

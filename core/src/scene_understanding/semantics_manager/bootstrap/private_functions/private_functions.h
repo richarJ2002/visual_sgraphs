@@ -21,7 +21,8 @@
  *
  * @brief           Declares the helpers of the SemanticsManager bootstrap
  *                  methods. Package-internal: not included by any public
- *                  header.
+ *                  header; printBootstrapRecord() is also used by
+ *                  map_linking for the recovery record.
  */
 
 #ifndef VS_GRAPHS_SEMANTICS_MANAGER_BOOTSTRAP_PRIVATE_FUNCTIONS_H
@@ -29,16 +30,11 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "map_state/atlas/atlas.h"
-#include "map_state/map/map.h"
-#include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/room/Room.h"
-#include "scene_understanding/scene_graph/room/objects/PassageContextStruct.h"
 
 namespace vs_graphs
 {
@@ -143,52 +139,6 @@ void printBootstrapRecord(
     const std::optional<int>           &floorId_in,
     const std::optional<std::size_t>   &restoredPassageCount_in,
     std::uint64_t                       semanticCycle_in);
-
-/*!
- * @brief           Creates a passage object that stands in for one of the lost
- *                  map's passages: a fresh id, no position or aperture size
- *                  (not knowable across a map break), only the frame-free state
- *                  (passable, traversal history). The passage is marked as a
- *                  recovery proxy and is not yet in the scene graph.
- *
- * @param[in,out]   p_atlas_inout
- *                  Atlas that hands out the passage id; borrowed.
- *
- * @param[in,out]   p_activeMap_inout
- *                  Map the passage belongs to; borrowed.
- *
- * @param[in]       passageContext_in
- *                  The lost passage's saved state.
- *
- * @return          The new passage, owned by the caller.
- */
-[[nodiscard]] std::unique_ptr<semantic::Passage>
-    createRecoveryPassage(atlas::Atlas                   *p_atlas_inout,
-                          map::Map                       *p_activeMap_inout,
-                          const semantic::PassageContext &passageContext_in);
-
-/*!
- * @brief           Links a restored passage to the recovered room: as the
- *                  known side or far side when the saved state named the
- *                  room's previous id, as the known side when the passage has
- *                  no room yet, and into the room's passage list.
- *
- * @param[in]       passageContext_in
- *                  The lost passage's saved state.
- *
- * @param[in]       recoveredRoomPreviousId_in
- *                  Id the recovered room had in the lost map.
- *
- * @param[in,out]   p_passage_inout
- *                  Restored passage; borrowed.
- *
- * @param[in,out]   p_room_inout
- *                  Recovered room in the new map; borrowed.
- */
-void linkRecoveryPassage(const semantic::PassageContext &passageContext_in,
-                         int                recoveredRoomPreviousId_in,
-                         semantic::Passage *p_passage_inout,
-                         semantic::Room    *p_room_inout);
 
 } /* namespace core */
 } /* namespace vs_graphs */

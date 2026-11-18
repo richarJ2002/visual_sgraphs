@@ -244,18 +244,6 @@ class SemanticsManager
     bool isCrossingBothSidesPending = false;
 
     /*!
-     * @brief           Test-only seam, always declared so production and test
-     *                  builds share one object layout; it stays empty outside
-     *                  tests, where updateTraversalEvidence() only moves an
-     *                  empty std::function. The callback is deliberately
-     *                  invoked while currentRoomMutex is held so the
-     *                  integration test proves real producer and consumer
-     *                  contention; it must not call back into this manager
-     *                  except through the non-blocking contention probe.
-     */
-    std::function<void()> roomTrackerPendingPublishHook;
-
-    /*!
      * @brief           Set by onTrackingLost() (once per loss episode) and
      *                  consumed by the room tracker during the next Run cycle.
      */
@@ -564,21 +552,10 @@ class SemanticsManager
     static constexpr double kProspectiveDedupDistance_m = 2.0;
 
     /*!
-     * @brief           Scopes transient semantic evidence to one active map and
-     *                  frame.
-     *
-     *                  A map switch clears every map-local cache. An in-place
-     *                  map correction invalidates geometry fingerprints and
-     *                  reseeds camera traversal state.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        resetTemporalStateForMap(map::Map *p_activeMap_in);
-
-    /*!
      * @brief           Ensures one real bootstrap room and canonical floor for
      *                  the active map before any semantic inference is
-     *                  performed. After a tracking loss it restores the last
-     *                  known room and its passages. An outdoor start
+     *                  performed. After a tracking loss it hands over to
+     *                  recoverRoomAfterTrackingLoss(). An outdoor start
      *                  (semantics_manager.start_environment) creates nothing
      *                  until a room has been detected; the building, storey
      *                  and current room then follow.
@@ -676,30 +653,36 @@ class SemanticsManager
                             semantic::Room *p_room_inout);
 
     /*!
-     * @brief           Restores the passages of the room the robot was lost in
-     *                  into the new map: a passage that exists is reused, any
-     *                  other is created as a recovery proxy, and each is linked
-     *                  to the recovered room.
+     * @brief           Links a bootstrap room into the map's canonical storey
+     *                  (created with building 0 when missing) and, when the
+     *                  manager has no live current room, adopts it as the
+     *                  current room. Writes the FLOOR_CREATION_FAILED
+     *                  initialization record when no storey can be created.
      *
      * @param[in,out]   p_activeMap_inout
      *                  Active map; borrowed.
      *
-     * @param[in]       mapId_in
-     *                  Id of the SLAM map.
+     * @param[in]       activeMapId_in
+     *                  Id of the active map.
      *
-     * @param[in]       recoveryContext_in
-     *                  Saved context of the lost room.
+     * @param[in]       roomId_in
+     *                  Id of the bootstrap room, for the record.
+     *
+     * @param[in]       isCurrentRoomLive_in
+     *                  True when the current room is a live room of this map.
      *
      * @param[in,out]   p_room_inout
-     *                  Recovered room in the new map; borrowed.
+     *                  Bootstrap room; borrowed, must not be null.
      *
-     * @return          Number of passages restored.
+     * @return          The storey; borrowed, owned by the scene graph. nullptr
+     *                  when none exists and none could be created.
      */
-    [[nodiscard]] std::size_t restoreRecoveryPassages(
-        map::Map                            *p_activeMap_inout,
-        unsigned long                        mapId_in,
-        const semantic::RoomContextSnapshot &recoveryContext_in,
-        semantic::Room                      *p_room_inout);
+    [[nodiscard]] semantic::Floor *
+        linkBootstrapRoomToFloor(map::Map       *p_activeMap_inout,
+                                 unsigned long   activeMapId_in,
+                                 int             roomId_in,
+                                 bool            isCurrentRoomLive_in,
+                                 semantic::Room *p_room_inout);
 
     /* ---------------------------------------------------------------------- *
      * PLANE STAGES (pipeline stages 1-3, plane_intake/, plane_checks/ and
@@ -1759,8 +1742,86 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus reconcileRoomGroundPlanes(void);
 
     /* ---------------------------------------------------------------------- *
-     * OTHER CYCLE STEPS (merge candidates and reporting), called by run().
+     * MAP LINKING (map_linking/): tracking loss and recovery, map reset and
+     * merge-candidate verification. onTrackingLost(), onTrackingRecovered(),
+     * getLastKnownRoomId() and submitVerificationVerdict() are its public
+     * entries.
      * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Scopes transient semantic evidence to one active map and
+     *                  frame.
+     *
+     *                  A map switch clears every map-local cache. An in-place
+     *                  map correction invalidates geometry fingerprints and
+     *                  reseeds camera traversal state.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        resetTemporalStateForMap(map::Map *p_activeMap_in);
+
+    /*!
+     * @brief           Restores the room the robot was lost in as the first
+     *                  room of the new map: placed at the override, else the
+     *                  camera centre, else the lost room's centroid; linked to
+     *                  the canonical storey; its passages restored. Writes the
+     *                  RECOVERY_RESTORED initialization record.
+     *
+     * @param[out]      bootstrapResult_out
+     *                  RECOVERED, or the failure that stopped the recovery.
+     *
+     * @param[in,out]   p_activeMap_inout
+     *                  Active map; borrowed.
+     *
+     * @param[in]       activeMapId_in
+     *                  Id of the active map.
+     *
+     * @param[in]       recoveryContext_in
+     *                  Saved context of the lost room; must hold a value.
+     *
+     * @param[in]       isCurrentRoomLive_in
+     *                  True when the manager's current room is a live room
+     *                  of this map, which then stays current.
+     *
+     * @param[in]       cameraPositionOverride_world_m_in
+     *                  Camera position in the map frame, metres; ignored when
+     *                  absent or not finite.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus recoverRoomAfterTrackingLoss(
+        SemanticsManager::ActiveMapBootstrapResult         &bootstrapResult_out,
+        map::Map                                           *p_activeMap_inout,
+        unsigned long                                       activeMapId_in,
+        const std::optional<semantic::RoomContextSnapshot> &recoveryContext_in,
+        bool isCurrentRoomLive_in,
+        const std::optional<Eigen::Vector3d>
+            &cameraPositionOverride_world_m_in);
+
+    /*!
+     * @brief           Restores the passages of the room the robot was lost in
+     *                  into the new map: a passage that exists is reused, any
+     *                  other is created as a recovery proxy, and each is linked
+     *                  to the recovered room.
+     *
+     * @param[in,out]   p_activeMap_inout
+     *                  Active map; borrowed.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[in]       recoveryContext_in
+     *                  Saved context of the lost room.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Recovered room in the new map; borrowed.
+     *
+     * @return          Number of passages restored.
+     */
+    [[nodiscard]] std::size_t restoreRecoveryPassages(
+        map::Map                            *p_activeMap_inout,
+        unsigned long                        mapId_in,
+        const semantic::RoomContextSnapshot &recoveryContext_in,
+        semantic::Room                      *p_room_inout);
 
     /*!
      * @brief           Resolves a room by the (map id, room id) pair a
@@ -1800,6 +1861,10 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus evaluateTopCandidateVerification(
         const std::vector<semantic::SemanticCandidate> &candidates_in);
+
+    /* ---------------------------------------------------------------------- *
+     * OTHER CYCLE STEPS (merge candidates and reporting), called by run().
+     * ---------------------------------------------------------------------- */
 
     /*!
      * @brief           Converts undefendedWalls into pointer-free,
@@ -2530,24 +2595,6 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus submitVerificationVerdict(
         const semantic::VerificationVerdict &verdict_in);
-
-    /*!
-     * @brief           Test-only direct call into the candidate-verification
-     *                  wiring, bypassing Run()'s full ROS/PCL/ORB3-dependent
-     *                  cycle.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        evaluateTopCandidateVerificationForTest(
-            const std::vector<semantic::SemanticCandidate> &candidates_in);
-
-    /*!
-     * @brief           Test-only bootstrap seam with an explicit valid camera
-     *                  position.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        ensureActiveMapBootstrapHierarchyForTest(
-            const Eigen::Vector3d &cameraPosition_world_m_in,
-            int                   &bootstrapResult_out);
 
     /*!
      * @brief           True once the semantic manager thread has exited Run().

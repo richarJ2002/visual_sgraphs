@@ -30,7 +30,7 @@ semantics_manager/objects/SemanticsManagerClass.h.
 #include <rclcpp/logging.hpp>
 #include <utility>
 
-#include "scene_understanding/semantics_manager/bootstrap/private_functions/private_functions.h"
+#include "scene_understanding/map_linking/private_functions/private_functions.h"
 
 namespace vs_graphs
 {

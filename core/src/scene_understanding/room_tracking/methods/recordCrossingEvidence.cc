@@ -27,7 +27,6 @@
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include <functional>
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
@@ -93,13 +92,6 @@ SemanticsManagerStatus
         }
         isCrossingBothSidesPending = isCrossingBothSidesPending ||
                                      passageHasBidirectionalTraversalEvidence;
-        /* Test seam: empty outside tests (SemanticsManager.h). */
-        std::function<void()> publishHook =
-            std::move(roomTrackerPendingPublishHook);
-        if (publishHook)
-        {
-            publishHook();
-        }
     }
 
     if (addedTraversal_in && !wasSettled_in)

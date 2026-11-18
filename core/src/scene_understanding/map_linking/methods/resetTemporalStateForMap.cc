@@ -23,11 +23,11 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

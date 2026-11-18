@@ -23,8 +23,8 @@
  *                  SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

@@ -109,17 +109,24 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+    if (recoveryContext.has_value())
+    {
+        return recoverRoomAfterTrackingLoss(bootstrapResult_out,
+                                            p_activeMap,
+                                            activeMapId,
+                                            recoveryContext,
+                                            hadLiveCurrentRoom,
+                                            cameraPositionOverride_world_m_in);
+    }
 
     bool initializedRoom = false;
-    bool recoveredRoom   = false;
     if (p_bootstrapRoom == nullptr)
     {
         /* An outdoor start has no room to begin with: the graph stays at the
          * environment node until a room is detected, which the next cycle
          * finds above as the first live room. */
-        if (!recoveryContext.has_value() &&
-            p_sysParams->semanticsManager.startEnvironment ==
-                scene_graph::StartEnvironment::START_ENVIRONMENT_OUTDOOR)
+        if (p_sysParams->semanticsManager.startEnvironment ==
+            scene_graph::StartEnvironment::START_ENVIRONMENT_OUTDOOR)
         {
             printBootstrapRecord("AWAITING_FIRST_ROOM",
                                  activeMapId,
@@ -134,7 +141,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
         const std::optional<Eigen::Vector3d> cameraPosition_world_m =
             resolveBootstrapCameraPosition(p_activeMap,
                                            cameraPositionOverride_world_m_in,
-                                           recoveryContext);
+                                           std::nullopt);
         if (!cameraPosition_world_m.has_value())
         {
             printBootstrapRecord("NO_USABLE_CAMERA_POSE",
@@ -150,7 +157,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
 
         p_bootstrapRoom = createBootstrapRoom(activeMapId,
                                               *cameraPosition_world_m,
-                                              recoveryContext);
+                                              std::nullopt);
         if (p_bootstrapRoom == nullptr)
         {
             printBootstrapRecord("ROOM_CREATION_FAILED",
@@ -163,8 +170,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                 ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
             return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
-        initializedRoom = !recoveryContext.has_value();
-        recoveredRoom   = recoveryContext.has_value();
+        initializedRoom = true;
     }
 
     int bootstrapRoomId{};
@@ -177,75 +183,39 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                      __func__);
     }
 
-    /* Building and storey come before the room is linked into them. */
-    semantic::Floor *p_canonicalFloor = ensureBootstrapFloor(activeMapId);
+    semantic::Floor *p_canonicalFloor =
+        linkBootstrapRoomToFloor(p_activeMap,
+                                 activeMapId,
+                                 bootstrapRoomId,
+                                 hadLiveCurrentRoom,
+                                 p_bootstrapRoom);
     if (p_canonicalFloor == nullptr)
     {
-        printBootstrapRecord("FLOOR_CREATION_FAILED",
-                             activeMapId,
-                             bootstrapRoomId,
-                             std::nullopt,
-                             std::nullopt,
-                             pipelineSemanticCycle);
         bootstrapResult_out = ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    if (p_canonicalFloor->addRoom(p_bootstrapRoom) !=
-        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: addRoom returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
-    }
-    if (!hadLiveCurrentRoom)
-    {
-        adoptBootstrapRoom(p_activeMap, p_bootstrapRoom);
-    }
 
-    std::size_t restoredPassageCount = 0U;
-    if (recoveredRoom)
+    if (!initializedRoom)
     {
-        restoredPassageCount = restoreRecoveryPassages(p_activeMap,
-                                                       activeMapId,
-                                                       *recoveryContext,
-                                                       p_bootstrapRoom);
+        bootstrapResult_out = ActiveMapBootstrapResult::REUSED;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-
     int canonicalFloorId{};
-    if ((initializedRoom || recoveredRoom) &&
-        p_canonicalFloor->getId(canonicalFloorId) !=
-            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    if (p_canonicalFloor->getId(canonicalFloorId) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    if (initializedRoom)
-    {
-        printBootstrapRecord("BOOTSTRAP_CREATED",
-                             activeMapId,
-                             bootstrapRoomId,
-                             canonicalFloorId,
-                             std::nullopt,
-                             pipelineSemanticCycle);
-        bootstrapResult_out = ActiveMapBootstrapResult::INITIALIZED;
-    }
-    else if (recoveredRoom)
-    {
-        printBootstrapRecord("RECOVERY_RESTORED",
-                             activeMapId,
-                             bootstrapRoomId,
-                             canonicalFloorId,
-                             restoredPassageCount,
-                             pipelineSemanticCycle);
-        bootstrapResult_out = ActiveMapBootstrapResult::RECOVERED;
-    }
-    else
-    {
-        bootstrapResult_out = ActiveMapBootstrapResult::REUSED;
-    }
+    printBootstrapRecord("BOOTSTRAP_CREATED",
+                         activeMapId,
+                         bootstrapRoomId,
+                         canonicalFloorId,
+                         std::nullopt,
+                         pipelineSemanticCycle);
+    bootstrapResult_out = ActiveMapBootstrapResult::INITIALIZED;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

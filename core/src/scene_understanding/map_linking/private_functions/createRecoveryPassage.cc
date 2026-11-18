@@ -20,10 +20,10 @@
  * @file            createRecoveryPassage.cc
  *
  * @brief           Implements createRecoveryPassage(), declared in
- *                  bootstrap/private_functions/private_functions.h.
+ *                  map_linking/private_functions/private_functions.h.
  */
 
-#include "scene_understanding/semantics_manager/bootstrap/private_functions/private_functions.h"
+#include "scene_understanding/map_linking/private_functions/private_functions.h"
 
 #include <rclcpp/logging.hpp>
 

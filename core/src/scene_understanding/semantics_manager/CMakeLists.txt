@@ -1,29 +1,21 @@
 # SemanticsManager object sources; the scene graph operations are built from
 # the graph and bootstrap subpackages, the pipeline stages from the stage
 # packages (plane_intake, plane_checks, plane_fusion, passage_detection,
-# room_association, room_tracking, room_validation) next to this one.
+# room_association, room_tracking, room_validation) and map_linking next to
+# this one.
 include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/captureUnresolvedWallHypotheses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/ensureActiveMapBootstrapHierarchyForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerification.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/logSemanticDiagnostics.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingLost.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingRecovered.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/submitVerificationVerdict.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildFiniteWallSegment2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceMatchSettings.cc
@@ -52,4 +44,5 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${VS_GRAPHS_ROOMASSOCIATION_SOURCES}
   ${VS_GRAPHS_ROOMTRACKING_SOURCES}
   ${VS_GRAPHS_ROOMVALIDATION_SOURCES}
+  ${VS_GRAPHS_MAPLINKING_SOURCES}
 )
