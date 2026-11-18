@@ -1883,6 +1883,88 @@ class SemanticsManager
                                    unsigned long   mapId_in,
                                    bool           &areAllWallsAdmitted_out);
 
+    /*!
+     * @brief           Distance from a point to the nearest finite point of a
+     *                  free-space cluster; infinity when the cluster has no
+     *                  finite point.
+     *
+     * @param[in]       cluster_world_m_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       point_world_m_in
+     *                  Query point, world frame, metres.
+     *
+     * @param[out]      distance_m_out
+     *                  Distance in metres.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus computeDistanceToCluster(
+        const std::vector<Eigen::Vector3d> &cluster_world_m_in,
+        const Eigen::Vector3d              &point_world_m_in,
+        double                             &distance_m_out) const;
+
+    /*!
+     * @brief           Decides whether a live prospective seed may fuse into
+     *                  the retained room: the seed has no walls, its centre
+     *                  lies inside the retained room's wall footprint (padded
+     *                  by half the thinnest wall) and strictly on the retained
+     *                  room's side of the seed's passage.
+     *
+     * @param[in]       p_retainedRoom_in
+     *                  Room that would absorb the seed; borrowed.
+     *
+     * @param[in]       p_seedRoom_in
+     *                  Live prospective room; borrowed.
+     *
+     * @param[in]       p_seedPassage_in
+     *                  Passage holding the seed as its prospective room;
+     *                  borrowed.
+     *
+     * @param[in]       p_currentMap_in
+     *                  Current map; borrowed.
+     *
+     * @param[in]       retainedCentroid_world_m_in
+     *                  Retained room centroid, world frame, metres.
+     *
+     * @param[out]      isFusable_out
+     *                  True when the seed may fuse.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus isSeedFusableIntoRoom(
+        semantic::Room        *p_retainedRoom_in,
+        semantic::Room        *p_seedRoom_in,
+        semantic::Passage     *p_seedPassage_in,
+        map::Map              *p_currentMap_in,
+        const Eigen::Vector3d &retainedCentroid_world_m_in,
+        bool                  &isFusable_out);
+
+    /*!
+     * @brief           Admits every wall of a duplicate room to the retained
+     *                  room; when one wall is rejected, every live room of
+     *                  the map gets back the walls it had before.
+     *
+     * @param[in]       p_retainedRoom_in
+     *                  Room receiving the walls; borrowed.
+     *
+     * @param[in]       p_duplicateRoom_in
+     *                  Duplicate room giving its walls; borrowed.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the current map.
+     *
+     * @param[out]      areAllWallsAdmitted_out
+     *                  True when every wall was admitted.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        transferDuplicateRoomWalls(semantic::Room *p_retainedRoom_in,
+                                   semantic::Room *p_duplicateRoom_in,
+                                   unsigned long   mapId_in,
+                                   bool           &areAllWallsAdmitted_out);
+
     /* Wall ownership (room_association/wall_ownership/). */
 
     /*!
@@ -1936,6 +2018,105 @@ class SemanticsManager
      *                  valid.
      */
     [[nodiscard]] SemanticsManagerStatus suppressUndefendedWalls(void);
+
+    /*!
+     * @brief           Passage-side routing of one contested wall: an owner
+     *                  whose centroid-to-wall segment crosses a passable
+     *                  opening is rejected, and the passage's live far-side
+     *                  room of the current map is preferred (confirmed rooms
+     *                  first, then the lower id) unless it would take the wall
+     *                  from a distinct confirmed owner.
+     *
+     * @param[in]       p_wall_in
+     *                  Contested wall; borrowed.
+     *
+     * @param[in]       owners_in
+     *                  Rooms that hold the wall; borrowed.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages in id order; borrowed.
+     *
+     * @param[in]       groundNormal_world_in
+     *                  Unit ground normal, world frame, or zero.
+     *
+     * @param[out]      p_retainedOwner_out
+     *                  Far-side owner chosen by a passage, or nullptr;
+     *                  borrowed.
+     *
+     * @param[out]      passageRejectedOwners_out
+     *                  Owners a passage ruled out.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus resolvePassageSideWallOwner(
+        geometric::Plane                       *p_wall_in,
+        const std::vector<semantic::Room *>    &owners_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        const Eigen::Vector3d                  &groundNormal_world_in,
+        semantic::Room                        *&p_retainedOwner_out,
+        std::unordered_set<semantic::Room *>   &passageRejectedOwners_out);
+
+    /*!
+     * @brief           Tells whether a live room of the given list owns the
+     *                  wall.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to look up; borrowed.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the current map; borrowed.
+     *
+     * @param[out]      isOwned_out
+     *                  True when a live room lists the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        isWallOwnedByLiveRoom(geometric::Plane                    *p_wall_in,
+                              const std::vector<semantic::Room *> &allRooms_in,
+                              bool                                &isOwned_out);
+
+    /*!
+     * @brief           Tells whether a live passage of the given list holds
+     *                  the wall as its door or as one of its walls.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to look up; borrowed.
+     *
+     * @param[in]       allPassages_in
+     *                  Passages of the current map; borrowed.
+     *
+     * @param[out]      isAssociated_out
+     *                  True when a live passage holds the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus isWallAssociatedWithPassage(
+        geometric::Plane                       *p_wall_in,
+        const std::vector<semantic::Passage *> &allPassages_in,
+        bool                                   &isAssociated_out);
+
+    /*!
+     * @brief           Tells whether a live skeleton cluster supports the
+     *                  wall: its centroid is near the wall centroid and one
+     *                  of its points lies close to the wall plane.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to check; borrowed.
+     *
+     * @param[in]       skeletonClusters_in
+     *                  Skeleton clusters of the current map, world frame,
+     *                  metres.
+     *
+     * @param[out]      hasCompatibleLiveCluster_out
+     *                  True when a cluster supports the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus hasWallLiveClusterSupport(
+        geometric::Plane                                *p_wall_in,
+        const std::vector<std::vector<Eigen::Vector3d>> &skeletonClusters_in,
+        bool &hasCompatibleLiveCluster_out);
 
     /* Passage rooms (room_association/passage_rooms/). */
 

@@ -204,85 +204,27 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
             continue;
         }
 
-        const bool ownedByLiveRoom = std::any_of(
-            allRooms.begin(),
-            allRooms.end(),
-            [p_wall](semantic::Room *p_room)
-            {
-                bool roomIsBad{};
-                if (!(p_room == nullptr) &&
-                    p_room->isBad(roomIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_room == nullptr || roomIsBad)
-                {
-                    return false;
-                }
-
-                std::vector<geometric::Plane *> roomWalls{};
-                if (p_room->getWalls(roomWalls) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                return std::find(roomWalls.begin(), roomWalls.end(), p_wall) !=
-                       roomWalls.end();
-            });
-        const bool associatedWithPassage = std::any_of(
-            allPassages.begin(),
-            allPassages.end(),
-            [p_wall](semantic::Passage *p_passage)
-            {
-                bool passageIsBad{};
-                if (!(p_passage == nullptr) &&
-                    p_passage->isBad(passageIsBad) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_passage == nullptr || passageIsBad)
-                {
-                    return false;
-                }
-
-                std::vector<geometric::Plane *> passageWalls{};
-                if (p_passage->getAssociateWalls(passageWalls) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getAssociateWalls returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                vs_graphs::core::geometric::Plane *p_passageAssociateDoor =
-                    nullptr;
-                if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getAssociateDoor returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                return p_passageAssociateDoor == p_wall ||
-                       std::find(passageWalls.begin(),
-                                 passageWalls.end(),
-                                 p_wall) != passageWalls.end();
-            });
+        bool ownedByLiveRoom{};
+        if (isWallOwnedByLiveRoom(p_wall, allRooms, ownedByLiveRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isWallOwnedByLiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool associatedWithPassage{};
+        if (isWallAssociatedWithPassage(p_wall,
+                                        allPassages,
+                                        associatedWithPassage) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: isWallAssociatedWithPassage returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         WallAdmissionEvidence evidence{};
         if (evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,
@@ -297,71 +239,17 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                 __func__);
         }
 
-        geometric::Plane::GeometrySnapshot wallGeometry{};
-        if (p_wall->getGeometrySnapshot(wallGeometry) !=
-            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        bool hasCompatibleLiveCluster{};
+        if (hasWallLiveClusterSupport(p_wall,
+                                      skeletonClusters,
+                                      hasCompatibleLiveCluster) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGeometrySnapshot returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        const Eigen::Vector4d wallEquation_world =
-            wallGeometry.planeEquation_world;
-        const double wallNormalNorm = wallEquation_world.head<3>().norm();
-        bool         hasCompatibleLiveCluster = false;
-        if (wallGeometry.planeCentroid_world_m.allFinite() &&
-            wallEquation_world.allFinite() && wallNormalNorm > 1e-8)
-        {
-            const Eigen::Vector3d wallNormal_world =
-                wallEquation_world.head<3>() / wallNormalNorm;
-            const double wallOffset_m = wallEquation_world(3) / wallNormalNorm;
-            const double maximumCentroidDistance_m =
-                2.0 * static_cast<double>(
-                          p_sysParams->roomSeg
-                              .clusterCentroidWallCentroidDistanceThresh);
-            const double maximumPointDistance_m = static_cast<double>(
-                p_sysParams->roomSeg.clusterPointWallDistanceThresh);
-
-            for (const std::vector<Eigen::Vector3d> &cluster : skeletonClusters)
-            {
-                if (cluster.empty())
-                {
-                    continue;
-                }
-                Eigen::Vector3d clusterCentroid_world_m{};
-                if (utils::utils::Utils::computeCentroidFromPoints(
-                        cluster,
-                        clusterCentroid_world_m) !=
-                    utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-                {
-                    /*!
-                     * computeCentroidFromPoints cannot fail; continue as
-                     * before.
-                     */
-                }
-                if (!clusterCentroid_world_m.allFinite() ||
-                    (clusterCentroid_world_m -
-                     wallGeometry.planeCentroid_world_m)
-                            .norm() > maximumCentroidDistance_m)
-                {
-                    continue;
-                }
-                hasCompatibleLiveCluster = std::any_of(
-                    cluster.begin(),
-                    cluster.end(),
-                    [&wallNormal_world, wallOffset_m, maximumPointDistance_m](
-                        const Eigen::Vector3d &point)
-                    {
-                        return point.allFinite() &&
-                               std::abs(wallNormal_world.dot(point) +
-                                        wallOffset_m) <= maximumPointDistance_m;
-                    });
-                if (hasCompatibleLiveCluster)
-                {
-                    break;
-                }
-            }
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: hasWallLiveClusterSupport returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         /*!
