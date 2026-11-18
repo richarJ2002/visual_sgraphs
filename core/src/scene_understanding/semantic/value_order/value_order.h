@@ -179,10 +179,32 @@ bool isRawPlaneRefLess(const RawPlaneRef &lhs_in, const RawPlaneRef &rhs_in);
 template <typename EntityT>
 bool isEntityIdLess(const EntityT *p_first_in, const EntityT *p_second_in);
 
+/*!
+ * @brief           Equality matching isEntityIdLess(): two entity pointers
+ *                  are equal when both are null or both are non-null with the
+ *                  same identifier, so std::unique after an id sort drops
+ *                  entities that repeat an identifier.
+ *
+ * @tparam          EntityT
+ *                  Entity type with `getId(int &) const` returning a status
+ *                  whose success value is 0 (Room, Passage, Plane).
+ *
+ * @param[in]       p_first_in
+ *                  Left-hand borrowed entity; may be null.
+ *
+ * @param[in]       p_second_in
+ *                  Right-hand borrowed entity; may be null.
+ *
+ * @return          True when both entities have the same identifier.
+ */
+template <typename EntityT>
+bool isEntityIdEqual(const EntityT *p_first_in, const EntityT *p_second_in);
+
 } /* namespace semantic */
 } /* namespace core */
 } /* namespace vs_graphs */
 
+#include "scene_understanding/semantic/value_order/methods/isEntityIdEqual.tpp"
 #include "scene_understanding/semantic/value_order/methods/isEntityIdLess.tpp"
 
 #endif /* SEMANTIC_VALUE_ORDER_H */

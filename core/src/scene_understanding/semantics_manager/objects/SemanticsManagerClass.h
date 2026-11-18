@@ -36,6 +36,7 @@
 #include "scene_understanding/semantic/semantic_diagnostics/semantic_diagnostics.h"
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include "scene_understanding/semantics_manager/objects/AbsorbedSceneGraphContentsStruct.h"
+#include "scene_understanding/semantics_manager/objects/FarSideProspectiveMatchStruct.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockModeEnum.h"
 #include "scene_understanding/semantics_manager/objects/GraphLockScopeStruct.h"
 #include "scene_understanding/semantics_manager/objects/PassageRoomLinkStateStruct.h"
@@ -1288,6 +1289,362 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         associateWallsToRoomsFromFreeSpaceClusters(void);
+
+    /*!
+     * @brief           Collects the admissible walls among the given planes:
+     *                  live planes that pass evaluateWallAdmissionEvidence()
+     *                  against the biggest ground plane's normal, in input
+     *                  order.
+     *
+     * @param[in]       allPlanes_in
+     *                  Every plane of the atlas; borrowed.
+     *
+     * @param[out]      allWalls_out
+     *                  Admissible walls, appended in input order; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus collectAdmissibleWalls(
+        const std::vector<geometric::Plane *> &allPlanes_in,
+        std::vector<geometric::Plane *>       &allWalls_out);
+
+    /*!
+     * @brief           Finds the walls a free-space cluster supports, ordered
+     *                  nearest to the camera first; walls repeating an id are
+     *                  dropped.
+     *
+     * @param[in]       cluster_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @param[in]       allWalls_in
+     *                  Admissible walls; borrowed.
+     *
+     * @param[out]      closestWalls_out
+     *                  Supported walls; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findClusterWalls(const std::vector<Eigen::Vector3d> &cluster_in,
+                         const Eigen::Vector3d              &clusterCentroid_in,
+                         const std::vector<geometric::Plane *> &allWalls_in,
+                         std::vector<geometric::Plane *> &closestWalls_out);
+
+    /*!
+     * @brief           Decides whether a wall bounds a free-space cluster: its
+     *                  centroid is near the cluster, its finite extent is
+     *                  large enough, a cluster point lies close to its plane
+     *                  and enough nearby points project inside its finite
+     *                  patch.
+     *
+     * @param[in]       p_wall_in
+     *                  Candidate wall; borrowed, may be null.
+     *
+     * @param[in]       cluster_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @param[out]      isSupported_out
+     *                  True when the cluster supports the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        isWallSupportedByCluster(geometric::Plane                   *p_wall_in,
+                                 const std::vector<Eigen::Vector3d> &cluster_in,
+                                 const Eigen::Vector3d &clusterCentroid_in,
+                                 bool                  &isSupported_out) const;
+
+    /*!
+     * @brief           Finds the nearest undefined prospective room, not yet
+     *                  matched this cycle, whose passage puts the cluster on
+     *                  its far side and which shares wall evidence with the
+     *                  cluster (or, without walls, has no finite wall between
+     *                  its seed and the cluster).
+     *
+     * @param[in]       allPlanes_in
+     *                  Every plane of the atlas; borrowed.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @param[in]       closestWalls_in
+     *                  Walls the cluster supports; borrowed.
+     *
+     * @param[in]       matchedRoomIds_in
+     *                  Ids of rooms already matched this cycle.
+     *
+     * @param[out]      prospectiveMatch_out
+     *                  Matched prospective room, its passage and its walls
+     *                  before the cluster; empty when none matched.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus findFarSideProspectiveRoom(
+        const std::vector<geometric::Plane *> &allPlanes_in,
+        const Eigen::Vector3d                 &clusterCentroid_in,
+        const std::vector<geometric::Plane *> &closestWalls_in,
+        const std::unordered_set<int>         &matchedRoomIds_in,
+        FarSideProspectiveMatch               &prospectiveMatch_out);
+
+    /*!
+     * @brief           Resolves the room a cluster describes: the matched
+     *                  prospective room, else associateRooms(), else the room
+     *                  that already owns one of the cluster's walls on the
+     *                  cluster's side. Records the matched room id.
+     *
+     * @param[in]       clusterId_in
+     *                  Index of the cluster, for the log.
+     *
+     * @param[in]       cluster_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @param[in]       closestWalls_in
+     *                  Walls the cluster supports; borrowed.
+     *
+     * @param[in]       p_clusterProspective_in
+     *                  Matched prospective room, or nullptr; borrowed.
+     *
+     * @param[in,out]   matchedRoomIds_inout
+     *                  Ids of rooms matched this cycle.
+     *
+     * @param[out]      p_room_out
+     *                  Resolved room, or nullptr when the cluster matches no
+     *                  known space; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus resolveClusterRoom(
+        std::size_t                            clusterId_in,
+        const std::vector<Eigen::Vector3d>    &cluster_in,
+        const Eigen::Vector3d                 &clusterCentroid_in,
+        const std::vector<geometric::Plane *> &closestWalls_in,
+        semantic::Room                        *p_clusterProspective_in,
+        std::unordered_set<int>               &matchedRoomIds_inout,
+        semantic::Room                       *&p_room_out);
+
+    /*!
+     * @brief           Logs why a cluster that matches no known space is
+     *                  deferred: a later room of the map must come through a
+     *                  passage, a pending recovery room or the bootstrap owns
+     *                  first-room creation.
+     *
+     * @param[in]       clusterId_in
+     *                  Index of the cluster, for the log.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        reportDeferredCluster(std::size_t clusterId_in);
+
+    /*!
+     * @brief           Tells whether a room is still the undefined
+     *                  prospective room of some passage.
+     *
+     * @param[in]       p_room_in
+     *                  Room to check; borrowed.
+     *
+     * @param[out]      isPassageBound_out
+     *                  True when a passage holds the room as its undefined
+     *                  prospective room.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        isRoomPassageBoundProspective(semantic::Room *p_room_in,
+                                      bool           &isPassageBound_out);
+
+    /*!
+     * @brief           Admits the cluster's walls to a room, nearest first:
+     *                  skips walls routed past a passage, walls the room
+     *                  already has and walls another room owns unless that
+     *                  owner is a transferable provisional room, then moves
+     *                  each admitted wall from its previous owner and
+     *                  registers it as a room wall.
+     *
+     * @param[in]       p_room_in
+     *                  Room receiving the walls; borrowed.
+     *
+     * @param[in]       closestWalls_in
+     *                  Walls the cluster supports; borrowed.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus admitClusterWallsToRoom(
+        semantic::Room                        *p_room_in,
+        const std::vector<geometric::Plane *> &closestWalls_in,
+        const Eigen::Vector3d                 &clusterCentroid_in);
+
+    /*!
+     * @brief           Applies enforcePassageApertureBackstop() to one cluster
+     *                  wall with all passages in id order.
+     *
+     * @param[in]       p_room_in
+     *                  Room the wall would join; borrowed.
+     *
+     * @param[in]       p_wall_in
+     *                  Cluster wall; borrowed.
+     *
+     * @param[out]      isFarSideBound_out
+     *                  True when the backstop removed or rerouted the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        applyClusterWallBackstop(semantic::Room   *p_room_in,
+                                 geometric::Plane *p_wall_in,
+                                 bool             &isFarSideBound_out);
+
+    /*!
+     * @brief           Finds the first live room in id order, other than the
+     *                  given one, that owns the wall.
+     *
+     * @param[in]       p_room_in
+     *                  Room to ignore; borrowed.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to look up; borrowed.
+     *
+     * @param[out]      p_wallOwner_out
+     *                  Owning room, or nullptr; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findOtherWallOwner(semantic::Room   *p_room_in,
+                           geometric::Plane *p_wall_in,
+                           semantic::Room  *&p_wallOwner_out);
+
+    /*!
+     * @brief           Decides whether a wall may leave its current owner: the
+     *                  owner is a transferable provisional room (undefined,
+     *                  one wall, centre within 0.20 m of the wall plane), and
+     *                  otherwise finds the passage that separates the owner
+     *                  from the cluster with the wall's observing cameras on
+     *                  the cluster side.
+     *
+     * @param[in]       p_wallOwner_in
+     *                  Current owner of the wall; borrowed.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to check; borrowed.
+     *
+     * @param[in]       clusterCentroid_in
+     *                  Cluster centroid, world frame, metres.
+     *
+     * @param[out]      isTransferableProvisional_out
+     *                  True when the owner is a transferable provisional room.
+     *
+     * @param[out]      p_transferPassage_out
+     *                  Separating passage, or nullptr; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        checkWallOwnerTransfer(semantic::Room        *p_wallOwner_in,
+                               geometric::Plane      *p_wall_in,
+                               const Eigen::Vector3d &clusterCentroid_in,
+                               bool &isTransferableProvisional_out,
+                               semantic::Passage *&p_transferPassage_out);
+
+    /*!
+     * @brief           Removes an admitted wall from its previous owner and
+     *                  logs the transfer; a transferable provisional owner is
+     *                  erased and marked bad.
+     *
+     * @param[in]       p_previousOwner_in
+     *                  Previous owner of the wall, or nullptr; borrowed.
+     *
+     * @param[in]       p_room_in
+     *                  Room that admitted the wall; borrowed.
+     *
+     * @param[in]       p_wall_in
+     *                  Admitted wall; borrowed.
+     *
+     * @param[in]       isTransferableProvisional_in
+     *                  True when the previous owner is a transferable
+     *                  provisional room.
+     *
+     * @param[in]       p_transferPassage_in
+     *                  Separating passage, for the log; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        detachWallFromPreviousOwner(semantic::Room   *p_previousOwner_in,
+                                    semantic::Room   *p_room_in,
+                                    geometric::Plane *p_wall_in,
+                                    bool isTransferableProvisional_in,
+                                    semantic::Passage *p_transferPassage_in);
+
+    /*!
+     * @brief           Consolidates provisional rooms into the room, removes
+     *                  its invalid walls and moves its centroid a damped step
+     *                  towards the centre its walls give.
+     *
+     * @param[in]       p_room_in
+     *                  Cluster room; borrowed.
+     *
+     * @param[out]      roomWalls_out
+     *                  Walls of the room after the clean-up; borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus refreshClusterRoomGeometry(
+        semantic::Room                  *p_room_in,
+        std::vector<geometric::Plane *> &roomWalls_out);
+
+    /*!
+     * @brief           Confirms an undefined cluster room with enough cluster
+     *                  vertices and at least one wall: a matched prospective
+     *                  room whose pre-cluster walls are still shared is
+     *                  promoted and linked to its passage; any other room
+     *                  that no passage holds as prospective is classified as
+     *                  a room.
+     *
+     * @param[in]       clusterId_in
+     *                  Index of the cluster, for the log.
+     *
+     * @param[in]       cluster_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       p_room_in
+     *                  Cluster room; borrowed.
+     *
+     * @param[in]       roomWalls_in
+     *                  Walls of the room; borrowed.
+     *
+     * @param[in]       closestWalls_in
+     *                  Walls the cluster supports; borrowed.
+     *
+     * @param[in]       prospectiveMatch_in
+     *                  Prospective match found for the cluster.
+     *
+     * @param[in]       roomIsPassageBoundProspective_in
+     *                  True when a passage holds the room as its undefined
+     *                  prospective room.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus confirmClusterRoom(
+        std::size_t                            clusterId_in,
+        const std::vector<Eigen::Vector3d>    &cluster_in,
+        semantic::Room                        *p_room_in,
+        const std::vector<geometric::Plane *> &roomWalls_in,
+        const std::vector<geometric::Plane *> &closestWalls_in,
+        const FarSideProspectiveMatch         &prospectiveMatch_in,
+        bool roomIsPassageBoundProspective_in);
 
     /*!
      * @brief           Gets the latest skeleton cluster acquired from voxblox.
