@@ -47,6 +47,7 @@
 #include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
 #include "scene_understanding/semantics_manager/objects/SceneGraphSnapshotStruct.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/WallAdmissionEvidenceStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallGapStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabProfileStruct.h"
 #include "scene_understanding/semantics_manager/objects/WallSlabQueryStruct.h"
@@ -1083,6 +1084,94 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus associateAllWallsToRooms(void);
 
     /*!
+     * @brief           Tells whether a wall is reached through a passage's
+     *                  opening from a viewpoint: the line to the wall centroid
+     *                  crosses the opening, or the lines to most of about 200
+     *                  sampled finite support points do.
+     *
+     * @param[in]       p_passage_in
+     *                  Passage to test; borrowed.
+     *
+     * @param[in]       wallCentroid_world_m_in
+     *                  Wall centroid, world frame, metres.
+     *
+     * @param[in]       wallGeometry_in
+     *                  Geometry snapshot of the wall.
+     *
+     * @param[in]       viewpoint_world_m_in
+     *                  Viewpoint, world frame, metres.
+     *
+     * @param[in]       groundNormal_world_in
+     *                  Unit ground normal, world frame, or zero.
+     *
+     * @param[in]       minimumSideDistance_m_in
+     *                  Side band of the passage plane, metres.
+     *
+     * @param[out]      isSeenThrough_out
+     *                  True when the wall is reached through the opening.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus isWallSeenThroughPassage(
+        semantic::Passage                        *p_passage_in,
+        const Eigen::Vector3d                    &wallCentroid_world_m_in,
+        const geometric::Plane::GeometrySnapshot &wallGeometry_in,
+        const Eigen::Vector3d                    &viewpoint_world_m_in,
+        const Eigen::Vector3d                    &groundNormal_world_in,
+        double                                    minimumSideDistance_m_in,
+        bool                                     &isSeenThrough_out);
+
+    /*!
+     * @brief           Tells whether a live confirmed room other than the
+     *                  given one owns the wall.
+     *
+     * @param[in]       p_room_in
+     *                  Room to ignore; borrowed.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall to look up; borrowed.
+     *
+     * @param[out]      isOwned_out
+     *                  True when another confirmed room owns the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        isWallOwnedByOtherConfirmedRoom(semantic::Room   *p_room_in,
+                                        geometric::Plane *p_wall_in,
+                                        bool             &isOwned_out);
+
+    /*!
+     * @brief           Records why an inadmissible wall is rejected (class
+     *                  vote, finite fit, then observation count) and prints a
+     *                  wall_rejection SG_PIPELINE record when the reason
+     *                  changes.
+     *
+     * @param[in]       p_plane_in
+     *                  Rejected wall; borrowed.
+     *
+     * @param[in]       planeId_in
+     *                  Id of the wall.
+     *
+     * @param[in]       activeMapIdRecord_in
+     *                  Active map id for the record, -1 without a map.
+     *
+     * @param[in]       variantTypeName_in
+     *                  Name of the wall's plane variant.
+     *
+     * @param[in]       admissionEvidence_in
+     *                  Admission evidence of the wall.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        recordWallRejection(geometric::Plane            *p_plane_in,
+                            int                          planeId_in,
+                            long long                    activeMapIdRecord_in,
+                            const char                  *variantTypeName_in,
+                            const WallAdmissionEvidence &admissionEvidence_in);
+
+    /*!
      * @brief           Adds a wall only when it preserves a valid room
      *                  boundary.
      *
@@ -1800,88 +1889,6 @@ class SemanticsManager
         const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
         const std::vector<vs_graphs::core::geometric::Plane *>
             &wallList_world_in);
-
-    /*!
-     * @brief           Distance from a point to the nearest finite point of a
-     *                  free-space cluster; infinity when the cluster has no
-     *                  finite point.
-     *
-     * @param[in]       cluster_world_m_in
-     *                  Free-space cluster points, world frame, metres.
-     *
-     * @param[in]       point_world_m_in
-     *                  Query point, world frame, metres.
-     *
-     * @param[out]      distance_m_out
-     *                  Distance in metres.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus computeDistanceToCluster(
-        const std::vector<Eigen::Vector3d> &cluster_world_m_in,
-        const Eigen::Vector3d              &point_world_m_in,
-        double                             &distance_m_out) const;
-
-    /*!
-     * @brief           Decides whether a live prospective seed may fuse into
-     *                  the retained room: the seed has no walls, its centre
-     *                  lies inside the retained room's wall footprint (padded
-     *                  by half the thinnest wall) and strictly on the retained
-     *                  room's side of the seed's passage.
-     *
-     * @param[in]       p_retainedRoom_in
-     *                  Room that would absorb the seed; borrowed.
-     *
-     * @param[in]       p_seedRoom_in
-     *                  Live prospective room; borrowed.
-     *
-     * @param[in]       p_seedPassage_in
-     *                  Passage holding the seed as its prospective room;
-     *                  borrowed.
-     *
-     * @param[in]       p_currentMap_in
-     *                  Current map; borrowed.
-     *
-     * @param[in]       retainedCentroid_world_m_in
-     *                  Retained room centroid, world frame, metres.
-     *
-     * @param[out]      isFusable_out
-     *                  True when the seed may fuse.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus isSeedFusableIntoRoom(
-        semantic::Room        *p_retainedRoom_in,
-        semantic::Room        *p_seedRoom_in,
-        semantic::Passage     *p_seedPassage_in,
-        map::Map              *p_currentMap_in,
-        const Eigen::Vector3d &retainedCentroid_world_m_in,
-        bool                  &isFusable_out);
-
-    /*!
-     * @brief           Admits every wall of a duplicate room to the retained
-     *                  room; when one wall is rejected, every live room of
-     *                  the map gets back the walls it had before.
-     *
-     * @param[in]       p_retainedRoom_in
-     *                  Room receiving the walls; borrowed.
-     *
-     * @param[in]       p_duplicateRoom_in
-     *                  Duplicate room giving its walls; borrowed.
-     *
-     * @param[in]       mapId_in
-     *                  Id of the current map.
-     *
-     * @param[out]      areAllWallsAdmitted_out
-     *                  True when every wall was admitted.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        transferDuplicateRoomWalls(semantic::Room *p_retainedRoom_in,
-                                   semantic::Room *p_duplicateRoom_in,
-                                   unsigned long   mapId_in,
-                                   bool           &areAllWallsAdmitted_out);
 
     /*!
      * @brief           Distance from a point to the nearest finite point of a

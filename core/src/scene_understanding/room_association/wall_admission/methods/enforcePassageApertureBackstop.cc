@@ -222,79 +222,12 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        const auto crossesTo =
-            [this, p_passage, &groundNormal_world_in, minimumSideDistance_m](
-                const Eigen::Vector3d &segmentStart_in,
-                const Eigen::Vector3d &segmentEnd_in)
-        {
-            bool crossesPassageOpening_out{};
-            if (segmentCrossesPassageOpening(
-                    segmentStart_in,
-                    segmentEnd_in,
-                    p_passage,
-                    groundNormal_world_in,
-                    static_cast<double>(
-                        p_sysParams->roomSeg.passagePartition.openingMargin_m),
-                    minimumSideDistance_m,
-                    crossesPassageOpening_out) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: segmentCrossesPassageOpening returned a failure "
-                    "status although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            return crossesPassageOpening_out;
-        };
         /* The wall is reached through the opening when the line to its
          * centroid is, or when the lines to most of its observed support
          * points are: a wall seen through a doorway is often only partly in
          * view, and its centroid may lie behind the solid part of the door
          * wall. Support points on the start's side or inside the side band
          * count against the wall. */
-        const auto crossesFrom = [&crossesTo, &wallGetCentroid, &wallGeometry](
-                                     const Eigen::Vector3d &segmentStart_in)
-        {
-            if (crossesTo(segmentStart_in, wallGetCentroid))
-            {
-                return true;
-            }
-            const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr
-                p_wallSupportCloud = wallGeometry.supportCloud;
-            if (p_wallSupportCloud == nullptr || p_wallSupportCloud->empty())
-            {
-                return false;
-            }
-            /* ponytail: fixed stride to about 200 tested points per wall
-             * and passage; replace with a per-cycle cached decision if the
-             * every-cycle sweep ever shows in the semantic cycle time. */
-            const std::size_t supportPointStride =
-                std::max<std::size_t>(1U, p_wallSupportCloud->size() / 200U);
-            std::size_t testedPointCount   = 0U;
-            std::size_t crossingPointCount = 0U;
-            for (std::size_t pointIndex = 0U;
-                 pointIndex < p_wallSupportCloud->size();
-                 pointIndex += supportPointStride)
-            {
-                const pcl::PointXYZRGBA &supportPoint =
-                    p_wallSupportCloud->points[pointIndex];
-                if (!pcl::isFinite(supportPoint))
-                {
-                    continue;
-                }
-                ++testedPointCount;
-                if (crossesTo(
-                        segmentStart_in,
-                        Eigen::Vector3d(static_cast<double>(supportPoint.x),
-                                        static_cast<double>(supportPoint.y),
-                                        static_cast<double>(supportPoint.z))))
-                {
-                    ++crossingPointCount;
-                }
-            }
-            return 2U * crossingPointCount > testedPointCount;
-        };
 
         /* For the room the camera is in, the camera is the viewpoint: a wall
          * it sees through the opening from the room's side lies beyond the
@@ -331,68 +264,42 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                     passageNormal_world;
             }
         }
-        const bool crossesPassageOpening =
-            isViewpointOnRoomSide && crossesFrom(viewpoint_world_m);
+        bool crossesPassageOpening = false;
+        if (isViewpointOnRoomSide)
+        {
+            if (isWallSeenThroughPassage(p_passage,
+                                         wallGetCentroid,
+                                         wallGeometry,
+                                         viewpoint_world_m,
+                                         groundNormal_world_in,
+                                         minimumSideDistance_m,
+                                         crossesPassageOpening) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: isWallSeenThroughPassage returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+        }
         if (!crossesPassageOpening)
         {
             continue;
         }
 
         /* Never steal a wall already claimed by a distinct confirmed room. */
-        bool                          ownedByConfirmedRoom = false;
-        std::vector<semantic::Room *> atlasAllRooms{};
-        if (getAllRoomsInIdOrder(atlasAllRooms) !=
+        bool ownedByConfirmedRoom{};
+        if (isWallOwnedByOtherConfirmedRoom(p_room_inout,
+                                            p_wall_in,
+                                            ownedByConfirmedRoom) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAllRoomsInIdOrder returned a failure status; "
-                         "continuing as before.",
-                         __func__);
-        }
-        for (vs_graphs::core::semantic::Room *p_other : atlasAllRooms)
-        {
-            bool otherIsBad{};
-            if (!(p_other == nullptr) &&
-                p_other->isBad(otherIsBad) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Room::RoomVariant otherRoomVariant{};
-            if (!(p_other == nullptr || otherIsBad ||
-                  p_other == p_room_inout) &&
-                p_other->getRoomVariant(otherRoomVariant) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomVariant returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_other == nullptr || otherIsBad || p_other == p_room_inout ||
-                otherRoomVariant ==
-                    vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
-            {
-                continue;
-            }
-            std::vector<geometric::Plane *> otherWalls{};
-            if (p_other->getWalls(otherWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (std::find(otherWalls.begin(), otherWalls.end(), p_wall_in) !=
-                otherWalls.end())
-            {
-                ownedByConfirmedRoom = true;
-                break;
-            }
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: isWallOwnedByOtherConfirmedRoom returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (ownedByConfirmedRoom)
         {

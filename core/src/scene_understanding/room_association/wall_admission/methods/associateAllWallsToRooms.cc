@@ -348,54 +348,18 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         /* Walls that fail the admission evidence are rejected for now. */
         if (!admissionEvidence.isAdmissible)
         {
-            /* Init variable which will hold the voted variant of the plane */
-            geometric::Plane::PlaneVariant votedPlanVariant{};
-
-            /* Extract the expected plane variation */
-            if (p_plane->getExpectedPlaneType(votedPlanVariant) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            if (recordWallRejection(p_plane,
+                                    planeId,
+                                    activeMapIdRecord,
+                                    variantTypeName,
+                                    admissionEvidence) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getExpectedPlaneType returned a failure "
-                             "status although it cannot fail; continuing as "
-                             "before.",
-                             __func__);
-            }
-
-            /* Init variable which will track reason plane should be rejected */
-            std::string rejectionReason;
-
-            /* The votes outrank the fit, which outranks the observation age */
-            if (votedPlanVariant != geometric::Plane::PlaneVariant::WALL)
-            {
-                rejectionReason = "CLASS_NOT_WALL";
-            }
-            else if (!admissionEvidence.hasAdequateFiniteFit)
-            {
-                rejectionReason = "INADEQUATE_FINITE_FIT";
-            }
-            else
-            {
-                rejectionReason = "INSUFFICIENT_OBSERVATIONS";
-            }
-
-            /* Emit the rejection record only when the reason changes. */
-            if (loggedWallRejectionReasons[planeId] != rejectionReason)
-            {
-                loggedWallRejectionReasons[planeId] = rejectionReason;
-                std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
-                             "\"map_id\":"
-                          << activeMapIdRecord
-                          << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                          << ",\"wall_id\":" << planeId << ",\"class\":\""
-                          << variantTypeName
-                          << "\",\"lifecycle\":\"REJECTED\","
-                             "\"owner\":\"NONE\",\"reason\":\""
-                          << rejectionReason << "\",\"support\":"
-                          << admissionEvidence.fittedPointCount
-                          << ",\"observations\":"
-                          << admissionEvidence.observationCount << "}"
-                          << std::endl;
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recordWallRejection returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             continue;
         }
