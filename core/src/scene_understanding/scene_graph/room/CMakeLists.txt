@@ -1,51 +1,13 @@
-# Room object sources: exactly this object's translation units.
+# Room object sources: split into subpackages, each declaring exactly its
+# own translation units.
+include(${CMAKE_CURRENT_LIST_DIR}/boundary/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/passages/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/state/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/walls/CMakeLists.txt)
+
 set(VS_GRAPHS_SCENEGRAPH_ROOM_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addPassageAssociation.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/clearPassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/clearWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getBoundaryCorners_world_m.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getBoundaryStatus.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCeilingPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCentroid.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getGroundPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getGroundPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getHasKnownLabel.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getIsPassageFaceRefused.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getIsSeparatedFrom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMatchedContext.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getName.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getObservationGaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassages.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomVariant.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getWallNormalTowardRoom_world.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/hasPreviouslyVisited.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/hasWall.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/isBoundaryComplete.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/removeInvalidWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/removePassageAssociation.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/removeWall.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/replaceGroundPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/replacePassageAssociation.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/replaceWall.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setBoundaryCorners_world_m.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setBoundaryStatus.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setFloor.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setGroundPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setHasKnownLabel.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setMatchedContext.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setName.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setObservationGaps.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setPreviouslyVisited.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomVariant.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setWalls.cc
+  ${VS_GRAPHS_SCENEGRAPH_ROOM_BOUNDARY_SOURCES}
+  ${VS_GRAPHS_SCENEGRAPH_ROOM_PASSAGES_SOURCES}
+  ${VS_GRAPHS_SCENEGRAPH_ROOM_STATE_SOURCES}
+  ${VS_GRAPHS_SCENEGRAPH_ROOM_WALLS_SOURCES}
 )

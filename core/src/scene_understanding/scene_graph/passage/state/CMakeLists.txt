@@ -1,0 +1,22 @@
+# passage object, state subpackage: exactly this subpackage's translation units.
+set(VS_GRAPHS_SCENEGRAPH_PASSAGE_STATE_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageType.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBlocked.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isPassable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isRecoveryProxy.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeFromDuplicate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBlocked.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setPassable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setPassageType.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setRecoveryProxy.cc
+)
