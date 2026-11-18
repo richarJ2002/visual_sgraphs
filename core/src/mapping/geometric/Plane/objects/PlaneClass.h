@@ -70,7 +70,7 @@ namespace geometric
 /*!
  * @brief           A plane in the map: its observations from key frames, the
  *                  point cloud supporting it and its semantic class (wall,
- *                  ground, door, window).
+ *                  ground, door, window, ceiling).
  */
 class Plane
 {
@@ -104,7 +104,15 @@ class Plane
         /*!
          * @brief           Window surface observed in a wall.
          */
-        WINDOW = 3
+        WINDOW = 3,
+
+        /*!
+         * @brief           Horizontal surface bounding a room from above.
+         *                  Appended last so the archived integers of the
+         *                  other classes and the tie order of
+         *                  getExpectedPlaneType() stay unchanged.
+         */
+        CEILING = 4
     };
 
     /*!

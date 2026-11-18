@@ -34,13 +34,15 @@ namespace semantic_constraints
 bool isGroundTiltAcceptable(const PlaneRuleInput      &planeInput_in,
                             const types::SystemParams &systemParams_in)
 {
-    if (planeInput_in.planeLabel != geometric::Plane::PlaneVariant::GROUND ||
-        !planeInput_in.hasOrientation)
+    const bool isLevelLabel =
+        planeInput_in.planeLabel == geometric::Plane::PlaneVariant::GROUND ||
+        planeInput_in.planeLabel == geometric::Plane::PlaneVariant::CEILING;
+    if (!isLevelLabel || !planeInput_in.hasOrientation)
     {
         return true;
     }
 
-    /* The tilt of a ground plane is the length of its normal's part across
+    /* The tilt of a level plane is the length of its normal's part across
      * up; the normal's sign is irrelevant. */
     const double upComponent =
         planeInput_in.planeNormal_common.dot(planeInput_in.upDirection_common);

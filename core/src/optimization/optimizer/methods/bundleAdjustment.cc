@@ -606,8 +606,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 /* adding plane-point constraints */
                 if (p_systemParams->optimization.planePoint.enabled)
                 {
-                    /* get the class index of the plane */
-                    int                            planeClassIndex{};
+                    /*!
+                     * Every labelled plane (ground, ceiling, wall, door,
+                     * window) gets the point-plane factor; an unlabelled
+                     * plane does not.
+                     */
                     geometric::Plane::PlaneVariant planeType2{};
                     if (plane->getPlaneType(planeType2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -618,17 +621,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (utils::utils::Utils::getClassIdFromPlaneType(
-                            planeType2,
-                            planeClassIndex) !=
-                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-                    {
-                        /*!
-                         * getClassIdFromPlaneType cannot fail; continue as
-                         * before.
-                         */
-                    }
-                    if (planeClassIndex != -1)
+                    if (planeType2 != geometric::Plane::PlaneVariant::UNDEFINED)
                     {
                         /* add the plane-point constraint */
                         optimizable_types::EdgeSE3KFPointToPlane::

@@ -52,6 +52,9 @@ SemanticsManagerStatus
     case geometric::Plane::PlaneVariant::WINDOW:
         variantName_out = "WINDOW";
         break;
+    case geometric::Plane::PlaneVariant::CEILING:
+        variantName_out = "CEILING";
+        break;
     case geometric::Plane::PlaneVariant::UNDEFINED:
     default:
         variantName_out = "UNDEFINED";

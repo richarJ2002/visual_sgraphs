@@ -4527,6 +4527,11 @@ void publishPlanes(
         {
             semanticClass = "DOOR";
         }
+        else if (planeType ==
+                 vs_graphs::core::geometric::Plane::PlaneVariant::CEILING)
+        {
+            semanticClass = "CEILING";
+        }
 
         {
             int mappedPlaneOwnerKey{};

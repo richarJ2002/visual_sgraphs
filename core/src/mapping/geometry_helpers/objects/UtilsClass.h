@@ -441,21 +441,6 @@ class Utils
         getPlaneTypeFromClassId(int classId_in,
                                 vs_graphs::core::geometric::Plane::PlaneVariant
                                     &planeTypeFromClassId_out);
-
-    /*!
-     * @brief           Gets the class id from the PlaneVariant type.
-     *
-     * @param[in]       planeType_in
-     *                  PlaneVariant type.
-     *
-     * @param[out]      classIdFromPlaneType_out
-     *                  Class id 0 to 3 for known types; -1 otherwise.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus getClassIdFromPlaneType(
-        vs_graphs::core::geometric::Plane::PlaneVariant planeType_in,
-        int &classIdFromPlaneType_out);
 };
 } /* namespace utils */
 } /* namespace utils */

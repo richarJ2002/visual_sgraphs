@@ -742,14 +742,15 @@ class SemanticsManager
         runPlaneChecks(const std::vector<geometric::Plane *> &intakePlanes_in);
 
     /*!
-     * @brief           Resets the semantics of the ground and wall planes that
-     *                  the tilt rules of the plane rule table reject. Judged
-     *                  against the up direction, not against the main ground
-     *                  plane, so that a misclassified plane cannot become the
-     *                  ground reference. Uses the plane_checkpoint.max_tilt_*
-     *                  tolerances, the same the plane checkpoint applies to
-     *                  each new patch; this map-level pass catches planes that
-     *                  turn after bundle adjustment or a map merge.
+     * @brief           Resets the semantics of the ground, ceiling and wall
+     *                  planes that the tilt rules of the plane rule table
+     *                  reject. Judged against the up direction, not against
+     *                  the main ground plane, so that a misclassified plane
+     *                  cannot become the ground reference. Uses the
+     *                  plane_checkpoint.max_tilt_* tolerances, the same the
+     *                  plane checkpoint applies to each new patch; this
+     *                  map-level pass catches planes that turn after bundle
+     *                  adjustment or a map merge.
      *
      * @param[in]       intakePlanes_in
      *                  Planes to judge, by expected type; borrowed.

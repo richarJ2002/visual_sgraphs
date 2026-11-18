@@ -381,9 +381,9 @@ class Passage;
  *                  Variant to name.
  *
  * @param[out]      variantName_out
- *                  Static, null-terminated name: WALL, GROUND, DOOR, WINDOW or
- *                  UNDEFINED (also for any unlisted variant); not owned by the
- *                  caller.
+ *                  Static, null-terminated name: WALL, GROUND, DOOR, WINDOW,
+ *                  CEILING or UNDEFINED (also for any unlisted variant); not
+ *                  owned by the caller.
  *
  * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */

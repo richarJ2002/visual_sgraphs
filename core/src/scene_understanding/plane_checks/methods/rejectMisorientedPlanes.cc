@@ -46,7 +46,7 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(
     PROFILE_FUNCTION();
     for (geometric::Plane *p_intakePlane : intakePlanes_in)
     {
-        /* Only ground and wall planes have an orientation to validate */
+        /* Only level and wall planes have an orientation to validate */
         geometric::Plane::PlaneVariant expectedPlaneType{};
         if (p_intakePlane->getExpectedPlaneType(expectedPlaneType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -57,6 +57,7 @@ SemanticsManagerStatus SemanticsManager::rejectMisorientedPlanes(
                          __func__);
         }
         if (expectedPlaneType != geometric::Plane::PlaneVariant::GROUND &&
+            expectedPlaneType != geometric::Plane::PlaneVariant::CEILING &&
             expectedPlaneType != geometric::Plane::PlaneVariant::WALL)
         {
             continue;

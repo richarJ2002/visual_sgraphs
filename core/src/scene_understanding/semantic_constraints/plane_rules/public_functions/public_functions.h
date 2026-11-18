@@ -44,9 +44,9 @@ namespace semantic_constraints
 {
 
 /*!
- * @brief           Ground tilt rule: a GROUND plane's normal may lean off up
- *                  by at most plane_checkpoint.max_tilt_ground, measured as
- *                  the length of the normal's part across up.
+ * @brief           Level tilt rule: a GROUND or CEILING plane's normal may
+ *                  lean off up by at most plane_checkpoint.max_tilt_ground,
+ *                  measured as the length of the normal's part across up.
  *
  * @param[in]       planeInput_in
  *                  Plane evidence; needs hasOrientation.
@@ -54,7 +54,8 @@ namespace semantic_constraints
  * @param[in]       systemParams_in
  *                  System parameters (planeCheckpoint.maxTiltGround).
  *
- * @return          False only for a GROUND plane tilted past the limit.
+ * @return          False only for a GROUND or CEILING plane tilted past the
+ *                  limit.
  */
 [[nodiscard]] bool
     isGroundTiltAcceptable(const PlaneRuleInput      &planeInput_in,

@@ -9,7 +9,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/computePlaneWidthHeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/consolidateProvisionalRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findMatchingPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getClassIdFromPlaneType.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneTypeFromClassId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/lineIntersectsPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/pointcloudDistanceFilter.cc
