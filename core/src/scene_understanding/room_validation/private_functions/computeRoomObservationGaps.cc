@@ -20,13 +20,13 @@
  * @file            computeRoomObservationGaps.cc
  *
  * @brief           Implements computeRoomObservationGaps(), declared in
- *                  SemanticsManager/private_functions.h.
+ *                  room_validation/private_functions/private_functions.h.
  */
 
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "private_functions.h"
+#include "scene_understanding/room_validation/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <cmath>

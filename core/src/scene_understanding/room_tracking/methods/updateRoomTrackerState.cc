@@ -23,12 +23,12 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "scene_understanding/semantic/room_tracker/objects/RoomTrackerStatusEnum.h"
 #include "scene_understanding/semantic/room_tracker/objects/RoomTrackingEventEnum.h"
 #include "scene_understanding/semantic/room_tracker/objects/RoomTrackingStateEnum.h"
 #include "scene_understanding/semantic/room_tracker/room_tracker.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 #include <rclcpp/logging.hpp>

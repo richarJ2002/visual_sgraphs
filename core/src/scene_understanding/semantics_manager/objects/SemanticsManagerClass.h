@@ -1602,9 +1602,27 @@ class SemanticsManager
                               semantic::Room    *p_farSideConfirmedRoom_in);
 
     /* ---------------------------------------------------------------------- *
-     * OTHER CYCLE STEPS (room tracking, room validation, merge candidates and
-     * reporting), called by run().
+     * ROOM TRACKING STAGE (pipeline stage 6, room_tracking/). Called by run()
+     * inside the cycle's exclusive graph lock; getCurrentRoomId() is the
+     * public query of this stage.
      * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Records traversal evidence on every passable passage
+     *                  whose aperture the UAV camera trajectory crossed since
+     *                  the last semantic cycle.
+     *
+     *                  Consumes all new keyframes in deterministic frame/id
+     *                  order and checks each consecutive camera-centre segment
+     *                  against passage aperture geometry. The evidence is a
+     *                  separate "settled" mark and never modifies observation
+     *                  confirmation.
+     *
+     * @param[in]       p_atlas_in
+     *                  The Atlas containing the mapped environment.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        updateTraversalEvidence(atlas::Atlas *p_atlas_in);
 
     /*!
      * @brief           Advances the room-state machine once per semantic
@@ -1618,6 +1636,72 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         updateRoomTrackerState(double now_s_in);
+
+    /*!
+     * @brief           Returns the usable room of the active map whose id is
+     *                  getCurrentRoomId(); the room variant is not checked.
+     *
+     * @param[out]      p_currentRoom_out
+     *                  Current room, or nullptr when there is none.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getCurrentRoom(semantic::Room *&p_currentRoom_out) const;
+
+    /* ---------------------------------------------------------------------- *
+     * ROOM VALIDATION STAGE (pipeline stage 7, room_validation/). Called by
+     * run() inside the cycle's exclusive graph lock.
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Validates finite wall associations and updates room
+     *                  maturity.
+     *
+     *                  The validator repairs decisive wall clashes, rejects
+     *                  ambiguous self-intersections, and marks a room complete
+     *                  only when ordered finite wall segments form a closed
+     *                  non-self-intersecting loop. Passage detection remains
+     *                  independent and may precede boundary completion.
+     */
+    [[nodiscard]] SemanticsManagerStatus validateRoomBoundaries(void);
+
+    /*!
+     * @brief           Recomputes room centroids as the arithmetic mean of
+     *                  associated wall centroids.
+     *
+     *                  Replaces the free-space cluster centroid with the
+     *                  geometric center of the room's boundary walls. Rooms
+     *                  with no valid walls retain their existing centroid.
+     */
+    [[nodiscard]] SemanticsManagerStatus recomputeRoomCentroidsFromWalls(void);
+
+    /*!
+     * @brief           Gets the updated floors containing rooms and corridors.
+     */
+    [[nodiscard]] SemanticsManagerStatus getUpdatedFloors(void);
+
+    /*!
+     * @brief           Reconciles each confirmed room's ground plane against
+     *                  the just-refreshed canonical Floor identity.
+     *
+     *                  getUpdatedFloors() selects one canonical Floor plane
+     *                  identity from the strongest-observed ground plane, but
+     *                  different rooms can independently hold different ground
+     *                  Plane objects
+     *                  (GeoSemHelpers::associateGroundPlaneToRoom). Nothing
+     *                  previously checked those against each other or against
+     *                  the canonical identity -- this is the front-end
+     *                  floor-flatness reconciliation Optimizer.cc's dead "moved
+     *                  to the front-end" comment describes but that nothing
+     *                  actually implemented. Run immediately after
+     *                  getUpdatedFloors() so the canonical identity is current.
+     */
+    [[nodiscard]] SemanticsManagerStatus reconcileRoomGroundPlanes(void);
+
+    /* ---------------------------------------------------------------------- *
+     * OTHER CYCLE STEPS (merge candidates and reporting), called by run().
+     * ---------------------------------------------------------------------- */
 
     /*!
      * @brief           Resolves a room by the (map id, room id) pair a
@@ -1659,18 +1743,6 @@ class SemanticsManager
         const std::vector<semantic::SemanticCandidate> &candidates_in);
 
     /*!
-     * @brief           Validates finite wall associations and updates room
-     *                  maturity.
-     *
-     *                  The validator repairs decisive wall clashes, rejects
-     *                  ambiguous self-intersections, and marks a room complete
-     *                  only when ordered finite wall segments form a closed
-     *                  non-self-intersecting loop. Passage detection remains
-     *                  independent and may precede boundary completion.
-     */
-    [[nodiscard]] SemanticsManagerStatus validateRoomBoundaries(void);
-
-    /*!
      * @brief           Converts undefendedWalls into pointer-free,
      *                  map-sorted UnresolvedWallHypothesisRecord values.
      *                  Read-only; must be called while the semantic-update lock
@@ -1696,16 +1768,6 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus logSemanticDiagnostics(
         const semantic::SemanticReportCacheEntry &entry_in);
-
-    /*!
-     * @brief           Recomputes room centroids as the arithmetic mean of
-     *                  associated wall centroids.
-     *
-     *                  Replaces the free-space cluster centroid with the
-     *                  geometric center of the room's boundary walls. Rooms
-     *                  with no valid walls retain their existing centroid.
-     */
-    [[nodiscard]] SemanticsManagerStatus recomputeRoomCentroidsFromWalls(void);
 
     /* ---------------------------------------------------------------------- *
      * SCENE GRAPH REGISTRY
@@ -2127,23 +2189,6 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus mergeOverlappingPassages(void);
 
     /*!
-     * @brief           Records traversal evidence on every passable passage
-     *                  whose aperture the UAV camera trajectory crossed since
-     *                  the last semantic cycle.
-     *
-     *                  Consumes all new keyframes in deterministic frame/id
-     *                  order and checks each consecutive camera-centre segment
-     *                  against passage aperture geometry. The evidence is a
-     *                  separate "settled" mark and never modifies observation
-     *                  confirmation.
-     *
-     * @param[in]       p_atlas_in
-     *                  The Atlas containing the mapped environment.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        updateTraversalEvidence(atlas::Atlas *p_atlas_in);
-
-    /*!
      * @brief           Returns the id of the room currently occupied by the
      *                  camera.
      *
@@ -2154,18 +2199,6 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         getCurrentRoomId(int &getCurrentRoomId_out) const;
-
-    /*!
-     * @brief           Returns the usable room of the active map whose id is
-     *                  getCurrentRoomId(); the room variant is not checked.
-     *
-     * @param[out]      p_currentRoom_out
-     *                  Current room, or nullptr when there is none.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        getCurrentRoom(semantic::Room *&p_currentRoom_out) const;
 
     /*!
      * @brief           Returns the id of the room last occupied before tracking
@@ -2413,29 +2446,6 @@ class SemanticsManager
                              PassageRoomLinkState &linkState_inout);
 
     /*!
-     * @brief           Gets the updated floors containing rooms and corridors.
-     */
-    [[nodiscard]] SemanticsManagerStatus getUpdatedFloors(void);
-
-    /*!
-     * @brief           Reconciles each confirmed room's ground plane against
-     *                  the just-refreshed canonical Floor identity.
-     *
-     *                  getUpdatedFloors() selects one canonical Floor plane
-     *                  identity from the strongest-observed ground plane, but
-     *                  different rooms can independently hold different ground
-     *                  Plane objects
-     *                  (GeoSemHelpers::associateGroundPlaneToRoom). Nothing
-     *                  previously checked those against each other or against
-     *                  the canonical identity -- this is the front-end
-     *                  floor-flatness reconciliation Optimizer.cc's dead "moved
-     *                  to the front-end" comment describes but that nothing
-     *                  actually implemented. Run immediately after
-     *                  getUpdatedFloors() so the canonical identity is current.
-     */
-    [[nodiscard]] SemanticsManagerStatus reconcileRoomGroundPlanes(void);
-
-    /*!
      * @brief           Method which runs the thread of the segmantic manager.
      */
     void run(void);
@@ -2463,48 +2473,6 @@ class SemanticsManager
         const semantic::VerificationVerdict &verdict_in);
 
     /*!
-     * @brief           Test-only deterministic drain of the production event
-     *                  seam.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        processRoomTrackerPendingForTest(double now_s_in);
-
-    /*!
-     * @brief           Test-only readout of the production-owned tracker
-     *                  history.
-     */
-    [[nodiscard]] SemanticsManagerStatus getRoomTrackerEventHistoryForTest(
-        const std::vector<semantic::TransitionEvent> *
-            &p_getRoomTrackerEventHistoryForTest_out) const;
-
-    /*!
-     * @brief           Test-only readout of the crossing and both-sides pending
-     *                  flags.
-     */
-    [[nodiscard]] SemanticsManagerStatus getRoomTrackerPendingForTest(
-        std::pair<bool, bool> &getRoomTrackerPendingForTest_out) const;
-
-    /*!
-     * @brief           Test-only readout of the production-owned tracker state.
-     */
-    [[nodiscard]] SemanticsManagerStatus getRoomTrackerStateForTest(
-        semantic::RoomTrackingState &getRoomTrackerStateForTest_out) const;
-
-    /*!
-     * @brief           Returns true only when the genuine pending-event mutex
-     *                  was acquired.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        tryLockRoomTrackerPendingMutexForTest(bool &isLocked_out) const;
-
-    /*!
-     * Installs a one-shot hook invoked while the genuine pending-event mutex is
-     * held by updateTraversalEvidence().
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        setRoomTrackerPendingPublishHookForTest(std::function<void()> hook_in);
-
-    /*!
      * @brief           Test-only direct call into the candidate-verification
      *                  wiring, bypassing Run()'s full ROS/PCL/ORB3-dependent
      *                  cycle.
@@ -2514,14 +2482,6 @@ class SemanticsManager
             const std::vector<semantic::SemanticCandidate> &candidates_in);
 
     /*!
-     * @brief           Test-only direct call into the private floor-hierarchy
-     *                  refresh (must run before
-     *                  reconcileRoomGroundPlanesForTest() so a canonical Floor
-     *                  identity exists to reconcile against).
-     */
-    [[nodiscard]] SemanticsManagerStatus getUpdatedFloorsForTest(void);
-
-    /*!
      * @brief           Test-only bootstrap seam with an explicit valid camera
      *                  position.
      */
@@ -2529,29 +2489,6 @@ class SemanticsManager
         ensureActiveMapBootstrapHierarchyForTest(
             const Eigen::Vector3d &cameraPosition_world_m_in,
             int                   &bootstrapResult_out);
-
-    /*!
-     * @brief           Test-only equivalent of committing a passage traversal
-     *                  room change.
-     */
-    [[nodiscard]] SemanticsManagerStatus setCurrentRoomIdForTest(int roomId_in);
-
-    /*!
-     * @brief           Test-only direct call into the private room/floor
-     *                  ground-plane reconciliation pass. Callers inspect the
-     *                  result via Room::getGroundPlane().
-     */
-    [[nodiscard]] SemanticsManagerStatus reconcileRoomGroundPlanesForTest(void);
-
-    /*!
-     * @brief           Test-only direct call into the private boundary
-     *                  validator (closed-loop detection, single-outlier-wall
-     *                  tolerance, and off-loop wall pruning). Callers inspect
-     *                  the result via Room::getBoundaryStatus(),
-     *                  Room::getBoundaryCorners_world_m(), and
-     *                  Room::getWalls().
-     */
-    [[nodiscard]] SemanticsManagerStatus validateRoomBoundariesForTest(void);
 
     /*!
      * @brief           True once the semantic manager thread has exited Run().

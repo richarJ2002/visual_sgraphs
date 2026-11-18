@@ -20,13 +20,14 @@
  * @file            tryCloseWallLoop.cc
  *
  * @brief           Implements tryCloseWallLoop(), declared in
- *                  SemanticsManager/private_functions.h.
+ *                  room_validation/private_functions/private_functions.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "configuration/types/types.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "private_functions.h"
+#include "scene_understanding/room_validation/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
 #include <array>

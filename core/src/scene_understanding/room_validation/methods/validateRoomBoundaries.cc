@@ -33,6 +33,7 @@
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include "scene_understanding/room_validation/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>

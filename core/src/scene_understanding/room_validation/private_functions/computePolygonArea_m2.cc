@@ -20,12 +20,13 @@
  * @file            computePolygonArea_m2.cc
  *
  * @brief           Implements computePolygonArea_m2(), declared in
- *                  SemanticsManager/private_functions.h.
+ *                  room_validation/private_functions/private_functions.h.
  */
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
-#include "private_functions.h"
+#include "scene_understanding/room_validation/private_functions/private_functions.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <cmath>
 #include <rclcpp/logging.hpp>

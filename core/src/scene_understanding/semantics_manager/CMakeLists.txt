@@ -1,7 +1,7 @@
 # SemanticsManager object sources; the scene graph operations are built from
 # the graph and bootstrap subpackages, the pipeline stages from the stage
 # packages (plane_intake, plane_checks, plane_fusion, passage_detection,
-# room_association) next to this one.
+# room_association, room_tracking, room_validation) next to this one.
 include(${CMAKE_CURRENT_LIST_DIR}/bootstrap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/graph/CMakeLists.txt)
 
@@ -12,42 +12,22 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerification.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateTopCandidateVerificationForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findRoomByMapAndId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoom.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLastKnownRoomId.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerEventHistoryForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerPendingForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomTrackerStateForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getSemanticReportCacheEntry.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloors.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedFloorsForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isSemanticReportCacheAvailable.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/logSemanticDiagnostics.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingLost.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/onTrackingRecovered.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/processRoomTrackerPendingForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/recomputeRoomCentroidsFromWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/reconcileRoomGroundPlanesForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetTemporalStateForMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setCurrentRoomIdForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomTrackerPendingPublishHookForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/submitVerificationVerdict.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/tryLockRoomTrackerPendingMutexForTest.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/updateRoomTrackerState.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/updateTraversalEvidence.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/validateRoomBoundaries.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/validateRoomBoundariesForTest.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildFiniteWallSegment2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceEvidence.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallFaceMatchSettings.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computePolygonArea_m2.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomCentreFromWalls.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomObservationGaps.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeRoomWallFootprint.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/crossProduct2d.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateWallAdmissionEvidence.cc
@@ -63,7 +43,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesAperture.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesForeignWall.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/segmentCrossesPassageOpening.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/tryCloseWallLoop.cc
   ${VS_GRAPHS_SEMANTICSMANAGER_BOOTSTRAP_SOURCES}
   ${VS_GRAPHS_SEMANTICSMANAGER_GRAPH_SOURCES}
   ${VS_GRAPHS_PLANEINTAKE_SOURCES}
@@ -71,4 +50,6 @@ set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
   ${VS_GRAPHS_PLANEFUSION_SOURCES}
   ${VS_GRAPHS_PASSAGEDETECTION_SOURCES}
   ${VS_GRAPHS_ROOMASSOCIATION_SOURCES}
+  ${VS_GRAPHS_ROOMTRACKING_SOURCES}
+  ${VS_GRAPHS_ROOMVALIDATION_SOURCES}
 )
