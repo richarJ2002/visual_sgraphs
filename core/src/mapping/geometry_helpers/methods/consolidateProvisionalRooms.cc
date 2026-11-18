@@ -189,26 +189,26 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                          "active map; continuing without its passages.",
                          __func__);
         }
-        const bool candidateIsLiveProspective = std::any_of(
-            activePassages.begin(),
-            activePassages.end(),
-            [p_candidateRoom](vs_graphs::core::semantic::Passage *p_passage)
+        bool candidateIsLiveProspective = false;
+        for (vs_graphs::core::semantic::Passage *p_passage : activePassages)
+        {
+            vs_graphs::core::semantic::Room *p_passageProspectiveRoom = nullptr;
+            if ((p_passage != nullptr) &&
+                p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
-                    nullptr;
-                if ((p_passage != nullptr) &&
-                    p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getProspectiveRoom returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                return p_passage != nullptr &&
-                       p_passageProspectiveRoom == p_candidateRoom;
-            });
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_passage != nullptr &&
+                p_passageProspectiveRoom == p_candidateRoom)
+            {
+                candidateIsLiveProspective = true;
+                break;
+            }
+        }
 
         if (candidateIsLiveProspective)
         {
@@ -391,37 +391,39 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                              __func__);
             }
 
-            const bool alreadyPresent = std::any_of(
-                selectedPassages.begin(),
-                selectedPassages.end(),
-                [p_candidatePassage](
-                    vs_graphs::core::semantic::Passage *p_existingPassage)
+            bool alreadyPresent = false;
+            for (vs_graphs::core::semantic::Passage *p_existingPassage :
+                 selectedPassages)
+            {
+                int existingPassageId{};
+                if ((p_existingPassage != nullptr) &&
+                    p_existingPassage->getId(existingPassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    int existingPassageId{};
-                    if ((p_existingPassage != nullptr) &&
-                        p_existingPassage->getId(existingPassageId) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    int candidatePassageId{};
-                    if ((p_existingPassage != nullptr) &&
-                        p_candidatePassage->getId(candidatePassageId) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    return p_existingPassage != nullptr &&
-                           existingPassageId == candidatePassageId;
-                });
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getId returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                int candidatePassageId{};
+                if ((p_existingPassage != nullptr) &&
+                    p_candidatePassage->getId(candidatePassageId) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getId returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_existingPassage != nullptr &&
+                    existingPassageId == candidatePassageId)
+                {
+                    alreadyPresent = true;
+                    break;
+                }
+            }
 
             /* Copy the passage relationship if required */
             if (!alreadyPresent)
