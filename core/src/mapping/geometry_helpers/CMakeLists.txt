@@ -20,6 +20,9 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/reAssociateRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkOppositeFacePair.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteWallExtentsAreCompatible.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/fuseDuplicatePassageAttributes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isRoomOnProvenFarSide.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/observationSide.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/projectPlaneBounds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/resolveLiveRoomHandle.cc
 )

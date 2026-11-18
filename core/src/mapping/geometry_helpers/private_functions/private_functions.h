@@ -30,6 +30,7 @@
 
 #include <limits>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -41,6 +42,7 @@
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometry_helpers/utils.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 
 namespace vs_graphs
 {
@@ -245,6 +247,79 @@ struct ProjectedPlaneBounds
                           geometric::Plane         *p_mappedPlane_in,
                           const PlaneMatchSettings &matchSettings_in,
                           PlaneMatchVerdict        &candidateVerdict_out);
+
+/*!
+ * @brief           Returns the room itself when it is non-null, not bad and in
+ *                  the active room set; otherwise null.
+ *
+ * @param[in]       activeRoomSet_in
+ *                  Rooms currently live in the map, non-owning.
+ *
+ * @param[in]       p_room_in
+ *                  Room to resolve, non-owning; may be null.
+ *
+ * @param[out]      p_liveRoom_out
+ *                  The live room, or null.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus resolveLiveRoomHandle(
+    const std::unordered_set<semantic::Room *> &activeRoomSet_in,
+    semantic::Room                             *p_room_in,
+    semantic::Room                            *&p_liveRoom_out);
+
+/*!
+ * @brief           Tells whether a room lies on the proven far side of a
+ *                  passage: its centroid more than 0.20 m behind the passage
+ *                  centroid along the known-side direction.
+ *
+ * @param[in]       knownSide_in
+ *                  Known-side provenance of the passage.
+ *
+ * @param[in]       passageCentroid_world_m_in
+ *                  Passage centroid in the world frame, metres.
+ *
+ * @param[in]       p_room_in
+ *                  Room to test, non-owning; may be null.
+ *
+ * @param[out]      isFarSide_out
+ *                  True when the room is on the proven far side.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus isRoomOnProvenFarSide(
+    const semantic::Passage::KnownSideProvenance &knownSide_in,
+    const Eigen::Vector3d                        &passageCentroid_world_m_in,
+    semantic::Room                               *p_room_in,
+    bool                                         &isFarSide_out);
+
+/*!
+ * @brief           Fuses the attributes of a duplicate passage into the
+ *                  retained passage.
+ *
+ * @param[in,out]   p_retainedPassage_inout
+ *                  Passage that is kept, non-owning.
+ *
+ * @param[in]       p_candidatePassage_in
+ *                  Duplicate passage whose attributes are fused, non-owning.
+ *
+ * @param[in]       retainedEquation_in
+ *                  Plane equation of the retained passage.
+ *
+ * @param[in]       retainedCentroid_world_m_in
+ *                  Retained passage centroid in the world frame, metres.
+ *
+ * @param[in]       candidateCentroid_world_m_in
+ *                  Duplicate passage centroid in the world frame, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus fuseDuplicatePassageAttributes(
+    semantic::Passage     *p_retainedPassage_inout,
+    semantic::Passage     *p_candidatePassage_in,
+    const Eigen::Vector4d &retainedEquation_in,
+    const Eigen::Vector3d &retainedCentroid_world_m_in,
+    const Eigen::Vector3d &candidateCentroid_world_m_in);
 
 } /* namespace utils */
 } /* namespace utils */
