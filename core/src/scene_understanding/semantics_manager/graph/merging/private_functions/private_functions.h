@@ -227,6 +227,90 @@ void fuseDuplicateRoomsAfterMerge(
         &duplicateRoomPairs_in);
 
 /*!
+ * @brief           Moves the walls of an imported duplicate room. Each wall
+ *                  goes to the retained room, stays with a distinct
+ *                  confirmed owner, or goes to the far-side room when a
+ *                  passable passage separates it from the retained room;
+ *                  the transfers are decided first and then committed.
+ *
+ * @param[in,out]   p_semanticsManager_inout
+ *                  Manager that lists the map's rooms; borrowed.
+ *
+ * @param[in]       mapId_in
+ *                  Id of the surviving map.
+ *
+ * @param[in,out]   p_importedRoom_inout
+ *                  Imported duplicate room that loses its walls.
+ *
+ * @param[in,out]   p_retainedRoom_inout
+ *                  Retained room that receives the walls.
+ *
+ * @param[in]       importedWalls_in
+ *                  Walls of the imported room, borrowed.
+ *
+ * @param[in]       retainedCentroid_world_m_in
+ *                  Retained room centroid in the world frame, metres.
+ *
+ * @param[in]       mergeGroundNormal_world_in
+ *                  Unit ground normal in the world frame.
+ *
+ * @param[in]       mergeOpeningMargin_m_in
+ *                  Passage aperture margin, metres.
+ *
+ * @param[in]       mergeMinimumSideDistance_m_in
+ *                  Required endpoint distance from a passage plane, metres.
+ *
+ * @param[in]       mergePassages_in
+ *                  Passable passages of the surviving map, borrowed.
+ */
+void moveImportedRoomWalls(
+    SemanticsManager                       *p_semanticsManager_inout,
+    unsigned long                           mapId_in,
+    semantic::Room                         *p_importedRoom_inout,
+    semantic::Room                         *p_retainedRoom_inout,
+    const std::vector<geometric::Plane *>  &importedWalls_in,
+    const Eigen::Vector3d                  &retainedCentroid_world_m_in,
+    const Eigen::Vector3d                  &mergeGroundNormal_world_in,
+    double                                  mergeOpeningMargin_m_in,
+    double                                  mergeMinimumSideDistance_m_in,
+    const std::vector<semantic::Passage *> &mergePassages_in);
+
+/*!
+ * @brief           Fuses the attributes of an imported duplicate room into
+ *                  the retained room: passage associations, centroid,
+ *                  ground plane, label, name and the visited flag.
+ *
+ * @param[in,out]   p_semanticsManager_inout
+ *                  Manager of the surviving map; borrowed.
+ *
+ * @param[in]       mapId_in
+ *                  Id of the surviving map.
+ *
+ * @param[in,out]   p_importedRoom_inout
+ *                  Imported duplicate room.
+ *
+ * @param[in,out]   p_retainedRoom_inout
+ *                  Retained room that receives the attributes.
+ *
+ * @param[in]       importedCentroid_world_m_in
+ *                  Imported room centroid in the world frame, metres.
+ *
+ * @param[in]       importedWalls_in
+ *                  Walls of the imported room before the move, borrowed.
+ *
+ * @param[in]       retainedWalls_in
+ *                  Walls of the retained room before the move, borrowed.
+ */
+void fuseImportedRoomAttributes(
+    SemanticsManager                      *p_semanticsManager_inout,
+    unsigned long                          mapId_in,
+    semantic::Room                        *p_importedRoom_inout,
+    semantic::Room                        *p_retainedRoom_inout,
+    const Eigen::Vector3d                 &importedCentroid_world_m_in,
+    const std::vector<geometric::Plane *> &importedWalls_in,
+    const std::vector<geometric::Plane *> &retainedWalls_in);
+
+/*!
  * @brief           Tests whether a segment traverses a passable passage
  *                  aperture.
  *

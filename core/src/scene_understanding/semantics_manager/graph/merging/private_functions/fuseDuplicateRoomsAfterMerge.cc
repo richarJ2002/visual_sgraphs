@@ -255,32 +255,30 @@ void fuseDuplicateRoomsAfterMerge(
                 __func__,
                 mapId);
         }
-        const bool roomsAreSeparatedByPassage = std::any_of(
-            mergePassages.begin(),
-            mergePassages.end(),
-            [&retainedCentroid_world_m,
-             &importedCentroid_world_m,
-             &mergeGroundNormal_world,
-             mergeOpeningMargin_m,
-             mergeMinimumSideDistance_m](semantic::Passage *p_passage)
+        bool roomsAreSeparatedByPassage = false;
+        for (semantic::Passage *p_passage : mergePassages)
+        {
+            bool crossesOpening{};
+            if (crossesPassablePassageOpening(retainedCentroid_world_m,
+                                              importedCentroid_world_m,
+                                              p_passage,
+                                              mergeGroundNormal_world,
+                                              mergeOpeningMargin_m,
+                                              mergeMinimumSideDistance_m,
+                                              crossesOpening) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                bool crossesOpening{};
-                if (crossesPassablePassageOpening(retainedCentroid_world_m,
-                                                  importedCentroid_world_m,
-                                                  p_passage,
-                                                  mergeGroundNormal_world,
-                                                  mergeOpeningMargin_m,
-                                                  mergeMinimumSideDistance_m,
-                                                  crossesOpening) !=
-                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-                {
-                    /*!
-                     * crossesPassablePassageOpening cannot fail; continue as
-                     * before.
-                     */
-                }
-                return crossesOpening;
-            });
+                /*!
+                 * crossesPassablePassageOpening cannot fail; continue as
+                 * before.
+                 */
+            }
+            if (crossesOpening)
+            {
+                roomsAreSeparatedByPassage = true;
+                break;
+            }
+        }
 
         if (roomsAreSeparatedByPassage)
         {
@@ -309,448 +307,26 @@ void fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        struct WallTransfer
-        {
-            geometric::Plane  *p_wall;
-            semantic::Room    *p_targetRoom;
-            semantic::Passage *p_separatingPassage;
-        };
+        /* Move the imported walls; a far-side wall goes to its room */
+        moveImportedRoomWalls(p_semanticsManager_inout,
+                              mapId,
+                              p_importedRoom,
+                              p_bestRetainedRoom,
+                              importedWalls,
+                              retainedCentroid_world_m,
+                              mergeGroundNormal_world,
+                              mergeOpeningMargin_m,
+                              mergeMinimumSideDistance_m,
+                              mergePassages);
 
-        std::vector<WallTransfer> wallTransfers;
-        wallTransfers.reserve(importedWalls.size());
-        std::vector<semantic::Room *> mapRooms{};
-        if (p_semanticsManager_inout->getMapRoomsInIdOrder(mapId, mapRooms) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: the semantics manager has no scene graph for map %lu; "
-                "continuing without its rooms.",
-                __func__,
-                mapId);
-        }
-        std::sort(mapRooms.begin(),
-                  mapRooms.end(),
-                  semantic::isEntityIdLess<semantic::Room>);
-
-        for (geometric::Plane *p_importedWall : importedWalls)
-        {
-            bool importedWallIsBad2{};
-            if (!(p_importedWall == nullptr) &&
-                p_importedWall->isBad(importedWallIsBad2) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_importedWall == nullptr || importedWallIsBad2)
-            {
-                continue;
-            }
-
-            Eigen::Vector3d importedWallGetCentroid{};
-            if (p_importedWall->getCentroid(importedWallGetCentroid) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const Eigen::Vector3d importedWallCentroid_world_m =
-                importedWallGetCentroid.cast<double>();
-
-            vs_graphs::core::semantic::Passage *p_separatingPassage = nullptr;
-
-            for (vs_graphs::core::semantic::Passage *p_passage : mergePassages)
-            {
-                bool crossesOpening{};
-                if ((p_passage != nullptr) &&
-                    crossesPassablePassageOpening(retainedCentroid_world_m,
-                                                  importedWallCentroid_world_m,
-                                                  p_passage,
-                                                  mergeGroundNormal_world,
-                                                  mergeOpeningMargin_m,
-                                                  mergeMinimumSideDistance_m,
-                                                  crossesOpening) !=
-                        SemanticsManagerStatus::
-                            SEMANTICS_MANAGER_STATUS_SUCCESS)
-                {
-                    /*!
-                     * crossesPassablePassageOpening cannot fail; continue as
-                     * before.
-                     */
-                }
-                if (p_passage != nullptr && crossesOpening)
-                {
-                    p_separatingPassage = p_passage;
-                    break;
-                }
-            }
-
-            semantic::Room *p_targetRoom = p_bestRetainedRoom;
-
-            /* Never introduce another owner when a distinct confirmed room
-             * already owns this wall. The imported duplicate is retired below,
-             * leaving that confirmed owner unchanged. */
-            for (semantic::Room *p_existingOwner : mapRooms)
-            {
-                bool existingOwnerIsBad{};
-                if (!(p_existingOwner == nullptr) &&
-                    p_existingOwner->isBad(existingOwnerIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                semantic::Room::RoomVariant existingOwnerRoomVariant{};
-                if (!(p_existingOwner == nullptr || existingOwnerIsBad ||
-                      p_existingOwner == p_importedRoom ||
-                      p_existingOwner == p_bestRetainedRoom) &&
-                    p_existingOwner->getRoomVariant(existingOwnerRoomVariant) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getRoomVariant returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (p_existingOwner == nullptr || existingOwnerIsBad ||
-                    p_existingOwner == p_importedRoom ||
-                    p_existingOwner == p_bestRetainedRoom ||
-                    existingOwnerRoomVariant !=
-                        semantic::Room::RoomVariant::ROOM)
-                {
-                    continue;
-                }
-
-                std::vector<geometric::Plane *> ownerWalls{};
-                if (p_existingOwner->getWalls(ownerWalls) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (std::find(ownerWalls.begin(),
-                              ownerWalls.end(),
-                              p_importedWall) != ownerWalls.end())
-                {
-                    p_targetRoom = p_existingOwner;
-                    break;
-                }
-            }
-
-            if (p_separatingPassage != nullptr &&
-                p_targetRoom == p_bestRetainedRoom)
-            {
-                vs_graphs::core::semantic::Room *p_farSideRoom = nullptr;
-                if (p_separatingPassage->getProspectiveRoom(p_farSideRoom) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getProspectiveRoom returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-
-                bool farSideRoomIsBad{};
-                if (!(p_farSideRoom == nullptr) &&
-                    p_farSideRoom->isBad(farSideRoomIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_farSideRoom == nullptr || farSideRoomIsBad ||
-                    p_farSideRoom == p_importedRoom)
-                {
-                    p_farSideRoom = nullptr;
-                }
-
-                p_targetRoom = p_farSideRoom;
-            }
-
-            wallTransfers.push_back(
-                {p_importedWall, p_targetRoom, p_separatingPassage});
-        }
-
-        /* Commit the precomputed ownership transaction. Removing the duplicate
-         * edge before adding its destination prevents transient double
-         * ownership inside the authorized room fusion. */
-        for (const WallTransfer &transfer : wallTransfers)
-        {
-            bool importedRoomWasWallRemoved{};
-            if (p_importedRoom->removeWall(transfer.p_wall,
-                                           importedRoomWasWallRemoved) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                importedRoomWasWallRemoved = false;
-                RCLCPP_WARN(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: removeWall rejected its input; continuing as before.",
-                    __func__);
-            }
-
-            if (transfer.p_targetRoom == nullptr)
-            {
-                int id{};
-                if (transfer.p_separatingPassage->getId(id) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int getId2{};
-                if (transfer.p_wall->getId(getId2) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                std::cout << "[SemanticMerge] Far-side Wall#" << getId2
-                          << " at Passage#" << id
-                          << " has no prospective; left unbound." << std::endl;
-                continue;
-            }
-
-            if (transfer.p_targetRoom->setWalls(transfer.p_wall) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-
-            if (transfer.p_separatingPassage != nullptr &&
-                transfer.p_targetRoom != p_bestRetainedRoom)
-            {
-                int id2{};
-                if (transfer.p_targetRoom->getId(id2) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int getId3{};
-                if (transfer.p_wall->getId(getId3) !=
-                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                std::cout << "[SemanticMerge] Redirected far-side Wall#"
-                          << getId3 << " to stable Room#" << id2 << "."
-                          << std::endl;
-            }
-        }
-
-        std::vector<vs_graphs::core::semantic::Passage *>
-            importedRoomPassages{};
-        if (p_importedRoom->getPassages(importedRoomPassages) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getPassages returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (vs_graphs::core::semantic::Passage *p_importedPassage :
-             importedRoomPassages)
-        {
-            if (p_bestRetainedRoom->addPassageAssociation(p_importedPassage) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: addPassageAssociation returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-        }
-
-        std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-        if (p_semanticsManager_inout->getMapPassagesInIdOrder(mapId,
-                                                              mapAllPassages) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: the semantics manager has no scene graph for map %lu; "
-                "continuing without its passages.",
-                __func__,
-                mapId);
-        }
-        for (semantic::Passage *p_passage : mapAllPassages)
-        {
-            if (p_passage != nullptr)
-            {
-                bool passageWasRoomReplaced{};
-                if (p_passage->replaceProspectiveRoom(p_importedRoom,
-                                                      p_bestRetainedRoom,
-                                                      passageWasRoomReplaced) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    passageWasRoomReplaced = false;
-                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                                "%s: replaceProspectiveRoom rejected its "
-                                "input; continuing as before.",
-                                __func__);
-                }
-            }
-        }
-
-        const double retainedWeight = static_cast<double>(
-            std::max<std::size_t>(retainedWalls.size(), 1U));
-
-        const double importedWeight = static_cast<double>(
-            std::max<std::size_t>(importedWalls.size(), 1U));
-
-        Eigen::Vector3d bestRetainedRoomCentroid{};
-        if (p_bestRetainedRoom->getCentroid(bestRetainedRoomCentroid) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        const Eigen::Vector3d fusedCentroid_world_m =
-            (retainedWeight * bestRetainedRoomCentroid +
-             importedWeight * importedCentroid_world_m) /
-            (retainedWeight + importedWeight);
-
-        if (p_bestRetainedRoom->setCentroid(fusedCentroid_world_m) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        geometric::Plane *p_bestRetainedRoomGroundPlane = nullptr;
-        if (p_bestRetainedRoom->getGroundPlane(p_bestRetainedRoomGroundPlane) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGroundPlane returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_bestRetainedRoomGroundPlane == nullptr)
-        {
-            geometric::Plane *p_importedRoomGroundPlane = nullptr;
-            if (p_importedRoom->getGroundPlane(p_importedRoomGroundPlane) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getGroundPlane returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_bestRetainedRoom->setGroundPlane(p_importedRoomGroundPlane) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setGroundPlane returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-
-        bool bestRetainedRoomHasKnownLabel{};
-        if (p_bestRetainedRoom->getHasKnownLabel(
-                bestRetainedRoomHasKnownLabel) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHasKnownLabel returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        bool importedRoomHasKnownLabel2{};
-        if ((!bestRetainedRoomHasKnownLabel) &&
-            p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel2) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHasKnownLabel returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (!bestRetainedRoomHasKnownLabel && importedRoomHasKnownLabel2)
-        {
-            if (p_bestRetainedRoom->setHasKnownLabel(true) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setHasKnownLabel returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            std::string importedRoomName{};
-            if (p_importedRoom->getName(importedRoomName) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getName returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_bestRetainedRoom->setName(importedRoomName) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setName returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-
-        /* Presence on either side proves the UAV has been there: a room fused
-         * from a visited duplicate stays visited. */
-        bool importedRoomHasPreviouslyVisited{};
-        if (p_importedRoom->hasPreviouslyVisited(
-                importedRoomHasPreviouslyVisited) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: hasPreviouslyVisited returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (importedRoomHasPreviouslyVisited)
-        {
-            if (p_bestRetainedRoom->setPreviouslyVisited(true) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: setPreviouslyVisited returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-        }
+        /* Passages, centroid, ground plane, label and visit flag */
+        fuseImportedRoomAttributes(p_semanticsManager_inout,
+                                   mapId,
+                                   p_importedRoom,
+                                   p_bestRetainedRoom,
+                                   importedCentroid_world_m,
+                                   importedWalls,
+                                   retainedWalls);
 
         std::vector<semantic::Floor *> mapAllFloors{};
         if (p_semanticsManager_inout->getMapFloorsInIdOrder(mapId,
