@@ -23,11 +23,11 @@
  *                  declared in SemanticsManager.h.
  */
 
-#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 

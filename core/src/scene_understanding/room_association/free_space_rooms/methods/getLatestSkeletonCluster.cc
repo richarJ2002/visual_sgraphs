@@ -17,13 +17,13 @@
  */
 
 /*!
- * @file            associateAllWallsToRoomsForTest.cc
+ * @file            getLatestSkeletonCluster.cc
  *
- * @brief           Implements
- *                  SemanticsManager::associateAllWallsToRoomsForTest(),
+ * @brief           Implements SemanticsManager::getLatestSkeletonCluster(),
  *                  declared in SemanticsManager.h.
  */
 
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
@@ -32,17 +32,23 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManagerStatus SemanticsManager::associateAllWallsToRoomsForTest(void)
+SemanticsManagerStatus SemanticsManager::getLatestSkeletonCluster(
+    std::vector<std::vector<Eigen::Vector3d>> &latestSkeletonCluster_out)
 {
-    if (associateAllWallsToRooms() !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    /* Lock the skeleton cluster */
+    std::unique_lock<std::mutex> lock(newRoomsMutex);
+
+    /* Get the latest skeleton cluster from Atlas */
+    std::vector<std::vector<Eigen::Vector3d>> atlasSkeletonClusterPoints{};
+    if (p_atlas->getSkeletonClusterPoints(atlasSkeletonClusterPoints) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: associateAllWallsToRooms returned a failure status "
+                     "%s: getSkeletonClusterPoints returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-
+    latestSkeletonCluster_out = atlasSkeletonClusterPoints;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

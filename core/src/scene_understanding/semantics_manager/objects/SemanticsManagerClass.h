@@ -976,215 +976,29 @@ class SemanticsManager
                           double                      decidingValue_in,
                           double                      faceSeparation_m_in);
 
-    /*!
-     * @brief           Advances the room-state machine once per semantic
-     *                  cycle.
-     *
-     *                  Consumes the per-cycle crossing and tracking-loss
-     *                  signals and feeds them to roomTracker together
-     *                  with the abstract verification verdict from the
-     *                  verification stub. Read-only with respect to
-     *                  currentRoomId/lastKnownRoomId.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        updateRoomTrackerState(double now_s_in);
+    /* ---------------------------------------------------------------------- *
+     * ROOM ASSOCIATION STAGE (pipeline stage 5, room_association/). Called
+     * by run() inside the cycle's exclusive graph lock; they hand no node
+     * pointer outside the manager.
+     * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           Resolves a room by the (map id, room id) pair a
-     *                  SemanticCandidate carries, scanning every live map in
-     *                  the Atlas (not only the current one) since a candidate's
-     *                  two rooms are, by construction, never in the same map.
-     *
-     * @param[in]       mapId_in
-     *                  Map that holds the room.
-     *
-     * @param[in]       roomId_in
-     *                  Room id within that map.
-     *
-     * @param[out]      p_room_out
-     *                  The matching, non-bad ROOM-variant room, or nullptr.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     * @brief           Outcome of enforcePassageApertureBackstop().
      */
-    [[nodiscard]] SemanticsManagerStatus
-        findRoomByMapAndId(long unsigned int mapId_in,
-                           int               roomId_in,
-                           semantic::Room  *&p_room_out) const;
+    enum class PassageSideEnforcementOutcome
+    {
+        NO_VIOLATION,
+        REMOVED_UNBOUND,
+        REROUTED
+    };
+
+    /* Wall admission (room_association/wall_admission/). */
 
     /*!
-     * @brief           Runs the geometric verifier on the single best
-     *                  candidate and feeds the resulting
-     *                  VerificationVerdict to the room-state machine.
-     *
-     *                  Verification only -- this never mutates the Atlas
-     *                  or triggers a map merge; see the comment above
-     *                  its call site in Run() for why that trigger is a
-     *                  separate, deliberately gated step.
-     *
-     * @param[in]       candidates_in
-     *                  This cycle's ranked SemanticCandidate list, best
-     *                  first.
+     * @brief           Ensures every valid WALL plane belongs to at least one
+     *                  room or provisional structural element.
      */
-    [[nodiscard]] SemanticsManagerStatus evaluateTopCandidateVerification(
-        const std::vector<semantic::SemanticCandidate> &candidates_in);
-
-    /*!
-     * @brief           Enforces exclusive ownership of every mapped wall
-     *                  surface.
-     *
-     *                  Observation-side evidence selects the most plausible
-     *                  room when legacy data or a map merge assigned one Plane
-     *                  object to multiple rooms. This structural invariant is
-     *                  enforced even when passage detection is disabled.
-     */
-    [[nodiscard]] SemanticsManagerStatus enforceUniqueWallOwnership(void);
-
-    /*!
-     * @brief           Validates finite wall associations and updates room
-     *                  maturity.
-     *
-     *                  The validator repairs decisive wall clashes, rejects
-     *                  ambiguous self-intersections, and marks a room complete
-     *                  only when ordered finite wall segments form a closed
-     *                  non-self-intersecting loop. Passage detection remains
-     *                  independent and may precede boundary completion.
-     */
-    [[nodiscard]] SemanticsManagerStatus validateRoomBoundaries(void);
-
-    /*!
-     * @brief           Ages and safely retires unused walls which never become
-     *                  valid.
-     */
-    [[nodiscard]] SemanticsManagerStatus suppressUndefendedWalls(void);
-
-    /*!
-     * @brief           Converts undefendedWalls into pointer-free,
-     *                  map-sorted UnresolvedWallHypothesisRecord values.
-     *                  Read-only; must be called while the semantic-update lock
-     *                  is still held.
-     */
-    [[nodiscard]] SemanticsManagerStatus captureUnresolvedWallHypotheses(
-        std::vector<semantic::UnresolvedWallHypothesisRecord>
-            &captureUnresolvedWallHypotheses_out) const;
-
-    /*!
-     * @brief           Emits bounded, parseable SG_AXIOM/SG_VIOLATION
-     *                  diagnostic lines for \p entry_in via
-     *                  semantic::buildSemanticDiagnosticUpdate(), which
-     *                  also updates semanticDiagnosticState so the
-     *                  next call can detect a transition. Never acquires
-     *                  the semantic-update lock (called after it is
-     *                  released) and never mutates evaluator/inference
-     *                  state -- read-only with respect to everything
-     *                  except semanticDiagnosticState.
-     *
-     * @param[in]       entry_in
-     *                  The cache entry just published for this cycle.
-     */
-    [[nodiscard]] SemanticsManagerStatus logSemanticDiagnostics(
-        const semantic::SemanticReportCacheEntry &entry_in);
-
-    /*!
-     * @brief           Recomputes room centroids as the arithmetic mean of
-     *                  associated wall centroids.
-     *
-     *                  Replaces the free-space cluster centroid with the
-     *                  geometric center of the room's boundary walls. Rooms
-     *                  with no valid walls retain their existing centroid.
-     */
-    [[nodiscard]] SemanticsManagerStatus recomputeRoomCentroidsFromWalls(void);
-
-    /*!
-     * @brief           Splits connected skeleton components at confirmed
-     *                  passages.
-     *
-     *                  Voxblox correctly represents free-space connectivity
-     *                  through an opening, whereas a semantic room must stop at
-     *                  that opening. The raw sparse-graph edges are therefore
-     *                  cut only inside confirmed passage apertures before
-     *                  room-wall association.
-     *
-     * @param[in]       freeSpaceClusters_world_m_in
-     *                  Connected Voxblox vertex components in the active map
-     *                  frame.
-     *
-     * @param[out]      partitions_out
-     *                  Passage-partitioned components in the same frame.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus partitionFreeSpaceAtPassages(
-        const std::vector<std::vector<Eigen::Vector3d>>
-                                                  &freeSpaceClusters_world_m_in,
-        std::vector<std::vector<Eigen::Vector3d>> &partitions_out) const;
-
-    /*!
-     * @brief           Removes room-wall associations proven to pass through an
-     *                  opening.
-     *
-     *                  This repairs persistent associations created before a
-     *                  passage was confirmed. Supporting walls on the passage
-     *                  plane are retained.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        detachWallsBeyondConfirmedPassages(void);
-
-    /*!
-     * @brief           Gives the points a room is judged from: its centroid,
-     *                  and for the room the camera is in also the current
-     *                  camera centre.
-     *
-     *                  The damped centroid of a young room can drift across
-     *                  one of its own walls, and the current-room estimate can
-     *                  lag the camera crossing a doorway. So for the room the
-     *                  camera is in, the face rule and the doorway backstop act
-     *                  only when the camera and the centroid agree; a point too
-     *                  close to a plane to tell its side counts as
-     *                  disagreement. The room the camera is in is the room
-     *                  whose id is getCurrentRoomId() and whose map is the
-     *                  active map.
-     *
-     * @param[in]       p_room_in
-     *                  Room to place; shall be non-null.
-     *
-     * @param[out]      roomCentroid_world_m_out
-     *                  Room centroid in the active map frame, metres.
-     *
-     * @param[out]      cameraCenter_world_m_out
-     *                  Current camera centre in the active map frame, metres;
-     *                  zero when hasCameraViewpoint_out is false.
-     *
-     * @param[out]      hasCameraViewpoint_out
-     *                  True when p_room_in is the room the camera is in and a
-     *                  camera centre is available.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        getRoomViewpoints(semantic::Room  *p_room_in,
-                          Eigen::Vector3d &roomCentroid_world_m_out,
-                          Eigen::Vector3d &cameraCenter_world_m_out,
-                          bool            &hasCameraViewpoint_out);
-
-    /*!
-     * @brief           Orders wall admission candidates so nearer walls are
-     *                  tried first.
-     *
-     *                  Order: horizontal distance from the current camera
-     *                  centre to the wall's finite ground segment (nearest
-     *                  first), then the time the wall was first observed
-     *                  (oldest first), then plane id. A wall without a finite
-     *                  segment, or every wall when there is no camera centre
-     *                  or ground plane, has an infinite distance. The order is
-     *                  deterministic for a given map state.
-     *
-     * @param[in,out]   walls_inout
-     *                  Candidate planes, reordered in place.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        sortWallsByCameraDistance(std::vector<geometric::Plane *> &walls_inout);
+    [[nodiscard]] SemanticsManagerStatus associateAllWallsToRooms(void);
 
     /*!
      * @brief           Adds a wall only when it preserves a valid room
@@ -1215,16 +1029,6 @@ class SemanticsManager
         admitWallToRoom(semantic::Room   *p_room_inout,
                         geometric::Plane *p_candidateWall_in,
                         bool             &wasAdmitted_out);
-
-    /*!
-     * @brief           Outcome of enforcePassageApertureBackstop().
-     */
-    enum class PassageSideEnforcementOutcome
-    {
-        NO_VIOLATION,
-        REMOVED_UNBOUND,
-        REROUTED
-    };
 
     /*!
      * @brief           Shared far-side-passage backstop: a wall whose centroid
@@ -1341,6 +1145,181 @@ class SemanticsManager
                                 bool             &isWallFaceForeignToRoom_out);
 
     /*!
+     * @brief           Gives the points a room is judged from: its centroid,
+     *                  and for the room the camera is in also the current
+     *                  camera centre.
+     *
+     *                  The damped centroid of a young room can drift across
+     *                  one of its own walls, and the current-room estimate can
+     *                  lag the camera crossing a doorway. So for the room the
+     *                  camera is in, the face rule and the doorway backstop act
+     *                  only when the camera and the centroid agree; a point too
+     *                  close to a plane to tell its side counts as
+     *                  disagreement. The room the camera is in is the room
+     *                  whose id is getCurrentRoomId() and whose map is the
+     *                  active map.
+     *
+     * @param[in]       p_room_in
+     *                  Room to place; shall be non-null.
+     *
+     * @param[out]      roomCentroid_world_m_out
+     *                  Room centroid in the active map frame, metres.
+     *
+     * @param[out]      cameraCenter_world_m_out
+     *                  Current camera centre in the active map frame, metres;
+     *                  zero when hasCameraViewpoint_out is false.
+     *
+     * @param[out]      hasCameraViewpoint_out
+     *                  True when p_room_in is the room the camera is in and a
+     *                  camera centre is available.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getRoomViewpoints(semantic::Room  *p_room_in,
+                          Eigen::Vector3d &roomCentroid_world_m_out,
+                          Eigen::Vector3d &cameraCenter_world_m_out,
+                          bool            &hasCameraViewpoint_out);
+
+    /*!
+     * @brief           Orders wall admission candidates so nearer walls are
+     *                  tried first.
+     *
+     *                  Order: horizontal distance from the current camera
+     *                  centre to the wall's finite ground segment (nearest
+     *                  first), then the time the wall was first observed
+     *                  (oldest first), then plane id. A wall without a finite
+     *                  segment, or every wall when there is no camera centre
+     *                  or ground plane, has an infinite distance. The order is
+     *                  deterministic for a given map state.
+     *
+     * @param[in,out]   walls_inout
+     *                  Candidate planes, reordered in place.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        sortWallsByCameraDistance(std::vector<geometric::Plane *> &walls_inout);
+
+    /* Free-space rooms (room_association/free_space_rooms/) and room
+     * consolidation (room_association/room_consolidation/). */
+
+    /*!
+     * @brief           Associates cluster-supported walls with rooms using
+     *                  passage-partitioned free-space evidence, maintaining
+     *                  matched rooms and promoting supported candidates.
+     *
+     * @return          Status of the wall-to-room association cycle.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        associateWallsToRoomsFromFreeSpaceClusters(void);
+
+    /*!
+     * @brief           Gets the latest skeleton cluster acquired from voxblox.
+     */
+    [[nodiscard]] SemanticsManagerStatus getLatestSkeletonCluster(
+        std::vector<std::vector<Eigen::Vector3d>> &latestSkeletonCluster_out);
+
+    /*!
+     * @brief           Splits connected skeleton components at confirmed
+     *                  passages.
+     *
+     *                  Voxblox correctly represents free-space connectivity
+     *                  through an opening, whereas a semantic room must stop at
+     *                  that opening. The raw sparse-graph edges are therefore
+     *                  cut only inside confirmed passage apertures before
+     *                  room-wall association.
+     *
+     * @param[in]       freeSpaceClusters_world_m_in
+     *                  Connected Voxblox vertex components in the active map
+     *                  frame.
+     *
+     * @param[out]      partitions_out
+     *                  Passage-partitioned components in the same frame.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus partitionFreeSpaceAtPassages(
+        const std::vector<std::vector<Eigen::Vector3d>>
+                                                  &freeSpaceClusters_world_m_in,
+        std::vector<std::vector<Eigen::Vector3d>> &partitions_out) const;
+
+    /*!
+     * @brief           Checks for the existing of a room with particular walls
+     *                  close to a cluster. It returns the address of the
+     *                  existing room if found, otherwise returns nullptr.
+     *
+     * @param[in]       clusterCentroid_world_in
+     *                  The centroid of the cluster in the world frame of the
+     *                  current map.
+     *
+     * @param[in]       wallList_world_in
+     *                  The list of walls to be checked in the current world map
+     *
+     * @param[in]       freeSpaceCluster_world_m_in
+     *                  Connected Voxblox skeleton vertices supporting the room.
+     *
+     * @param[in]       excludedRoomIds_in
+     *                  Room IDs already matched to other clusters in this
+     *                  cycle.
+     *
+     * @param[out]      p_room_out
+     *                  The existing room, or nullptr when none matches.
+     */
+    [[nodiscard]] SemanticsManagerStatus associateRooms(
+        const Eigen::Vector3d clusterCentroid_world_in,
+        const std::vector<vs_graphs::core::geometric::Plane *>
+                                           &wallList_world_in,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
+        const std::unordered_set<int>      &excludedRoomIds_in,
+        vs_graphs::core::semantic::Room   *&p_room_out);
+
+    /*!
+     * @brief           Fuses duplicate room hypotheses supported by one
+     *                  connected free-space region when no finite wall
+     *                  separates them.
+     *
+     * @param[in,out]   p_retainedRoom_inout
+     *                  Room which retains the consolidated semantic topology.
+     *
+     * @param[in]       freeSpaceCluster_world_m_in
+     *                  Connected Voxblox skeleton vertices for the current
+     *                  room.
+     *
+     * @param[in]       wallList_world_in
+     *                  Current mapped wall surfaces used as merge vetoes.
+     */
+    [[nodiscard]] SemanticsManagerStatus consolidateRoomsInFreeSpaceCluster(
+        vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
+        const std::vector<vs_graphs::core::geometric::Plane *>
+            &wallList_world_in);
+
+    /* Wall ownership (room_association/wall_ownership/). */
+
+    /*!
+     * @brief           Enforces exclusive ownership of every mapped wall
+     *                  surface.
+     *
+     *                  Observation-side evidence selects the most plausible
+     *                  room when legacy data or a map merge assigned one Plane
+     *                  object to multiple rooms. This structural invariant is
+     *                  enforced even when passage detection is disabled.
+     */
+    [[nodiscard]] SemanticsManagerStatus enforceUniqueWallOwnership(void);
+
+    /*!
+     * @brief           Removes room-wall associations proven to pass through an
+     *                  opening.
+     *
+     *                  This repairs persistent associations created before a
+     *                  passage was confirmed. Supporting walls on the passage
+     *                  plane are retained.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        detachWallsBeyondConfirmedPassages(void);
+
+    /*!
      * @brief           Continuous invariant sweep: re-applies
      *                  enforcePassageApertureBackstop() AND
      *                  isWallFaceForeignToRoom() to every wall every
@@ -1363,6 +1342,278 @@ class SemanticsManager
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
      */
     [[nodiscard]] SemanticsManagerStatus enforcePassageTopologyInvariant(void);
+
+    /*!
+     * @brief           Ages and safely retires unused walls which never become
+     *                  valid.
+     */
+    [[nodiscard]] SemanticsManagerStatus suppressUndefendedWalls(void);
+
+    /* Passage rooms (room_association/passage_rooms/). */
+
+    /*!
+     * @brief           Associates each passage with the closest room on either
+     *                  side of its supporting wall.
+     */
+    [[nodiscard]] SemanticsManagerStatus associatePassagesToRooms(void);
+
+    /*!
+     * @brief           First step of associatePassagesToRooms() for one
+     *                  passage: keeps the room edges of a recovery proxy,
+     *                  reads the supporting walls, unit plane, centroid and
+     *                  width, and stamps the known-side direction from the
+     *                  supporting wall's observation origin when missing.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage of the active map; may be null or bad.
+     *
+     * @param[in,out]   linkState_inout
+     *                  Fresh state; isPassageLinkable is set only when the
+     *                  later steps may run.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        readPassageLinkGeometry(semantic::Passage    *p_passage_inout,
+                                PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Finds the nearest room on each side of the passage
+     *                  plane among the rooms that own a wall at the opening,
+     *                  and the rooms that own a supporting wall exactly.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State from readPassageLinkGeometry(); the side rooms
+     *                  and distances are written.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findPassageSideRooms(const std::vector<semantic::Room *> &allRooms_in,
+                             semantic::Passage    *p_passage_inout,
+                             PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Drops the farther side room when the two side rooms
+     *                  stand on different floors: a passage links rooms of
+     *                  one floor only.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State with both side rooms; one may be cleared.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        dropCrossFloorSideRoom(semantic::Passage    *p_passage_inout,
+                               PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Links the passage to its side rooms, revokes it from
+     *                  every other room, counts the linked rooms and sets the
+     *                  known-side room when only the direction was known.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in]       previousPassageIdsByRoom_in
+     *                  Passage ids each room held before this pass; only new
+     *                  links are logged.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @param[in,out]   linkState_inout
+     *                  State with the side rooms; the room counts and the
+     *                  known-side sign are written.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus linkPassageToSideRooms(
+        const std::vector<semantic::Room *> &allRooms_in,
+        const std::unordered_map<semantic::Room *, std::unordered_set<int>>
+                             &previousPassageIdsByRoom_in,
+        semantic::Passage    *p_passage_inout,
+        PassageRoomLinkState &linkState_inout);
+
+    /*!
+     * @brief           Retires the prospective far-side room of a passage
+     *                  once a distinct confirmed room with real walls borders
+     *                  the passage on that side.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Linkable passage.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus resolveProspectiveRoomPromotion(
+        const std::vector<semantic::Room *> &allRooms_in,
+        semantic::Passage                   *p_passage_inout);
+
+    /*!
+     * @brief           Finds the confirmed room on the far side of a passage
+     *                  whose centroid segment to the prospective room threads
+     *                  the passage opening and crosses no foreign wall; the
+     *                  near-side room is never chosen.
+     *
+     * @param[in]       allRooms_in
+     *                  Rooms of the active map, in id order.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage with a prospective far-side room.
+     *
+     * @param[in]       p_prospectiveRoom_in
+     *                  The prospective room; has at least one wall.
+     *
+     * @param[out]      p_farSideConfirmedRoom_out
+     *                  The confirmed room; null when none. Borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus findPromotionFarSideRoom(
+        const std::vector<semantic::Room *> &allRooms_in,
+        semantic::Passage                   *p_passage_inout,
+        semantic::Room                      *p_prospectiveRoom_in,
+        semantic::Room                     *&p_farSideConfirmedRoom_out);
+
+    /*!
+     * @brief           Makes the confirmed room the passage's far-side
+     *                  handle, offers the prospective room's walls to it
+     *                  (admitWallToRoom()) and marks the prospective room
+     *                  bad.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Passage with a prospective far-side room.
+     *
+     * @param[in,out]   p_prospectiveRoom_inout
+     *                  The prospective room to retire.
+     *
+     * @param[in]       p_farSideConfirmedRoom_in
+     *                  Confirmed far-side room; receives the passage link.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        retireProspectiveRoom(semantic::Passage *p_passage_inout,
+                              semantic::Room    *p_prospectiveRoom_inout,
+                              semantic::Room    *p_farSideConfirmedRoom_in);
+
+    /* ---------------------------------------------------------------------- *
+     * OTHER CYCLE STEPS (room tracking, room validation, merge candidates and
+     * reporting), called by run().
+     * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Advances the room-state machine once per semantic
+     *                  cycle.
+     *
+     *                  Consumes the per-cycle crossing and tracking-loss
+     *                  signals and feeds them to roomTracker together
+     *                  with the abstract verification verdict from the
+     *                  verification stub. Read-only with respect to
+     *                  currentRoomId/lastKnownRoomId.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        updateRoomTrackerState(double now_s_in);
+
+    /*!
+     * @brief           Resolves a room by the (map id, room id) pair a
+     *                  SemanticCandidate carries, scanning every live map in
+     *                  the Atlas (not only the current one) since a candidate's
+     *                  two rooms are, by construction, never in the same map.
+     *
+     * @param[in]       mapId_in
+     *                  Map that holds the room.
+     *
+     * @param[in]       roomId_in
+     *                  Room id within that map.
+     *
+     * @param[out]      p_room_out
+     *                  The matching, non-bad ROOM-variant room, or nullptr.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findRoomByMapAndId(long unsigned int mapId_in,
+                           int               roomId_in,
+                           semantic::Room  *&p_room_out) const;
+
+    /*!
+     * @brief           Runs the geometric verifier on the single best
+     *                  candidate and feeds the resulting
+     *                  VerificationVerdict to the room-state machine.
+     *
+     *                  Verification only -- this never mutates the Atlas
+     *                  or triggers a map merge; see the comment above
+     *                  its call site in Run() for why that trigger is a
+     *                  separate, deliberately gated step.
+     *
+     * @param[in]       candidates_in
+     *                  This cycle's ranked SemanticCandidate list, best
+     *                  first.
+     */
+    [[nodiscard]] SemanticsManagerStatus evaluateTopCandidateVerification(
+        const std::vector<semantic::SemanticCandidate> &candidates_in);
+
+    /*!
+     * @brief           Validates finite wall associations and updates room
+     *                  maturity.
+     *
+     *                  The validator repairs decisive wall clashes, rejects
+     *                  ambiguous self-intersections, and marks a room complete
+     *                  only when ordered finite wall segments form a closed
+     *                  non-self-intersecting loop. Passage detection remains
+     *                  independent and may precede boundary completion.
+     */
+    [[nodiscard]] SemanticsManagerStatus validateRoomBoundaries(void);
+
+    /*!
+     * @brief           Converts undefendedWalls into pointer-free,
+     *                  map-sorted UnresolvedWallHypothesisRecord values.
+     *                  Read-only; must be called while the semantic-update lock
+     *                  is still held.
+     */
+    [[nodiscard]] SemanticsManagerStatus captureUnresolvedWallHypotheses(
+        std::vector<semantic::UnresolvedWallHypothesisRecord>
+            &captureUnresolvedWallHypotheses_out) const;
+
+    /*!
+     * @brief           Emits bounded, parseable SG_AXIOM/SG_VIOLATION
+     *                  diagnostic lines for \p entry_in via
+     *                  semantic::buildSemanticDiagnosticUpdate(), which
+     *                  also updates semanticDiagnosticState so the
+     *                  next call can detect a transition. Never acquires
+     *                  the semantic-update lock (called after it is
+     *                  released) and never mutates evaluator/inference
+     *                  state -- read-only with respect to everything
+     *                  except semanticDiagnosticState.
+     *
+     * @param[in]       entry_in
+     *                  The cache entry just published for this cycle.
+     */
+    [[nodiscard]] SemanticsManagerStatus logSemanticDiagnostics(
+        const semantic::SemanticReportCacheEntry &entry_in);
+
+    /*!
+     * @brief           Recomputes room centroids as the arithmetic mean of
+     *                  associated wall centroids.
+     *
+     *                  Replaces the free-space cluster centroid with the
+     *                  geometric center of the room's boundary walls. Rooms
+     *                  with no valid walls retain their existing centroid.
+     */
+    [[nodiscard]] SemanticsManagerStatus recomputeRoomCentroidsFromWalls(void);
 
     /* ---------------------------------------------------------------------- *
      * SCENE GRAPH REGISTRY
@@ -1497,12 +1748,6 @@ class SemanticsManager
             p_sysParams->roomTracking.reacquireMinPlanes;
         roomTracker = semantic::RoomTracker(trackerConfiguration);
     }
-
-    /*!
-     * @brief           Gets the latest skeleton cluster acquired from voxblox.
-     */
-    [[nodiscard]] SemanticsManagerStatus getLatestSkeletonCluster(
-        std::vector<std::vector<Eigen::Vector3d>> &latestSkeletonCluster_out);
 
     /*!
      * @brief           Returns a copied snapshot of the latest complete
@@ -1862,156 +2107,6 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus onTrackingRecovered(void);
 
     /*!
-     * @brief           Checks for the existing of a room with particular walls
-     *                  close to a cluster. It returns the address of the
-     *                  existing room if found, otherwise returns nullptr.
-     *
-     * @param[in]       clusterCentroid_world_in
-     *                  The centroid of the cluster in the world frame of the
-     *                  current map.
-     *
-     * @param[in]       wallList_world_in
-     *                  The list of walls to be checked in the current world map
-     *
-     * @param[in]       freeSpaceCluster_world_m_in
-     *                  Connected Voxblox skeleton vertices supporting the room.
-     *
-     * @param[in]       excludedRoomIds_in
-     *                  Room IDs already matched to other clusters in this
-     *                  cycle.
-     *
-     * @param[out]      p_room_out
-     *                  The existing room, or nullptr when none matches.
-     */
-    [[nodiscard]] SemanticsManagerStatus associateRooms(
-        const Eigen::Vector3d clusterCentroid_world_in,
-        const std::vector<vs_graphs::core::geometric::Plane *>
-                                           &wallList_world_in,
-        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
-        const std::unordered_set<int>      &excludedRoomIds_in,
-        vs_graphs::core::semantic::Room   *&p_room_out);
-
-    /*!
-     * @brief           Fuses duplicate room hypotheses supported by one
-     *                  connected free-space region when no finite wall
-     *                  separates them.
-     *
-     * @param[in,out]   p_retainedRoom_inout
-     *                  Room which retains the consolidated semantic topology.
-     *
-     * @param[in]       freeSpaceCluster_world_m_in
-     *                  Connected Voxblox skeleton vertices for the current
-     *                  room.
-     *
-     * @param[in]       wallList_world_in
-     *                  Current mapped wall surfaces used as merge vetoes.
-     */
-    [[nodiscard]] SemanticsManagerStatus consolidateRoomsInFreeSpaceCluster(
-        vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
-        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
-        const std::vector<vs_graphs::core::geometric::Plane *>
-            &wallList_world_in);
-
-    /*!
-     * @brief           Ensures every valid WALL plane belongs to at least one
-     *                  room or provisional structural element.
-     */
-    [[nodiscard]] SemanticsManagerStatus associateAllWallsToRooms(void);
-
-    /*!
-     * @brief           Associates each passage with the closest room on either
-     *                  side of its supporting wall.
-     */
-    [[nodiscard]] SemanticsManagerStatus associatePassagesToRooms(void);
-
-    /*!
-     * @brief           First step of associatePassagesToRooms() for one
-     *                  passage: keeps the room edges of a recovery proxy,
-     *                  reads the supporting walls, unit plane, centroid and
-     *                  width, and stamps the known-side direction from the
-     *                  supporting wall's observation origin when missing.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Passage of the active map; may be null or bad.
-     *
-     * @param[in,out]   linkState_inout
-     *                  Fresh state; isPassageLinkable is set only when the
-     *                  later steps may run.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        readPassageLinkGeometry(semantic::Passage    *p_passage_inout,
-                                PassageRoomLinkState &linkState_inout);
-
-    /*!
-     * @brief           Finds the nearest room on each side of the passage
-     *                  plane among the rooms that own a wall at the opening,
-     *                  and the rooms that own a supporting wall exactly.
-     *
-     * @param[in]       allRooms_in
-     *                  Rooms of the active map, in id order.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Linkable passage.
-     *
-     * @param[in,out]   linkState_inout
-     *                  State from readPassageLinkGeometry(); the side rooms
-     *                  and distances are written.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        findPassageSideRooms(const std::vector<semantic::Room *> &allRooms_in,
-                             semantic::Passage    *p_passage_inout,
-                             PassageRoomLinkState &linkState_inout);
-
-    /*!
-     * @brief           Drops the farther side room when the two side rooms
-     *                  stand on different floors: a passage links rooms of
-     *                  one floor only.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Linkable passage.
-     *
-     * @param[in,out]   linkState_inout
-     *                  State with both side rooms; one may be cleared.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        dropCrossFloorSideRoom(semantic::Passage    *p_passage_inout,
-                               PassageRoomLinkState &linkState_inout);
-
-    /*!
-     * @brief           Links the passage to its side rooms, revokes it from
-     *                  every other room, counts the linked rooms and sets the
-     *                  known-side room when only the direction was known.
-     *
-     * @param[in]       allRooms_in
-     *                  Rooms of the active map, in id order.
-     *
-     * @param[in]       previousPassageIdsByRoom_in
-     *                  Passage ids each room held before this pass; only new
-     *                  links are logged.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Linkable passage.
-     *
-     * @param[in,out]   linkState_inout
-     *                  State with the side rooms; the room counts and the
-     *                  known-side sign are written.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus linkPassageToSideRooms(
-        const std::vector<semantic::Room *> &allRooms_in,
-        const std::unordered_map<semantic::Room *, std::unordered_set<int>>
-                             &previousPassageIdsByRoom_in,
-        semantic::Passage    *p_passage_inout,
-        PassageRoomLinkState &linkState_inout);
-
-    /*!
      * @brief           Passage detection part of associatePassagesToRooms():
      *                  keeps the far-side room handle of a passage right. It
      *                  clears a stale handle, resolves it to a confirmed room
@@ -2226,81 +2321,6 @@ class SemanticsManager
                              PassageRoomLinkState &linkState_inout);
 
     /*!
-     * @brief           Retires the prospective far-side room of a passage
-     *                  once a distinct confirmed room with real walls borders
-     *                  the passage on that side.
-     *
-     * @param[in]       allRooms_in
-     *                  Rooms of the active map, in id order.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Linkable passage.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus resolveProspectiveRoomPromotion(
-        const std::vector<semantic::Room *> &allRooms_in,
-        semantic::Passage                   *p_passage_inout);
-
-    /*!
-     * @brief           Finds the confirmed room on the far side of a passage
-     *                  whose centroid segment to the prospective room threads
-     *                  the passage opening and crosses no foreign wall; the
-     *                  near-side room is never chosen.
-     *
-     * @param[in]       allRooms_in
-     *                  Rooms of the active map, in id order.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Passage with a prospective far-side room.
-     *
-     * @param[in]       p_prospectiveRoom_in
-     *                  The prospective room; has at least one wall.
-     *
-     * @param[out]      p_farSideConfirmedRoom_out
-     *                  The confirmed room; null when none. Borrowed.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus findPromotionFarSideRoom(
-        const std::vector<semantic::Room *> &allRooms_in,
-        semantic::Passage                   *p_passage_inout,
-        semantic::Room                      *p_prospectiveRoom_in,
-        semantic::Room                     *&p_farSideConfirmedRoom_out);
-
-    /*!
-     * @brief           Makes the confirmed room the passage's far-side
-     *                  handle, offers the prospective room's walls to it
-     *                  (admitWallToRoom()) and marks the prospective room
-     *                  bad.
-     *
-     * @param[in,out]   p_passage_inout
-     *                  Passage with a prospective far-side room.
-     *
-     * @param[in,out]   p_prospectiveRoom_inout
-     *                  The prospective room to retire.
-     *
-     * @param[in]       p_farSideConfirmedRoom_in
-     *                  Confirmed far-side room; receives the passage link.
-     *
-     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        retireProspectiveRoom(semantic::Passage *p_passage_inout,
-                              semantic::Room    *p_prospectiveRoom_inout,
-                              semantic::Room    *p_farSideConfirmedRoom_in);
-
-    /*!
-     * @brief           Associates cluster-supported walls with rooms using
-     *                  passage-partitioned free-space evidence, maintaining
-     *                  matched rooms and promoting supported candidates.
-     *
-     * @return          Status of the wall-to-room association cycle.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        associateWallsToRoomsFromFreeSpaceClusters(void);
-
-    /*!
      * @brief           Gets the updated floors containing rooms and corridors.
      */
     [[nodiscard]] SemanticsManagerStatus getUpdatedFloors(void);
@@ -2402,37 +2422,6 @@ class SemanticsManager
             const std::vector<semantic::SemanticCandidate> &candidates_in);
 
     /*!
-     * @brief           Test-only readout of evaluateWallAdmissionEvidence()'s
-     *                  admissible flag (the full WallAdmissionEvidence struct
-     *                  is file-local to SemanticsManager.cc's anonymous
-     *                  namespace).
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        evaluateWallAdmissionEvidenceAdmissibleForTest(
-            geometric::Plane      *p_wall_in,
-            const Eigen::Vector3d &groundNormal_world_in,
-            bool                  &isAdmissible_out) const;
-
-    /*!
-     * @brief           Test-only direct call into the private admission gate
-     *                  (far-side backstop, evidence check, wrong-side
-     *                  observation check, boundary topology).
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        admitWallToRoomForTest(semantic::Room   *p_room_in,
-                               geometric::Plane *p_candidateWall_in,
-                               bool             &wasAdmitted_out);
-
-    /*!
-     * @brief           Test-only direct call into the private per-cycle
-     *                  passage-side sweep (prospective-placement exemption,
-     *                  wall-face ownership, aperture backstop). Callers inspect
-     *                  the result via Room::getWalls().
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        enforcePassageSideInvariantForTest(void);
-
-    /*!
      * @brief           Test-only direct call into the private floor-hierarchy
      *                  refresh (must run before
      *                  reconcileRoomGroundPlanesForTest() so a canonical Floor
@@ -2454,24 +2443,6 @@ class SemanticsManager
      *                  room change.
      */
     [[nodiscard]] SemanticsManagerStatus setCurrentRoomIdForTest(int roomId_in);
-
-    /*!
-     * @brief           Test-only direct ordinary-wall association pass.
-     */
-    [[nodiscard]] SemanticsManagerStatus associateAllWallsToRoomsForTest(void);
-
-    /*!
-     * @brief           Test-only direct bounded pending-wall retirement pass.
-     */
-    [[nodiscard]] SemanticsManagerStatus suppressUndefendedWallsForTest(void);
-
-    /*!
-     * @brief           Test-only pending age readout; -1 means the wall is not
-     *                  pending.
-     */
-    [[nodiscard]] SemanticsManagerStatus
-        getPendingWallAgeForTest(int  wallId_in,
-                                 int &pendingWallAgeForTest_out) const;
 
     /*!
      * @brief           Test-only direct call into the private room/floor
