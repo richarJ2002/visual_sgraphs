@@ -23,9 +23,6 @@
  *                  in SemanticsManager.h.
  */
 
-#include "map_state/atlas/objects/AtlasStatusEnum.h"
-#include "map_state/map/map.h"
-#include "map_state/map/objects/MapStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
@@ -41,83 +38,27 @@ SemanticsManagerStatus
                                          int               roomId_in,
                                          semantic::Room  *&p_room_out) const
 {
-    std::vector<map::Map *> atlasAllMaps{};
-    if (p_atlas->getAllMaps(atlasAllMaps) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    /* A map the graph registry does not hold (no longer in the Atlas) has no
+     * room: MAP_NOT_FOUND leaves the room null, as a missing id does. */
+    semantic::Room *p_room = nullptr;
+    if (getMapRoomById(mapId_in, roomId_in, p_room) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+        p_room == nullptr)
+    {
+        p_room_out = nullptr;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+    semantic::Room::RoomVariant roomVariant{};
+    if (p_room->getRoomVariant(roomVariant) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMaps returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getRoomVariant returned a failure status "
+                     "although it cannot fail; continuing as before.",
                      __func__);
     }
-    for (map::Map *p_map : atlasAllMaps)
-    {
-        unsigned long mapId{};
-        if (!(p_map == nullptr) &&
-            p_map->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_map == nullptr || mapId != mapId_in)
-        {
-            continue;
-        }
-        std::vector<semantic::Room *> mapAllRooms{};
-        if (getMapRoomsInIdOrder(mapId, mapAllRooms) !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMapRoomsInIdOrder returned a failure status; "
-                         "continuing as before.",
-                         __func__);
-        }
-        for (semantic::Room *p_room : mapAllRooms)
-        {
-            bool roomIsBad{};
-            if ((p_room != nullptr) &&
-                p_room->isBad(roomIsBad) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            semantic::Room::RoomVariant roomVariant{};
-            if ((p_room != nullptr && !roomIsBad) &&
-                p_room->getRoomVariant(roomVariant) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomVariant returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            int roomId{};
-            if ((p_room != nullptr && !roomIsBad &&
-                 roomVariant == semantic::Room::RoomVariant::ROOM) &&
-                p_room->getId(roomId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_room != nullptr && !roomIsBad &&
-                roomVariant == semantic::Room::RoomVariant::ROOM &&
-                roomId == roomId_in)
-            {
-                p_room_out = p_room;
-                return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
-            }
-        }
-        break;
-    }
-    p_room_out = nullptr;
+    p_room_out =
+        roomVariant == semantic::Room::RoomVariant::ROOM ? p_room : nullptr;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

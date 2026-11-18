@@ -1825,9 +1825,10 @@ class SemanticsManager
 
     /*!
      * @brief           Resolves a room by the (map id, room id) pair a
-     *                  SemanticCandidate carries, scanning every live map in
-     *                  the Atlas (not only the current one) since a candidate's
-     *                  two rooms are, by construction, never in the same map.
+     *                  SemanticCandidate carries, through the map's scene
+     *                  graph (getMapRoomById()), for any live map, not only
+     *                  the current one, since a candidate's two rooms are, by
+     *                  construction, never in the same map.
      *
      * @param[in]       mapId_in
      *                  Map that holds the room.
