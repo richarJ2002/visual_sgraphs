@@ -95,26 +95,6 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                      __func__);
     }
 
-    const auto distanceToCluster_m =
-        [&freeSpaceCluster_world_m_in](
-            const Eigen::Vector3d &clusterPoint_world_m_in)
-    {
-        double minimumDistance_m = std::numeric_limits<double>::infinity();
-
-        for (const Eigen::Vector3d &clusterPoint_world_m :
-             freeSpaceCluster_world_m_in)
-        {
-            if (clusterPoint_world_m.allFinite())
-            {
-                minimumDistance_m = std::min(
-                    minimumDistance_m,
-                    (clusterPoint_world_m_in - clusterPoint_world_m).norm());
-            }
-        }
-
-        return minimumDistance_m;
-    };
-
     std::vector<semantic::Room *> currentMapAllRooms{};
     unsigned long                 currentMapId{};
     if (p_currentMap->getId(currentMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
@@ -160,30 +140,28 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "status; continuing as before.",
                          __func__);
         }
-        const std::vector<semantic::Passage *>::const_iterator
-            duplicateSeedPassage = std::find_if(
-                activePassages.begin(),
-                activePassages.end(),
-                [p_duplicateRoom](semantic::Passage *p_passage)
-                {
-                    vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
-                        nullptr;
-                    if ((p_passage != nullptr) &&
-                        p_passage->getProspectiveRoom(
-                            p_passageProspectiveRoom) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getProspectiveRoom returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    return p_passage != nullptr &&
-                           p_passageProspectiveRoom == p_duplicateRoom;
-                });
+        semantic::Passage *p_duplicateSeedPassage = nullptr;
+        for (semantic::Passage *p_passage : activePassages)
+        {
+            vs_graphs::core::semantic::Room *p_passageProspectiveRoom = nullptr;
+            if ((p_passage != nullptr) &&
+                p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_passage != nullptr &&
+                p_passageProspectiveRoom == p_duplicateRoom)
+            {
+                p_duplicateSeedPassage = p_passage;
+                break;
+            }
+        }
         const bool duplicateIsLiveProspective =
-            duplicateSeedPassage != activePassages.end();
+            p_duplicateSeedPassage != nullptr;
 
         /*!
          * A live prospective room waits for its own cluster validation,
@@ -197,108 +175,22 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
          */
         if (duplicateIsLiveProspective)
         {
-            std::vector<geometric::Plane *> duplicateSeedWalls{};
-            if (p_duplicateRoom->getWalls(duplicateSeedWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (!duplicateSeedWalls.empty())
-            {
-                continue;
-            }
-
-            std::vector<geometric::Plane *> retainedWalls{};
-            if (p_retainedRoom_inout->getWalls(retainedWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            Eigen::Vector3d upDirection_world = Eigen::Vector3d::Zero();
-            bool            isUpFromImuGravity{};
-            if (p_currentMap->getUpDirection(upDirection_world,
-                                             isUpFromImuGravity) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getUpDirection returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            RoomWallFootprint retainedFootprint{};
-            bool              hasRetainedFootprint{};
-            if (computeRoomWallFootprint(retainedWalls,
-                                         upDirection_world,
-                                         retainedFootprint,
-                                         hasRetainedFootprint) !=
+            bool isSeedFusable{};
+            if (isSeedFusableIntoRoom(p_retainedRoom_inout,
+                                      p_duplicateRoom,
+                                      p_duplicateSeedPassage,
+                                      p_currentMap,
+                                      retainedCentroid_world_m,
+                                      isSeedFusable) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: computeRoomWallFootprint returned a failure "
-                             "status although it cannot fail; continuing as "
-                             "before.",
-                             __func__);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: isSeedFusableIntoRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
-            Eigen::Vector3d seedCentroid_world_m{};
-            if (p_duplicateRoom->getCentroid(seedCentroid_world_m) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const double footprintTolerance_m =
-                0.5 * static_cast<double>(
-                          p_sysParams->optimization.minimumThickness_m);
-            const double seedAlongFirst_m =
-                seedCentroid_world_m.dot(retainedFootprint.firstAxis_world);
-            const double seedAlongSecond_m =
-                seedCentroid_world_m.dot(retainedFootprint.secondAxis_world);
-            const bool isSeedInsideFootprint =
-                hasRetainedFootprint && seedCentroid_world_m.allFinite() &&
-                seedAlongFirst_m >=
-                    retainedFootprint.minimumFirst_m - footprintTolerance_m &&
-                seedAlongFirst_m <=
-                    retainedFootprint.maximumFirst_m + footprintTolerance_m &&
-                seedAlongSecond_m >=
-                    retainedFootprint.minimumSecond_m - footprintTolerance_m &&
-                seedAlongSecond_m <=
-                    retainedFootprint.maximumSecond_m + footprintTolerance_m;
-            if (!isSeedInsideFootprint)
-            {
-                continue;
-            }
-
-            g2o::Plane3D seedPassageGlobalEquation{};
-            if ((*duplicateSeedPassage)
-                    ->getGlobalEquation(seedPassageGlobalEquation) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getGlobalEquation returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            const Eigen::Vector4d seedPassageEquation_world =
-                seedPassageGlobalEquation.coeffs();
-            const double seedSide_m =
-                seedPassageEquation_world.head<3>().dot(seedCentroid_world_m) +
-                seedPassageEquation_world(3);
-            const double retainedSide_m =
-                seedPassageEquation_world.head<3>().dot(
-                    retainedCentroid_world_m) +
-                seedPassageEquation_world(3);
-            /* Only a strictly same-side pair fuses; an unusable plane or
-             * centre (NaN or zero product) proves no side, so the seed keeps
-             * waiting. */
-            if (!(seedSide_m * retainedSide_m > 0.0))
+            if (!isSeedFusable)
             {
                 continue;
             }
@@ -342,6 +234,19 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         const double centroidDistance_m =
             (duplicateCentroid_world_m - retainedCentroid_world_m).norm();
 
+        double duplicateClusterDistance_m{};
+        if (computeDistanceToCluster(freeSpaceCluster_world_m_in,
+                                     duplicateCentroid_world_m,
+                                     duplicateClusterDistance_m) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeDistanceToCluster returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+
         /*
          * Do not impose a room-centroid separation limit here. One connected
          * free-space component can legitimately span a large office, and its
@@ -351,8 +256,7 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         const bool isDuplicateOutsideCluster =
             !duplicateCentroid_world_m.allFinite() ||
             !std::isfinite(centroidDistance_m) ||
-            distanceToCluster_m(duplicateCentroid_world_m) >
-                maximumClusterSupportDistance_m;
+            duplicateClusterDistance_m > maximumClusterSupportDistance_m;
         const bool isSeparatedByFiniteWall =
             !isDuplicateOutsideCluster &&
             semantic_constraints::hasSeparatingFiniteWall(
@@ -393,106 +297,22 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        std::vector<
-            std::pair<semantic::Room *, std::vector<geometric::Plane *>>>
-                                      wallSnapshots;
-        std::vector<semantic::Room *> currentMapAllRooms2{};
-        if (getMapRoomsInIdOrder(currentMapId, currentMapAllRooms2) !=
+        /* Move the duplicate's walls; one rejected wall restores all */
+        bool allDuplicateWallsWereAdmitted{};
+        if (transferDuplicateRoomWalls(p_retainedRoom_inout,
+                                       p_duplicateRoom,
+                                       currentMapId,
+                                       allDuplicateWallsWereAdmitted) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMapRoomsInIdOrder returned a failure status; "
-                         "continuing as before.",
-                         __func__);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: transferDuplicateRoomWalls returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
-        for (semantic::Room *p_snapshotRoom : currentMapAllRooms2)
-        {
-            bool snapshotRoomIsBad{};
-            if ((p_snapshotRoom != nullptr) &&
-                p_snapshotRoom->isBad(snapshotRoomIsBad) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_snapshotRoom != nullptr && !snapshotRoomIsBad)
-            {
-                std::vector<geometric::Plane *> snapshotRoomWalls{};
-                if (p_snapshotRoom->getWalls(snapshotRoomWalls) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                wallSnapshots.emplace_back(p_snapshotRoom, snapshotRoomWalls);
-            }
-        }
-
-        bool allDuplicateWallsWereAdmitted = true;
-
-        std::vector<geometric::Plane *> duplicateRoomWalls{};
-        if (p_duplicateRoom->getWalls(duplicateRoomWalls) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (geometric::Plane *p_wall : duplicateRoomWalls)
-        {
-            bool wasAdmitted{};
-            if (admitWallToRoom(p_retainedRoom_inout, p_wall, wasAdmitted) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: admitWallToRoom returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (!wasAdmitted)
-            {
-                allDuplicateWallsWereAdmitted = false;
-                break;
-            }
-        }
-
-        /*
-         * A topology-rejected provisional wall is not a duplicate room. Keep
-         * that structural element alive so another free-space component can
-         * claim it instead of repeatedly deleting and recreating it.
-         */
         if (!allDuplicateWallsWereAdmitted)
         {
-            for (auto &[p_snapshotRoom, snapshotWalls] : wallSnapshots)
-            {
-                if (p_snapshotRoom->clearWalls() !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: clearWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                for (geometric::Plane *p_snapshotWall : snapshotWalls)
-                {
-                    if (p_snapshotRoom->setWalls(p_snapshotWall) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: setWalls returned a failure status although "
-                            "it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                }
-            }
             continue;
         }
 

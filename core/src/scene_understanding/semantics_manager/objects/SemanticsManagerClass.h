@@ -1801,6 +1801,88 @@ class SemanticsManager
         const std::vector<vs_graphs::core::geometric::Plane *>
             &wallList_world_in);
 
+    /*!
+     * @brief           Distance from a point to the nearest finite point of a
+     *                  free-space cluster; infinity when the cluster has no
+     *                  finite point.
+     *
+     * @param[in]       cluster_world_m_in
+     *                  Free-space cluster points, world frame, metres.
+     *
+     * @param[in]       point_world_m_in
+     *                  Query point, world frame, metres.
+     *
+     * @param[out]      distance_m_out
+     *                  Distance in metres.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus computeDistanceToCluster(
+        const std::vector<Eigen::Vector3d> &cluster_world_m_in,
+        const Eigen::Vector3d              &point_world_m_in,
+        double                             &distance_m_out) const;
+
+    /*!
+     * @brief           Decides whether a live prospective seed may fuse into
+     *                  the retained room: the seed has no walls, its centre
+     *                  lies inside the retained room's wall footprint (padded
+     *                  by half the thinnest wall) and strictly on the retained
+     *                  room's side of the seed's passage.
+     *
+     * @param[in]       p_retainedRoom_in
+     *                  Room that would absorb the seed; borrowed.
+     *
+     * @param[in]       p_seedRoom_in
+     *                  Live prospective room; borrowed.
+     *
+     * @param[in]       p_seedPassage_in
+     *                  Passage holding the seed as its prospective room;
+     *                  borrowed.
+     *
+     * @param[in]       p_currentMap_in
+     *                  Current map; borrowed.
+     *
+     * @param[in]       retainedCentroid_world_m_in
+     *                  Retained room centroid, world frame, metres.
+     *
+     * @param[out]      isFusable_out
+     *                  True when the seed may fuse.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus isSeedFusableIntoRoom(
+        semantic::Room        *p_retainedRoom_in,
+        semantic::Room        *p_seedRoom_in,
+        semantic::Passage     *p_seedPassage_in,
+        map::Map              *p_currentMap_in,
+        const Eigen::Vector3d &retainedCentroid_world_m_in,
+        bool                  &isFusable_out);
+
+    /*!
+     * @brief           Admits every wall of a duplicate room to the retained
+     *                  room; when one wall is rejected, every live room of
+     *                  the map gets back the walls it had before.
+     *
+     * @param[in]       p_retainedRoom_in
+     *                  Room receiving the walls; borrowed.
+     *
+     * @param[in]       p_duplicateRoom_in
+     *                  Duplicate room giving its walls; borrowed.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the current map.
+     *
+     * @param[out]      areAllWallsAdmitted_out
+     *                  True when every wall was admitted.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        transferDuplicateRoomWalls(semantic::Room *p_retainedRoom_in,
+                                   semantic::Room *p_duplicateRoom_in,
+                                   unsigned long   mapId_in,
+                                   bool           &areAllWallsAdmitted_out);
+
     /* Wall ownership (room_association/wall_ownership/). */
 
     /*!
