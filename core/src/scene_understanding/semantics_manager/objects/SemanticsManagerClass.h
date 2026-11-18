@@ -1625,6 +1625,55 @@ class SemanticsManager
         updateTraversalEvidence(atlas::Atlas *p_atlas_in);
 
     /*!
+     * @brief           Makes the room reached through a crossed passage the
+     *                  current room when it is a live room of the active map;
+     *                  an undefined candidate room is promoted to a room
+     *                  first (room_promotion SG_PIPELINE record).
+     *
+     * @param[in]       activeMapId_in
+     *                  Id of the active map.
+     *
+     * @param[in]       p_activeMap_in
+     *                  Active map; borrowed.
+     *
+     * @param[in]       p_passage_in
+     *                  Crossed passage; borrowed.
+     *
+     * @param[in,out]   p_reachedRoom_inout
+     *                  Room on the side the crossing reached, or nullptr;
+     *                  borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        enterTraversedRoom(unsigned long      activeMapId_in,
+                           map::Map          *p_activeMap_in,
+                           semantic::Passage *p_passage_in,
+                           semantic::Room    *p_reachedRoom_inout);
+
+    /*!
+     * @brief           Publishes a newly accepted passage crossing: unblocks a
+     *                  blocked passage, raises the room-tracker crossing flags
+     *                  and logs a newly settled passage.
+     *
+     * @param[in,out]   p_passage_inout
+     *                  Crossed passage; borrowed.
+     *
+     * @param[in]       addedTraversal_in
+     *                  True when the passage accepted this crossing as new
+     *                  evidence; nothing is published otherwise.
+     *
+     * @param[in]       wasSettled_in
+     *                  Traversal evidence of the passage before this crossing.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        recordCrossingEvidence(semantic::Passage *p_passage_inout,
+                               bool               addedTraversal_in,
+                               bool               wasSettled_in);
+
+    /*!
      * @brief           Advances the room-state machine once per semantic
      *                  cycle.
      *
@@ -1653,6 +1702,16 @@ class SemanticsManager
      * ROOM VALIDATION STAGE (pipeline stage 7, room_validation/). Called by
      * run() inside the cycle's exclusive graph lock.
      * ---------------------------------------------------------------------- */
+
+    /*!
+     * @brief           Stage 7, room validation: room boundaries, undefended
+     *                  wall retirement, room centroids from walls (not in
+     *                  FREE_SPACE room segmentation), floors and room ground
+     *                  planes, in that order.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus runRoomValidation(void);
 
     /*!
      * @brief           Validates finite wall associations and updates room

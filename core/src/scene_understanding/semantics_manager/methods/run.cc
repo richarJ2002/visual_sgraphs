@@ -266,67 +266,14 @@ void SemanticsManager::run(void)
                          __func__);
         }
 
-        /* Validate room geometry without delaying independent passage data. */
-        if (validateRoomBoundaries() !=
+        /* Stage 7, room validation: boundaries, centroids, floors */
+        if (runRoomValidation() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: validateRoomBoundaries returned a failure status "
+                         "%s: runRoomValidation returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
-        }
-
-        /* Retire only stale, weak wall hypotheses left unused by the graph. */
-        if (suppressUndefendedWalls() !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: suppressUndefendedWalls returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-
-        /* Recompute room centroids as mean of associated wall centroids.
-         * In FREE_SPACE mode the skeleton-cluster centroid set during room
-         * detection is the authoritative room centre; overwriting it with the
-         * wall-centroid mean drifts rooms away from the cluster each cycle,
-         * which breaks the centroid-keyed room matching in associateRooms()
-         * and spawns a duplicate room every run. */
-        if (p_sysParams->roomSeg.method !=
-            types::SystemParams::RoomSeg::Method::FREE_SPACE)
-        {
-            if (recomputeRoomCentroidsFromWalls() !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: recomputeRoomCentroidsFromWalls returned a failure "
-                    "status although it cannot fail; continuing as before.",
-                    __func__);
-            }
-        }
-
-        /* Associate every valid room/SE with the floor */
-        if (getUpdatedFloors() !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getUpdatedFloors returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /* Re-point any room whose own ground plane disagrees with the
-         * just-refreshed canonical Floor identity. */
-        if (reconcileRoomGroundPlanes() !=
-            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: reconcileRoomGroundPlanes returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
         }
 
         /* Room candidate generation is pre-verification only. The legacy

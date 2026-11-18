@@ -31,15 +31,13 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/scene_graph/floor/Floor.h"
-#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
-#include "scene_understanding/scene_graph/passage/objects/KnownSideProvenanceStatusEnum.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include "scene_understanding/room_tracking/private_functions/private_functions.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 
 #include <algorithm>
@@ -104,36 +102,30 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    orderedKeyFrames.erase(
-        std::remove_if(
-            orderedKeyFrames.begin(),
-            orderedKeyFrames.end(),
-            [](keyframe::KeyFrame *p_keyFrame)
-            {
-                bool keyFrameIsBad{};
-                if (!(p_keyFrame == nullptr) &&
-                    p_keyFrame->isBad(keyFrameIsBad) !=
-                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return p_keyFrame == nullptr || keyFrameIsBad;
-            }),
-        orderedKeyFrames.end());
+    /* Drop missing and bad key frames, keeping the map order. */
+    std::vector<keyframe::KeyFrame *> liveKeyFrames{};
+    liveKeyFrames.reserve(orderedKeyFrames.size());
+    for (keyframe::KeyFrame *p_keyFrame : orderedKeyFrames)
+    {
+        bool keyFrameIsBad{};
+        if (!(p_keyFrame == nullptr) &&
+            p_keyFrame->isBad(keyFrameIsBad) !=
+                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!(p_keyFrame == nullptr || keyFrameIsBad))
+        {
+            liveKeyFrames.push_back(p_keyFrame);
+        }
+    }
+    orderedKeyFrames.swap(liveKeyFrames);
     std::sort(orderedKeyFrames.begin(),
               orderedKeyFrames.end(),
-              [](const keyframe::KeyFrame *p_first,
-                 const keyframe::KeyFrame *p_second)
-              {
-                  if (p_first->frameId != p_second->frameId)
-                  {
-                      return p_first->frameId < p_second->frameId;
-                  }
-                  return p_first->id < p_second->id;
-              });
+              isKeyFrameEarlier);
 
     if (orderedKeyFrames.empty())
     {
@@ -309,24 +301,24 @@ SemanticsManagerStatus
                 continue;
             }
             passagePlaneEquation /= passageNormalNorm;
-            const auto signedSideDistance_m =
-                [&passagePlaneEquation](const Eigen::Vector3d &point_world_m_in)
-            {
-                return passagePlaneEquation.head<3>().dot(point_world_m_in) +
-                       passagePlaneEquation(3);
-            };
+            const double previousSideDistance_m =
+                passagePlaneEquation.head<3>().dot(
+                    previousCameraCenter_world_m) +
+                passagePlaneEquation(3);
+            const double currentSideDistance_m =
+                passagePlaneEquation.head<3>().dot(
+                    currentCameraCenter_world_m) +
+                passagePlaneEquation(3);
 
             /* The first resolvable centre in the replayed history (possibly
              * the seed) starts the crossing segment. */
             if (resolvedSideCenter_world_m.count(p_passage) == 0U &&
-                std::abs(signedSideDistance_m(previousCameraCenter_world_m)) >=
-                    minimumSideDistance_m)
+                std::abs(previousSideDistance_m) >= minimumSideDistance_m)
             {
                 resolvedSideCenter_world_m[p_passage] =
                     previousCameraCenter_world_m;
             }
-            if (std::abs(signedSideDistance_m(currentCameraCenter_world_m)) <
-                minimumSideDistance_m)
+            if (std::abs(currentSideDistance_m) < minimumSideDistance_m)
             {
                 /* Too close to the plane to tell the side; keep the start. */
                 continue;
@@ -378,108 +370,19 @@ SemanticsManagerStatus
                 semantic::Passage::TraversalDirection traversalDirection =
                     semantic::Passage::TraversalDirection::UNKNOWN;
                 semantic::Passage::KnownSideProvenance knownSide{};
-                if (p_passage->getKnownSideProvenance(knownSide) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                if (resolveTraversalDirection(p_passage,
+                                              crossingStart_world_m,
+                                              minimumSideDistance_m,
+                                              knownSide,
+                                              traversalDirection) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
                         rclcpp::get_logger("vs_graphs"),
-                        "%s: getKnownSideProvenance returned a failure status "
+                        "%s: resolveTraversalDirection returned a failure "
+                        "status "
                         "although it cannot fail; continuing as before.",
                         __func__);
-                }
-                bool knownSideHasDirection{};
-                if (knownSide.hasDirection(knownSideHasDirection) !=
-                    semantic::KnownSideProvenanceStatus::
-                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: hasDirection returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (!knownSideHasDirection)
-                {
-                    g2o::Plane3D passageGlobalEquation{};
-                    if (p_passage->getGlobalEquation(passageGlobalEquation) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getGlobalEquation returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    Eigen::Vector4d passageEquation =
-                        passageGlobalEquation.coeffs();
-                    const double normalNorm = passageEquation.head<3>().norm();
-                    if (passageEquation.allFinite() && normalNorm > 1e-8)
-                    {
-                        passageEquation /= normalNorm;
-                        const double observationSide =
-                            passageEquation.head<3>().dot(
-                                crossingStart_world_m) +
-                            passageEquation(3);
-                        if (std::abs(observationSide) > minimumSideDistance_m)
-                        {
-                            if (p_passage->setKnownSideDirection(
-                                    (observationSide > 0.0 ? 1.0 : -1.0) *
-                                    passageEquation.head<3>()) !=
-                                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                            {
-                                RCLCPP_WARN(
-                                    rclcpp::get_logger("vs_graphs"),
-                                    "%s: setKnownSideDirection rejected its "
-                                    "input; continuing as before.",
-                                    __func__);
-                            }
-                            semantic::Passage::KnownSideProvenance
-                                passageKnownSideProvenance{};
-                            if (p_passage->getKnownSideProvenance(
-                                    passageKnownSideProvenance) !=
-                                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                            {
-                                /*!
-                                 * getKnownSideProvenance cannot fail; continue
-                                 * as before.
-                                 */
-                            }
-                            knownSide = passageKnownSideProvenance;
-                        }
-                    }
-                }
-                bool knownSideHasDirection2{};
-                if (knownSide.hasDirection(knownSideHasDirection2) !=
-                    semantic::KnownSideProvenanceStatus::
-                        KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: hasDirection returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                if (knownSideHasDirection2)
-                {
-                    Eigen::Vector3d passageCentroid{};
-                    if (p_passage->getCentroid(passageCentroid) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getCentroid returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    const Eigen::Vector3d startFromPassage_world_m =
-                        crossingStart_world_m - passageCentroid;
-                    traversalDirection =
-                        startFromPassage_world_m.dot(
-                            knownSide.knownSideDirection_world) >= 0.0
-                            ? semantic::Passage::TraversalDirection::
-                                  KNOWN_TO_FAR
-                            : semantic::Passage::TraversalDirection::
-                                  FAR_TO_KNOWN;
                 }
 
                 /* Resolve the room entered after crossing this passage: a
@@ -508,218 +411,17 @@ SemanticsManagerStatus
                 {
                     p_reachedRoom = knownSide.p_room;
                 }
-                std::vector<semantic::Room *> activeRooms{};
-                if (getMapRoomsInIdOrder(activeMapId, activeRooms) !=
+                if (enterTraversedRoom(activeMapId,
+                                       p_activeMap,
+                                       p_passage,
+                                       p_reachedRoom) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getMapRoomsInIdOrder returned a failure "
-                                 "status; continuing as before.",
-                                 __func__);
-                }
-                bool reachedRoomIsBad{};
-                if ((p_reachedRoom != nullptr) &&
-                    p_reachedRoom->isBad(reachedRoomIsBad) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                map::Map *p_reachedRoomMap = nullptr;
-                if ((p_reachedRoom != nullptr && !reachedRoomIsBad) &&
-                    p_reachedRoom->getMap(p_reachedRoomMap) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
                         rclcpp::get_logger("vs_graphs"),
-                        "%s: getMap returned a failure status although it "
-                        "cannot fail; continuing as before.",
+                        "%s: enterTraversedRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
                         __func__);
-                }
-                const bool reachedRoomIsLive =
-                    p_reachedRoom != nullptr && !reachedRoomIsBad &&
-                    p_reachedRoomMap == p_activeMap &&
-                    std::find(activeRooms.begin(),
-                              activeRooms.end(),
-                              p_reachedRoom) != activeRooms.end();
-                if (reachedRoomIsLive)
-                {
-                    semantic::Room::RoomVariant reachedRoomRoomVariant{};
-                    if (p_reachedRoom->getRoomVariant(reachedRoomRoomVariant) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getRoomVariant returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (reachedRoomRoomVariant ==
-                        semantic::Room::RoomVariant::UNDEFINED)
-                    {
-                        if (promoteCandidateRoom(activeMapId, p_reachedRoom) !=
-                            SemanticsManagerStatus::
-                                SEMANTICS_MANAGER_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: promoteCandidateRoom returned a failure "
-                                "status; continuing as before.",
-                                __func__);
-                        }
-                        if (p_reachedRoom->setRoomVariant(
-                                semantic::Room::RoomVariant::ROOM) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: setRoomVariant returned a "
-                                         "failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
-                        }
-                        int reachedRoomId2{};
-                        if (p_reachedRoom->getId(reachedRoomId2) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        if (p_reachedRoom->setName(
-                                "Room#" + std::to_string(reachedRoomId2)) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: setName returned a failure "
-                                         "status although it cannot fail; "
-                                         "continuing as before.",
-                                         __func__);
-                        }
-                        if (p_reachedRoom->setBoundaryStatus(
-                                semantic::Room::BoundaryStatus::UNOBSERVED) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            /*!
-                             * setBoundaryStatus cannot fail; continue as
-                             * before.
-                             */
-                        }
-                        int reachedRoomId3{};
-                        if (p_reachedRoom->getId(reachedRoomId3) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        prospectiveRoomCycles.erase(reachedRoomId3);
-
-                        semantic::Floor               *p_floor = nullptr;
-                        std::vector<semantic::Floor *> activeMapAllFloors{};
-                        if (getMapFloorsInIdOrder(activeMapId,
-                                                  activeMapAllFloors) !=
-                            SemanticsManagerStatus::
-                                SEMANTICS_MANAGER_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getMapFloorsInIdOrder returned a failure "
-                                "status; continuing as before.",
-                                __func__);
-                        }
-                        if (semantic::Floor::selectBestObservedFloor(
-                                activeMapAllFloors,
-                                p_floor) !=
-                            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-                        {
-                            /*!
-                             * selectBestObservedFloor cannot fail; continue as
-                             * before.
-                             */
-                        }
-                        if (p_floor != nullptr)
-                        {
-                            if (p_floor->addRoom(p_reachedRoom) !=
-                                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-                            {
-                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                             "%s: addRoom returned a failure "
-                                             "status although it cannot fail; "
-                                             "continuing as before.",
-                                             __func__);
-                            }
-                        }
-                        int reachedRoomId4{};
-                        if (p_reachedRoom->getId(reachedRoomId4) !=
-                            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        int passageId{};
-                        if (p_passage->getId(passageId) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        std::cout
-                            << "SG_PIPELINE {\"event\":\"room_promotion\","
-                               "\"map_id\":"
-                            << activeMapId << ",\"room_id\":" << reachedRoomId4
-                            << ",\"passage_id\":" << passageId
-                            << ",\"reason\":\"PASSAGE_TRAVERSAL\","
-                               "\"semantic_cycle\":"
-                            << pipelineSemanticCycle << "}" << std::endl;
-                    }
-                    int reachedRoomId{};
-                    if (p_reachedRoom->getId(reachedRoomId) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    {
-                        std::lock_guard<std::mutex> currentRoomLock(
-                            currentRoomMutex);
-                        currentRoomId = reachedRoomId;
-                    }
-                    if (p_atlas->setCurrentSemanticRoomIdentity(
-                            reachedRoomId) !=
-                        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: setCurrentSemanticRoomIdentity "
-                                     "returned a failure status although it "
-                                     "cannot fail; continuing as before.",
-                                     __func__);
-                    }
-                    /* Completed passage traversal into this room: entry
-                     * evidence marks it visited. */
-                    if (p_reachedRoom->setPreviouslyVisited(true) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: setPreviouslyVisited returned a "
-                                     "failure status although it cannot fail; "
-                                     "continuing as before.",
-                                     __func__);
-                    }
                 }
 
                 bool addedTraversal{};
@@ -736,85 +438,16 @@ SemanticsManagerStatus
                         __func__);
                 }
 
-                /* Only newly accepted segment evidence is a new tracker event.
-                 * The passage owns segment deduplication, so replayed history
-                 * must not republish crossing evidence. */
-                /* A new crossing proves a blocked passage open again. */
-                bool passageIsBlocked{};
-                if (addedTraversal &&
-                    p_passage->isBlocked(passageIsBlocked) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                if (recordCrossingEvidence(p_passage,
+                                           addedTraversal,
+                                           wasSettled) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
                         rclcpp::get_logger("vs_graphs"),
-                        "%s: isBlocked returned a failure status although it "
-                        "cannot fail; continuing as before.",
+                        "%s: recordCrossingEvidence returned a failure status "
+                        "although it cannot fail; continuing as before.",
                         __func__);
-                }
-                if (addedTraversal && passageIsBlocked)
-                {
-                    int blockedPassageId{};
-                    if (p_passage->setBlocked(false) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-                        p_passage->setVerdictCounters(0U, 0U, 0) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
-                        p_passage->getId(blockedPassageId) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: setBlocked/setVerdictCounters/getId "
-                                     "returned a failure status although it "
-                                     "cannot fail; continuing as before.",
-                                     __func__);
-                    }
-                    std::cout << "[SemMgr] Passage#" << blockedPassageId
-                              << " unblocked: crossed again." << std::endl;
-                }
-
-                if (addedTraversal)
-                {
-                    std::lock_guard<std::mutex> currentRoomLock(
-                        currentRoomMutex);
-                    isCrossingEventPending = true;
-                    bool passageHasBidirectionalTraversalEvidence{};
-                    if (!(isCrossingBothSidesPending) &&
-                        p_passage->hasBidirectionalTraversalEvidence(
-                            passageHasBidirectionalTraversalEvidence) !=
-                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                     "%s: hasBidirectionalTraversalEvidence "
-                                     "returned a failure status although it "
-                                     "cannot fail; continuing as before.",
-                                     __func__);
-                    }
-                    isCrossingBothSidesPending =
-                        isCrossingBothSidesPending ||
-                        passageHasBidirectionalTraversalEvidence;
-                    /* Test seam: empty outside tests (SemanticsManager.h). */
-                    std::function<void()> publishHook =
-                        std::move(roomTrackerPendingPublishHook);
-                    if (publishHook)
-                    {
-                        publishHook();
-                    }
-                }
-
-                if (addedTraversal && !wasSettled)
-                {
-                    int passageId2{};
-                    if (p_passage->getId(passageId2) !=
-                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    std::cout << "[SemMgr] Passage#" << passageId2
-                              << " traversed (traversal evidence settled)."
-                              << std::endl;
                 }
             }
         }
