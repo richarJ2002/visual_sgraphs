@@ -27,6 +27,8 @@
 #define VS_GRAPHS_CORE_SRC_ROOM_TRACKING_PRIVATE_FUNCTIONS_H
 
 #include <Eigen/Core>
+#include <cstddef>
+#include <vector>
 
 #include "scene_understanding/scene_graph/passage/objects/PassageClass.h"
 #include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
@@ -39,7 +41,35 @@ namespace core
 namespace keyframe
 {
 class KeyFrame;
-} /* namespace keyframe */
+} // namespace keyframe
+
+namespace map
+{
+class Map;
+} // namespace map
+
+/*!
+ * @brief           Most recent live key frames the traversal replay walks each
+ *                  cycle; the key frame room links are written only inside
+ *                  this window.
+ */
+inline constexpr std::size_t MAXIMUM_TRAVERSAL_HISTORY_KEYFRAMES = 128U;
+
+/*!
+ * @brief           Returns the replay window of a map: its live key frames in
+ *                  isKeyFrameEarlier order, the last
+ *                  MAXIMUM_TRAVERSAL_HISTORY_KEYFRAMES of them.
+ *
+ * @param[in]       p_map_in
+ *                  Map whose key frames are read; borrowed, may be null
+ *                  (empty window).
+ *
+ * @param[out]      windowKeyFrames_out
+ *                  Window key frames, oldest first; borrowed.
+ */
+void collectReplayWindowKeyFrames(
+    map::Map                          *p_map_in,
+    std::vector<keyframe::KeyFrame *> &windowKeyFrames_out);
 
 /*!
  * @brief           Strict weak order of key frames by frame id, then key

@@ -48,67 +48,47 @@ namespace core
 SemanticsManagerStatus
     SemanticsManager::linkNewKeyFramesToCurrentRoom(map::Map *p_activeMap_in)
 {
-    if (p_activeMap_in == nullptr)
+    /* The crossing results of this cycle's replay are consumed here. */
+    keyframe::KeyFrame *p_crossingKeyFrame  = p_latestCrossingKeyFrame;
+    const bool          isCrossingEntered   = isLatestCrossingEntered;
+    const std::size_t   crossingLinkedCount = crossingLinkedKeyFrameCount;
+    p_latestCrossingKeyFrame                = nullptr;
+    isLatestCrossingEntered                 = false;
+    crossingLinkedKeyFrameCount             = 0U;
+
+    std::vector<keyframe::KeyFrame *> windowKeyFrames{};
+    collectReplayWindowKeyFrames(p_activeMap_in, windowKeyFrames);
+    if (windowKeyFrames.empty())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-
-    std::vector<keyframe::KeyFrame *> mapKeyFrames{};
-    unsigned long                     activeMapId{};
-    if (p_activeMap_in->getAllKeyFrames(mapKeyFrames) !=
-            map::MapStatus::MAP_STATUS_SUCCESS ||
-        p_activeMap_in->getId(activeMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long activeMapId{};
+    if (p_activeMap_in->getId(activeMapId) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllKeyFrames/getId returned a failure status "
-                     "although they cannot fail; continuing as before.",
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
                      __func__);
     }
 
-    /* Key frame ids grow with creation time across all maps, so the ids at
-     * or above the cursor are the key frames taken since the last cycle. */
-    std::vector<keyframe::KeyFrame *> newKeyFrames{};
-    std::size_t                       badKeyFrameCount = 0U;
-    long unsigned int nextCursorKeyFrameId = firstUnlinkedKeyFrameId;
-    for (keyframe::KeyFrame *p_mapKeyFrame : mapKeyFrames)
+    /* Key frames that left the window are never linked again, so their
+     * crossing marks can go. */
+    long unsigned int windowFirstKeyFrameId = windowKeyFrames.front()->id;
+    for (keyframe::KeyFrame *p_windowKeyFrame : windowKeyFrames)
     {
-        if (p_mapKeyFrame == nullptr ||
-            p_mapKeyFrame->id < firstUnlinkedKeyFrameId)
-        {
-            continue;
-        }
-        if (p_mapKeyFrame->id >= nextCursorKeyFrameId)
-        {
-            nextCursorKeyFrameId = p_mapKeyFrame->id + 1U;
-        }
-        bool isKeyFrameBad{};
-        if (p_mapKeyFrame->isBad(isKeyFrameBad) !=
-            keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (isKeyFrameBad)
-        {
-            badKeyFrameCount++;
-            continue;
-        }
-        newKeyFrames.push_back(p_mapKeyFrame);
+        windowFirstKeyFrameId =
+            std::min(windowFirstKeyFrameId, p_windowKeyFrame->id);
     }
-    firstUnlinkedKeyFrameId = nextCursorKeyFrameId;
-    std::sort(newKeyFrames.begin(), newKeyFrames.end(), isKeyFrameEarlier);
-    if (newKeyFrames.empty() && badKeyFrameCount == 0U)
-    {
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
-    }
+    crossingLinkedKeyFrameIds.erase(
+        crossingLinkedKeyFrameIds.begin(),
+        crossingLinkedKeyFrameIds.lower_bound(windowFirstKeyFrameId));
 
-    /* Why the new key frames get no room, if they get none: no current
-     * room yet (outdoor start, before bootstrap, a fresh map after tracking
-     * loss), a current room id the active map no longer holds, or a current
-     * room flagged bad (fused or retired this cycle). */
+    /* Why a key frame gets no room here: no current room yet (outdoor
+     * start, before bootstrap, a fresh map after tracking loss), a current
+     * room id the active map no longer holds, a current room flagged bad
+     * (fused or retired this cycle), or a latest crossing that entered no
+     * live room. */
     int currentRoomIdSnapshot{};
     if (getCurrentRoomId(currentRoomIdSnapshot) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -135,8 +115,26 @@ SemanticsManagerStatus
                      "fail; continuing as before.",
                      __func__);
     }
+
+    /* Key frames up to the latest crossing were taken before it, in a room
+     * the current room does not tell; the replay links those after an
+     * entering crossing. Only key frames after it are left to this linker. */
+    const std::vector<keyframe::KeyFrame *>::iterator crossingIt =
+        std::find(windowKeyFrames.begin(),
+                  windowKeyFrames.end(),
+                  p_crossingKeyFrame);
+    const bool        hasCrossingInWindow = crossingIt != windowKeyFrames.end();
+    const std::size_t fallbackStartIndex =
+        hasCrossingInWindow
+            ? static_cast<std::size_t>(crossingIt - windowKeyFrames.begin()) +
+                  1U
+            : 0U;
     const char *p_linkReason = "LINKED";
-    if (currentRoomIdSnapshot < 0)
+    if (hasCrossingInWindow && !isCrossingEntered)
+    {
+        p_linkReason = "CROSSING_ROOM_UNKNOWN";
+    }
+    else if (currentRoomIdSnapshot < 0)
     {
         p_linkReason = "NO_CURRENT_ROOM";
     }
@@ -148,40 +146,63 @@ SemanticsManagerStatus
     {
         p_linkReason = "ROOM_BAD";
     }
+    const bool canLinkToCurrentRoom =
+        !(hasCrossingInWindow && !isCrossingEntered) &&
+        p_currentRoom != nullptr && !isCurrentRoomBad;
 
-    std::size_t linkedKeyFrameCount = 0U;
-    if (p_currentRoom != nullptr && !isCurrentRoomBad)
+    std::size_t       cycleLinkedCount        = 0U;
+    std::size_t       unlinkedCount           = 0U;
+    std::size_t       unlinkedBeforeCrossing  = 0U;
+    long unsigned int unlinkedFirstKeyFrameId = 0U;
+    long unsigned int unlinkedLastKeyFrameId  = 0U;
+    for (std::size_t windowIndex = 0U; windowIndex < windowKeyFrames.size();
+         windowIndex++)
     {
-        for (keyframe::KeyFrame *p_newKeyFrame : newKeyFrames)
+        keyframe::KeyFrame *p_windowKeyFrame = windowKeyFrames[windowIndex];
+        const bool          isLinkable =
+            windowIndex >= fallbackStartIndex && canLinkToCurrentRoom &&
+            p_windowKeyFrame->roomId < 0 &&
+            crossingLinkedKeyFrameIds.count(p_windowKeyFrame->id) == 0U;
+        /* An unlinked key frame has no room to leave. */
+        if (isLinkable && semantic::Room::linkKeyFrame(p_windowKeyFrame,
+                                                       nullptr,
+                                                       p_currentRoom) ==
+                              semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            /* A new key frame has no room yet, so there is no previous room
-             * to leave. */
-            if (p_newKeyFrame->roomId < 0 &&
-                semantic::Room::linkKeyFrame(p_newKeyFrame,
-                                             nullptr,
-                                             p_currentRoom) ==
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                linkedKeyFrameCount++;
-            }
+            cycleLinkedCount++;
+        }
+        if (p_windowKeyFrame->roomId >= 0)
+        {
+            continue;
+        }
+        if (unlinkedCount == 0U)
+        {
+            unlinkedFirstKeyFrameId = p_windowKeyFrame->id;
+        }
+        unlinkedLastKeyFrameId = p_windowKeyFrame->id;
+        unlinkedCount++;
+        if (windowIndex < fallbackStartIndex)
+        {
+            unlinkedBeforeCrossing++;
         }
     }
 
-    /* One line per cycle: the new key frames are the ids in
-     * [first_keyframe_id, last_keyframe_id]; those not linked share the
-     * reason. */
+    /* One line per cycle over the replay window. Unlinked key frames before
+     * the latest crossing wait for a replay to cover them; the others share
+     * the reason. */
     std::cout << "SG_PIPELINE {\"event\":\"keyframe_room_link\","
                  "\"semantic_cycle\":"
               << pipelineSemanticCycle << ",\"map_id\":" << activeMapId
-              << ",\"first_keyframe_id\":"
-              << (newKeyFrames.empty() ? 0U : newKeyFrames.front()->id)
-              << ",\"last_keyframe_id\":"
-              << (newKeyFrames.empty() ? 0U : newKeyFrames.back()->id)
-              << ",\"new_keyframes\":" << newKeyFrames.size()
-              << ",\"bad_keyframes\":" << badKeyFrameCount
+              << ",\"window_first_keyframe_id\":" << windowKeyFrames.front()->id
+              << ",\"window_last_keyframe_id\":" << windowKeyFrames.back()->id
+              << ",\"window_keyframes\":" << windowKeyFrames.size()
               << ",\"room_id\":" << currentRoomIdSnapshot
-              << ",\"linked\":" << linkedKeyFrameCount
-              << ",\"unlinked\":" << newKeyFrames.size() - linkedKeyFrameCount
+              << ",\"crossing_linked\":" << crossingLinkedCount
+              << ",\"cycle_linked\":" << cycleLinkedCount
+              << ",\"unlinked\":" << unlinkedCount
+              << ",\"unlinked_before_crossing\":" << unlinkedBeforeCrossing
+              << ",\"unlinked_first_keyframe_id\":" << unlinkedFirstKeyFrameId
+              << ",\"unlinked_last_keyframe_id\":" << unlinkedLastKeyFrameId
               << ",\"reason\":\"" << p_linkReason << "\"}" << std::endl;
 
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

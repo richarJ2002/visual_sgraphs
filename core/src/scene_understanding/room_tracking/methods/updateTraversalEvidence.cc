@@ -93,39 +93,10 @@ SemanticsManagerStatus
                      __func__);
     }
 
+    /* The replay window: the newest live key frames, in camera-path
+     * order. */
     std::vector<keyframe::KeyFrame *> orderedKeyFrames{};
-    if (p_activeMap->getAllKeyFrames(orderedKeyFrames) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllKeyFrames returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-    /* Drop missing and bad key frames, keeping the map order. */
-    std::vector<keyframe::KeyFrame *> liveKeyFrames{};
-    liveKeyFrames.reserve(orderedKeyFrames.size());
-    for (keyframe::KeyFrame *p_keyFrame : orderedKeyFrames)
-    {
-        bool keyFrameIsBad{};
-        if (!(p_keyFrame == nullptr) &&
-            p_keyFrame->isBad(keyFrameIsBad) !=
-                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (!(p_keyFrame == nullptr || keyFrameIsBad))
-        {
-            liveKeyFrames.push_back(p_keyFrame);
-        }
-    }
-    orderedKeyFrames.swap(liveKeyFrames);
-    std::sort(orderedKeyFrames.begin(),
-              orderedKeyFrames.end(),
-              isKeyFrameEarlier);
+    collectReplayWindowKeyFrames(p_activeMap, orderedKeyFrames);
 
     if (orderedKeyFrames.empty())
     {
@@ -204,12 +175,7 @@ SemanticsManagerStatus
      * recent trajectory on every semantic cycle; Passage deduplicates segment
      * IDs, so a crossing observed before the passage existed is retained once
      * the persistent passage appears. */
-    constexpr std::size_t maximumTraversalHistoryKeyFrames = 128U;
-    const std::size_t     historyStartIndex =
-        orderedKeyFrames.size() > maximumTraversalHistoryKeyFrames
-                ? orderedKeyFrames.size() - maximumTraversalHistoryKeyFrames
-                : 0U;
-    keyframe::KeyFrame *p_seedKeyFrame = orderedKeyFrames[historyStartIndex];
+    keyframe::KeyFrame *p_seedKeyFrame = orderedKeyFrames.front();
     Eigen::Vector3f     seedKeyFrameCameraCenter{};
     if (p_seedKeyFrame->getCameraCenter(seedKeyFrameCameraCenter) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -238,7 +204,10 @@ SemanticsManagerStatus
     std::unordered_map<semantic::Passage *, Eigen::Vector3d>
         resolvedSideCenter_world_m{};
 
-    for (std::size_t keyFrameIndex = historyStartIndex + 1U;
+    /* Room the replayed key frames were taken in: set at each crossing,
+     * null before the first one and after one that entered no live room. */
+    semantic::Room *p_replayRoom = nullptr;
+    for (std::size_t keyFrameIndex = 1U;
          keyFrameIndex < orderedKeyFrames.size();
          ++keyFrameIndex)
     {
@@ -424,6 +393,29 @@ SemanticsManagerStatus
                         __func__);
                 }
 
+                /* The crossing entered the reached room when that room is
+                 * now the current room. */
+                int enteredRoomId{};
+                int reachedRoomId = -1;
+                if (getCurrentRoomId(enteredRoomId) !=
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS ||
+                    (p_reachedRoom != nullptr &&
+                     p_reachedRoom->getId(reachedRoomId) !=
+                         semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getCurrentRoomId/getId returned a "
+                                 "failure status although they cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
+                isLatestCrossingEntered =
+                    p_reachedRoom != nullptr && enteredRoomId == reachedRoomId;
+                p_latestCrossingKeyFrame = p_keyFrame;
+                p_replayRoom =
+                    isLatestCrossingEntered ? p_reachedRoom : nullptr;
+
                 bool addedTraversal{};
                 if (p_passage->addTraversalObservation(traversalDirection,
                                                        p_keyFrame->frameId,
@@ -450,6 +442,16 @@ SemanticsManagerStatus
                         __func__);
                 }
             }
+        }
+
+        if (p_replayRoom != nullptr &&
+            linkReplayedKeyFrame(p_keyFrame, p_replayRoom) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: linkReplayedKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

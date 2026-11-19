@@ -355,11 +355,31 @@ class SemanticsManager
     bool hasTraversalKeyFrameCursor = false;
 
     /*!
-     * @brief           Smallest key frame id linkNewKeyFramesToCurrentRoom()
-     *                  has not looked at yet; key frame ids are unique and
-     *                  grow across all maps, so a map change keeps it.
+     * @brief           Ids of the replay-window key frames linked to a room
+     *                  at a passage crossing; such a key frame is never
+     *                  linked again. Ids that left the window are dropped.
      */
-    long unsigned int firstUnlinkedKeyFrameId = 0U;
+    std::set<long unsigned int> crossingLinkedKeyFrameIds{};
+
+    /*!
+     * @brief           Key frame of the latest passage crossing found by this
+     *                  cycle's replay, or null; borrowed. Consumed and
+     *                  cleared by linkNewKeyFramesToCurrentRoom().
+     */
+    keyframe::KeyFrame *p_latestCrossingKeyFrame = nullptr;
+
+    /*!
+     * @brief           True when the latest crossing of this cycle's replay
+     *                  entered a live room. Consumed with
+     *                  p_latestCrossingKeyFrame.
+     */
+    bool isLatestCrossingEntered = false;
+
+    /*!
+     * @brief           Key frames linked at a crossing by this cycle's
+     *                  replay. Consumed with p_latestCrossingKeyFrame.
+     */
+    std::size_t crossingLinkedKeyFrameCount = 0U;
 
     /*!
      * @brief           Active map which owns every map-local temporal cache
@@ -2379,13 +2399,16 @@ class SemanticsManager
         updateRoomTrackerState(double now_s_in);
 
     /*!
-     * @brief           Links every key frame of the active map taken since
-     *                  the last cycle to the current room, once the cycle
-     *                  has settled that room. A new key frame stays without
-     *                  a room when there is no current room, its id is not
-     *                  in the active map or the room is bad; it is not
-     *                  retried later. Logs one keyframe_room_link line per
-     *                  cycle with new key frames.
+     * @brief           End-of-cycle fallback of the key frame room links,
+     *                  once the cycle has settled the current room: links
+     *                  each still unlinked replay-window key frame after the
+     *                  latest crossing (all of them without a crossing) to
+     *                  the current room. Nothing is linked when there is no
+     *                  current room, its id is not in the active map, it is
+     *                  bad, or the latest crossing entered no live room; the
+     *                  key frames are retried on later cycles while they
+     *                  stay in the window. Logs one keyframe_room_link line
+     *                  per cycle with a non-empty window.
      *
      * @param[in]       p_activeMap_in
      *                  Active map; borrowed, may be null (nothing happens).
@@ -2394,6 +2417,24 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         linkNewKeyFramesToCurrentRoom(map::Map *p_activeMap_in);
+
+    /*!
+     * @brief           Links a key frame replayed after an entering passage
+     *                  crossing to the room that crossing entered, unless a
+     *                  crossing linked it before. A link the end-of-cycle
+     *                  fallback made is replaced.
+     *
+     * @param[in,out]   p_keyFrame_inout
+     *                  Replayed key frame; borrowed, not null.
+     *
+     * @param[in,out]   p_room_inout
+     *                  Live room the crossing entered; borrowed, not null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        linkReplayedKeyFrame(keyframe::KeyFrame *p_keyFrame_inout,
+                             semantic::Room     *p_room_inout);
 
     /*!
      * @brief           Returns the usable room of the active map whose id is
