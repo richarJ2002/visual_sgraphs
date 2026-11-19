@@ -7,6 +7,8 @@ set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_QUERIES_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorPassagesInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFrontierPassages.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getIncompleteRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapCandidateRoomsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapDetectedRoomsInIdOrder.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorById.cc

@@ -4284,6 +4284,47 @@ class SemanticsManager
         std::vector<semantic::Passage *> &passages_out) const;
 
     /*!
+     * @brief           Lists the rooms of a map, as getMapRoomsInIdOrder(),
+     *                  whose boundary status is not COMPLETE: rooms still to
+     *                  be explored. Takes the graph lock shared.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[out]      rooms_out
+     *                  Borrowed rooms in ascending id order; empty when the
+     *                  map is unknown.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the
+     *                  registry has no scene graph for the id.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        getIncompleteRooms(unsigned long                  mapId_in,
+                           std::vector<semantic::Room *> &rooms_out) const;
+
+    /*!
+     * @brief           Lists the passages of a map whose far-side room is
+     *                  missing (no id, or no live room with that id in the
+     *                  map) or has a boundary that is not COMPLETE: where to
+     *                  explore next. Takes the graph lock shared.
+     *
+     * @param[in]       mapId_in
+     *                  Id of the SLAM map.
+     *
+     * @param[out]      passages_out
+     *                  Borrowed passages in ascending id order; empty when
+     *                  the map is unknown.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS, or
+     *                  SEMANTICS_MANAGER_STATUS_MAP_NOT_FOUND when the
+     *                  registry has no scene graph for the id.
+     */
+    [[nodiscard]] SemanticsManagerStatus getFrontierPassages(
+        unsigned long                     mapId_in,
+        std::vector<semantic::Passage *> &passages_out) const;
+
+    /*!
      * @brief           Lists the storeys of a map in ascending id order,
      *                  building by building. Takes the graph lock shared.
      *
