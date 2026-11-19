@@ -453,8 +453,8 @@ class SemanticsManager
     struct VisibilityRejectionState
     {
         /*!
-         * @brief           Number of semantic cycles in which the visibility
-         *                  rules refused the wall for the room.
+         * @brief           Number of consecutive semantic cycles in which the
+         *                  visibility rules refused the wall for the room.
          */
         unsigned int rejectedCycles = 0U;
 
@@ -467,11 +467,11 @@ class SemanticsManager
     };
 
     /*!
-     * @brief           Visibility refusals keyed by (wall id, room id). Once
-     *                  a pair reaches semantics.minRejectingViewCount the
-     *                  wall is no longer offered to that room. Entries are
-     *                  pruned by suppressUndefendedWalls() when the wall or
-     *                  the room is gone.
+     * @brief           Visibility refusals keyed by (wall id, room id); an
+     *                  offer that is not refused erases the entry. Once a
+     *                  pair reaches semantics.minRejectingViewCount, growth
+     *                  no longer spares the wall in suppressUndefendedWalls(),
+     *                  which also prunes entries whose wall or room is gone.
      */
     std::map<std::pair<int, int>, VisibilityRejectionState>
         visibilityRejections;

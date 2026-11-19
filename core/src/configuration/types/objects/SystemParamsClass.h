@@ -1121,9 +1121,9 @@ class SystemParams
          */
         unsigned int maxUnassignedPlaneCycles = 5U;
         /*!
-         * @brief           Semantic cycles in which the visibility rules
-         *                  refuse a wall for a room before the wall is no
-         *                  longer offered to that room
+         * @brief           Consecutive semantic cycles in which the
+         *                  visibility rules refuse a wall for one room before
+         *                  growth no longer spares the wall from retirement
          *                  (semantics.visibility.min_rejecting_views), >= 1.
          */
         unsigned int minRejectingViewCount = 5U;

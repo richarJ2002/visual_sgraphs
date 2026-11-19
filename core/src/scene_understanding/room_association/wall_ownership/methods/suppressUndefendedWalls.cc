@@ -337,15 +337,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         state.cloudPointCount      = cloudPointCount;
         state.observationCount     = observationCount;
 
-        if ((evidence.hasAdequateFiniteFit && cloudGrew) || observationGrew)
-        {
-            state.unresolvedCycles = 0U;
-            continue;
-        }
-
-        state.unresolvedCycles++;
-
-        /* Most visibility-refused cycles of this wall for any one room. */
+        /* Most consecutive visibility-refused cycles for any one room. */
         unsigned int visibilityRejectedCycles = 0U;
         for (std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
                  rejectionIterator = visibilityRejections.lower_bound(
@@ -358,6 +350,18 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                 std::max(visibilityRejectedCycles,
                          rejectionIterator->second.rejectedCycles);
         }
+
+        /* Growth does not spare a wall the visibility rules keep refusing:
+         * a plane seen only through a solid wall gets deleted. */
+        if (visibilityRejectedCycles <
+                p_sysParams->semantics.minRejectingViewCount &&
+            ((evidence.hasAdequateFiniteFit && cloudGrew) || observationGrew))
+        {
+            state.unresolvedCycles = 0U;
+            continue;
+        }
+
+        state.unresolvedCycles++;
 
         if (state.unresolvedCycles <
             p_sysParams->semantics.maxUnassignedPlaneCycles)

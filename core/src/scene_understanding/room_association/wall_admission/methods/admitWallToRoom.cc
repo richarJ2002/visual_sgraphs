@@ -279,10 +279,9 @@ SemanticsManagerStatus
      * order: the passage rule judges a room the camera is not in from its
      * centroid, the solid-wall rule judges the camera's room from the camera.
      * A refused wall stays unowned for another room's admission. The
-     * condition is re-evaluated on every attempt, so a hold ends by itself
-     * until the wall has been refused for this room on
-     * semantics.visibility.min_rejecting_views cycles; from then on it is
-     * no longer offered to this room.
+     * condition is re-evaluated on every attempt, so a hold ends by itself.
+     * Consecutive refused cycles per (wall, room) feed retirement only (see
+     * suppressUndefendedWalls()); an offer that is not refused resets them.
      */
     int candidateWallId{};
     int offeredRoomId{};
@@ -295,18 +294,6 @@ SemanticsManagerStatus
                      "%s: getId returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
-    }
-
-    /* A wall refused on enough cycles is no longer offered to this room. */
-    const std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
-        rejectionIterator =
-            visibilityRejections.find({candidateWallId, offeredRoomId});
-    if (rejectionIterator != visibilityRejections.end() &&
-        rejectionIterator->second.rejectedCycles >=
-            p_sysParams->semantics.minRejectingViewCount)
-    {
-        wasAdmitted_out = false;
-        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Observer sight lines: the candidate's observers taken in this room. */
@@ -346,9 +333,15 @@ SemanticsManagerStatus
     visibilityInput.p_mapPassages              = &allPassages;
     visibilityInput.p_mapPlanes                = &mappedPlanes;
     geometric::Plane *p_blockingWall           = nullptr;
-    if (semantic_constraints::isSeenThroughAnyWall(visibilityInput,
+    const bool        isRefusedByVisibility =
+        semantic_constraints::isSeenThroughAnyWall(visibilityInput,
                                                    *p_sysParams,
-                                                   p_blockingWall))
+                                                   p_blockingWall);
+    if (!isRefusedByVisibility)
+    {
+        visibilityRejections.erase({candidateWallId, offeredRoomId});
+    }
+    else
     {
         /* Count this cycle's refusal once for the (wall, room) pair. */
         VisibilityRejectionState &rejection =
