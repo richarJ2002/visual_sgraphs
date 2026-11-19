@@ -88,6 +88,30 @@ semantics:
     # key frame, tracking's reference and last key frames, queued key
     # frames and loop-closure key frames.
     erase_deleted_room_keyframes: false
+  # Semantic layout factors added to local and global bundle adjustment.
+  # They act on wall plane vertices only; rooms are inputs, not variables.
+  factors:
+    # Corners meet: two crossing walls (more than 45 degrees apart) whose
+    # end points lie within max_gap_m of each other are pulled so that each
+    # wall's end point lies on the other wall's plane.
+    wall_edge:
+      enabled: false
+      # Largest horizontal distance (metres, > 0) between the two end points.
+      max_gap_m: 0.3
+      # Information, 1/m^2, per end-point distance (sigma = 10 cm).
+      information_gain: 100.0
+    # Rooms and walls do not overlap: a wall of another room whose segment
+    # lies inside a COMPLETE room's wall footprint is pushed out of it.
+    room_overlap:
+      enabled: false
+      # Overlap tolerated before the penalty starts (metres, >= 0).
+      margin_m: 0.05
+      # A room's footprint is used only when each of its walls lies within
+      # this distance (metres, >= 0) of a footprint side, i.e. the room is
+      # a box; an L-shaped room's bounding box would cover its neighbours.
+      max_wall_inset_m: 0.25
+      # Information, 1/m^2, on the penetration depth (sigma = 20 cm).
+      information_gain: 25.0
 
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:

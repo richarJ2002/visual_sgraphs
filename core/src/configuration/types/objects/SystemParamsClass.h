@@ -1133,6 +1133,78 @@ class SystemParams
          *                  erase_deleted_room_keyframes).
          */
         bool         isDeletedRoomKeyFrameErasureEnabled = false;
+        /*!
+         * @brief           Semantic layout factors of local and global bundle
+         *                  adjustment (semantics.factors); each is off unless
+         *                  its switch is set.
+         */
+        struct Factors
+        {
+            /*!
+             * @brief           Corner factor between two crossing walls
+             *                  whose end points nearly meet
+             *                  (semantics.factors.wall_edge).
+             */
+            struct WallEdge
+            {
+                /*!
+                 * @brief           True when bundle adjustment adds the
+                 *                  corner factor.
+                 */
+                bool  isEnabled = false;
+                /*!
+                 * @brief           Largest horizontal distance between the
+                 *                  two end points, metres, > 0.
+                 */
+                float maxGap_m = 0.3f;
+                /*!
+                 * @brief           Information per end-point distance,
+                 *                  1/m^2, > 0.
+                 */
+                float informationGain = 100.0f;
+            };
+            /*!
+             * @brief           Penalty on a wall of one room that enters
+             *                  the wall footprint of another, COMPLETE room
+             *                  (semantics.factors.room_overlap).
+             */
+            struct RoomOverlap
+            {
+                /*!
+                 * @brief           True when bundle adjustment adds the
+                 *                  overlap factor.
+                 */
+                bool  isEnabled = false;
+                /*!
+                 * @brief           Overlap tolerated before the penalty
+                 *                  starts, metres, >= 0.
+                 */
+                float margin_m = 0.05f;
+                /*!
+                 * @brief           Largest distance of a room's wall from
+                 *                  its footprint side for the footprint to
+                 *                  be used, metres, >= 0.
+                 */
+                float maxWallInset_m = 0.25f;
+                /*!
+                 * @brief           Information on the penetration depth,
+                 *                  1/m^2, > 0.
+                 */
+                float informationGain = 25.0f;
+            };
+            /*!
+             * @brief           Corner factor settings.
+             */
+            WallEdge    wallEdge;
+            /*!
+             * @brief           Overlap factor settings.
+             */
+            RoomOverlap roomOverlap;
+        };
+        /*!
+         * @brief           Semantic layout factor settings.
+         */
+        Factors factors;
     };
     /*!
      * @brief           Map-wide semantic limits.

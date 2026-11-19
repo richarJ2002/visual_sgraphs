@@ -472,6 +472,39 @@ SystemParamsStatus
             config["semantics"]["room"]["erase_deleted_room_keyframes"]
                 .as<bool>();
 
+        /* Semantic layout factors of bundle adjustment. */
+        const YAML::Node wallEdgeNode =
+            config["semantics"]["factors"]["wall_edge"];
+        const YAML::Node roomOverlapNode =
+            config["semantics"]["factors"]["room_overlap"];
+        Semantics::Factors &factors = semantics.factors;
+        factors.wallEdge.isEnabled  = wallEdgeNode["enabled"].as<bool>();
+        factors.wallEdge.maxGap_m   = wallEdgeNode["max_gap_m"].as<float>();
+        factors.wallEdge.informationGain =
+            wallEdgeNode["information_gain"].as<float>();
+        factors.roomOverlap.isEnabled = roomOverlapNode["enabled"].as<bool>();
+        factors.roomOverlap.margin_m  = roomOverlapNode["margin_m"].as<float>();
+        factors.roomOverlap.maxWallInset_m =
+            roomOverlapNode["max_wall_inset_m"].as<float>();
+        factors.roomOverlap.informationGain =
+            roomOverlapNode["information_gain"].as<float>();
+        if (!std::isfinite(factors.wallEdge.maxGap_m) ||
+            factors.wallEdge.maxGap_m <= 0.0F ||
+            !std::isfinite(factors.wallEdge.informationGain) ||
+            factors.wallEdge.informationGain <= 0.0F ||
+            !std::isfinite(factors.roomOverlap.margin_m) ||
+            factors.roomOverlap.margin_m < 0.0F ||
+            !std::isfinite(factors.roomOverlap.maxWallInset_m) ||
+            factors.roomOverlap.maxWallInset_m < 0.0F ||
+            !std::isfinite(factors.roomOverlap.informationGain) ||
+            factors.roomOverlap.informationGain <= 0.0F)
+        {
+            throw std::invalid_argument(
+                "semantics.factors needs wall_edge.max_gap_m > 0, "
+                "room_overlap.margin_m >= 0, room_overlap.max_wall_inset_m "
+                ">= 0 and information_gain > 0");
+        }
+
         /* Absent key: the mission starts indoors. Any other text than
          * "indoor" or "outdoor" is rejected here, at the boundary. */
         const YAML::Node startEnvironmentNode =
