@@ -458,3 +458,8 @@ map_merge:
   room_pair_wall_fraction: 0.6
   # Two rooms pair only when at least this many wall pairs exist.
   room_pair_min_walls: 2
+  # Same-map loop closure: refuse a loop whose current and matched key frames
+  # lie in two different rooms that share no passage or wall. A key frame
+  # without a room always passes. Off: the check only logs loop_room_check
+  # (shadow) until replays show its refusals are wrong loops.
+  loop_room_check: false

@@ -1,6 +1,7 @@
 # LoopClosing object sources: exactly this object's translation units.
 set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkLoopRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkNewKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkObservations.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/correctLoop.cc

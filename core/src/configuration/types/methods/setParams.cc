@@ -414,6 +414,8 @@ SystemParamsStatus
             config["map_merge"]["room_pair_wall_fraction"].as<float>();
         mapMerge.roomPairMinWalls =
             config["map_merge"]["room_pair_min_walls"].as<unsigned int>();
+        mapMerge.isLoopRoomCheckEnabled =
+            config["map_merge"]["loop_room_check"].as<bool>();
 
         /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =

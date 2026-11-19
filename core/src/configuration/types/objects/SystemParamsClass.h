@@ -1366,6 +1366,13 @@ class SystemParams
          * @brief           Fewest wall pairs two rooms need to pair.
          */
         unsigned int roomPairMinWalls = 2U;
+        /*!
+         * @brief           Refuses a same-map loop whose current and matched
+         *                  key frames lie in two different rooms that are not
+         *                  neighbours (map_merge.loop_room_check). Off, the
+         *                  check only logs.
+         */
+        bool         isLoopRoomCheckEnabled = false;
     };
     /*!
      * @brief           Map-merge and axiom thresholds.

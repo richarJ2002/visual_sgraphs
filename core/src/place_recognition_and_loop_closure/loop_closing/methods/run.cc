@@ -36,15 +36,15 @@
 
 #include <rclcpp/logging.hpp>
 
-#include "optimization/g2o_types/g2o_types/public_functions/public_functions.h"
+#include "estimation/tracking/tracking.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
+#include "execution/system/system.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "optimization/g2o_types/g2o_types/public_functions/public_functions.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
-#include "execution/system/system.h"
-#include "estimation/tracking/tracking.h"
 
 namespace vs_graphs
 {
@@ -806,6 +806,18 @@ void LoopClosing::run(void)
                      * optimisation and updates keyframe/map point poses to
                      * remove accumulated drift.
                      */
+                    bool isLoopRejected = false;
+                    if (isGoodLoop &&
+                        checkLoopRooms(isLoopRejected) !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: checkLoopRooms returned a failure "
+                                     "status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    isGoodLoop = isGoodLoop && !isLoopRejected;
                     if (isGoodLoop)
                     {
                         loopMapPoints = loopMPs;

@@ -39,75 +39,65 @@
 #include <mutex>
 #include <thread>
 
-#include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
-#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 #include "map_state/atlas/atlas.h"
 #include "map_state/keyframe/keyframe.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
-
-namespace vs_graphs::core::atlas { class Atlas; }
-namespace vs_graphs::core::keyframe { class KeyFrame; }
-namespace vs_graphs::core::keyframe_database { class KeyFrameDatabase; }
-namespace vs_graphs::core::local_mapping { class LocalMapping; }
-namespace vs_graphs::core::map { class Map; }
-namespace vs_graphs::core::map_point { class MapPoint; }
-namespace vs_graphs::core::tracking { class Tracking; }
+#include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-} /* namespace core */
-} /* namespace vs_graphs */
+class SemanticsManager;
 
-namespace vs_graphs
-{
-namespace core
-{
 namespace types
 {
 class SystemParams;
-}
-
-
-
-
-
-
-
+} // namespace types
 
 namespace tracking
 {
 class Tracking;
-} /* namespace tracking */
+} // namespace tracking
+
 namespace local_mapping
 {
 class LocalMapping;
-} /* namespace local_mapping */
+} // namespace local_mapping
+
 namespace keyframe
 {
 class KeyFrame;
-} /* namespace keyframe */
+} // namespace keyframe
+
+namespace keyframe_database
+{
+class KeyFrameDatabase;
+} // namespace keyframe_database
+
 namespace map
 {
 class Map;
-} /* namespace map */
+} // namespace map
+
 namespace map_point
 {
 class MapPoint;
-} /* namespace map_point */
+} // namespace map_point
+
 namespace atlas
 {
 class Atlas;
-} /* namespace atlas */
-class SemanticsManager;
+} // namespace atlas
+
 namespace semantic
 {
 enum class SemanticMergeDecision;
-}
+} // namespace semantic
 
 /*!
  * @brief           Confirms both maps have observed floors with matching
@@ -277,11 +267,11 @@ class LoopClosing
      *                  False switches loop closing off: key frames are queued
      *                  but no loop or merge is detected.
      */
-    LoopClosing(atlas::Atlas     *p_atlas_in,
+    LoopClosing(atlas::Atlas                        *p_atlas_in,
                 keyframe_database::KeyFrameDatabase *p_database_in,
-                ORBVocabulary    *p_vocabulary_in,
-                const bool        isScaleFixed_in,
-                const bool        isActiveLc_in) :
+                ORBVocabulary                       *p_vocabulary_in,
+                const bool                           isScaleFixed_in,
+                const bool                           isActiveLc_in) :
         isResetRequested(false),
         isResetActiveMapRequested(false),
         isFinishRequested(false),
@@ -1002,6 +992,25 @@ class LoopClosing
      *                  adjustment.
      */
     [[nodiscard]] LoopClosingStatus correctLoop(void);
+
+    /*!
+     * @brief           Checks the rooms of a confirmed same-map loop before it
+     *                  is corrected: the rooms of the current and the matched
+     *                  key frame must be one room or neighbours (on one
+     *                  passage, or the two faces of one wall). A key frame
+     *                  without a live room passes. Logs one SG_PIPELINE
+     *                  loop_room_check line. Reject-only: it never makes a
+     *                  loop. Takes the map's graph lock shared, so the caller
+     *                  holds no graph, atlas or map lock.
+     *
+     * @param[out]      isLoopRejected_out
+     *                  True when the rooms differ, are not neighbours and
+     *                  map_merge.loop_room_check is on; the rejection is then
+     *                  recorded as loop correction event "room_mismatch".
+     *
+     * @return          LOOP_CLOSING_STATUS_SUCCESS.
+     */
+    [[nodiscard]] LoopClosingStatus checkLoopRooms(bool &isLoopRejected_out);
 
     /*!
      * @brief           Stops and joins the owned global bundle-adjustment
