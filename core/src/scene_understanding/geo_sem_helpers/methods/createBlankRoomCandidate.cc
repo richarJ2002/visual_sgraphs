@@ -161,7 +161,8 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    /* Every room, recovered ones included, takes a fresh identity. */
+    /* Every room takes a fresh identity here; the bootstrap then gives a
+     * recovered room the id of the room it restores. */
     int roomId{};
     if (p_atlas_inout->reserveRoomIdentity(roomId) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)

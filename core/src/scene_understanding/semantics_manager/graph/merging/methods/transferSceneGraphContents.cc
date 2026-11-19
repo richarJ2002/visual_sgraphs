@@ -33,10 +33,16 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include <iostream>
 #include <rclcpp/logging.hpp>
+#include <vector>
 
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 #include "scene_understanding/semantics_manager/graph/merging/private_functions/private_functions.h"
@@ -89,6 +95,46 @@ SemanticsManagerStatus SemanticsManager::transferSceneGraphContents(
     }
 
     collectAbsorbedSceneGraph(this, absorbedMapId, absorbedContents_out);
+
+    /* A map started after a tracking loss holds the lost room under the
+     * room's old id, so both maps can hold one id. Rooms are keyed by id: an
+     * absorbed room whose id the surviving map holds takes a fresh id before
+     * it moves, or the move would drop it. The anchor rooms are paired by
+     * pointer, so they still fuse, and the surviving room keeps the id. */
+    std::vector<semantic::Room *> absorbedRooms =
+        absorbedContents_out.detectedRooms;
+    absorbedRooms.insert(absorbedRooms.end(),
+                         absorbedContents_out.candidateRooms.begin(),
+                         absorbedContents_out.candidateRooms.end());
+    for (semantic::Room *p_absorbedRoom : absorbedRooms)
+    {
+        int             absorbedRoomId{};
+        semantic::Room *p_survivingRoom = nullptr;
+        if (p_absorbedRoom == nullptr ||
+            p_absorbedRoom->getId(absorbedRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            getMapRoomById(survivingMapId, absorbedRoomId, p_survivingRoom) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+            p_survivingRoom == nullptr)
+        {
+            continue;
+        }
+        int freshRoomId{};
+        if (p_atlas->reserveRoomIdentity(freshRoomId) !=
+                atlas::AtlasStatus::ATLAS_STATUS_SUCCESS ||
+            p_absorbedRoom->setId(freshRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: re-keying a room returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[SemanticMergeFusion] Absorbed Room#" << absorbedRoomId
+                  << " shares its id with a surviving room; moved as Room#"
+                  << freshRoomId << "." << std::endl;
+    }
+
     transferPassages(this,
                      p_survivingMap_inout,
                      p_absorbedMap_inout,

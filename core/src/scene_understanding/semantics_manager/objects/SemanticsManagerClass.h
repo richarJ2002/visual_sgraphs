@@ -686,8 +686,10 @@ class SemanticsManager
 
     /*!
      * @brief           Creates the first room of a map: a confirmed room with
-     *                  a fresh id, added to the graph, unobserved boundary, and
-     *                  the visited state of the lost room when it recovers one.
+     *                  a fresh id, added to the graph, unobserved boundary.
+     *                  When it recovers the lost room it takes that room's id
+     *                  (unless a live room of this map holds it) and visited
+     *                  state.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
@@ -2690,7 +2692,11 @@ class SemanticsManager
      * @brief           Restores the room the robot was lost in as the first
      *                  room of the new map: placed at the override, else the
      *                  camera centre, else the lost room's centroid; linked to
-     *                  the canonical storey; its passages restored. Writes the
+     *                  the canonical storey; its passages restored. The room
+     *                  keeps the lost room's id and the storey takes the lost
+     *                  room's storey id (a free id when this map holds it), so
+     *                  the old map's final room and this map's starting room
+     *                  are one room in one storey. Writes the
      *                  RECOVERY_RESTORED initialization record.
      *
      * @param[out]      bootstrapResult_out
@@ -4116,10 +4122,14 @@ class SemanticsManager
     /*!
      * @brief           First half of a map merge: moves the passages, rooms
      *                  and storeys of the absorbed map's scene graph into the
-     *                  surviving map's. Passages and storeys that duplicate
-     *                  one the surviving map has (paired by geometry with the
-     *                  merge thresholds) are merged into it and the duplicate
-     *                  leaves the graph; the surviving map's storeys are then
+     *                  surviving map's. An absorbed room whose id the
+     *                  surviving map holds (the room a tracking loss
+     *                  restored under its old id) takes a fresh id from the
+     *                  atlas before it moves. Passages and storeys that
+     *                  duplicate one the surviving map has (paired by
+     *                  geometry with the merge thresholds) are merged into it
+     *                  and the duplicate leaves the graph; the surviving
+     *                  map's storeys are then
      *                  collapsed into one, and the walls of every valid room
      *                  are re-indexed in the surviving map. Takes both graph
      *                  locks exclusive in ascending map-id order (re-entrant

@@ -28,6 +28,7 @@
 
 #include <optional>
 #include <rclcpp/logging.hpp>
+#include <string>
 
 #include "scene_understanding/scene_graph/floor/Floor.h"
 #include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
@@ -114,6 +115,30 @@ SemanticsManagerStatus SemanticsManager::recoverRoomAfterTrackingLoss(
                      "%s: getId returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
+    }
+
+    /* The storey is the lost room's storey, so it takes that storey's id.
+     * Storeys are keyed by id: re-inserting the storey under the new key
+     * gives it a free id instead when another storey of this map holds it.
+     * The building is building 0 in every map already. */
+    const int lostFloorId = recoveryContext_in->floorId;
+    if (lostFloorId >= 0 && lostFloorId != canonicalFloorId)
+    {
+        if (p_canonicalFloor->setId(lostFloorId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS ||
+            moveFloor(activeMapId_in, activeMapId_in, p_canonicalFloor) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+            p_canonicalFloor->getId(canonicalFloorId) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS ||
+            p_canonicalFloor->setName("Floor#" +
+                                      std::to_string(canonicalFloorId)) !=
+                semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: re-keying the storey returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     printBootstrapRecord("RECOVERY_RESTORED",
                          activeMapId_in,

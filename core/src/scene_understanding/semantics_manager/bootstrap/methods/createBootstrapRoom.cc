@@ -64,6 +64,24 @@ semantic::Room *SemanticsManager::createBootstrapRoom(
         return nullptr;
     }
 
+    /* A recovered room is the room the robot was lost in, so it keeps that
+     * room's id; the old map's final room and this map's starting room then
+     * name the same room. A live room of this map holding the id keeps it,
+     * and the recovered room keeps its fresh id. */
+    semantic::Room *p_roomHoldingId = nullptr;
+    if (recoveryContext_in.has_value() && recoveryContext_in->roomId >= 0 &&
+        getMapRoomById(mapId_in, recoveryContext_in->roomId, p_roomHoldingId) ==
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS &&
+        p_roomHoldingId == nullptr &&
+        p_room->setId(recoveryContext_in->roomId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+
     /* The room is born confirmed: it enters the map as a candidate and is
      * promoted at once. */
     if (addCandidateRoom(mapId_in, std::move(p_blankRoomCandidate)) !=
