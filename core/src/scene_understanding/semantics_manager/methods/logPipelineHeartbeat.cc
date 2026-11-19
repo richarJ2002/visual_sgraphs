@@ -392,7 +392,9 @@ SemanticsManagerStatus SemanticsManager::logPipelineHeartbeat(void)
               << ",\"real_rooms\":" << realRoomCount
               << ",\"prospective_rooms\":" << prospectiveRoomCount
               << ",\"passages\":" << livePassageCount
-              << ",\"floors\":" << pipelineFloors.size() << "}" << std::endl;
+              << ",\"floors\":" << pipelineFloors.size()
+              << ",\"retired_planes_unfreed\":" << retiredPlanesUnfreedCount
+              << "}" << std::endl;
 
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

@@ -477,6 +477,16 @@ class SemanticsManager
         visibilityRejections;
 
     /*!
+     * @brief           Planes set bad and erased from their map but not freed
+     *                  (suppressUndefendedWalls() retirement and
+     *                  reAssociateSemanticPlanes() fusion), reported by the
+     *                  heartbeat; guarded by the semantic update lock.
+     *                  Freeing is blocked by unlocked plane pointers in
+     *                  bundle adjustment and the publisher.
+     */
+    std::size_t retiredPlanesUnfreedCount{0U};
+
+    /*!
      * @brief           Current semantic transaction sequence used by
      *                  SG_PIPELINE.
      */

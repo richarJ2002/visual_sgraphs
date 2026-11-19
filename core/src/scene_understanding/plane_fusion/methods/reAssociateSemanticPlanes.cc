@@ -397,6 +397,7 @@ SemanticsManagerStatus
                              "cannot fail; continuing as before.",
                              __func__);
             }
+            retiredPlanesUnfreedCount++;
 
             int retiredPlaneGetId{};
             if (p_retiredPlane->getId(retiredPlaneGetId) !=

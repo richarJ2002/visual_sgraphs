@@ -366,18 +366,9 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         if (state.unresolvedCycles <
             p_sysParams->semantics.maxUnassignedPlaneCycles)
         {
-            unsigned long currentMapId2{};
-            if (p_currentMap->getId(currentMapId2) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
-                      << currentMapId2
+                      << currentMapId
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\","
@@ -451,6 +442,27 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
             }
         }
 
+        /* The twin face must not keep pointing at the retired plane. */
+        geometric::Plane *p_twinWall     = nullptr;
+        geometric::Plane *p_twinWallLink = nullptr;
+        if (p_wall->getTwinFace(p_twinWall) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+            p_wall->clearTwinFace() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+            (p_twinWall != nullptr &&
+             (p_twinWall->getTwinFace(p_twinWallLink) !=
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+              (p_twinWallLink == p_wall &&
+               p_twinWall->clearTwinFace() !=
+                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS))))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTwinFace/clearTwinFace returned a failure "
+                         "status although they cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
         if (p_wall->setBad() != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -485,21 +497,13 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         }
         undefendedWalls.erase(wallId);
         liveWallIds.erase(wallId);
+        retiredPlanesUnfreedCount++;
 
         if (loggedRetiredWallIds.insert(wallId).second)
         {
-            unsigned long currentMapId3{};
-            if (p_currentMap->getId(currentMapId3) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_retirement\","
                          "\"map_id\":"
-                      << currentMapId3
+                      << currentMapId
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\",\"lifecycle\":\"RETIRED\","
