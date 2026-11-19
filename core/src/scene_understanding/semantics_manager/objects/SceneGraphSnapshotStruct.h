@@ -84,6 +84,19 @@ struct SceneGraphSnapshot
     std::vector<SceneGraphPassageEntry> passages;
 
     /*!
+     * @brief           Ids of the rooms whose boundary is not COMPLETE,
+     *                  ascending (SemanticsManager::getIncompleteRooms()).
+     */
+    std::vector<int> incompleteRoomIds;
+
+    /*!
+     * @brief           Ids of the passages whose far-side room is missing or
+     *                  not COMPLETE, ascending: where to explore next
+     *                  (SemanticsManager::getFrontierPassages()).
+     */
+    std::vector<int> frontierPassageIds;
+
+    /*!
      * @brief           Looks a room up by id.
      *
      * @param[in]       roomId_in

@@ -734,6 +734,27 @@ extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
     pubAllPassages;
 
 /*!
+ * @brief           Publisher of the active map's rooms whose boundary is not
+ *                  COMPLETE (topic "incomplete_rooms"), same entries as
+ *                  pubAllRooms. Latched (transient local, depth 1).
+ *
+ * @note            Global variable declared in `commonStat.cpp`
+ */
+extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
+    pubIncompleteRooms;
+
+/*!
+ * @brief           Publisher of the active map's passages whose far-side room
+ *                  is missing or not COMPLETE, i.e. where to explore next
+ *                  (topic "frontier_passages"), same entries as
+ *                  pubAllPassages. Latched (transient local, depth 1).
+ *
+ * @note            Global variable declared in `commonStat.cpp`
+ */
+extern rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+    pubFrontierPassages;
+
+/*!
  * @brief           Publisher for the mapped-floor representation (id, plane
  *                  equation, observation quality) for offline/evaluation
  *                  consumption -- the only source of Z-direction constraint
@@ -1073,10 +1094,15 @@ extern void publishAllMappedWalls(
  *
  * @param[in]       msgTime_s_in
  *                  The timestamp for the message.
+ *
+ * @param[in]       roomPublisher_in
+ *                  Topic to publish on (pubAllRooms or pubIncompleteRooms).
  */
 extern void publishAllMappedRooms(
     const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
-    rclcpp::Time                               msgTime_s_in);
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::
+        SharedPtr &roomPublisher_in);
 
 /*!
  * @brief           Publishes all mapped passages (id, centroid, extent,
@@ -1090,10 +1116,16 @@ extern void publishAllMappedRooms(
  *
  * @param[in]       msgTime_s_in
  *                  The timestamp for the message.
+ *
+ * @param[in]       passagePublisher_in
+ *                  Topic to publish on (pubAllPassages or
+ *                  pubFrontierPassages).
  */
 extern void publishAllMappedPassages(
     const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
-    rclcpp::Time                               msgTime_s_in);
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+        &passagePublisher_in);
 
 /*!
  * @brief           Publishes all mapped floors (id, plane equation, observation

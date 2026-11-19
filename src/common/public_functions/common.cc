@@ -368,6 +368,12 @@ rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
 rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
     pubAllPassages = nullptr;
 
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
+    pubIncompleteRooms = nullptr;
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+    pubFrontierPassages = nullptr;
+
 rclcpp::Publisher<vs_graphs::msg::VSGraphsAllFloorsData>::SharedPtr
     pubAllFloors = nullptr;
 
@@ -2108,7 +2114,9 @@ void publishAllMappedWalls(
 
 void publishAllMappedRooms(
     const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
-    rclcpp::Time                               msgTime_s_in)
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<
+        vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr &roomPublisher_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllDetectdetRooms roomDataMsg;
@@ -2137,12 +2145,14 @@ void publishAllMappedRooms(
     }
 
     /* Publish all mapped rooms */
-    pubAllRooms->publish(roomDataMsg);
+    roomPublisher_in->publish(roomDataMsg);
 }
 
 void publishAllMappedPassages(
     const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
-    rclcpp::Time                               msgTime_s_in)
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+        &passagePublisher_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllPassagesData passageDataMsg;
@@ -2222,7 +2232,7 @@ void publishAllMappedPassages(
     }
 
     /* Publish all mapped passages */
-    pubAllPassages->publish(passageDataMsg);
+    passagePublisher_in->publish(passageDataMsg);
 }
 
 void publishAllMappedFloors(
@@ -5649,9 +5659,60 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
      * evaluation run can reconstruct the full generated scene graph
      * (rooms, walls, passages) without loading a saved Atlas file.
      */
-    publishAllMappedRooms(activeSceneGraph, msgTime_s_in);
-    publishAllMappedPassages(activeSceneGraph, msgTime_s_in);
+    publishAllMappedRooms(activeSceneGraph, msgTime_s_in, pubAllRooms);
+    publishAllMappedPassages(activeSceneGraph, msgTime_s_in, pubAllPassages);
     publishAllMappedFloors(activeSceneGraph, msgTime_s_in);
+
+    /*!
+     * Exploration output: the rooms still to close and the passages still to
+     * explore. Their id lists come from the semantic cycle and change only at
+     * a cycle end, so publishing when they change publishes at most once per
+     * cycle. Plain data only: no graph lock is held here.
+     */
+    static unsigned long    lastFrontierMapId = 0UL;
+    static std::vector<int> lastIncompleteRoomIds{};
+    static std::vector<int> lastFrontierPassageIds{};
+    static bool             hasPublishedFrontier = false;
+    if (!hasPublishedFrontier || activeSceneGraph.mapId != lastFrontierMapId ||
+        activeSceneGraph.incompleteRoomIds != lastIncompleteRoomIds ||
+        activeSceneGraph.frontierPassageIds != lastFrontierPassageIds)
+    {
+        /* Rooms are kept whole in the passage copy: each passage's known-side
+         * room is resolved against them. Both id lists are ascending. */
+        vs_graphs::core::SceneGraphSnapshot incompleteRoomGraph{};
+        vs_graphs::core::SceneGraphSnapshot frontierPassageGraph{};
+        frontierPassageGraph.rooms = activeSceneGraph.rooms;
+        for (const vs_graphs::core::SceneGraphRoomEntry &room :
+             activeSceneGraph.rooms)
+        {
+            if (std::binary_search(activeSceneGraph.incompleteRoomIds.begin(),
+                                   activeSceneGraph.incompleteRoomIds.end(),
+                                   room.id))
+            {
+                incompleteRoomGraph.rooms.push_back(room);
+            }
+        }
+        for (const vs_graphs::core::SceneGraphPassageEntry &passage :
+             activeSceneGraph.passages)
+        {
+            if (std::binary_search(activeSceneGraph.frontierPassageIds.begin(),
+                                   activeSceneGraph.frontierPassageIds.end(),
+                                   passage.id))
+            {
+                frontierPassageGraph.passages.push_back(passage);
+            }
+        }
+        publishAllMappedRooms(incompleteRoomGraph,
+                              msgTime_s_in,
+                              pubIncompleteRooms);
+        publishAllMappedPassages(frontierPassageGraph,
+                                 msgTime_s_in,
+                                 pubFrontierPassages);
+        lastFrontierMapId      = activeSceneGraph.mapId;
+        lastIncompleteRoomIds  = activeSceneGraph.incompleteRoomIds;
+        lastFrontierPassageIds = activeSceneGraph.frontierPassageIds;
+        hasPublishedFrontier   = true;
+    }
 
     /*!
      * Archive the same snapshot to JSON. The archiver rate-limits itself on
@@ -6389,6 +6450,21 @@ void setupPublishers(
             makeTopicName("all_mapped_passages"),
             standardPublisherQoS);
 
+    /* Exploration output: changes only at a semantic cycle end, so it is
+     * latched rather than streamed. */
+    const rclcpp::QoS latchedPublisherQoS =
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+
+    pubIncompleteRooms =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>(
+            makeTopicName("incomplete_rooms"),
+            latchedPublisherQoS);
+
+    pubFrontierPassages =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllPassagesData>(
+            makeTopicName("frontier_passages"),
+            latchedPublisherQoS);
+
     pubAllFloors =
         node_in->create_publisher<vs_graphs::msg::VSGraphsAllFloorsData>(
             makeTopicName("all_mapped_floors"),
@@ -6464,6 +6540,8 @@ void shutdownRosInterfaces()
     pubAllWalls_legacy.reset();
     pubAllRooms.reset();
     pubAllPassages.reset();
+    pubIncompleteRooms.reset();
+    pubFrontierPassages.reset();
     pubAllFloors.reset();
     pubStructuralElements.reset();
 

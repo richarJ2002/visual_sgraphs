@@ -58,11 +58,17 @@ SemanticsManagerStatus SemanticsManager::getSceneGraphSnapshot(
     std::vector<semantic::Floor *>   floors{};
     std::vector<semantic::Room *>    rooms{};
     std::vector<semantic::Passage *> passages{};
+    std::vector<semantic::Room *>    incompleteRooms{};
+    std::vector<semantic::Passage *> frontierPassages{};
     if (getMapFloorsInIdOrder(mapId_in, floors) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
         getMapRoomsInIdOrder(mapId_in, rooms) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
         getMapPassagesInIdOrder(mapId_in, passages) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+        getIncompleteRooms(mapId_in, incompleteRooms) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+        getFrontierPassages(mapId_in, frontierPassages) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -97,6 +103,24 @@ SemanticsManagerStatus SemanticsManager::getSceneGraphSnapshot(
     {
         capturePassageEntry(passages[passageIndex],
                             snapshot_out.passages[passageIndex]);
+    }
+    for (semantic::Room *p_incompleteRoom : incompleteRooms)
+    {
+        int roomId{};
+        if (p_incompleteRoom->getId(roomId) ==
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            snapshot_out.incompleteRoomIds.push_back(roomId);
+        }
+    }
+    for (semantic::Passage *p_frontierPassage : frontierPassages)
+    {
+        int passageId{};
+        if (p_frontierPassage->getId(passageId) ==
+            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            snapshot_out.frontierPassageIds.push_back(passageId);
+        }
     }
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }

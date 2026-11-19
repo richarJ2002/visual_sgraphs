@@ -3971,12 +3971,14 @@ class SemanticsManager
                             std::vector<RoomSnapshot> &roomSnapshots_out) const;
 
     /*!
-     * @brief           Copies the live storeys, rooms and passages of one map
-     *                  into plain data under the map's shared graph lock,
-     *                  which is taken and released inside the call. The
-     *                  snapshot holds no pointer into the graph, so the caller
-     *                  holds no node and no graph lock afterwards. Used by the
-     *                  ROS publisher, the archive and the health report.
+     * @brief           Copies the live storeys, rooms and passages of one map,
+     *                  and the ids getIncompleteRooms() and
+     *                  getFrontierPassages() return for it, into plain data
+     *                  under the map's shared graph lock, which is taken and
+     *                  released inside the call. The snapshot holds no
+     *                  pointer into the graph, so the caller holds no node
+     *                  and no graph lock afterwards. Used by the ROS
+     *                  publisher, the archive and the health report.
      *
      * @param[in]       mapId_in
      *                  Id of the SLAM map.
