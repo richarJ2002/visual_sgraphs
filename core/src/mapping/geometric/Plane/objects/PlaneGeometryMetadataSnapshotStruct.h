@@ -83,6 +83,18 @@ struct PlaneGeometryMetadataSnapshot
     double maxPlaneV_m{0.0};
 
     /*!
+     * @brief           Width of the plane, maxPlaneU_m - minPlaneU_m, meters;
+     *                  0 while the bounds are unset.
+     */
+    double planeWidth_m{0.0};
+
+    /*!
+     * @brief           Height of the plane, maxPlaneV_m - minPlaneV_m, meters;
+     *                  0 while the bounds are unset.
+     */
+    double planeHeight_m{0.0};
+
+    /*!
      * @brief           In-plane axes U and V the bounds above were measured
      *                  on, world frame.
      */

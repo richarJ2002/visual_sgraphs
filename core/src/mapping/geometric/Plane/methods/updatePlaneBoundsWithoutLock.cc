@@ -44,10 +44,12 @@ PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
 {
 
     /* Reset the plane size */
-    minPlaneU = std::numeric_limits<double>::max();
-    maxPlaneU = std::numeric_limits<double>::lowest();
-    minPlaneV = std::numeric_limits<double>::max();
-    maxPlaneV = std::numeric_limits<double>::lowest();
+    minPlaneU     = std::numeric_limits<double>::max();
+    maxPlaneU     = std::numeric_limits<double>::lowest();
+    minPlaneV     = std::numeric_limits<double>::max();
+    maxPlaneV     = std::numeric_limits<double>::lowest();
+    planeWidth_m  = 0.0;
+    planeHeight_m = 0.0;
 
     /* Extract the coefficient of the wall */
     Eigen::Vector4d wallEquation = globalEquation.coeffs();
@@ -175,6 +177,9 @@ PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
         minPlaneV = robustBound(projectionsV, lowerPercentile);
         maxPlaneV = robustBound(projectionsV, upperPercentile);
     }
+
+    planeWidth_m  = maxPlaneU - minPlaneU;
+    planeHeight_m = maxPlaneV - minPlaneV;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

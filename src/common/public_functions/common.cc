@@ -3328,6 +3328,10 @@ void maybeArchiveSGraph(
                         geometry.maxPlaneU_m - geometry.minPlaneU_m);
                     wallJson["wall_extent_v_m"] = sanitiseArchiveDouble(
                         geometry.maxPlaneV_m - geometry.minPlaneV_m);
+                    wallJson["wall_width_m"] =
+                        sanitiseArchiveDouble(geometry.planeWidth_m);
+                    wallJson["wall_height_m"] =
+                        sanitiseArchiveDouble(geometry.planeHeight_m);
                     wallJson["parent_room"] = roomKey;
 
                     Json passageList = Json::array();

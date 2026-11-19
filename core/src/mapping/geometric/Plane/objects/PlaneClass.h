@@ -222,6 +222,18 @@ class Plane
         double maxPlaneV_m{0.0};
 
         /*!
+         * @brief           Width of the plane, maxPlaneU_m - minPlaneU_m,
+         *                  metres; 0 while the bounds are unset.
+         */
+        double planeWidth_m{0.0};
+
+        /*!
+         * @brief           Height of the plane, maxPlaneV_m - minPlaneV_m,
+         *                  metres; 0 while the bounds are unset.
+         */
+        double planeHeight_m{0.0};
+
+        /*!
          * @brief           In-plane axes U and V the bounds above were
          *                  measured on, world frame.
          */
@@ -364,6 +376,26 @@ class Plane
     double minPlaneV;
 
   private:
+    /*!
+     * @brief           Width of the plane: the extent of the support cloud
+     *                  along the in-plane axis U of boundsAxes
+     *                  (maxPlaneU - minPlaneU); 0 while the bounds are
+     *                  unset.
+     *
+     * @units           meters
+     */
+    double planeWidth_m{0.0};
+
+    /*!
+     * @brief           Height of the plane: the extent of the support cloud
+     *                  along the in-plane axis V of boundsAxes
+     *                  (maxPlaneV - minPlaneV); 0 while the bounds are
+     *                  unset.
+     *
+     * @units           meters
+     */
+    double planeHeight_m{0.0};
+
     /*!
      * @brief           In-plane axes the bounds minPlaneU/V and maxPlaneU/V
      *                  were measured on; written with them under the same
@@ -716,14 +748,6 @@ class Plane
      */
     [[nodiscard]] PlaneStatus
         getCentroid(Eigen::Vector3d &getCentroid_out) const;
-
-    /*!
-     * @brief           Method which takes the points in the map and calculates
-     *                  the bounds of the plane. Assumes that the plane already
-     *                  has points associated with it. Assumes that the plane is
-     *                  a rectangle.
-     */
-    [[nodiscard]] PlaneStatus updateSizeOfPlane(void);
 
     /*!
      * @brief           Sets the plane centroid in the active map frame.
