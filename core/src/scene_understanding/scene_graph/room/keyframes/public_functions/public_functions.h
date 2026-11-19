@@ -107,24 +107,6 @@ namespace semantic
     int                           roomId_in,
     std::vector<Eigen::Vector3d> &cameraCenters_world_m_out);
 
-/*!
- * @brief           Finds the observer room of a plane: the room most of its
- *                  observing key frames were taken in; on a tie, the room of
- *                  the latest (highest id) observer among the tied rooms.
- *                  Observers that are bad or have no room do not vote.
- *
- * @param[in]       p_plane_in
- *                  Plane whose observations are read; borrowed, may be null.
- *
- * @param[out]      observerRoomId_out
- *                  Id of the observer room, or -1 when no observer has a
- *                  room (or the plane is null).
- *
- * @return          ROOM_STATUS_SUCCESS.
- */
-[[nodiscard]] RoomStatus findObserverRoomId(geometric::Plane *p_plane_in,
-                                            int &observerRoomId_out);
-
 } /* namespace semantic */
 } /* namespace core */
 } /* namespace vs_graphs */

@@ -3,7 +3,6 @@
 # rules and retire undefended walls; exactly this subpackage's translation
 # units.
 set(VS_GRAPHS_ROOMASSOCIATION_WALLOWNERSHIP_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/methods/compareWallObserverRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/detachWallsBeyondConfirmedPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageTopologyInvariant.cc

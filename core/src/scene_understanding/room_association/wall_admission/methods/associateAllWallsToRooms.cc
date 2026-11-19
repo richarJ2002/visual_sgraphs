@@ -380,11 +380,8 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          __func__);
         }
 
-        /*!
-         * An owned wall keeps its owner here, even when its observers vote
-         * for another room; the wall_observer_room shadow log reports that
-         * drift.
-         */
+        /* An owned wall keeps its owner, even when its observers vote for
+         * another room. */
         if (p_roomContainingWall != nullptr)
         {
             continue;

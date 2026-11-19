@@ -222,16 +222,6 @@ SemanticsManagerStatus SemanticsManager::runCycleStages(void)
                      __func__);
     }
 
-    /* Shadow log: wall owners against the rooms of their observers. */
-    if (compareWallObserverRooms(p_atlasCurrentMap) !=
-        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: compareWallObserverRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
