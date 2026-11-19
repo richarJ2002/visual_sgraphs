@@ -1414,6 +1414,18 @@ class KeyFrame
      */
     long unsigned int baFixedKeyFrameId;
 
+    /* Variables used by the semantics thread */
+    /*!
+     * @brief           Id of the room the robot was in when this key frame
+     *                  was taken; -1 while it has none (taken before any
+     *                  room existed, or its room was erased). Written only by
+     *                  semantic::Room::linkKeyFrame, which also keeps that
+     *                  room's key frame list in step, and semantic::Room::
+     *                  setId, both under the room's scene graph lock held
+     *                  exclusive; read under that lock.
+     */
+    int roomId = -1;
+
     /* Variables used by the keyframe database */
     /*!
      * @brief           Id of the query key frame for which the loop candidate

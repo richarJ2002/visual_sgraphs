@@ -460,11 +460,13 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          __func__);
         }
         if (p_duplicateRoom->clearWalls() !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            p_duplicateRoom->transferKeyFrames(p_retainedRoom_inout) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: clearWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
+                         "%s: clearWalls/transferKeyFrames returned a failure "
+                         "status although they cannot fail; continuing.",
                          __func__);
         }
         if (p_duplicateRoom->clearPassages() !=

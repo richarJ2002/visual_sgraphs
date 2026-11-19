@@ -53,6 +53,10 @@ namespace geometric
 {
 class Plane;
 } /* namespace geometric */
+namespace keyframe
+{
+class KeyFrame;
+} /* namespace keyframe */
 } /* namespace core */
 } /* namespace vs_graphs */
 
@@ -242,6 +246,16 @@ class Room
     std::vector<vs_graphs::core::semantic::Passage *> passages;
 
     /*!
+     * @brief           Key frames taken while the robot was in this room;
+     *                  non-owning (the SLAM map owns them and never frees a
+     *                  mapped key frame during a run), possibly bad. Each one
+     *                  carries this room's id in KeyFrame::roomId. Written
+     *                  only by linkKeyFrame, under the room's graph lock held
+     *                  exclusive.
+     */
+    std::vector<keyframe::KeyFrame *> keyFrames;
+
+    /*!
      * @brief           Current validation result for the finite
      *                  horizontal wall loop.
      */
@@ -337,7 +351,9 @@ class Room
     [[nodiscard]] RoomStatus getId(int &id_out) const;
 
     /*!
-     * @brief           Sets the room identifier assigned by the atlas.
+     * @brief           Sets the room identifier assigned by the atlas and
+     *                  writes it into the room id of every key frame of this
+     *                  room.
      *
      * @param[in]       id_in
      *                  New atlas room identifier.
@@ -915,6 +931,50 @@ class Room
      *                  Owning map; shall be non-null.
      */
     [[nodiscard]] RoomStatus setMap(map::Map *p_map_in);
+
+    /*!
+     * @brief           Moves one key frame from one room to another, writing
+     *                  both directions: it leaves the previous room's key
+     *                  frame list, joins the next room's list (once) and
+     *                  takes the next room's id, or -1 when there is no next
+     *                  room. The only writer of the room key frame lists and,
+     *                  with setId, of KeyFrame::roomId. The caller holds the
+     *                  graph locks of both rooms exclusive (the semantic
+     *                  cycle or a map merge).
+     *
+     * @param[in,out]   p_keyFrame_inout
+     *                  Key frame to move; non-null.
+     *
+     * @param[in,out]   p_previousRoom_inout
+     *                  Room the key frame is in now, or null when it has none.
+     *
+     * @param[in,out]   p_nextRoom_inout
+     *                  Room the key frame goes to, or null to leave it without
+     *                  a room.
+     *
+     * @return          ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT
+     *                  when the key frame is null (nothing changes).
+     */
+    [[nodiscard]] static RoomStatus
+        linkKeyFrame(keyframe::KeyFrame *p_keyFrame_inout,
+                     Room               *p_previousRoom_inout,
+                     Room               *p_nextRoom_inout);
+
+    /*!
+     * @brief           Moves every key frame of this room to another room
+     *                  through linkKeyFrame: to the surviving room when two
+     *                  rooms fuse, or to no room when this room is erased.
+     *                  Leaves this room's key frame list empty. The caller
+     *                  holds the graph locks of both rooms exclusive.
+     *
+     * @param[in,out]   p_survivorRoom_inout
+     *                  Room that takes the key frames, or null to leave them
+     *                  without a room.
+     *
+     * @return          ROOM_STATUS_SUCCESS, or ROOM_STATUS_INVALID_ARGUMENT
+     *                  when the survivor is this room (nothing changes).
+     */
+    [[nodiscard]] RoomStatus transferKeyFrames(Room *p_survivorRoom_inout);
 
   protected:
     /* ---------------------------------------------------------------------- *

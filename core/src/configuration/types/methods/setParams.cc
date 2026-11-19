@@ -451,6 +451,23 @@ SystemParamsStatus
         semantics.pointDensity.maxPointsPerVoxel =
             static_cast<unsigned int>(maxPointsPerVoxelValue);
 
+        /* Plane lifetime limits; read as int so a negative value is caught
+         * here instead of wrapping. */
+        const int maxUnassignedCyclesValue =
+            config["semantics"]["plane"]["max_unassigned_cycles"].as<int>();
+        const int minRejectingViewsValue =
+            config["semantics"]["visibility"]["min_rejecting_views"].as<int>();
+        if (maxUnassignedCyclesValue < 1 || minRejectingViewsValue < 1)
+        {
+            throw std::invalid_argument(
+                "semantics.plane.max_unassigned_cycles and "
+                "semantics.visibility.min_rejecting_views need >= 1");
+        }
+        semantics.maxUnassignedPlaneCycles =
+            static_cast<unsigned int>(maxUnassignedCyclesValue);
+        semantics.minRejectingViewCount =
+            static_cast<unsigned int>(minRejectingViewsValue);
+
         /* Absent key: the mission starts indoors. Any other text than
          * "indoor" or "outdoor" is rejected here, at the boundary. */
         const YAML::Node startEnvironmentNode =

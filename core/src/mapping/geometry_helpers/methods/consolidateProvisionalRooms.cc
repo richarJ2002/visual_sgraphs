@@ -470,6 +470,16 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             }
         }
 
+        /* The selected room takes the candidate's key frames. */
+        if (p_candidateRoom->transferKeyFrames(p_selectedRoom_inout) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: transferKeyFrames refused the candidate itself "
+                         "as its survivor; continuing as before.",
+                         __func__);
+        }
+
         /* Repoint the map's room chain before the candidate is retired. */
         int linkFusedRoomId{};
         int linkKeptRoomId{};

@@ -70,6 +70,18 @@ semantics:
     # Most points per voxel (>= 1); 2 lets two planes meet at a corner while
     # a third duplicate adds nothing there.
     max_points: 2
+  plane:
+    # Semantic cycles (>= 1) a plane may stay without a room before it is
+    # deleted. 5 = roomSeg minimum_undefended_wall_hold_cycles, so an
+    # unassigned plane lives as long as an undefended wall does today. Not
+    # used yet.
+    max_unassigned_cycles: 5
+  visibility:
+    # Consistent views (>= 1) that must see a plane only through a solid wall
+    # before it is deleted. 5 = minimum_undefended_wall_hold_cycles: today a
+    # refused wall is re-refused once per cycle and retired after 5 cycles.
+    # Not used yet.
+    min_rejecting_views: 5
 
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:

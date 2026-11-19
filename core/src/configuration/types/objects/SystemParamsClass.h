@@ -1110,6 +1110,19 @@ class SystemParams
          * @brief           Plane point density cap.
          */
         PointDensity pointDensity;
+        /*!
+         * @brief           Semantic cycles a plane may stay without a room
+         *                  before it is deleted (semantics.plane.
+         *                  max_unassigned_cycles), >= 1. Not read yet.
+         */
+        unsigned int maxUnassignedPlaneCycles = 5U;
+        /*!
+         * @brief           Consistent views that must refuse a plane through
+         *                  a solid wall before it is deleted
+         *                  (semantics.visibility.min_rejecting_views), >= 1.
+         *                  Not read yet.
+         */
+        unsigned int minRejectingViewCount = 5U;
     };
     /*!
      * @brief           Map-wide semantic limits.

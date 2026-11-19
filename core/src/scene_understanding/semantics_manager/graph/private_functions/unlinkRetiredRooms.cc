@@ -41,17 +41,20 @@ void unlinkRetiredRooms(
 {
     for (const std::unique_ptr<semantic::Room> &p_retiredRoom : retiredRooms_in)
     {
-        /* The room's planes belong to the SLAM map and are not freed; the
-         * room only lets go of them. */
+        /* The room's planes and key frames belong to the SLAM map and are
+         * not freed; the room only lets go of them, and its key frames are
+         * left without a room. */
         if (p_retiredRoom->clearWalls() !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
             p_retiredRoom->setGroundPlane(nullptr) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            p_retiredRoom->transferKeyFrames(nullptr) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: clearWalls/setGroundPlane returned a failure "
-                         "status although they cannot fail; continuing as "
-                         "before.",
+                         "%s: clearWalls/setGroundPlane/transferKeyFrames "
+                         "returned a failure status although they cannot "
+                         "fail; continuing as before.",
                          __func__);
         }
 

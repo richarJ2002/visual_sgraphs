@@ -368,12 +368,15 @@ void fuseDuplicateRoomsAfterMerge(
                          __func__,
                          mapId);
         }
+        /* The surviving room takes the imported room's key frames. */
         if (p_importedRoom->clearWalls() !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+            p_importedRoom->transferKeyFrames(p_bestRetainedRoom) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: clearWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
+                         "%s: clearWalls/transferKeyFrames returned a failure "
+                         "status although they cannot fail; continuing.",
                          __func__);
         }
         if (p_importedRoom->clearPassages() !=

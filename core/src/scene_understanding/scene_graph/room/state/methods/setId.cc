@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "map_state/keyframe/objects/KeyFrameClass.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -37,6 +39,12 @@ namespace semantic
 RoomStatus Room::setId(int id_in)
 {
     id = id_in;
+
+    /* A merge gives an imported room a fresh id; its key frames follow. */
+    for (keyframe::KeyFrame *p_roomKeyFrame : keyFrames)
+    {
+        p_roomKeyFrame->roomId = id;
+    }
 
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
