@@ -34,6 +34,7 @@
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantic_constraints/visibility_rules/visibility_rules.h"
@@ -106,7 +107,11 @@ SemanticsManagerStatus SemanticsManager::findRedirectedObserverRoomId(
         {
             singlePassage.front()      = p_passage;
             geometric::Plane *p_unused = nullptr;
-            if (!observerCameraCenter_world_m.allFinite() ||
+            bool              isPassageBad{true};
+            if (p_passage == nullptr ||
+                p_passage->isBad(isPassageBad) !=
+                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS ||
+                isPassageBad || !observerCameraCenter_world_m.allFinite() ||
                 !semantic_constraints::isSeenThroughPassage(sightLineInput,
                                                             *p_sysParams,
                                                             p_unused))

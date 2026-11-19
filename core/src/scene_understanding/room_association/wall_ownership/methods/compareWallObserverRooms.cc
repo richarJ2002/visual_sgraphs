@@ -78,9 +78,8 @@ SemanticsManagerStatus
                      activeMapId);
     }
 
-    /* Live passages, in id order, for the passage-first redirect. */
+    /* Passages in id order, for the passage-first redirect. */
     std::vector<semantic::Passage *> mapPassages{};
-    std::vector<semantic::Passage *> livePassages{};
     if (getMapPassagesInIdOrder(activeMapId, mapPassages) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
@@ -89,17 +88,6 @@ SemanticsManagerStatus
                      "map %lu; continuing without passages.",
                      __func__,
                      activeMapId);
-    }
-    for (semantic::Passage *p_passage : mapPassages)
-    {
-        bool isPassageBad{true};
-        if (p_passage != nullptr &&
-            p_passage->isBad(isPassageBad) ==
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS &&
-            !isPassageBad)
-        {
-            livePassages.push_back(p_passage);
-        }
     }
 
     /* Live walls in id order. */
@@ -161,7 +149,7 @@ SemanticsManagerStatus
         int redirectedRoomId = -1;
         if (findRedirectedObserverRoomId(liveWall.second,
                                          mapRooms,
-                                         livePassages,
+                                         mapPassages,
                                          redirectedRoomId) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {

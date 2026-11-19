@@ -1112,6 +1112,37 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus associateAllWallsToRooms(void);
 
     /*!
+     * @brief           Picks the room an unowned wall is offered to: the room
+     *                  its observers vote for (findRedirectedObserverRoomId()),
+     *                  or the current room when no observer is linked.
+     *
+     * @param[in]       p_wall_in
+     *                  The wall; borrowed, not null.
+     *
+     * @param[in]       rooms_in
+     *                  Rooms of the active map; borrowed.
+     *
+     * @param[in]       p_currentRoom_in
+     *                  The room the robot is in, or nullptr; borrowed.
+     *
+     * @param[out]      observerRoomId_out
+     *                  The voted room id, -1 when no observer is linked.
+     *
+     * @param[out]      p_targetRoom_out
+     *                  The room to offer the wall to, or nullptr when the
+     *                  voted room is gone or there is no current room;
+     *                  borrowed.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findWallTargetRoom(geometric::Plane                    *p_wall_in,
+                           const std::vector<semantic::Room *> &rooms_in,
+                           semantic::Room  *p_currentRoom_in,
+                           int             &observerRoomId_out,
+                           semantic::Room *&p_targetRoom_out) const;
+
+    /*!
      * @brief           Tells whether a wall is reached through a passage's
      *                  opening from a viewpoint: the line to the wall centroid
      *                  crosses the opening, or the lines to most of about 200
@@ -2086,7 +2117,8 @@ class SemanticsManager
      *                  Rooms of the active map; borrowed.
      *
      * @param[in]       passages_in
-     *                  Live passages of the active map in id order; borrowed.
+     *                  Passages of the active map in id order; bad ones are
+     *                  skipped; borrowed.
      *
      * @param[out]      redirectedRoomId_out
      *                  Redirected observer room id, or -1 without a vote.

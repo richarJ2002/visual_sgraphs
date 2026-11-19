@@ -343,7 +343,7 @@ SemanticsManagerStatus
              * intact. */
             RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
                         "[SemMgr] Wall#%d refused from Room#%d: beyond a "
-                        "passage wall seen from the room centre.",
+                        "passage wall on the sight lines.",
                         candidateWallId,
                         roomId);
         }

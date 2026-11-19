@@ -380,18 +380,42 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                          __func__);
         }
 
-        /* If the room containing wall is invalid, skip to next plane */
+        /*!
+         * An owned wall keeps its owner here, even when its observers vote
+         * for another room; the wall_observer_room shadow log reports that
+         * drift.
+         */
         if (p_roomContainingWall != nullptr)
         {
             continue;
         }
 
-        /* Declare flag to indicate wall should be admitted to current room */
+        /*!
+         * Offer the wall to the room its observers vote for (passage first,
+         * then majority). Only a wall with no linked observer falls back to
+         * the current room.
+         */
+        int             observerRoomId = -1;
+        semantic::Room *p_targetRoom   = nullptr;
+        if (findWallTargetRoom(p_plane,
+                               allRooms,
+                               p_currentRoom,
+                               observerRoomId,
+                               p_targetRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findWallTargetRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Declare flag to indicate wall should be admitted to target room */
         bool wasWallAdmitted{};
 
-        /* Admit wall to current room */
-        if ((p_currentRoom != nullptr) &&
-            admitWallToRoom(p_currentRoom, p_plane, wasWallAdmitted) !=
+        /* Admit wall to the target room through the admission gates */
+        if ((p_targetRoom != nullptr) &&
+            admitWallToRoom(p_targetRoom, p_plane, wasWallAdmitted) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -401,11 +425,11 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         }
 
         /* Init flag to indicate if the wall was admitted */
-        const bool isWallAdmitted = p_currentRoom != nullptr && wasWallAdmitted;
+        const bool isWallAdmitted = p_targetRoom != nullptr && wasWallAdmitted;
 
         /*!
          * Look the owner up again in the atlas rooms. It may be a room other
-         * than the current one (passage far-side precedence).
+         * than the target one (passage far-side precedence).
          */
         std::vector<semantic::Room *> atlasAllRooms{};
         if (getAllRoomsInIdOrder(atlasAllRooms) !=
@@ -474,9 +498,10 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
                       << selectedOwnerId << ",\"reason\":\""
-                      << (p_selectedOwner == p_currentRoom
-                              ? "CURRENT_ROOM_OBSERVATION"
-                              : "PASSAGE_FAR_SIDE_PRECEDENCE")
+                      << (p_selectedOwner != p_targetRoom
+                              ? "PASSAGE_FAR_SIDE_PRECEDENCE"
+                          : observerRoomId >= 0 ? "OBSERVER_ROOM_VOTE"
+                                                : "CURRENT_ROOM_OBSERVATION")
                       << "\",\"support\":" << admissionEvidence.fittedPointCount
                       << ",\"observations\":"
                       << admissionEvidence.observationCount << "}" << std::endl;
@@ -499,8 +524,8 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
                          "\"reason\":\""
-                      << (p_currentRoom == nullptr ? "NO_CURRENT_ROOM"
-                                                   : "SAFE_ADMISSION_REJECTED")
+                      << (p_targetRoom == nullptr ? "NO_TARGET_ROOM"
+                                                  : "SAFE_ADMISSION_REJECTED")
                       << "\",\"support\":" << admissionEvidence.fittedPointCount
                       << ",\"observations\":"
                       << admissionEvidence.observationCount
