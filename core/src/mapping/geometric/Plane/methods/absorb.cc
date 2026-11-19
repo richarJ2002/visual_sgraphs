@@ -197,7 +197,8 @@ PlaneStatus Plane::absorb(Plane *p_retiredPlane_inout)
                 p_retiredPlane_inout->planeCloud->points.begin(),
                 p_retiredPlane_inout->planeCloud->points.end());
         }
-        if (thinMapCloudWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+        if (thinMapCloudWithoutLock(p_retiredPlane_inout) !=
+            PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: thinMapCloudWithoutLock returned a failure "

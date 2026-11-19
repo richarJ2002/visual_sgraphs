@@ -1085,6 +1085,38 @@ class SystemParams
     SemanticsManager semanticsManager;
 
     /*!
+     * @brief           Map-wide limits on the semantic entities.
+     */
+    struct Semantics
+    {
+        /*!
+         * @brief           Map-wide cap on plane points per voxel, summed over
+         *                  all planes of one map; the per-plane thinning
+         *                  stays as well.
+         */
+        struct PointDensity
+        {
+            /*!
+             * @brief           Edge of the voxel the cap counts points in
+             *                  (metres), > 0.
+             */
+            float        voxelSize_m = 0.03f;
+            /*!
+             * @brief           Most plane points one voxel may hold, >= 1.
+             */
+            unsigned int maxPointsPerVoxel = 2U;
+        };
+        /*!
+         * @brief           Plane point density cap.
+         */
+        PointDensity pointDensity;
+    };
+    /*!
+     * @brief           Map-wide semantic limits.
+     */
+    Semantics semantics;
+
+    /*!
      * @brief           Limits and weights for generating room-match candidates
      *                  across maps.
      */

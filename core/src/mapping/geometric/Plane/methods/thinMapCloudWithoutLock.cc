@@ -25,11 +25,14 @@
 
 #include "mapping/geometric/Plane/objects/PlaneClass.h"
 
+#include <Eigen/Core>
 #include <cstdint>
 #include <rclcpp/logging.hpp>
+#include <vector>
 
 #include "configuration/types/objects/SystemParamsStatusEnum.h"
 #include "configuration/types/types.h"
+#include "map_state/map/map.h"
 #include "mapping/geometry_helpers/objects/UtilsClass.h"
 
 namespace vs_graphs
@@ -39,10 +42,10 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::thinMapCloudWithoutLock(void)
+PlaneStatus Plane::thinMapCloudWithoutLock(const Plane *p_releasedPlane_in)
 {
     p_octree->deleteTree();
-    if (planeCloud == nullptr || planeCloud->empty())
+    if (planeCloud == nullptr)
     {
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
@@ -68,26 +71,81 @@ PlaneStatus Plane::thinMapCloudWithoutLock(void)
      */
     constexpr unsigned int MINIMUM_POINTS_PER_VOXEL = 1U;
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_thinnedCloud;
-    if (utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
-            planeCloud,
-            p_params->refineMapPoints.octree.resolution,
-            MINIMUM_POINTS_PER_VOXEL,
-            p_thinnedCloud) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+    if (!planeCloud->empty())
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: pointcloudDownsample returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_thinnedCloud;
+        if (utils::utils::Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
+                planeCloud,
+                p_params->refineMapPoints.octree.resolution,
+                MINIMUM_POINTS_PER_VOXEL,
+                p_thinnedCloud) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: pointcloudDownsample returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Swap only the points so header and sensor pose stay with the
+         * plane. */
+        planeCloud->points.swap(p_thinnedCloud->points);
     }
 
-    /* Swap only the points so header and sensor pose stay with the plane. */
-    planeCloud->points.swap(p_thinnedCloud->points);
+    /* The cap counts only the points kept by the thinning above. */
+    map::Map *p_planeMap = nullptr;
+    if (getMap(p_planeMap) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_planeMap != nullptr)
+    {
+        std::vector<Eigen::Vector3f> pointPositions_world_m{};
+        pointPositions_world_m.reserve(planeCloud->size());
+        for (const pcl::PointXYZRGBA &planePoint : planeCloud->points)
+        {
+            pointPositions_world_m.emplace_back(planePoint.x,
+                                                planePoint.y,
+                                                planePoint.z);
+        }
+        std::vector<bool> isPointAdmitted{};
+        if (p_planeMap->admitPlanePoints(this,
+                                         p_releasedPlane_in,
+                                         pointPositions_world_m,
+                                         isPointAdmitted) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: admitPlanePoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Keep the admitted points in their order. */
+        std::size_t keptPointCount = 0U;
+        for (std::size_t pointIndex = 0U; pointIndex < isPointAdmitted.size();
+             ++pointIndex)
+        {
+            if (isPointAdmitted[pointIndex])
+            {
+                planeCloud->points[keptPointCount++] =
+                    planeCloud->points[pointIndex];
+            }
+        }
+        planeCloud->points.resize(keptPointCount);
+    }
+
     planeCloud->width  = static_cast<std::uint32_t>(planeCloud->size());
     planeCloud->height = 1;
 
-    p_octree->setInputCloud(planeCloud);
-    p_octree->addPointsFromInputCloud();
+    if (!planeCloud->empty())
+    {
+        p_octree->setInputCloud(planeCloud);
+        p_octree->addPointsFromInputCloud();
+    }
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

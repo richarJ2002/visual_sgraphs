@@ -65,6 +65,11 @@ MapStatus Map::clear()
 
     planes.clear();
     mapPoints.clear();
+    {
+        std::lock_guard<std::mutex> densityLock(pointDensityMutex);
+        pointCountByVoxel.clear();
+        voxelKeysByPlane.clear();
+    }
     keyFrames.clear();
 
     planeIndex.clear();

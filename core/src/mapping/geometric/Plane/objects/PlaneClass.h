@@ -556,16 +556,26 @@ class Plane
     [[nodiscard]] PlaneStatus rebuildSemanticVotesWithoutLock(void);
 
     /*!
-     * @brief           Thins the plane cloud to one point per voxel and
+     * @brief           Thins the plane cloud to one point per voxel, applies
+     *                  the map-wide density cap (Map::admitPlanePoints) and
      *                  rebuilds the octree once, with featuresMutex already
-     *                  held by the caller.
+     *                  held by the caller. Runs on an empty cloud too, so
+     *                  the plane gives back its voxels.
      *
-     * @note            The voxel edge is the octree resolution
+     * @param[in]       p_releasedPlane_in
+     *                  Plane whose map voxels are given back with this
+     *                  plane's (one being absorbed into this plane), or
+     *                  null; borrowed.
+     *
+     * @note            The thinning voxel edge is the octree resolution
      *                  (refine_map_points.octree.resolution), so the cloud
      *                  keeps the density its own neighbour search expects
-     *                  and stops growing as observations accumulate.
+     *                  and stops growing as observations accumulate. A plane
+     *                  without a map is thinned but not capped. Takes this
+     *                  plane's mapMutex, then the map's pointDensityMutex.
      */
-    [[nodiscard]] PlaneStatus thinMapCloudWithoutLock(void);
+    [[nodiscard]] PlaneStatus
+        thinMapCloudWithoutLock(const Plane *p_releasedPlane_in);
 
   public:
     Plane(void)
@@ -957,7 +967,8 @@ class Plane
 
     /*!
      * @brief           Appends points to the accumulated plane cloud, then
-     *                  thins it to one point per octree voxel.
+     *                  thins it to one point per octree voxel and applies
+     *                  the map-wide density cap.
      *
      *                  Use replaceMapClouds() to substitute the whole cloud.
      */
@@ -970,6 +981,19 @@ class Plane
      */
     [[nodiscard]] PlaneStatus replaceMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);
+
+    /*!
+     * @brief           Thins the current cloud and admits it to the owning
+     *                  map's density table again, dropping points over the
+     *                  cap; a changed cloud starts a new cloud generation.
+     *                  Used when the map rebuilds its table after a merge.
+     *
+     * @return          PLANE_STATUS_SUCCESS always.
+     *
+     * @note            Self-locking (featuresMutex); the caller must hold no
+     *                  lock of this plane nor the map's pointDensityMutex.
+     */
+    [[nodiscard]] PlaneStatus reapplyDensityCap(void);
 
     /*!
      * @brief           Claims and returns an immutable snapshot of a new cloud

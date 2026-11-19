@@ -30,6 +30,7 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTwinFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isPointinPlaneCloud.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reapplyDensityCap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/rebuildSemanticVotesWithoutLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceMapClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetPlaneSemantics.cc

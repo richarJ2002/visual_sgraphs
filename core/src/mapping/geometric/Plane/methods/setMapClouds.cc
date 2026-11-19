@@ -57,7 +57,7 @@ PlaneStatus Plane::setMapClouds(
     }
 
     /* Thinning also resets the organization metadata and the octree. */
-    if (thinMapCloudWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: thinMapCloudWithoutLock returned a failure status "

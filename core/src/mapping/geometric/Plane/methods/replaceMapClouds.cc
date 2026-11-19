@@ -52,7 +52,15 @@ PlaneStatus Plane::replaceMapClouds(
     {
         centroid.setZero();
         isFlaggedBad = true;
-        p_octree->deleteTree();
+        if (thinMapCloudWithoutLock(nullptr) !=
+            PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thinMapCloudWithoutLock returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
@@ -64,7 +72,7 @@ PlaneStatus Plane::replaceMapClouds(
     planeCloud->sensor_orientation_ =
         p_replacementCloud_in->sensor_orientation_;
 
-    if (thinMapCloudWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: thinMapCloudWithoutLock returned a failure status "

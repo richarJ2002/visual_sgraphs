@@ -59,6 +59,18 @@ optimization:
   # plane; a larger change is refused and the plane keeps its geometry.
   max_plane_normal_correction: 5.0 # degrees
 
+################################ Map-wide semantic limits #######################################
+semantics:
+  # Map-wide cap on plane points: a point is not added to a plane when its
+  # voxel already holds max_points points from any plane of the map.
+  point_density:
+    # Voxel edge (metres, > 0); 0.03 matches the per-plane thinning
+    # (refine_map_points.octree.resolution).
+    voxel_m: 0.03
+    # Most points per voxel (>= 1); 2 lets two planes meet at a corner while
+    # a third duplicate adds nothing there.
+    max_points: 2
+
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:
   enabled: true

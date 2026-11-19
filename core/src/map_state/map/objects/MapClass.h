@@ -44,6 +44,7 @@
 #include <Eigen/Core>
 #include <atomic>
 #include <boost/serialization/access.hpp>
+#include <cstdint>
 #include <map>
 #include <mutex>
 #include <set>
@@ -537,6 +538,67 @@ class Map
      */
     [[nodiscard]] MapStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
+
+    /*!
+     * @brief           Map-wide plane point density cap. Gives back every
+     *                  voxel held by p_plane_in and p_releasedPlane_in, then
+     *                  admits the plane's points in order while their voxel
+     *                  (semantics.point_density.voxel_m) holds fewer than
+     *                  semantics.point_density.max_points points from any
+     *                  plane of this map. Takes pointDensityMutex only.
+     *
+     * @param[in]       p_plane_in
+     *                  Plane whose points are admitted; borrowed.
+     *
+     * @param[in]       p_releasedPlane_in
+     *                  Plane whose points are given back too (a plane being
+     *                  absorbed by p_plane_in), or null; borrowed.
+     *
+     * @param[in]       pointPositions_world_m_in
+     *                  The plane's whole cloud after its own thinning, world
+     *                  frame, metres. Empty gives back the plane's voxels.
+     *
+     * @param[out]      isPointAdmitted_out
+     *                  One flag per input point; false for a point over the
+     *                  cap or with a non-finite coordinate.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     *
+     * @note            Lock order: the caller may hold the plane's
+     *                  featuresMutex, positionMutex, typeMutex and mapMutex;
+     *                  pointDensityMutex is taken last and nothing is taken
+     *                  while it is held.
+     */
+    [[nodiscard]] MapStatus admitPlanePoints(
+        const geometric::Plane             *p_plane_in,
+        const geometric::Plane             *p_releasedPlane_in,
+        const std::vector<Eigen::Vector3f> &pointPositions_world_m_in,
+        std::vector<bool>                  &isPointAdmitted_out);
+
+    /*!
+     * @brief           Clears the density table and admits the cloud of
+     *                  every plane of this map again, in plane order; points
+     *                  over the cap are dropped from their plane. Called
+     *                  after a map merge. Takes no lock while a plane is
+     *                  called.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus rebuildPointDensity(void);
+
+    /*!
+     * @brief           Largest number of plane points in one voxel
+     *                  (semantics.point_density.voxel_m), counted over the
+     *                  clouds of all planes of this map, not read from the
+     *                  density table.
+     *
+     * @param[out]      maxPointsPerVoxel_out
+     *                  The count; 0 when the map has no plane points.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] MapStatus
+        getMaxPointsPerVoxel(std::uint32_t &maxPointsPerVoxel_out);
 
     /*!
      * @brief           Returns a snapshot copy of all key frames of this map.
@@ -1130,6 +1192,27 @@ class Map
 
   protected:
     /*!
+     * @brief           Key of the voxel holding a point: the floor of each
+     *                  coordinate divided by the voxel edge, 21 bits per
+     *                  axis.
+     *
+     * @param[in]       pointPosition_world_m_in
+     *                  Finite point, world frame, metres.
+     *
+     * @param[in]       voxelSize_m_in
+     *                  Voxel edge, metres, > 0.
+     *
+     * @param[out]      voxelKey_out
+     *                  Packed voxel indices.
+     *
+     * @return          MAP_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] static MapStatus
+        computePointVoxelKey(const Eigen::Vector3f &pointPosition_world_m_in,
+                             double                 voxelSize_m_in,
+                             std::int64_t          &voxelKey_out);
+
+    /*!
      * @brief           Returns the S-Graph this map owns (building, floors,
      *                  rooms, passages). The semantics manager's graph
      * operations lock and edit it; read or write its content only through them.
@@ -1377,6 +1460,28 @@ class Map
      * @brief           Guards the map contents; taken by most methods.
      */
     std::mutex mapMutex;
+
+    /*!
+     * @brief           Plane points per voxel over all planes of this map,
+     *                  keyed by computePointVoxelKey(); equals the sum of
+     *                  voxelKeysByPlane. Guarded by pointDensityMutex.
+     */
+    std::unordered_map<std::int64_t, std::uint32_t> pointCountByVoxel;
+
+    /*!
+     * @brief           Voxel key of every admitted point, per plane, so a
+     *                  plane gives back exactly what it holds. Guarded by
+     *                  pointDensityMutex.
+     */
+    std::unordered_map<const geometric::Plane *, std::vector<std::int64_t>>
+        voxelKeysByPlane;
+
+    /*!
+     * @brief           Guards the two density tables. Leaf lock: taken after
+     *                  any plane or map lock, never held while another lock
+     *                  is taken.
+     */
+    std::mutex pointDensityMutex;
 };
 
 } /* namespace map */

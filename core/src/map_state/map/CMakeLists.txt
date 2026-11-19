@@ -2,6 +2,7 @@
 set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/admitPlanePoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeRecord.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addRoomWallPlane.cc
@@ -10,6 +11,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clear.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearTransferredEntityIndexes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computePointVoxelKey.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseMapPoint.cc
@@ -32,6 +34,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapChangeIndex.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxKeyFrameId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxPointsPerVoxel.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMergeRecords.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneById.cc
@@ -53,6 +56,7 @@ set(VS_GRAPHS_MAP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/linkFollowingMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/rebuildPointDensity.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceLinkedRoom.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reservePlaneId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc

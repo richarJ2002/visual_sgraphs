@@ -137,6 +137,17 @@ void transferPlanes(map::Map                              *p_currentMap_inout,
                          __func__);
         }
     }
+
+    /* The transferred clouds overlap the surviving map's: count all planes
+     * of the merged map again under the density cap. */
+    if (p_currentMap_inout->rebuildPointDensity() !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rebuildPointDensity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } /* namespace core */

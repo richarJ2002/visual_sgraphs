@@ -435,6 +435,22 @@ SystemParamsStatus
         semanticsManager.runInterval_s =
             config["semantics_manager"]["run_interval_s"].as<double>();
 
+        /* Map-wide plane point density cap. */
+        semantics.pointDensity.voxelSize_m =
+            config["semantics"]["point_density"]["voxel_m"].as<float>();
+        const int maxPointsPerVoxelValue =
+            config["semantics"]["point_density"]["max_points"].as<int>();
+        if (!std::isfinite(semantics.pointDensity.voxelSize_m) ||
+            semantics.pointDensity.voxelSize_m <= 0.0F ||
+            maxPointsPerVoxelValue < 1)
+        {
+            throw std::invalid_argument(
+                "semantics.point_density needs voxel_m > 0 and "
+                "max_points >= 1");
+        }
+        semantics.pointDensity.maxPointsPerVoxel =
+            static_cast<unsigned int>(maxPointsPerVoxelValue);
+
         /* Absent key: the mission starts indoors. Any other text than
          * "indoor" or "outdoor" is rejected here, at the boundary. */
         const YAML::Node startEnvironmentNode =

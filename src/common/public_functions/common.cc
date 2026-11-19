@@ -3108,6 +3108,19 @@ void maybeArchiveSGraph(
         mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
         mapJson["keyframe_count"]    = keyFrameCount;
         mapJson["map_point_count"]   = mapPointCount;
+
+        /* Checked against semantics.point_density.max_points offline. */
+        std::uint32_t maxPointsPerVoxel = 0U;
+        if (mapInput.p_map != nullptr &&
+            mapInput.p_map->getMaxPointsPerVoxel(maxPointsPerVoxel) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMaxPointsPerVoxel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        mapJson["max_points_per_voxel"] = maxPointsPerVoxel;
         archiveBuildingLevel(sceneGraph, mapJson, buildingIds_all);
 
         /* Merges this map survived; transforms map absorbed-map world points
