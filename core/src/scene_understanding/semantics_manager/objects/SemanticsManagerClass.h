@@ -2055,6 +2055,22 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus suppressUndefendedWalls(void);
 
     /*!
+     * @brief           Shadow check of the observer-room rule, read only:
+     *                  compares each live wall's owner today with its
+     *                  observer room (findObserverRoomId) and logs one
+     *                  wall_observer_room line per cycle with the agree,
+     *                  disagree, no-observer-room and unowned-but-observed
+     *                  counts and the walls that disagree or are unowned.
+     *
+     * @param[in]       p_activeMap_in
+     *                  Active map; borrowed, may be null (nothing happens).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        compareWallObserverRooms(map::Map *p_activeMap_in);
+
+    /*!
      * @brief           Passage-side routing of one contested wall: an owner
      *                  whose centroid-to-wall segment crosses a passable
      *                  opening is rejected, and the passage's live far-side
