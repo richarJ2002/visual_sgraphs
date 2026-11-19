@@ -211,6 +211,17 @@ SemanticsManagerStatus SemanticsManager::runCycleStages(void)
                      __func__);
     }
 
+    /* The current room is final for this cycle: the key frames taken since
+     * the last cycle are linked to it. */
+    if (linkNewKeyFramesToCurrentRoom(p_atlasCurrentMap) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: linkNewKeyFramesToCurrentRoom returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 

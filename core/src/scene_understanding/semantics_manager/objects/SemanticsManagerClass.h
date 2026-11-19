@@ -355,6 +355,13 @@ class SemanticsManager
     bool hasTraversalKeyFrameCursor = false;
 
     /*!
+     * @brief           Smallest key frame id linkNewKeyFramesToCurrentRoom()
+     *                  has not looked at yet; key frame ids are unique and
+     *                  grow across all maps, so a map change keeps it.
+     */
+    long unsigned int firstUnlinkedKeyFrameId = 0U;
+
+    /*!
      * @brief           Active map which owns every map-local temporal cache
      *                  below.
      */
@@ -2370,6 +2377,23 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         updateRoomTrackerState(double now_s_in);
+
+    /*!
+     * @brief           Links every key frame of the active map taken since
+     *                  the last cycle to the current room, once the cycle
+     *                  has settled that room. A new key frame stays without
+     *                  a room when there is no current room, its id is not
+     *                  in the active map or the room is bad; it is not
+     *                  retried later. Logs one keyframe_room_link line per
+     *                  cycle with new key frames.
+     *
+     * @param[in]       p_activeMap_in
+     *                  Active map; borrowed, may be null (nothing happens).
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        linkNewKeyFramesToCurrentRoom(map::Map *p_activeMap_in);
 
     /*!
      * @brief           Returns the usable room of the active map whose id is

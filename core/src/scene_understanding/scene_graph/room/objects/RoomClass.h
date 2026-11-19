@@ -34,51 +34,31 @@
 #include <mutex>
 #include <optional>
 
-namespace vs_graphs::core::map
+namespace vs_graphs
+{
+namespace core
+{
+
+namespace map
 {
 class Map;
-}
+} // namespace map
 
-namespace vs_graphs
-{
-namespace core
-{} /* namespace core */
-} /* namespace vs_graphs */
-
-namespace vs_graphs
-{
-namespace core
-{
 namespace geometric
 {
 class Plane;
-} /* namespace geometric */
+} // namespace geometric
+
 namespace keyframe
 {
 class KeyFrame;
-} /* namespace keyframe */
-} /* namespace core */
-} /* namespace vs_graphs */
+} // namespace keyframe
 
-namespace vs_graphs
-{
-namespace core
-{
 namespace semantic
 {
-class Passage;
-} /* namespace semantic */
-} /* namespace core */
-} /* namespace vs_graphs */
-
-namespace vs_graphs
-{
-namespace core
-{
-namespace semantic
-{
-struct RoomContextSnapshot;
 class Floor;
+class Passage;
+struct RoomContextSnapshot;
 
 /*!
  * @brief           A room or corridor found in the building: its ground,
