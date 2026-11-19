@@ -279,8 +279,27 @@ SemanticsManagerStatus
      * A refused wall stays unowned for another room's admission. The
      * condition is re-evaluated on every attempt, so a hold ends by itself.
      */
+    /* Observer sight lines: the candidate's observers taken in this room. */
+    std::vector<Eigen::Vector3d> observerViewpoints_world_m{};
+    int                          offeredRoomId{};
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
+        p_sysParams->roomSeg.isObserverSightLineEnabled &&
+        (p_room_inout->getId(offeredRoomId) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+         semantic::collectObserverCameraCenters(p_candidateWall_in,
+                                                offeredRoomId,
+                                                observerViewpoints_world_m) !=
+             semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId/collectObserverCameraCenters returned a "
+                     "failure status although they cannot fail; continuing "
+                     "as before.",
+                     __func__);
+    }
     std::vector<geometric::Plane *> mappedPlanes{};
-    if (p_sysParams->roomSeg.isSeeThroughGateEnabled && isCameraViewpoint &&
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
+        (isCameraViewpoint || !observerViewpoints_world_m.empty()) &&
         p_atlas->getAllPlanes(mappedPlanes) !=
             atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -290,16 +309,17 @@ SemanticsManagerStatus
                      __func__);
     }
     semantic_constraints::VisibilityRuleInput visibilityInput{};
-    visibilityInput.isCameraViewpoint         = isCameraViewpoint;
-    visibilityInput.roomCentroid_world_m      = roomCentroid_world_m;
-    visibilityInput.roomViewpoint_world_m     = roomViewpoint_world_m;
-    visibilityInput.candidateCentroid_world_m = candidateCentroid_world_m;
-    visibilityInput.p_candidateWall           = p_candidateWall_in;
-    visibilityInput.p_candidateTwinWall       = p_candidateTwinWall;
-    visibilityInput.p_roomWalls               = &existingWalls;
-    visibilityInput.p_mapPassages             = &allPassages;
-    visibilityInput.p_mapPlanes               = &mappedPlanes;
-    geometric::Plane *p_blockingWall          = nullptr;
+    visibilityInput.isCameraViewpoint          = isCameraViewpoint;
+    visibilityInput.roomCentroid_world_m       = roomCentroid_world_m;
+    visibilityInput.roomViewpoint_world_m      = roomViewpoint_world_m;
+    visibilityInput.observerViewpoints_world_m = observerViewpoints_world_m;
+    visibilityInput.candidateCentroid_world_m  = candidateCentroid_world_m;
+    visibilityInput.p_candidateWall            = p_candidateWall_in;
+    visibilityInput.p_candidateTwinWall        = p_candidateTwinWall;
+    visibilityInput.p_roomWalls                = &existingWalls;
+    visibilityInput.p_mapPassages              = &allPassages;
+    visibilityInput.p_mapPlanes                = &mappedPlanes;
+    geometric::Plane *p_blockingWall           = nullptr;
     if (semantic_constraints::isSeenThroughAnyWall(visibilityInput,
                                                    *p_sysParams,
                                                    p_blockingWall))

@@ -366,6 +366,11 @@ room_seg:
   # sem_seg.reassociate.wall_extension.maximum_in_plane_gap.
   see_through_gate:
     enabled: true
+    # Judge a wall offered to a room from the sight lines of its observers
+    # taken in that room (keyframe camera centre to wall centroid) instead
+    # of the camera or room centroid; refused when more than half are
+    # blocked. Off keeps today's single viewpoint.
+    observer_sight_lines: false
 
   # Parameters for GNN-based room segmentation
   gnn_based:

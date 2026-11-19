@@ -69,6 +69,17 @@ struct VisibilityRuleInput
     Eigen::Vector3d roomViewpoint_world_m = Eigen::Vector3d::Zero();
 
     /*!
+     * @brief           Camera centres of the observers the room is judged
+     *                  from, one sight line each to the candidate centroid.
+     *                  Empty (room_seg.see_through_gate.
+     *                  observer_sight_lines off, or no observer) keeps the
+     *                  single viewpoint above; non-empty, both rules judge
+     *                  these lines for any room and refuse when more than
+     *                  half of them are blocked.
+     */
+    std::vector<Eigen::Vector3d> observerViewpoints_world_m{};
+
+    /*!
      * @brief           Centroid of the candidate wall.
      */
     Eigen::Vector3d candidateCentroid_world_m = Eigen::Vector3d::Zero();

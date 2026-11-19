@@ -98,7 +98,10 @@ namespace semantic_constraints
  *                  rooms. The aperture backstop only catches a line through
  *                  the passage's opening; this catches a line through the
  *                  solid part of the same wall. The candidate and its twin
- *                  face never block.
+ *                  face never block. With observer viewpoints the rule
+ *                  judges each observer's line to the candidate instead,
+ *                  for any room, and refuses when more than half cross a
+ *                  passage wall.
  *
  * @param[in]       visibilityInput_in
  *                  Candidate wall and room viewpoints; reads p_mapPassages.
@@ -129,7 +132,10 @@ namespace semantic_constraints
  *                  face never blocks. The hold ends by itself when the camera
  *                  crosses N's plane or N's vote or type moves away from
  *                  WALL. The crossing must lie inside N's observed extent
- *                  widened by wall_extension.maximum_in_plane_gap.
+ *                  widened by wall_extension.maximum_in_plane_gap. With
+ *                  observer viewpoints the rule judges each observer's line
+ *                  instead, for any room, and refuses when more than half
+ *                  are blocked; the first blocked line names N.
  *
  * @param[in]       visibilityInput_in
  *                  Candidate wall and room viewpoints; reads p_roomWalls and

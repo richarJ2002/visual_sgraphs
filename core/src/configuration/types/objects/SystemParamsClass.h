@@ -999,6 +999,14 @@ class SystemParams
         bool isSeeThroughGateEnabled = true;
 
         /*!
+         * @brief           Judges a wall offered to a room from the sight
+         *                  lines of its observers taken in that room, not
+         *                  from the camera or the room centroid
+         *                  (room_seg.see_through_gate.observer_sight_lines).
+         */
+        bool isObserverSightLineEnabled = false;
+
+        /*!
          * @brief           Version of the GNN-based room segmentation: 1 is the
          *                  S-Graphs one, 2 the vS-Graphs one. Loaded from YAML
          *                  but not read anywhere yet.

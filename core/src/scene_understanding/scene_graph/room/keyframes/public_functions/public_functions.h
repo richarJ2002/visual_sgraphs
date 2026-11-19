@@ -26,6 +26,11 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_ROOM_KEYFRAMES_PUBLIC_FUNCTIONS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_ROOM_KEYFRAMES_PUBLIC_FUNCTIONS_H
 
+#include <utility>
+#include <vector>
+
+#include <Eigen/Core>
+
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 
 namespace vs_graphs
@@ -38,8 +43,69 @@ namespace geometric
 class Plane;
 } // namespace geometric
 
+namespace keyframe
+{
+class KeyFrame;
+} // namespace keyframe
+
 namespace semantic
 {
+
+/*!
+ * @brief           Lists the observers of a plane that can vote for a room:
+ *                  its observing key frames that are live and have a room,
+ *                  in key frame id order.
+ *
+ * @param[in]       p_plane_in
+ *                  Plane whose observations are read; borrowed, may be null.
+ *
+ * @param[out]      observerKeyFrames_out
+ *                  Voting observers; borrowed. Empty for a null plane.
+ *
+ * @return          ROOM_STATUS_SUCCESS.
+ */
+[[nodiscard]] RoomStatus collectObserverKeyFrames(
+    geometric::Plane                  *p_plane_in,
+    std::vector<keyframe::KeyFrame *> &observerKeyFrames_out);
+
+/*!
+ * @brief           Picks the room with the most votes; on a tie, the room
+ *                  whose latest vote has the highest key frame id.
+ *
+ * @param[in]       roomVotes_in
+ *                  One vote per observer: (room id, observer key frame id).
+ *                  Votes with a negative room id are ignored.
+ *
+ * @param[out]      majorityRoomId_out
+ *                  Winning room id, or -1 without a valid vote.
+ *
+ * @return          ROOM_STATUS_SUCCESS.
+ */
+[[nodiscard]] RoomStatus selectMajorityRoomId(
+    const std::vector<std::pair<int, long unsigned int>> &roomVotes_in,
+    int                                                  &majorityRoomId_out);
+
+/*!
+ * @brief           Returns the camera centres of the observers of a plane
+ *                  that were taken in one room: the starts of the sight
+ *                  lines that room is judged from.
+ *
+ * @param[in]       p_plane_in
+ *                  Plane whose observations are read; borrowed, may be null.
+ *
+ * @param[in]       roomId_in
+ *                  Room the observers must have been taken in.
+ *
+ * @param[out]      cameraCenters_world_m_out
+ *                  Camera centres in the active map frame, metres, in key
+ *                  frame id order; empty when no observer was taken there.
+ *
+ * @return          ROOM_STATUS_SUCCESS.
+ */
+[[nodiscard]] RoomStatus collectObserverCameraCenters(
+    geometric::Plane             *p_plane_in,
+    int                           roomId_in,
+    std::vector<Eigen::Vector3d> &cameraCenters_world_m_out);
 
 /*!
  * @brief           Finds the observer room of a plane: the room most of its

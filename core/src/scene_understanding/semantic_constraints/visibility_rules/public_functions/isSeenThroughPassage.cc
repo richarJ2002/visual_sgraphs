@@ -24,6 +24,9 @@
 
 #include "scene_understanding/semantic_constraints/visibility_rules/public_functions/public_functions.h"
 
+#include <cstddef>
+#include <vector>
+
 #include "scene_understanding/scene_graph/passage/Passage.h"
 #include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 
@@ -39,8 +42,10 @@ bool isSeenThroughPassage(const VisibilityRuleInput &visibilityInput_in,
                           geometric::Plane         *&p_blockingWall_out)
 {
     p_blockingWall_out = nullptr;
+    const std::vector<Eigen::Vector3d> &observerViewpoints =
+        visibilityInput_in.observerViewpoints_world_m;
     if (!systemParams_in.roomSeg.isSeeThroughGateEnabled ||
-        visibilityInput_in.isCameraViewpoint)
+        (visibilityInput_in.isCameraViewpoint && observerViewpoints.empty()))
     {
         return false;
     }
@@ -70,13 +75,27 @@ bool isSeenThroughPassage(const VisibilityRuleInput &visibilityInput_in,
         }
     }
 
-    return hasSeparatingFiniteWall(
-        passageWalls,
-        visibilityInput_in.roomCentroid_world_m,
-        visibilityInput_in.candidateCentroid_world_m,
-        static_cast<double>(systemParams_in.semSeg.reassociate.wallExtension
-                                .maximumInPlaneGap_m),
-        true);
+    /* Without observers the line runs from the room centroid. */
+    const std::vector<Eigen::Vector3d> sightLineStarts =
+        observerViewpoints.empty()
+            ? std::vector<Eigen::Vector3d>{visibilityInput_in
+                                               .roomCentroid_world_m}
+            : observerViewpoints;
+    std::size_t blockedSightLineCount = 0U;
+    for (const Eigen::Vector3d &sightLineStart_world_m : sightLineStarts)
+    {
+        if (hasSeparatingFiniteWall(
+                passageWalls,
+                sightLineStart_world_m,
+                visibilityInput_in.candidateCentroid_world_m,
+                static_cast<double>(systemParams_in.semSeg.reassociate
+                                        .wallExtension.maximumInPlaneGap_m),
+                true))
+        {
+            blockedSightLineCount++;
+        }
+    }
+    return 2U * blockedSightLineCount > sightLineStarts.size();
 }
 
 } /* namespace semantic_constraints */

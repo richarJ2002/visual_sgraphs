@@ -2057,10 +2057,11 @@ class SemanticsManager
     /*!
      * @brief           Shadow check of the observer-room rule, read only:
      *                  compares each live wall's owner today with its
-     *                  observer room (findObserverRoomId) and logs one
-     *                  wall_observer_room line per cycle with the agree,
-     *                  disagree, no-observer-room and unowned-but-observed
-     *                  counts and the walls that disagree or are unowned.
+     *                  observer room (findObserverRoomId) and with the room
+     *                  after the passage redirect
+     *                  (findRedirectedObserverRoomId), and logs one
+     *                  wall_observer_room line per cycle with the counts and
+     *                  every wall as owner/observer/redirected.
      *
      * @param[in]       p_activeMap_in
      *                  Active map; borrowed, may be null (nothing happens).
@@ -2069,6 +2070,66 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         compareWallObserverRooms(map::Map *p_activeMap_in);
+
+    /*!
+     * @brief           Observer room of a wall after the passage check: an
+     *                  observer whose sight line to the wall centroid
+     *                  isSeenThroughPassage() refuses through a passage votes
+     *                  for that passage's far-side room, every other
+     *                  observer for the room it was taken in; the majority
+     *                  vote (selectMajorityRoomId) then decides.
+     *
+     * @param[in]       p_wall_in
+     *                  Wall whose observers are read; borrowed, may be null.
+     *
+     * @param[in]       rooms_in
+     *                  Rooms of the active map; borrowed.
+     *
+     * @param[in]       passages_in
+     *                  Live passages of the active map in id order; borrowed.
+     *
+     * @param[out]      redirectedRoomId_out
+     *                  Redirected observer room id, or -1 without a vote.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus findRedirectedObserverRoomId(
+        geometric::Plane                       *p_wall_in,
+        const std::vector<semantic::Room *>    &rooms_in,
+        const std::vector<semantic::Passage *> &passages_in,
+        int                                    &redirectedRoomId_out) const;
+
+    /*!
+     * @brief           Room on the far side of a passage from a near room:
+     *                  among the passage's live rooms (known side,
+     *                  prospective, and every room listing it) other than the
+     *                  near room, the only one, or else the one whose
+     *                  centroid lies on the far point's side of the passage
+     *                  plane.
+     *
+     * @param[in]       p_passage_in
+     *                  Passage; borrowed, not null.
+     *
+     * @param[in]       nearRoomId_in
+     *                  Room on the near side.
+     *
+     * @param[in]       farPoint_world_m_in
+     *                  A point on the far side, active map frame, metres.
+     *
+     * @param[in]       rooms_in
+     *                  Rooms of the active map; borrowed.
+     *
+     * @param[out]      farSideRoomId_out
+     *                  Far-side room id, or -1 when none is found.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        findPassageFarSideRoomId(semantic::Passage     *p_passage_in,
+                                 int                    nearRoomId_in,
+                                 const Eigen::Vector3d &farPoint_world_m_in,
+                                 const std::vector<semantic::Room *> &rooms_in,
+                                 int &farSideRoomId_out) const;
 
     /*!
      * @brief           Passage-side routing of one contested wall: an owner

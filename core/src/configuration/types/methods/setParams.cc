@@ -401,6 +401,9 @@ SystemParamsStatus
                       .as<float>();
         roomSeg.isSeeThroughGateEnabled =
             config["room_seg"]["see_through_gate"]["enabled"].as<bool>();
+        roomSeg.isObserverSightLineEnabled =
+            config["room_seg"]["see_through_gate"]["observer_sight_lines"]
+                .as<bool>();
 
         /* Map-merge and axiom thresholds. */
         mapMerge.wallCoplanarAngle_deg =

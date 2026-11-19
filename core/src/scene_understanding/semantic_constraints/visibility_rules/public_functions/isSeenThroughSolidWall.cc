@@ -24,6 +24,9 @@
 
 #include "scene_understanding/semantic_constraints/visibility_rules/public_functions/public_functions.h"
 
+#include <cstddef>
+#include <vector>
+
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 
@@ -41,8 +44,10 @@ bool isSeenThroughSolidWall(const VisibilityRuleInput &visibilityInput_in,
                             geometric::Plane         *&p_blockingWall_out)
 {
     p_blockingWall_out = nullptr;
+    const std::vector<Eigen::Vector3d> &observerViewpoints =
+        visibilityInput_in.observerViewpoints_world_m;
     if (!systemParams_in.roomSeg.isSeeThroughGateEnabled ||
-        !visibilityInput_in.isCameraViewpoint)
+        (!visibilityInput_in.isCameraViewpoint && observerViewpoints.empty()))
     {
         return false;
     }
@@ -80,25 +85,47 @@ bool isSeenThroughSolidWall(const VisibilityRuleInput &visibilityInput_in,
         }
     }
 
-    for (geometric::Plane *p_nearerWall : blockerWalls)
+    /* Without observers the line runs from the camera. A line is blocked by
+     * the first nearer wall it crosses; the first blocked line names the
+     * blocking wall. */
+    const std::vector<Eigen::Vector3d> sightLineStarts =
+        observerViewpoints.empty()
+            ? std::vector<Eigen::Vector3d>{visibilityInput_in
+                                               .roomViewpoint_world_m}
+            : observerViewpoints;
+    std::size_t       blockedSightLineCount = 0U;
+    geometric::Plane *p_firstBlockingWall   = nullptr;
+    for (const Eigen::Vector3d &sightLineStart_world_m : sightLineStarts)
     {
-        if (p_nearerWall == nullptr ||
-            p_nearerWall == visibilityInput_in.p_candidateWall ||
-            p_nearerWall == visibilityInput_in.p_candidateTwinWall)
+        for (geometric::Plane *p_nearerWall : blockerWalls)
         {
-            continue;
+            if (p_nearerWall == nullptr ||
+                p_nearerWall == visibilityInput_in.p_candidateWall ||
+                p_nearerWall == visibilityInput_in.p_candidateTwinWall)
+            {
+                continue;
+            }
+            if (hasSeparatingFiniteWall(
+                    {p_nearerWall},
+                    sightLineStart_world_m,
+                    visibilityInput_in.candidateCentroid_world_m,
+                    static_cast<double>(systemParams_in.semSeg.reassociate
+                                            .wallExtension.maximumInPlaneGap_m),
+                    true))
+            {
+                blockedSightLineCount++;
+                if (p_firstBlockingWall == nullptr)
+                {
+                    p_firstBlockingWall = p_nearerWall;
+                }
+                break;
+            }
         }
-        if (hasSeparatingFiniteWall(
-                {p_nearerWall},
-                visibilityInput_in.roomViewpoint_world_m,
-                visibilityInput_in.candidateCentroid_world_m,
-                static_cast<double>(systemParams_in.semSeg.reassociate
-                                        .wallExtension.maximumInPlaneGap_m),
-                true))
-        {
-            p_blockingWall_out = p_nearerWall;
-            return true;
-        }
+    }
+    if (2U * blockedSightLineCount > sightLineStarts.size())
+    {
+        p_blockingWall_out = p_firstBlockingWall;
+        return true;
     }
     return false;
 }

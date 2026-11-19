@@ -8,6 +8,8 @@ set(VS_GRAPHS_ROOMASSOCIATION_WALLOWNERSHIP_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageSideInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforcePassageTopologyInvariant.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/enforceUniqueWallOwnership.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findPassageFarSideRoomId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findRedirectedObserverRoomId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/hasWallLiveClusterSupport.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isWallAssociatedWithPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isWallOwnedByLiveRoom.cc

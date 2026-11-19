@@ -37,6 +37,8 @@
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
 #include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
@@ -76,6 +78,30 @@ SemanticsManagerStatus
                      activeMapId);
     }
 
+    /* Live passages, in id order, for the passage-first redirect. */
+    std::vector<semantic::Passage *> mapPassages{};
+    std::vector<semantic::Passage *> livePassages{};
+    if (getMapPassagesInIdOrder(activeMapId, mapPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPassagesInIdOrder found no scene graph for "
+                     "map %lu; continuing without passages.",
+                     __func__,
+                     activeMapId);
+    }
+    for (semantic::Passage *p_passage : mapPassages)
+    {
+        bool isPassageBad{true};
+        if (p_passage != nullptr &&
+            p_passage->isBad(isPassageBad) ==
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS &&
+            !isPassageBad)
+        {
+            livePassages.push_back(p_passage);
+        }
+    }
+
     /* Live walls in id order. */
     std::vector<std::pair<int, geometric::Plane *>> liveWalls{};
     for (geometric::Plane *p_plane : mapPlanes)
@@ -106,12 +132,13 @@ SemanticsManagerStatus
     std::sort(liveWalls.begin(), liveWalls.end());
 
     /* Shadow comparison only: today's owner against the observer room. */
-    std::size_t agreeCount           = 0U;
-    std::size_t disagreeCount        = 0U;
-    std::size_t noObserverRoomCount  = 0U;
-    std::size_t unownedObservedCount = 0U;
-    std::string disagreeWallsText{};
-    std::string unownedWallsText{};
+    std::size_t agreeCount              = 0U;
+    std::size_t disagreeCount           = 0U;
+    std::size_t noObserverRoomCount     = 0U;
+    std::size_t unownedObservedCount    = 0U;
+    std::size_t redirectedAgreeCount    = 0U;
+    std::size_t redirectedDisagreeCount = 0U;
+    std::string wallRoomsText{};
     for (const std::pair<int, geometric::Plane *> &liveWall : liveWalls)
     {
         semantic::Room *p_ownerRoom    = nullptr;
@@ -131,6 +158,25 @@ SemanticsManagerStatus
                          "continuing as before.",
                          __func__);
         }
+        int redirectedRoomId = -1;
+        if (findRedirectedObserverRoomId(liveWall.second,
+                                         mapRooms,
+                                         livePassages,
+                                         redirectedRoomId) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findRedirectedObserverRoomId returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+        wallRoomsText += (wallRoomsText.empty() ? "" : ",") +
+                         std::to_string(liveWall.first) + ":" +
+                         std::to_string(ownerRoomId) + "/" +
+                         std::to_string(observerRoomId) + "/" +
+                         std::to_string(redirectedRoomId);
+
         if (observerRoomId < 0)
         {
             noObserverRoomCount++;
@@ -138,9 +184,6 @@ SemanticsManagerStatus
         else if (p_ownerRoom == nullptr)
         {
             unownedObservedCount++;
-            unownedWallsText += (unownedWallsText.empty() ? "" : ",") +
-                                std::to_string(liveWall.first) + ">" +
-                                std::to_string(observerRoomId);
         }
         else if (ownerRoomId == observerRoomId)
         {
@@ -149,15 +192,24 @@ SemanticsManagerStatus
         else
         {
             disagreeCount++;
-            disagreeWallsText += (disagreeWallsText.empty() ? "" : ",") +
-                                 std::to_string(liveWall.first) + ":" +
-                                 std::to_string(ownerRoomId) + ">" +
-                                 std::to_string(observerRoomId);
+        }
+        if (p_ownerRoom != nullptr && redirectedRoomId >= 0)
+        {
+            if (ownerRoomId == redirectedRoomId)
+            {
+                redirectedAgreeCount++;
+            }
+            else
+            {
+                redirectedDisagreeCount++;
+            }
         }
     }
 
-    /* Wall lists: "wall:owner>observer" for a disagreement, "wall>observer"
-     * for a wall no room owns. */
+    /* wall_rooms lists every wall as "wall:owner/observer/redirected", -1
+     * for none; agree and disagree compare the owner with the plain observer
+     * room, redirected_agree and redirected_disagree with the room after the
+     * passage redirect. */
     std::cout << "SG_PIPELINE {\"event\":\"wall_observer_room\","
                  "\"semantic_cycle\":"
               << pipelineSemanticCycle << ",\"map_id\":" << activeMapId
@@ -166,9 +218,9 @@ SemanticsManagerStatus
               << ",\"disagree\":" << disagreeCount
               << ",\"no_observer_room\":" << noObserverRoomCount
               << ",\"unowned_observed\":" << unownedObservedCount
-              << ",\"disagree_walls\":\"" << disagreeWallsText
-              << "\",\"unowned_walls\":\"" << unownedWallsText << "\"}"
-              << std::endl;
+              << ",\"redirected_agree\":" << redirectedAgreeCount
+              << ",\"redirected_disagree\":" << redirectedDisagreeCount
+              << ",\"wall_rooms\":\"" << wallRoomsText << "\"}" << std::endl;
 
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
