@@ -20,8 +20,8 @@
  * @file            public_functions.h
  *
  * @brief           Declares the functions that add the semantic factors
- *                  (wall-face thickness, room-wall) to a bundle adjustment,
- *                  and the plane lookups they need.
+ *                  (wall-face thickness, room-wall, semantic layout) to a
+ *                  bundle adjustment, and the plane lookups they need.
  */
 
 #ifndef VS_GRAPHS_SEMANTIC_FACTORS_PUBLIC_FUNCTIONS_H
@@ -38,11 +38,15 @@
 namespace vs_graphs::core::geometric
 {
 class Plane;
-}
+} /* namespace vs_graphs::core::geometric */
+namespace vs_graphs::core::map
+{
+class Map;
+} /* namespace vs_graphs::core::map */
 namespace vs_graphs::core::types
 {
 class SystemParams;
-}
+} /* namespace vs_graphs::core::types */
 namespace g2o
 {
 class SparseOptimizer;
@@ -154,6 +158,49 @@ void resolveRoomWallPlanes(
     const std::map<int, int>                          &roomVertexIdsByRoomId_in,
     const types::SystemParams                         *p_systemParams_in,
     double                                             huberThreshold3d_in);
+
+/*!
+ * @brief           Adds the semantic layout edges whose switches are set in
+ *                  semantics.factors (EdgeWallCorner for wall_edge) between
+ *                  the walls of this optimisation, and logs one line with
+ *                  the number and initial chi2 of each enabled edge type.
+ *                  Rooms are inputs only; no room vertex is used.
+ *
+ * @param[in,out]   optimizer_inout
+ *                  g2o optimiser owning the plane vertices; takes ownership
+ *                  of the new edges.
+ *
+ * @param[in]       planes_in
+ *                  Planes with vertices in this optimisation; borrowed.
+ *
+ * @param[in]       getVertexId_in
+ *                  Callable returning a plane's optimiser vertex id.
+ *
+ * @param[in]       rooms_in
+ *                  Snapshots of the map's rooms (wall membership).
+ *
+ * @param[in]       p_map_in
+ *                  Map of the planes, for its up direction; borrowed. Null:
+ *                  no edge is added.
+ *
+ * @param[in]       p_systemParams_in
+ *                  System parameters (semantics.factors). Null: no edge is
+ *                  added.
+ *
+ * @param[in]       p_optimisationName_in
+ *                  Name of the optimisation in the log line ("LBA", "GBA");
+ *                  not null.
+ *
+ * @return          OPTIMIZER_STATUS_SUCCESS always.
+ */
+[[nodiscard]] optimizer::OptimizerStatus addSemanticLayoutEdges(
+    g2o::SparseOptimizer                         &optimizer_inout,
+    const std::vector<geometric::Plane *>        &planes_in,
+    const std::function<int(geometric::Plane *)> &getVertexId_in,
+    const std::vector<RoomSnapshot>              &rooms_in,
+    map::Map                                     *p_map_in,
+    const types::SystemParams                    *p_systemParams_in,
+    const char                                   *p_optimisationName_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

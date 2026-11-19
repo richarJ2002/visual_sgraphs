@@ -941,6 +941,15 @@ OptimizerStatus Optimizer::bundleAdjustment(
                            p_systemParams,
                            huberThreshold3D);
 
+    /* [GBA] Semantic layout edges between the walls */
+    (void)addSemanticLayoutEdges(optimizer,
+                                 planes_in,
+                                 getVertexIdG,
+                                 rooms_in,
+                                 p_map,
+                                 p_systemParams,
+                                 "GBA");
+
     maxGlobalOptimizationId += roomCount;
 
     /* Optimize! */

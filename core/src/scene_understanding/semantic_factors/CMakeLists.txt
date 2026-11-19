@@ -8,10 +8,14 @@ include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertexPlaneParallelism/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertexPlanePerpendicularity/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertexPlaneProjectPointXYZ/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertexPlaneProjectSE3KF/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/EdgeWallCorner/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeWallFaceThickness/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICFACTORS_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/addWallCornerEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallSegments.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/addRoomWallEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/public_functions/addSemanticLayoutEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/addTwinFaceThicknessEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/indexPlanesById.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/resolveRoomWallPlanes.cc
@@ -22,5 +26,6 @@ set(VS_GRAPHS_SEMANTICFACTORS_SOURCES
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEVERTEXPLANEPERPENDICULARITY_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEVERTEXPLANEPROJECTPOINTXYZ_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEVERTEXPLANEPROJECTSE3KF_SOURCES}
+  ${VS_GRAPHS_SEMANTICFACTORS_EDGEWALLCORNER_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEWALLFACETHICKNESS_SOURCES}
 )

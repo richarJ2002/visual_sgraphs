@@ -1622,6 +1622,15 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                            p_sysParams,
                            thresholdHuberStereo);
 
+    /* [LBA] Semantic layout edges between the local walls */
+    (void)addSemanticLayoutEdges(optimizer,
+                                 localPlaneVec,
+                                 getVertexId,
+                                 allRooms,
+                                 p_currentMap,
+                                 p_sysParams,
+                                 "LBA");
+
     maximumOpId += roomCount;
 
     /* abort if no edges */
