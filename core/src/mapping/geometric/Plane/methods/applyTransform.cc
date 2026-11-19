@@ -77,9 +77,15 @@ PlaneStatus Plane::applyTransform(
     }
     globalEquation = transformedEquation;
 
-    p_octree->deleteTree();
-    p_octree->setInputCloud(planeCloud);
-    p_octree->addPointsFromInputCloud();
+    /* Moved points can enter other voxels: thin and re-admit them so the
+     * map density table follows the cloud. */
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: thinMapCloudWithoutLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Recompute the finite bounds in the transformed frame. */
     if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)

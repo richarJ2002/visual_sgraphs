@@ -621,7 +621,9 @@ class Plane
      *
      *                  Updates the centroid, point cloud, observation origin
      *                  and plane equations so that the plane remains
-     *                  consistent with the merged map frame.
+     *                  consistent with the merged map frame. The moved
+     *                  cloud is thinned and re-admitted under the map-wide
+     *                  density cap, which may drop points.
      *
      * @param[in]       alignmentTransform_oldWorldToNewWorld_in
      *                  Transform from the current plane frame to the new map
@@ -637,7 +639,10 @@ class Plane
      *                  A minimal rigid correction is applied to the centroid,
      *                  supporting cloud and observation origin (so the
      *                  observed side is kept) before the target equation is
-     *                  stored, and the octree and in-plane bounds are rebuilt.
+     *                  stored; the moved cloud is thinned and re-admitted
+     *                  under the map-wide density cap (which may drop
+     *                  points), and the octree and in-plane bounds are
+     *                  rebuilt.
      *                  This keeps all plane representations mutually
      *                  consistent after graph optimization. A target whose
      *                  normal is more than
