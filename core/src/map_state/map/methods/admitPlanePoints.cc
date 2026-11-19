@@ -63,6 +63,7 @@ MapStatus Map::admitPlanePoints(
 
     /* Leaf lock: nothing else is locked while it is held. */
     std::lock_guard<std::mutex> lock(pointDensityMutex);
+    ++densityRevision;
 
     /* Both planes give back every voxel they hold before any point is
      * counted, so a plane never competes with its own earlier points. */

@@ -42,6 +42,7 @@ MapStatus Map::rebuildPointDensity(void)
         std::lock_guard<std::mutex> lock(pointDensityMutex);
         pointCountByVoxel.clear();
         voxelKeysByPlane.clear();
+        ++densityRevision;
     }
 
     /* No map lock is held here: each plane takes its own locks first and the

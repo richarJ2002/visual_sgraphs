@@ -590,15 +590,24 @@ class Map
      * @brief           Largest number of plane points in one voxel
      *                  (semantics.point_density.voxel_m), counted over the
      *                  clouds of all planes of this map, not read from the
-     *                  density table.
+     *                  density table. The count is retried, up to 10 times,
+     *                  until no admission happened while the clouds were
+     *                  copied. Takes pointDensityMutex alone, then each
+     *                  plane's locks with no map lock held.
      *
      * @param[out]      maxPointsPerVoxel_out
-     *                  The count; 0 when the map has no plane points.
+     *                  The count of the last attempt; 0 when the map has no
+     *                  plane points.
+     *
+     * @param[out]      isCountConsistent_out
+     *                  False when every attempt overlapped an admission; the
+     *                  count is then not evidence of the cap.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
     [[nodiscard]] MapStatus
-        getMaxPointsPerVoxel(std::uint32_t &maxPointsPerVoxel_out);
+        getMaxPointsPerVoxel(std::uint32_t &maxPointsPerVoxel_out,
+                             bool          &isCountConsistent_out);
 
     /*!
      * @brief           Returns a snapshot copy of all key frames of this map.
@@ -1475,6 +1484,13 @@ class Map
      */
     std::unordered_map<const geometric::Plane *, std::vector<std::int64_t>>
         voxelKeysByPlane;
+
+    /*!
+     * @brief           Raised by every change of the density tables, so a
+     *                  reader can tell that clouds changed under it. Guarded
+     *                  by pointDensityMutex.
+     */
+    std::uint64_t densityRevision{0U};
 
     /*!
      * @brief           Guards the two density tables. Leaf lock: taken after

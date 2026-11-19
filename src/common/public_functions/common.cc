@@ -3109,10 +3109,13 @@ void maybeArchiveSGraph(
         mapJson["keyframe_count"]    = keyFrameCount;
         mapJson["map_point_count"]   = mapPointCount;
 
-        /* Checked against semantics.point_density.max_points offline. */
+        /* Checked against semantics.point_density.max_points offline; null
+         * when no consistent count could be taken (unknown, not a pass). */
         std::uint32_t maxPointsPerVoxel = 0U;
+        bool          isCountConsistent = mapInput.p_map == nullptr;
         if (mapInput.p_map != nullptr &&
-            mapInput.p_map->getMaxPointsPerVoxel(maxPointsPerVoxel) !=
+            mapInput.p_map->getMaxPointsPerVoxel(maxPointsPerVoxel,
+                                                 isCountConsistent) !=
                 vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -3120,7 +3123,8 @@ void maybeArchiveSGraph(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        mapJson["max_points_per_voxel"] = maxPointsPerVoxel;
+        mapJson["max_points_per_voxel"] =
+            isCountConsistent ? Json(maxPointsPerVoxel) : Json(nullptr);
         archiveBuildingLevel(sceneGraph, mapJson, buildingIds_all);
 
         /* Merges this map survived; transforms map absorbed-map world points
