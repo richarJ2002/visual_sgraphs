@@ -26,6 +26,7 @@
 
 #include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include <algorithm>
 #include <rclcpp/logging.hpp>
 #include <utility>
 #include <vector>
@@ -85,9 +86,12 @@ SemanticsManagerStatus SemanticsManager::findRedirectedObserverRoomId(
     }
 
     /* Passage first: an observer that sees the wall through a passage votes
-     * for the room on the far side of the first such passage in id order
-     * (no vote when that room is unknown); any other observer votes for the
-     * room it was taken in. */
+     * for the room on the far side of that passage (no vote when that room is
+     * unknown); any other observer votes for the room it was taken in. The
+     * passage rule tests a passage's associated walls, and one long wall can
+     * host several passages, so when several passages qualify the one whose
+     * centroid lies nearest the sight line is the opening looked through
+     * (ties keep the lower id). */
     std::vector<std::pair<int, long unsigned int>> roomVotes{};
     for (keyframe::KeyFrame *p_observer : observerKeyFrames)
     {
@@ -102,7 +106,13 @@ SemanticsManagerStatus SemanticsManager::findRedirectedObserverRoomId(
         }
         sightLineInput.observerViewpoints_world_m = {
             observerCameraCenter_world_m.cast<double>()};
-        int votedRoomId = p_observer->roomId;
+        int                   votedRoomId              = p_observer->roomId;
+        semantic::Passage    *p_nearestSeenPassage     = nullptr;
+        double                nearestPassageDistance_m = 0.0;
+        const Eigen::Vector3d sightLineStart_world_m =
+            observerCameraCenter_world_m.cast<double>();
+        const Eigen::Vector3d sightLine_world_m =
+            sightLineInput.candidateCentroid_world_m - sightLineStart_world_m;
         for (semantic::Passage *p_passage : passages_in)
         {
             singlePassage.front()      = p_passage;
@@ -118,21 +128,53 @@ SemanticsManagerStatus SemanticsManager::findRedirectedObserverRoomId(
             {
                 continue;
             }
-            if (findPassageFarSideRoomId(
-                    p_passage,
-                    p_observer->roomId,
-                    sightLineInput.candidateCentroid_world_m,
-                    rooms_in,
-                    votedRoomId) !=
-                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            /* Distance from the passage centroid to the closest point of the
+             * observer-to-wall sight line segment. */
+            Eigen::Vector3d passageCentroid_world_m{};
+            if (p_passage->getCentroid(passageCentroid_world_m) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: findPassageFarSideRoomId returned a failure "
-                             "status although it cannot fail; continuing as "
-                             "before.",
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
                              __func__);
             }
-            break;
+            const double sightLineLengthSquared_m2 =
+                sightLine_world_m.squaredNorm();
+            const double closestPointFraction =
+                sightLineLengthSquared_m2 > 0.0
+                    ? std::clamp(
+                          (passageCentroid_world_m - sightLineStart_world_m)
+                                  .dot(sightLine_world_m) /
+                              sightLineLengthSquared_m2,
+                          0.0,
+                          1.0)
+                    : 0.0;
+            const double passageDistance_m =
+                (sightLineStart_world_m +
+                 closestPointFraction * sightLine_world_m -
+                 passageCentroid_world_m)
+                    .norm();
+            if (p_nearestSeenPassage == nullptr ||
+                passageDistance_m < nearestPassageDistance_m)
+            {
+                p_nearestSeenPassage     = p_passage;
+                nearestPassageDistance_m = passageDistance_m;
+            }
+        }
+        if (p_nearestSeenPassage != nullptr &&
+            findPassageFarSideRoomId(p_nearestSeenPassage,
+                                     p_observer->roomId,
+                                     sightLineInput.candidateCentroid_world_m,
+                                     rooms_in,
+                                     votedRoomId) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findPassageFarSideRoomId returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
         }
         roomVotes.emplace_back(votedRoomId, p_observer->id);
     }

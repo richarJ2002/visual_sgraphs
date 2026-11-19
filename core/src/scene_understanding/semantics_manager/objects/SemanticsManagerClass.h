@@ -2163,9 +2163,11 @@ class SemanticsManager
      * @brief           Observer room of a wall after the passage check: an
      *                  observer whose sight line to the wall centroid
      *                  isSeenThroughPassage() refuses through a passage votes
-     *                  for that passage's far-side room, every other
-     *                  observer for the room it was taken in; the majority
-     *                  vote (selectMajorityRoomId) then decides.
+     *                  for that passage's far-side room (of several such
+     *                  passages, the one whose centroid lies nearest the
+     *                  sight line), every other observer for the room it
+     *                  was taken in; the majority vote
+     *                  (selectMajorityRoomId) then decides.
      *
      * @param[in]       p_wall_in
      *                  Wall whose observers are read; borrowed, may be null.
