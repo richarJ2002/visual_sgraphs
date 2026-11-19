@@ -161,10 +161,11 @@ void resolveRoomWallPlanes(
 
 /*!
  * @brief           Adds the semantic layout edges whose switches are set in
- *                  semantics.factors (EdgeWallCorner for wall_edge) between
- *                  the walls of this optimisation, and logs one line with
- *                  the number and initial chi2 of each enabled edge type.
- *                  Rooms are inputs only; no room vertex is used.
+ *                  semantics.factors (EdgeWallCorner for wall_edge,
+ *                  EdgeRoomWallOverlap for room_overlap) on the walls of
+ *                  this optimisation, and logs one line with the number and
+ *                  initial chi2 of each enabled edge type. Rooms are inputs
+ *                  only; no room vertex is used.
  *
  * @param[in,out]   optimizer_inout
  *                  g2o optimiser owning the plane vertices; takes ownership
@@ -177,7 +178,8 @@ void resolveRoomWallPlanes(
  *                  Callable returning a plane's optimiser vertex id.
  *
  * @param[in]       rooms_in
- *                  Snapshots of the map's rooms (wall membership).
+ *                  Snapshots of the map's rooms (wall membership, closed
+ *                  boundaries).
  *
  * @param[in]       p_map_in
  *                  Map of the planes, for its up direction; borrowed. Null:

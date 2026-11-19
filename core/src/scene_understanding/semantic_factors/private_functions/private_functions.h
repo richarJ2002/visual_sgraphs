@@ -113,6 +113,55 @@ void addWallCornerEdges(g2o::SparseOptimizer             &optimizer_inout,
                         std::size_t                      &edgeCount_out,
                         double                           &initialChi2_out);
 
+/*!
+ * @brief           Adds one EdgeRoomWallOverlap for each wall of another room
+ *                  whose segment lies more than
+ *                  semantics.factors.room_overlap.margin_m inside the wall
+ *                  footprint box (computeRoomWallFootprint) of a COMPLETE
+ *                  room. A room is used only when all its walls are in this
+ *                  optimisation and each lies within max_wall_inset_m of a
+ *                  box side, i.e. the room is a box.
+ *
+ * @param[in,out]   optimizer_inout
+ *                  g2o optimiser owning the plane vertices; takes ownership
+ *                  of the new edges and robust kernels.
+ *
+ * @param[in]       planes_in
+ *                  Planes with vertices in this optimisation; borrowed. The
+ *                  room walls are resolved among them.
+ *
+ * @param[in]       wallSegments_in
+ *                  Walls of this optimisation (buildWallSegments).
+ *
+ * @param[in]       rooms_in
+ *                  Snapshots of the map's rooms; read only.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Unit up direction of the map, world frame.
+ *
+ * @param[in]       p_systemParams_in
+ *                  System parameters (semantics.factors.room_overlap); not
+ *                  null.
+ *
+ * @param[in]       huberThreshold1d_in
+ *                  Huber delta for the one-dimensional edges.
+ *
+ * @param[out]      edgeCount_out
+ *                  Number of edges added.
+ *
+ * @param[out]      initialChi2_out
+ *                  Sum of the added edges' chi2 before optimisation.
+ */
+void addRoomOverlapEdges(g2o::SparseOptimizer                  &optimizer_inout,
+                         const std::vector<geometric::Plane *> &planes_in,
+                         const std::vector<WallSegment3d>      &wallSegments_in,
+                         const std::vector<RoomSnapshot>       &rooms_in,
+                         const Eigen::Vector3d     &upDirection_world_in,
+                         const types::SystemParams *p_systemParams_in,
+                         double                     huberThreshold1d_in,
+                         std::size_t               &edgeCount_out,
+                         double                    &initialChi2_out);
+
 } /* namespace core */
 } /* namespace vs_graphs */
 

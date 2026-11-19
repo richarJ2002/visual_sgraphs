@@ -40,7 +40,8 @@ namespace core
     }
     const types::SystemParams::Semantics::Factors &factorParameters =
         p_systemParams_in->semantics.factors;
-    if (!factorParameters.wallEdge.isEnabled)
+    if (!factorParameters.wallEdge.isEnabled &&
+        !factorParameters.roomOverlap.isEnabled)
     {
         return optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
@@ -73,20 +74,42 @@ namespace core
      * Huber deltas: square roots of the 95 % chi2 quantiles, as the other
      * bundle-adjustment edges use them.
      */
+    const double huberThreshold1d = std::sqrt(3.841);
     const double huberThreshold2d = std::sqrt(5.991);
 
+    /* The log line names only the enabled edge types. */
     std::string edgeCountText{};
-    std::size_t cornerEdgeCount{};
-    double      cornerInitialChi2{};
-    addWallCornerEdges(optimizer_inout,
-                       wallSegments,
-                       upDirection_world,
-                       p_systemParams_in,
-                       huberThreshold2d,
-                       cornerEdgeCount,
-                       cornerInitialChi2);
-    edgeCountText += " wall_edge=" + std::to_string(cornerEdgeCount) +
-                     " wall_edge_chi2=" + std::to_string(cornerInitialChi2);
+    if (factorParameters.wallEdge.isEnabled)
+    {
+        std::size_t cornerEdgeCount{};
+        double      cornerInitialChi2{};
+        addWallCornerEdges(optimizer_inout,
+                           wallSegments,
+                           upDirection_world,
+                           p_systemParams_in,
+                           huberThreshold2d,
+                           cornerEdgeCount,
+                           cornerInitialChi2);
+        edgeCountText += " wall_edge=" + std::to_string(cornerEdgeCount) +
+                         " wall_edge_chi2=" + std::to_string(cornerInitialChi2);
+    }
+    if (factorParameters.roomOverlap.isEnabled)
+    {
+        std::size_t overlapEdgeCount{};
+        double      overlapInitialChi2{};
+        addRoomOverlapEdges(optimizer_inout,
+                            planes_in,
+                            wallSegments,
+                            rooms_in,
+                            upDirection_world,
+                            p_systemParams_in,
+                            huberThreshold1d,
+                            overlapEdgeCount,
+                            overlapInitialChi2);
+        edgeCountText +=
+            " room_overlap=" + std::to_string(overlapEdgeCount) +
+            " room_overlap_chi2=" + std::to_string(overlapInitialChi2);
+    }
 
     RCLCPP_INFO(rclcpp::get_logger("vs_graphs"),
                 "[SemanticFactors] %s walls=%zu%s",

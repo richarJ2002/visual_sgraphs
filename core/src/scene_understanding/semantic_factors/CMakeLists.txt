@@ -1,6 +1,7 @@
 # Semantic factors: the semantic bundle-adjustment edge types (one subpackage
 # each, namespaces unchanged) and the functions that add them to a bundle
 # adjustment; exactly this package's translation units.
+include(${CMAKE_CURRENT_LIST_DIR}/EdgeRoomWallOverlap/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeSE3KFPointToPlane/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertex4PlaneProjectSE3Room/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeVertexNPlaneProjectSE3Room/CMakeLists.txt)
@@ -12,6 +13,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/EdgeWallCorner/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeWallFaceThickness/CMakeLists.txt)
 
 set(VS_GRAPHS_SEMANTICFACTORS_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/addRoomOverlapEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/addWallCornerEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildWallSegments.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/addRoomWallEdges.cc
@@ -19,6 +21,7 @@ set(VS_GRAPHS_SEMANTICFACTORS_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/addTwinFaceThicknessEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/indexPlanesById.cc
   ${CMAKE_CURRENT_LIST_DIR}/public_functions/resolveRoomWallPlanes.cc
+  ${VS_GRAPHS_SEMANTICFACTORS_EDGEROOMWALLOVERLAP_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGESE3KFPOINTTOPLANE_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEVERTEX4PLANEPROJECTSE3ROOM_SOURCES}
   ${VS_GRAPHS_SEMANTICFACTORS_EDGEVERTEXNPLANEPROJECTSE3ROOM_SOURCES}
