@@ -448,6 +448,35 @@ class SemanticsManager
     std::unordered_map<int, UndefendedWallState> undefendedWalls;
 
     /*!
+     * @brief           Visibility refusals of one wall for one room.
+     */
+    struct VisibilityRejectionState
+    {
+        /*!
+         * @brief           Number of semantic cycles in which the visibility
+         *                  rules refused the wall for the room.
+         */
+        unsigned int rejectedCycles = 0U;
+
+        /*!
+         * @brief           pipelineSemanticCycle of the last counted refusal,
+         *                  so a cycle counts once however often the wall is
+         *                  offered.
+         */
+        std::uint64_t lastRejectedCycle = 0U;
+    };
+
+    /*!
+     * @brief           Visibility refusals keyed by (wall id, room id). Once
+     *                  a pair reaches semantics.minRejectingViewCount the
+     *                  wall is no longer offered to that room. Entries are
+     *                  pruned by suppressUndefendedWalls() when the wall or
+     *                  the room is gone.
+     */
+    std::map<std::pair<int, int>, VisibilityRejectionState>
+        visibilityRejections;
+
+    /*!
      * @brief           Current semantic transaction sequence used by
      *                  SG_PIPELINE.
      */

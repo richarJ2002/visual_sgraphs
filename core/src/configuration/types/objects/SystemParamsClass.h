@@ -862,11 +862,6 @@ class SystemParams
          */
         unsigned int minimumWallObservationCount = 3;
         /*!
-         * @brief           Number of semantic cycles an unused wall is kept
-         *                  before it is retired. Must be at least 1.
-         */
-        unsigned int minimumUndefendedWallHoldCycles = 5;
-        /*!
          * @brief           Fraction of nearby skeleton points, 0 to 1, that
          *                  must project inside a wall's observed bounds.
          */
@@ -1119,16 +1114,17 @@ class SystemParams
          */
         PointDensity pointDensity;
         /*!
-         * @brief           Semantic cycles a plane may stay without a room
+         * @brief           Semantic cycles without growth a wall may stay
+         *                  with no room, passage or live skeleton cluster
          *                  before it is deleted (semantics.plane.
-         *                  max_unassigned_cycles), >= 1. Not read yet.
+         *                  max_unassigned_cycles), >= 1.
          */
         unsigned int maxUnassignedPlaneCycles = 5U;
         /*!
-         * @brief           Consistent views that must refuse a plane through
-         *                  a solid wall before it is deleted
+         * @brief           Semantic cycles in which the visibility rules
+         *                  refuse a wall for a room before the wall is no
+         *                  longer offered to that room
          *                  (semantics.visibility.min_rejecting_views), >= 1.
-         *                  Not read yet.
          */
         unsigned int minRejectingViewCount = 5U;
     };

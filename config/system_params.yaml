@@ -71,16 +71,15 @@ semantics:
     # a third duplicate adds nothing there.
     max_points: 2
   plane:
-    # Semantic cycles (>= 1) a plane may stay without a room before it is
-    # deleted. 5 = roomSeg minimum_undefended_wall_hold_cycles, so an
-    # unassigned plane lives as long as an undefended wall does today. Not
-    # used yet.
+    # Semantic cycles (>= 1) without growth a wall may stay with no room,
+    # passage or live skeleton cluster before it is deleted. The first
+    # sighting is always spared one cycle, so room creation in the same
+    # cycle can still claim it.
     max_unassigned_cycles: 5
   visibility:
-    # Consistent views (>= 1) that must see a plane only through a solid wall
-    # before it is deleted. 5 = minimum_undefended_wall_hold_cycles: today a
-    # refused wall is re-refused once per cycle and retired after 5 cycles.
-    # Not used yet.
+    # Semantic cycles (>= 1) in which the visibility rules refuse a wall for
+    # a room before the wall is no longer offered to that room. It then
+    # stays unassigned and max_unassigned_cycles deletes it.
     min_rejecting_views: 5
 
 ################################ Refining map points using semantics Parameters ##################
@@ -299,15 +298,6 @@ room_seg:
     minimum_wall_support_points: 2
     # Minimum keyframe observations needed before creating an orphan-wall structural element
     minimum_wall_observations: 3
-    # Stale semantic cycles retained before an unused weak wall is retired.
-    # A wall with no room, no passage association, and no growing evidence
-    # should not persist as a floating orphan in the sgraph/visualization --
-    # 1 is the minimum the retirement logic allows (the first sighting of
-    # an undefended wall is always spared one cycle so newly-created
-    # evidence isn't retired before room-creation logic in the same Run()
-    # cycle gets a chance to claim it; this is the very next check after
-    # that).
-    minimum_undefended_wall_hold_cycles: 5
     # Fraction of nearby skeleton points which must project inside the observed wall bounds
     minimum_wall_support_ratio: 0.5
     # Tolerance around the observed finite wall bounds (metres)

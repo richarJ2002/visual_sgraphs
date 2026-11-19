@@ -43,6 +43,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <rclcpp/logging.hpp>
 #include <unordered_set>
@@ -70,6 +71,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
     if (p_currentMap == nullptr)
     {
         undefendedWalls.clear();
+        visibilityRejections.clear();
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
@@ -118,6 +120,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                      __func__);
     }
     std::unordered_set<int> mappedWallIds;
+    std::unordered_set<int> liveWallIds;
 
     /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
      * gate (see the comment at its definition). */
@@ -203,6 +206,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
             undefendedWalls.erase(wallId);
             continue;
         }
+        liveWallIds.insert(wallId);
 
         bool ownedByLiveRoom{};
         if (isWallOwnedByLiveRoom(p_wall, allRooms, ownedByLiveRoom) !=
@@ -341,8 +345,22 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
 
         state.unresolvedCycles++;
 
+        /* Most visibility-refused cycles of this wall for any one room. */
+        unsigned int visibilityRejectedCycles = 0U;
+        for (std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
+                 rejectionIterator = visibilityRejections.lower_bound(
+                     {wallId, std::numeric_limits<int>::min()});
+             rejectionIterator != visibilityRejections.end() &&
+             rejectionIterator->first.first == wallId;
+             ++rejectionIterator)
+        {
+            visibilityRejectedCycles =
+                std::max(visibilityRejectedCycles,
+                         rejectionIterator->second.rejectedCycles);
+        }
+
         if (state.unresolvedCycles <
-            p_sysParams->roomSeg.minimumUndefendedWallHoldCycles)
+            p_sysParams->semantics.maxUnassignedPlaneCycles)
         {
             unsigned long currentMapId2{};
             if (p_currentMap->getId(currentMapId2) !=
@@ -364,8 +382,9 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          "\"support\":"
                       << evidence.fittedPointCount
                       << ",\"observations\":" << evidence.observationCount
-                      << ",\"pending_age\":" << state.unresolvedCycles << "}"
-                      << std::endl;
+                      << ",\"pending_age\":" << state.unresolvedCycles
+                      << ",\"visibility_rejections\":"
+                      << visibilityRejectedCycles << "}" << std::endl;
             continue;
         }
 
@@ -461,6 +480,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          __func__);
         }
         undefendedWalls.erase(wallId);
+        liveWallIds.erase(wallId);
 
         if (loggedRetiredWallIds.insert(wallId).second)
         {
@@ -484,8 +504,9 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          "\"support\":"
                       << evidence.fittedPointCount
                       << ",\"observations\":" << evidence.observationCount
-                      << ",\"pending_age\":" << retiredAfterCycles << "}"
-                      << std::endl;
+                      << ",\"pending_age\":" << retiredAfterCycles
+                      << ",\"visibility_rejections\":"
+                      << visibilityRejectedCycles << "}" << std::endl;
         }
     }
 
@@ -496,6 +517,28 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         stateIterator = mappedWallIds.count(stateIterator->first) == 0U
                             ? undefendedWalls.erase(stateIterator)
                             : std::next(stateIterator);
+    }
+
+    /* Forget visibility refusals of walls and rooms that are gone. */
+    std::unordered_set<int> liveRoomIds;
+    for (semantic::Room *p_room : allRooms)
+    {
+        int roomId{};
+        if (p_room != nullptr &&
+            p_room->getId(roomId) == semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            liveRoomIds.insert(roomId);
+        }
+    }
+    for (std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
+             rejectionIterator = visibilityRejections.begin();
+         rejectionIterator != visibilityRejections.end();)
+    {
+        rejectionIterator =
+            liveWallIds.count(rejectionIterator->first.first) == 0U ||
+                    liveRoomIds.count(rejectionIterator->first.second) == 0U
+                ? visibilityRejections.erase(rejectionIterator)
+                : std::next(rejectionIterator);
     }
 
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

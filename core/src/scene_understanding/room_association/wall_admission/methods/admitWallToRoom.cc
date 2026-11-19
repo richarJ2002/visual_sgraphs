@@ -41,7 +41,9 @@
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <rclcpp/logging.hpp>
+#include <utility>
 
 namespace vs_graphs
 {
@@ -277,24 +279,48 @@ SemanticsManagerStatus
      * order: the passage rule judges a room the camera is not in from its
      * centroid, the solid-wall rule judges the camera's room from the camera.
      * A refused wall stays unowned for another room's admission. The
-     * condition is re-evaluated on every attempt, so a hold ends by itself.
+     * condition is re-evaluated on every attempt, so a hold ends by itself
+     * until the wall has been refused for this room on
+     * semantics.visibility.min_rejecting_views cycles; from then on it is
+     * no longer offered to this room.
      */
-    /* Observer sight lines: the candidate's observers taken in this room. */
-    std::vector<Eigen::Vector3d> observerViewpoints_world_m{};
-    int                          offeredRoomId{};
-    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
-        p_sysParams->roomSeg.isObserverSightLineEnabled &&
-        (p_room_inout->getId(offeredRoomId) !=
-             semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
-         semantic::collectObserverCameraCenters(p_candidateWall_in,
-                                                offeredRoomId,
-                                                observerViewpoints_world_m) !=
-             semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+    int candidateWallId{};
+    int offeredRoomId{};
+    if (p_candidateWall_in->getId(candidateWallId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+        p_room_inout->getId(offeredRoomId) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getId/collectObserverCameraCenters returned a "
-                     "failure status although they cannot fail; continuing "
-                     "as before.",
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* A wall refused on enough cycles is no longer offered to this room. */
+    const std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
+        rejectionIterator =
+            visibilityRejections.find({candidateWallId, offeredRoomId});
+    if (rejectionIterator != visibilityRejections.end() &&
+        rejectionIterator->second.rejectedCycles >=
+            p_sysParams->semantics.minRejectingViewCount)
+    {
+        wasAdmitted_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    /* Observer sight lines: the candidate's observers taken in this room. */
+    std::vector<Eigen::Vector3d> observerViewpoints_world_m{};
+    if (p_sysParams->roomSeg.isSeeThroughGateEnabled &&
+        p_sysParams->roomSeg.isObserverSightLineEnabled &&
+        (semantic::collectObserverCameraCenters(p_candidateWall_in,
+                                                offeredRoomId,
+                                                observerViewpoints_world_m) !=
+         semantic::RoomStatus::ROOM_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectObserverCameraCenters returned a failure "
+                     "status although it cannot fail; continuing as before.",
                      __func__);
     }
     std::vector<geometric::Plane *> mappedPlanes{};
@@ -324,17 +350,14 @@ SemanticsManagerStatus
                                                    *p_sysParams,
                                                    p_blockingWall))
     {
-        int candidateWallId{};
-        int roomId{};
-        if (p_candidateWall_in->getId(candidateWallId) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
-            p_room_inout->getId(roomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        /* Count this cycle's refusal once for the (wall, room) pair. */
+        VisibilityRejectionState &rejection =
+            visibilityRejections[{candidateWallId, offeredRoomId}];
+        if (rejection.rejectedCycles == 0U ||
+            rejection.lastRejectedCycle != pipelineSemanticCycle)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
+            rejection.rejectedCycles++;
+            rejection.lastRejectedCycle = pipelineSemanticCycle;
         }
         if (p_blockingWall == nullptr)
         {
@@ -345,7 +368,7 @@ SemanticsManagerStatus
                         "[SemMgr] Wall#%d refused from Room#%d: beyond a "
                         "passage wall on the sight lines.",
                         candidateWallId,
-                        roomId);
+                        offeredRoomId);
         }
         else if (loggedOrphanWallIds.insert(candidateWallId).second)
         {
@@ -381,7 +404,7 @@ SemanticsManagerStatus
                              __func__);
             }
             std::cout << "[SemMgr] Wall#" << candidateWallId
-                      << " held from Room#" << roomId
+                      << " held from Room#" << offeredRoomId
                       << ": seen through nearer Wall#" << nearerWallId << "."
                       << std::endl;
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","

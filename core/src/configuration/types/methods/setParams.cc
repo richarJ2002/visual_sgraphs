@@ -337,10 +337,6 @@ SystemParamsStatus
         roomSeg.minimumWallObservationCount =
             config["room_seg"]["skeleton_based"]["minimum_wall_observations"]
                 .as<unsigned int>();
-        roomSeg.minimumUndefendedWallHoldCycles =
-            config["room_seg"]["skeleton_based"]
-                  ["minimum_undefended_wall_hold_cycles"]
-                      .as<unsigned int>();
         roomSeg.minimumWallSupportRatio =
             config["room_seg"]["skeleton_based"]["minimum_wall_support_ratio"]
                 .as<float>();
@@ -605,7 +601,6 @@ SystemParamsStatus
             passagePartition.openingMargin_m < 0.0F ||
             passagePartition.minimumSideDistance_m < 0.0F ||
             passagePartition.wallCentroidMinimumSideDistance_m < 0.0F ||
-            roomSeg.minimumUndefendedWallHoldCycles < 1U ||
             boundaryTopology.minimumWallCount < 3U ||
             boundaryTopology.minimumWallLength_m <= 0.0F ||
             boundaryTopology.maximumCornerGap_m < 0.0F ||
