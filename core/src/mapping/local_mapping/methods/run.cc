@@ -437,6 +437,18 @@ void LocalMapping::run()
                         __func__);
                 }
 
+                /* Erase the key frames of rooms deleted as invalid */
+                if (eraseRequestedKeyFrames() !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseRequestedKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as "
+                        "before.",
+                        __func__);
+                }
+
                 /*!
                  * Staged IMU initialization
                  * [Hint] For Visual-Inertial SLAM, the IMU biases and scale are

@@ -522,6 +522,19 @@ class LocalMapping
     [[nodiscard]] LocalMappingStatus keyFrameCulling();
 
     /*!
+     * @brief           Erases the key frames of deleted rooms that the
+     *                  semantics manager queued, keeping the map's first key
+     *                  frame, tracking's reference and last key frames, the
+     *                  key frame being processed and queued key frames. In
+     *                  inertial mode the IMU chain is repaired as in
+     *                  keyFrameCulling(), and a key frame whose neighbours
+     *                  cannot be joined is kept.
+     *
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] LocalMappingStatus eraseRequestedKeyFrames();
+
+    /*!
      * @brief           True when the sensor is monocular (set from the
      *                  constructor's monocular_in).
      */

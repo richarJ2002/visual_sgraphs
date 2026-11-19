@@ -487,6 +487,18 @@ class SemanticsManager
     std::size_t retiredPlanesUnfreedCount{0U};
 
     /*!
+     * @brief           Guards keyFrameErasureRequests only; never held with
+     *                  another lock.
+     */
+    std::mutex keyFrameErasureMutex;
+
+    /*!
+     * @brief           Ids of key frames of deleted rooms, waiting for
+     *                  LocalMapping to erase them.
+     */
+    std::vector<unsigned long> keyFrameErasureRequests;
+
+    /*!
      * @brief           Current semantic transaction sequence used by
      *                  SG_PIPELINE.
      */
@@ -1141,6 +1153,24 @@ class SemanticsManager
      * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
      */
     [[nodiscard]] SemanticsManagerStatus retireOrphanedProspectiveRooms(void);
+
+    /*!
+     * @brief           Queues the ids of the live key frames linked to a room
+     *                  that is deleted as invalid, for LocalMapping to erase
+     *                  (takeKeyFrameErasureRequests()); does nothing unless
+     *                  semantics.isDeletedRoomKeyFrameErasureEnabled.
+     *
+     * @param[in]       p_map_in
+     *                  Map of the room; borrowed, not null.
+     *
+     * @param[in]       p_room_in
+     *                  The deleted room; borrowed, not null.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus
+        requestRoomKeyFrameErasure(map::Map       *p_map_in,
+                                   semantic::Room *p_room_in);
 
     /* Wall admission (room_association/wall_admission/). */
 
@@ -3238,6 +3268,20 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus
         getCurrentRoomId(int &getCurrentRoomId_out) const;
+
+    /*!
+     * @brief           Hands over the key frame ids queued for erasure by
+     *                  requestRoomKeyFrameErasure() and empties the queue.
+     *                  Called by LocalMapping on its own thread; takes only
+     *                  keyFrameErasureMutex.
+     *
+     * @param[out]      keyFrameIds_out
+     *                  The queued ids, oldest request first.
+     *
+     * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SemanticsManagerStatus takeKeyFrameErasureRequests(
+        std::vector<unsigned long> &keyFrameIds_out);
 
     /*!
      * @brief           Returns the id of the room last occupied before tracking

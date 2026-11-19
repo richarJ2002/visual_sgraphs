@@ -466,6 +466,9 @@ SystemParamsStatus
             static_cast<unsigned int>(maxUnassignedCyclesValue);
         semantics.minRejectingViewCount =
             static_cast<unsigned int>(minRejectingViewsValue);
+        semantics.isDeletedRoomKeyFrameErasureEnabled =
+            config["semantics"]["room"]["erase_deleted_room_keyframes"]
+                .as<bool>();
 
         /* Absent key: the mission starts indoors. Any other text than
          * "indoor" or "outdoor" is rejected here, at the boundary. */

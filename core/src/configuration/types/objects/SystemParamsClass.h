@@ -1127,6 +1127,12 @@ class SystemParams
          *                  (semantics.visibility.min_rejecting_views), >= 1.
          */
         unsigned int minRejectingViewCount = 5U;
+        /*!
+         * @brief           True to erase the key frames of a room deleted as
+         *                  invalid (semantics.room.
+         *                  erase_deleted_room_keyframes).
+         */
+        bool         isDeletedRoomKeyFrameErasureEnabled = false;
     };
     /*!
      * @brief           Map-wide semantic limits.

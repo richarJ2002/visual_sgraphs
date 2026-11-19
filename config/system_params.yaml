@@ -81,6 +81,13 @@ semantics:
     # refuse a wall for one room before growth no longer spares the wall
     # from max_unassigned_cycles; an offer that is not refused resets it.
     min_rejecting_views: 5
+  room:
+    # Erase the key frames of a room that is deleted as invalid (not of a
+    # room fused into another, whose key frames move to the survivor).
+    # LocalMapping erases them on its own thread and keeps the map's first
+    # key frame, tracking's reference and last key frames, queued key
+    # frames and loop-closure key frames.
+    erase_deleted_room_keyframes: false
 
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:

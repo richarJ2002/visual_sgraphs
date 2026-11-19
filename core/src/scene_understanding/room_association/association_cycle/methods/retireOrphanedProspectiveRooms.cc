@@ -301,6 +301,16 @@ SemanticsManagerStatus SemanticsManager::retireOrphanedProspectiveRooms(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
+                /* A true deletion: its key frames go too, when enabled. */
+                if (requestRoomKeyFrameErasure(p_candidateMap, p_candidate) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: requestRoomKeyFrameErasure returned a "
+                                 "failure status although it cannot fail; "
+                                 "continuing as before.",
+                                 __func__);
+                }
                 if (eraseRoom(candidateMapId, p_candidate) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {

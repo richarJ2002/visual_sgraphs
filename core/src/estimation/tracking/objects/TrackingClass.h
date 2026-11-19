@@ -725,6 +725,22 @@ class Tracking
         }
 
         /*!
+         * @brief           Gives the reference key frame of the current frame.
+         *
+         * @param[out]      p_referenceKeyFrame_out
+         *                  Reference key frame, or null before the first key
+         *                  frame. Borrowed.
+         *
+         * @return          TRACKING_STATUS_SUCCESS always.
+         */
+        [[nodiscard]] TrackingStatus
+            getReferenceKeyFrame(keyframe::KeyFrame *&p_referenceKeyFrame_out)
+        {
+            p_referenceKeyFrame_out = p_referenceKF;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
+
+        /*!
          * @brief           Gives the camera pose of the current frame.
          *
          * @param[out]      cameraPose_cameraToWorld_out
