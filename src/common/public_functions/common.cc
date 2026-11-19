@@ -3137,6 +3137,11 @@ void maybeArchiveSGraph(
             isCountConsistent ? Json(maxPointsPerVoxel) : Json(nullptr);
         archiveBuildingLevel(sceneGraph, mapJson, buildingIds_all);
 
+        /* Exploration output of this map, as on the incomplete_rooms and
+         * frontier_passages topics. */
+        mapJson["incomplete_room_ids"]  = sceneGraph.incompleteRoomIds;
+        mapJson["frontier_passage_ids"] = sceneGraph.frontierPassageIds;
+
         /* Merges this map survived; transforms map absorbed-map world points
          * into this map's world as p = scale * R(qxyzw) * p_absorbed + t. */
         mapJson["merge_records"] = Json::array();
