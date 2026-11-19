@@ -101,6 +101,8 @@ nlohmann::json
     json["prospectiveRoomCount"]   = value_in.prospectiveRoomCount;
     json["livePassageCount"]       = value_in.livePassageCount;
     json["fullyValidPassageCount"] = value_in.fullyValidPassageCount;
+    json["incompleteRoomIds"]      = value_in.incompleteRoomIds;
+    json["frontierPassageIds"]     = value_in.frontierPassageIds;
     json["legacy"] = serializeLegacyMapCompletenessResult(value_in.legacy);
     json["legacyAndConservativeDiverge"] =
         value_in.doLegacyAndConservativeDiverge;

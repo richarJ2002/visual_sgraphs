@@ -236,11 +236,14 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        completenessJson.push_back({{"mapId", completeness.mapId},
-                                    {"isComplete", completeness.isComplete},
-                                    {"conservativeResult", axiomResultName3},
-                                    {"reasons", std::move(reasonsJson)},
-                                    {"relevantEntityKeys", json4}});
+        completenessJson.push_back(
+            {{"mapId", completeness.mapId},
+             {"isComplete", completeness.isComplete},
+             {"conservativeResult", axiomResultName3},
+             {"reasons", std::move(reasonsJson)},
+             {"relevantEntityKeys", json4},
+             {"incompleteRoomIds", completeness.incompleteRoomIds},
+             {"frontierPassageIds", completeness.frontierPassageIds}});
     }
     topologyJson_in["semanticMapCompleteness"] = std::move(completenessJson);
     nlohmann::json json5{};

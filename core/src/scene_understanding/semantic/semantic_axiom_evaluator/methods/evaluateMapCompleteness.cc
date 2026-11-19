@@ -72,7 +72,9 @@ SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        result.legacy = legacyMapCompleteness;
+        result.incompleteRoomIds  = mapSnapshot.incompleteRoomIds;
+        result.frontierPassageIds = mapSnapshot.frontierPassageIds;
+        result.legacy             = legacyMapCompleteness;
         result.doLegacyAndConservativeDiverge =
             (result.legacy.isMapFullyModeled != result.isComplete);
         results.push_back(std::move(result));

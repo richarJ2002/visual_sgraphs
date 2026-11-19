@@ -81,6 +81,23 @@ struct MapSnapshot
      * @brief           Sorted by FloorRecord::key.
      */
     std::vector<FloorRecord> floors;
+
+    /*!
+     * @brief           Ids of the map's rooms whose boundary is not COMPLETE,
+     *                  ascending, from SemanticsManager::getIncompleteRooms()
+     *                  at the semantic cycle end; empty for a snapshot built
+     *                  only by captureSemanticGraphSnapshot().
+     */
+    std::vector<int> incompleteRoomIds;
+
+    /*!
+     * @brief           Ids of the map's passages whose far-side room is
+     *                  missing or not COMPLETE, ascending, from
+     *                  SemanticsManager::getFrontierPassages() at the semantic
+     *                  cycle end; empty for a snapshot built only by
+     *                  captureSemanticGraphSnapshot().
+     */
+    std::vector<int> frontierPassageIds;
 };
 
 } /* namespace semantic */

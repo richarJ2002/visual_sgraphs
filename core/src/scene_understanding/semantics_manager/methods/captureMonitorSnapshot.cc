@@ -99,6 +99,40 @@ SemanticsManagerStatus SemanticsManager::captureMonitorSnapshot(
     snapshot_out.managerPrivateUnresolvedWallHypothesesReason =
         semantic::UnavailableReason::NONE;
 
+    /* Rooms still to close and passages still to explore, per map, from the
+     * graph queries; the cycle still holds every graph lock here. */
+    for (semantic::MapSnapshot &mapSnapshot : snapshot_out.maps)
+    {
+        std::vector<semantic::Room *>    incompleteRooms{};
+        std::vector<semantic::Passage *> frontierPassages{};
+        if (getIncompleteRooms(mapSnapshot.mapId, incompleteRooms) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS ||
+            getFrontierPassages(mapSnapshot.mapId, frontierPassages) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            /* A map without a registered scene graph has no rooms. */
+            continue;
+        }
+        for (semantic::Room *p_incompleteRoom : incompleteRooms)
+        {
+            int roomId{};
+            if (p_incompleteRoom->getId(roomId) ==
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                mapSnapshot.incompleteRoomIds.push_back(roomId);
+            }
+        }
+        for (semantic::Passage *p_frontierPassage : frontierPassages)
+        {
+            int passageId{};
+            if (p_frontierPassage->getId(passageId) ==
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                mapSnapshot.frontierPassageIds.push_back(passageId);
+            }
+        }
+    }
+
     if (snapshot_out.currentMapId.has_value())
     {
         map::Map *p_currentMap = nullptr;

@@ -77,7 +77,7 @@ class SemanticReportCache
      *                  Complete evaluation output for \p snapshot_in.
      *
      * @param[in]       completenessResults_in
-     *                  Complete map-completeness shadow results for
+     *                  Complete map-completeness results for
      *                  \p snapshot_in.
      *
      * @param[in]       semanticCycle_in

@@ -1080,8 +1080,11 @@ class SemanticsManager
 
     /*!
      * @brief           Captures the pointer-free semantic snapshot with the
-     *                  manager's unresolved wall hypotheses, and the change
-     *                  index of the current map when the snapshot names it.
+     *                  manager's unresolved wall hypotheses, each map's
+     *                  incomplete room and frontier passage ids
+     *                  (getIncompleteRooms(), getFrontierPassages()), and the
+     *                  change index of the current map when the snapshot
+     *                  names it.
      *
      * @param[out]      snapshot_out
      *                  Snapshot of the atlas.
