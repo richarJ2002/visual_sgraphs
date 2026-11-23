@@ -55,7 +55,6 @@
 #include "execution/system/system.h"
 
 #include <chrono>
-#include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <mutex>
@@ -382,24 +381,6 @@ TrackingStatus Tracking::track()
          */
         if (!isTrackingOnlyMode)
         {
-            /*!
-             * TEMPORARY (WP-10 merge exercise, remove after): once the frame
-             * time passes VSG_FORCE_LOSS_AT_S seconds, declare the track
-             * lost so the normal LOST branch starts a new map and loop
-             * closing must merge it back.
-             */
-            static const char *forceLossEnv = std::getenv("VSG_FORCE_LOSS_AT_S");
-            static bool forceLossDone       = (forceLossEnv == nullptr);
-            if (!forceLossDone && state == OK &&
-                currentFrame.timeStamp >= std::atof(forceLossEnv))
-            {
-                forceLossDone = true;
-                state         = LOST;
-                RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
-                            "[ForcedLoss] track declared lost at t=%.2f s",
-                            currentFrame.timeStamp);
-            }
-
             /*!
              * State OK
              * Local Mapping is activated. This is the normal behaviour, unless
