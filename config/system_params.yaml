@@ -44,7 +44,7 @@ optimization:
   # Minimum wall thickness enforced by the optimiser between twin wall faces.
   # At least 0.08 m; the one-sided hinge contributes nothing when satisfied.
   wall_thickness:
-    enabled: false
+    enabled: true
     minimum_thickness: 0.08 # metres
     information_gain: 10000.0 # information (sigma = 1 cm)
 
@@ -95,7 +95,7 @@ semantics:
     # end points lie within max_gap_m of each other are pulled so that each
     # wall's end point lies on the other wall's plane.
     wall_edge:
-      enabled: false
+      enabled: true
       # Largest horizontal distance (metres, > 0) between the two end points.
       max_gap_m: 0.3
       # Information, 1/m^2, per end-point distance (sigma = 10 cm).
@@ -103,7 +103,7 @@ semantics:
     # Rooms and walls do not overlap: a wall of another room whose segment
     # lies inside a COMPLETE room's wall footprint is pushed out of it.
     room_overlap:
-      enabled: false
+      enabled: true
       # Overlap tolerated before the penalty starts (metres, >= 0).
       margin_m: 0.05
       # A room's footprint is used only when each of its walls lies within

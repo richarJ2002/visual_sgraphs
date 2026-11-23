@@ -206,7 +206,7 @@ class SystemParams
          * @brief           Factor enforcing minimum thickness between twin wall
          *                  faces (both faces of one physical wall).
          */
-        Constraint wallThickness;
+        Constraint wallThickness{true};
         /*!
          * @brief           Factor tying a room centre to the midpoints of its
          *                  facing wall pairs; the information gain is in
@@ -1151,7 +1151,7 @@ class SystemParams
                  * @brief           True when bundle adjustment adds the
                  *                  corner factor.
                  */
-                bool  isEnabled = false;
+                bool  isEnabled = true;
                 /*!
                  * @brief           Largest horizontal distance between the
                  *                  two end points, metres, > 0.
@@ -1174,7 +1174,7 @@ class SystemParams
                  * @brief           True when bundle adjustment adds the
                  *                  overlap factor.
                  */
-                bool  isEnabled = false;
+                bool  isEnabled = true;
                 /*!
                  * @brief           Overlap tolerated before the penalty
                  *                  starts, metres, >= 0.
