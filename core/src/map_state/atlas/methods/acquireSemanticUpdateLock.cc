@@ -32,6 +32,8 @@
 
 #include "map_state/atlas/objects/AtlasClass.h"
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -42,6 +44,7 @@ namespace atlas
 AtlasStatus Atlas::acquireSemanticUpdateLock(
     std::unique_lock<std::mutex> &semanticUpdateLock_out)
 {
+    PROFILE_FUNCTION();
     semanticUpdateLock_out = std::unique_lock<std::mutex>(semanticUpdateMutex);
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

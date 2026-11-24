@@ -103,16 +103,17 @@ namespace vs_graphs::core::semantic
                        AxiomEvaluationReport             &report_out);
 
 /*!
- * @brief           Computes the shadow conservative-completeness result
- *                  for every map in \p snapshot_in, paired with an exact
- *                  reproduction of the current legacy
- *                  (SemanticsManager::Run()) completeness calculation
- *                  for the same map.
+ * @brief           Computes the completeness result for every map in
+ *                  \p snapshot_in: the incomplete rooms and frontier
+ *                  passages the scene-graph queries put into each
+ *                  MapSnapshot, the conservative completeness tri-state,
+ *                  and an exact reproduction of the legacy completeness
+ *                  calculation for the same map.
  *
- *                  This is a shadow/comparison calculation only: it does
- *                  not change SemanticsManager's own logging-only
- *                  calculation or any runtime consumer of it. Never
- *                  mutates \p snapshot_in.
+ *                  The room and passage lists are published as the
+ *                  exploration output; the tri-state and the legacy
+ *                  reproduction are diagnostics. Never mutates
+ *                  \p snapshot_in.
  *
  * @param[in]       snapshot_in
  *                  Snapshot to compute completeness for.

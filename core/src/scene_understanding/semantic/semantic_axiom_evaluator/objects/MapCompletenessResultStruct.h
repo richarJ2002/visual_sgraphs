@@ -19,9 +19,9 @@
 /*!
  * @file            MapCompletenessResultStruct.h
  *
- * @brief           Declares one map's shadow conservative-completeness
- *                  result, paired with the legacy calculation and their
- *                  divergence.
+ * @brief           Declares one map's completeness result: the rooms and
+ *                  passages still to explore, the conservative completeness
+ *                  check, the legacy calculation and their divergence.
  */
 
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_AXIOM_EVALUATOR_OBJECTS_MAPCOMPLETENESSRESULT_STRUCT_H
@@ -43,13 +43,13 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief           One map's shadow completeness result, produced by
- *                  evaluateMapCompleteness(). This is a
- *                  shadow/comparison value only: nothing in this module
- *                  changes SemanticsManager's own logging-only
- *                  completeness calculation or any runtime consumer of
- *                  it -- see \c legacy below and
- *                  LegacyMapCompletenessResult.h.
+ * @brief           One map's completeness result, produced by
+ *                  evaluateMapCompleteness() at the end of every semantic
+ *                  cycle. incompleteRoomIds and frontierPassageIds come from
+ *                  the scene-graph queries and drive the exploration output;
+ *                  the conservative tri-state and the \c legacy reproduction
+ *                  (LegacyMapCompletenessResult.h) are diagnostics that
+ *                  change no map state.
  */
 struct MapCompletenessResult
 {
@@ -131,6 +131,21 @@ struct MapCompletenessResult
     std::size_t fullyValidPassageCount{0U};
 
     /*!
+     * @brief           Ids of the map's rooms whose boundary is not COMPLETE,
+     *                  ascending (SemanticsManager::getIncompleteRooms(), via
+     *                  MapSnapshot::incompleteRoomIds).
+     */
+    std::vector<int> incompleteRoomIds;
+
+    /*!
+     * @brief           Ids of the map's passages whose far-side room is
+     *                  missing or not COMPLETE, ascending: where to explore
+     *                  next (SemanticsManager::getFrontierPassages(), via
+     *                  MapSnapshot::frontierPassageIds).
+     */
+    std::vector<int> frontierPassageIds;
+
+    /*!
      * @brief           The exact legacy (SemanticsManager::Run()) calculation
      *                  for this same map, reproduced from this snapshot.
      */
@@ -138,8 +153,8 @@ struct MapCompletenessResult
 
     /*!
      * @brief           True when legacy.isMapFullyModeled != isComplete: the
-     *                  shadow conservative calculation and the current
-     *                  production calculation disagree about this map.
+     *                  conservative calculation and the legacy calculation
+     *                  disagree about this map.
      */
     bool doLegacyAndConservativeDiverge{false};
 };

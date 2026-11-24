@@ -57,6 +57,8 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -69,6 +71,7 @@ LoopClosingStatus
                                            unsigned long loopKeyFrameCount_in,
                                            unsigned int  generation_in)
 {
+    PROFILE_FUNCTION();
     if (system::Verbose::printMess("Starting Global Bundle Adjustment",
                            system::Verbose::VERBOSITY_NORMAL) !=
         system::VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -79,42 +82,22 @@ LoopClosingStatus
                      __func__);
     }
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point timeStartFGba =
-        std::chrono::steady_clock::now();
-
-    fullGbaExecutionCount += 1;
-
-    std::vector<keyframe::KeyFrame *> activeMapKeyFrames;
-    if (p_activeMap_inout->getAllKeyFrames(activeMapKeyFrames) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(
-            rclcpp::get_logger("vs_graphs"),
-            "%s: getAllKeyFrames returned a failure status although it "
-            "cannot fail; continuing as before.",
-            __func__);
-    }
-    gbaKeyFrameCounts.push_back(activeMapKeyFrames.size());
-    std::vector<map_point::MapPoint *> activeMapMapPoints;
-    if (p_activeMap_inout->getAllMapPoints(activeMapMapPoints) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(
-            rclcpp::get_logger("vs_graphs"),
-            "%s: getAllMapPoints returned a failure status although it "
-            "cannot fail; continuing as before.",
-            __func__);
-    }
-    gbaMapPointCounts.push_back(activeMapMapPoints.size());
-#endif
-
     /*
      * g2o accepts a plain bool force-stop token. A first-party iteration action
      * copies the atomic cross-thread request into this worker-local flag, so
      * cancellation remains race-free and takes effect between iterations.
      */
     bool optimizerStopRequested = false;
+
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool isImuInitialized{};
     if (p_activeMap_inout->isImuInitialized(isImuInitialized) !=
@@ -130,6 +113,7 @@ LoopClosingStatus
     {
         if (optimizer::Optimizer::globalBundleAdjustment(
                 p_activeMap_inout,
+                p_semanticsManager,
                 10,
                 &optimizerStopRequested,
                 loopKeyFrameCount_in,
@@ -162,22 +146,6 @@ LoopClosingStatus
                          __func__);
         }
     }
-
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point timeEndGba =
-        std::chrono::steady_clock::now();
-
-    double timeGba =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            timeEndGba - timeStartFGba)
-            .count();
-    gbaTimes_ms.push_back(timeGba);
-
-    if (optimizerStopRequested)
-    {
-        fullGbaAbortCount += 1;
-    }
-#endif
 
     /*!
      * Update all MapPoints and KeyFrames
@@ -729,6 +697,7 @@ LoopClosingStatus
             /* Keep every semantic entity aligned with the corrected cameras. */
             if (utils::utils::Utils::propagateSemanticPoseCorrections(
                     p_activeMap_inout,
+                    p_semanticsManager,
                     keyFramePosesBefore_worldToCamera,
                     keyFramePosesAfter_worldToCamera,
                     identityTransform_worldToWorld) !=
@@ -768,7 +737,10 @@ LoopClosingStatus
                     continue;
                 }
 
-                if (p_plane->alignGeometryToEquation(p_plane->planeGBA) !=
+                /* Refused target: plane unchanged (logged inside). */
+                bool isEquationApplied{};
+                if (p_plane->alignGeometryToEquation(p_plane->planeGBA,
+                                                     isEquationApplied) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -808,23 +780,6 @@ LoopClosingStatus
                              __func__);
             }
 
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point time_EndUpdateMap =
-                std::chrono::steady_clock::now();
-
-            double timeUpdateMap =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    time_EndUpdateMap - timeEndGba)
-                    .count();
-            updateMapTimes_ms.push_back(timeUpdateMap);
-
-            double timeFGba = std::chrono::duration_cast<
-                                  std::chrono::duration<double, std::milli>>(
-                                  time_EndUpdateMap - timeStartFGba)
-                                  .count();
-            fullGbaTotalTimes_ms.push_back(timeFGba);
-#endif
             if (system::Verbose::printMess("map::Map updated!",
                                    system::Verbose::VERBOSITY_NORMAL) !=
                 system::VerboseStatus::VERBOSE_STATUS_SUCCESS)

@@ -41,12 +41,12 @@
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
 #include "execution/system/objects/VerboseStatusEnum.h"
 #include "execution/system/system.h"
 #include "estimation/tracking/objects/TrackingClass.h"
 #include <rclcpp/logging.hpp>
+
+#include "execution/profiling/profiling.h"
 
 namespace vs_graphs
 {
@@ -57,6 +57,7 @@ namespace tracking
 
 TrackingStatus Tracking::createNewKeyFrame()
 {
+    PROFILE_FUNCTION();
     bool localMapperIsInitializing{};
     if (p_localMapper->isInitializing(localMapperIsInitializing) !=
         local_mapping::LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -396,57 +397,6 @@ TrackingStatus Tracking::createNewKeyFrame()
                     pointCount > maximumPoint)
                 {
                     break;
-                }
-            }
-        }
-    }
-
-    /*!
-     * Check if the marker ids fromt he current frame exist in all the previous
-     * keyframes first get the mapped marker from the keyframes
-     */
-    std::vector<semantic::Marker *> atlasAllMarkers{};
-    if (p_atlas->getAllMarkers(atlasAllMarkers) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (semantic::Marker *const p_currentMapMarker : atlasAllMarkers)
-    {
-        /* Check if the marker is already in the Global map */
-        for (semantic::Marker *p_currentFrameMaker : currentFrame.mapMarkers)
-        {
-            int currentFrameMakerId{};
-            if (p_currentFrameMaker->getId(currentFrameMakerId) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int currentMapMarkerId{};
-            if (p_currentMapMarker->getId(currentMapMarkerId) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (currentFrameMakerId == currentMapMarkerId)
-            {
-                if (p_currentFrameMaker->setMarkerInGMap(true) !=
-                    semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: setMarkerInGMap returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
                 }
             }
         }

@@ -62,26 +62,42 @@ PlaneStatus Plane::addObservation(keyframe::KeyFrame    *p_keyFrame_inout,
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
-    /* Lock the plane observation data */
-    std::unique_lock<std::mutex> lock(featuresMutex);
+    /* Lock observations and semantics for one consistent vote rebuild. */
+    std::scoped_lock lock(featuresMutex, typeMutex);
 
-    /*!
-     * Insert the observation only when the keyframe has not previously
-     * observed this plane.
-     */
-    const std::pair<std::map<keyframe::KeyFrame *, Observation>::iterator, bool>
-        insertionResult =
-            observations.insert({p_keyFrame_inout, observation_in});
-
-    /* Increment the observation count after a successful insertion */
-    if (insertionResult.second)
+    const std::map<keyframe::KeyFrame *, Observation>::iterator observationIt =
+        observations.find(p_keyFrame_inout);
+    if (observationIt == observations.end())
     {
+        observations.emplace(p_keyFrame_inout, observation_in);
         observationCount++;
 
         if (p_refKeyFrame == nullptr)
         {
             p_refKeyFrame = p_keyFrame_inout;
         }
+    }
+    else
+    {
+        /*!
+         * A second patch from the same keyframe joins that keyframe's
+         * record, so the keyframe still casts one vote. Only the label
+         * evidence is summed per class; the first patch's geometry and
+         * optimiser weight (confidence) stay as they were.
+         */
+        for (const auto &[semanticType, weight] :
+             observation_in.semanticEvidence)
+        {
+            observationIt->second.semanticEvidence[semanticType] += weight;
+        }
+    }
+
+    if (rebuildSemanticVotesWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rebuildSemanticVotesWithoutLock returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

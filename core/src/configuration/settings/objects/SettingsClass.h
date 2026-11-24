@@ -34,8 +34,6 @@
 
 #include "configuration/settings/objects/SettingsStatusEnum.h"
 
-/* Define REGISTER_TIMES to time tracking, mapping and place recognition */
-
 #include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
 
 #include <cstdint>

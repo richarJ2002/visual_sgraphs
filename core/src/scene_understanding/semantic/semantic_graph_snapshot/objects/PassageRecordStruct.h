@@ -36,7 +36,7 @@
 
 #include <Eigen/Core>
 
-#include "scene_understanding/semantic/passage/objects/PassageClass.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageClass.h"
 
 namespace vs_graphs
 {

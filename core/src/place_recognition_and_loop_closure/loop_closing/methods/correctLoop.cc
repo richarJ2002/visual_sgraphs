@@ -51,6 +51,8 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -60,6 +62,7 @@ namespace loop_closing
 
 LoopClosingStatus LoopClosing::correctLoop()
 {
+    PROFILE_FUNCTION();
     /* Avoid new keyframes are inserted while correcting the loop */
     if (p_localMapper->requestStop() !=
         local_mapping::LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -184,11 +187,6 @@ LoopClosingStatus LoopClosing::correctLoop()
                      "fail; continuing as before.",
                      __func__);
     }
-
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point timeStartFusion =
-        std::chrono::steady_clock::now();
-#endif
 
     {
         /* Get map::Map Mutex */
@@ -580,16 +578,6 @@ LoopClosingStatus LoopClosing::correctLoop()
     if (p_tracker->sensor == system::System::IMU_MONOCULAR && !inertialBA2)
         isFixedScale = false;
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point timeEndFusion =
-        std::chrono::steady_clock::now();
-
-    double timeFusion =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            timeEndFusion - timeStartFusion)
-            .count();
-    loopFusionTimes_ms.push_back(timeFusion);
-#endif
     bool loopMapIsInertial{};
     if (p_loopMap->isInertial(loopMapIsInertial) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
@@ -643,16 +631,6 @@ LoopClosingStatus LoopClosing::correctLoop()
                          __func__);
         }
     }
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point timeEndOpt =
-        std::chrono::steady_clock::now();
-
-    double timeOptEss =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            timeEndOpt - timeEndFusion)
-            .count();
-    loopEssentialGraphTimes_ms.push_back(timeOptEss);
-#endif
 
     if (p_atlas->informNewBigChange() != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {

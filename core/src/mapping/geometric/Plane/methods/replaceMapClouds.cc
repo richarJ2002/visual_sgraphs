@@ -30,6 +30,7 @@
 #include <cmath>
 #include <limits>
 #include <pcl/octree/octree_search.h>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -51,7 +52,15 @@ PlaneStatus Plane::replaceMapClouds(
     {
         centroid.setZero();
         isFlaggedBad = true;
-        p_octree->deleteTree();
+        if (thinMapCloudWithoutLock(nullptr) !=
+            PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thinMapCloudWithoutLock returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
@@ -63,10 +72,13 @@ PlaneStatus Plane::replaceMapClouds(
     planeCloud->sensor_orientation_ =
         p_replacementCloud_in->sensor_orientation_;
 
-    /* Update the octree */
-    p_octree->deleteTree();
-    p_octree->setInputCloud(planeCloud);
-    p_octree->addPointsFromInputCloud();
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: thinMapCloudWithoutLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

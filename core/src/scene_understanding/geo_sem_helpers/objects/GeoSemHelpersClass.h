@@ -20,29 +20,39 @@
  * @file            GeoSemHelpers.h
  *
  * @brief           Declares GeoSemHelpers, helper functions that create and
- *                  update semantic map entities (markers, passages, rooms,
- *                  ground planes) from geometry.
+ *                  update semantic map entities (passages, rooms, ground
+ *                  planes) from geometry.
  */
 
 #ifndef VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 #define VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H
 
-#include <optional>
-#include <string>
-#include <vector>
-#include <utility>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
 #include "mapping/geometric/Plane/Plane.h"
 #include "scene_understanding/geo_sem_helpers/objects/GeoSemHelpersStatusEnum.h"
-namespace vs_graphs::core::atlas { class Atlas; }
-namespace vs_graphs::core::keyframe { class KeyFrame; }
-namespace vs_graphs::core::semantic { class Room; class Marker; }
+#include <memory>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <string>
+#include <utility>
+#include <vector>
+namespace vs_graphs::core::atlas
+{
+class Atlas;
+}
+namespace vs_graphs::core::keyframe
+{
+class KeyFrame;
+}
+namespace vs_graphs::core::semantic
+{
+class Room;
+class Passage;
+} /* namespace vs_graphs::core::semantic */
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
 /*!
- * @brief           Static helpers that create and update the planes, markers,
+ * @brief           Static helpers that create and update the planes,
  *                  passages, rooms and floors of the semantic map in the atlas.
  */
 class GeoSemHelpers
@@ -75,8 +85,8 @@ class GeoSemHelpers
      *                  The confidence of the plane observation
      */
     [[nodiscard]] static GeoSemHelpersStatus createMapPlane(
-        atlas::Atlas                                          *p_atlas_inout,
-        keyframe::KeyFrame                      *p_keyFrame_inout,
+        atlas::Atlas                                   *p_atlas_inout,
+        keyframe::KeyFrame                             *p_keyFrame_inout,
         const g2o::Plane3D                              estimatedPlane_in,
         const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   p_planeCloud_in,
         vs_graphs::core::geometric::Plane             *&p_mapPlane_out,
@@ -109,103 +119,14 @@ class GeoSemHelpers
      *                  The confidence of the plane observation
      */
     [[nodiscard]] static GeoSemHelpersStatus updateMapPlane(
-        atlas::Atlas                                          *p_atlas_in,
-        keyframe::KeyFrame                      *p_keyFrame_inout,
+        atlas::Atlas                                   *p_atlas_in,
+        keyframe::KeyFrame                             *p_keyFrame_inout,
         const g2o::Plane3D                              estimatedPlane_in,
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         p_planeCloud_in,
         int                                             planeId_in,
         vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
             vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
         double confidence_in = 1.0);
-
-    /*!
-     * @brief           Checks to see if the marker is attached to a doorway or
-     *                  not (e.g., a window) and returns the name of it if
-     *                  exists (only valid for doors)
-     *
-     * @param[in]       markerId_in
-     *                  The id of the marker
-     *
-     * @param[in]       envRooms_in
-     *                  Rooms of the environment; each room's meta-marker id is
-     *                  compared with the marker
-     *
-     * @param[out]      doorwayMatch_out
-     *                  Whether a match was found, and the name of the matched
-     *                  room
-     *
-     * @return          GEO_SEM_HELPERS_STATUS_SUCCESS
-     */
-    [[nodiscard]] static GeoSemHelpersStatus checkIfMarkerIsDoorway(
-        const int                                     &markerId_in,
-        std::vector<vs_graphs::core::semantic::Room *> envRooms_in,
-        std::pair<bool, std::string>                  &doorwayMatch_out);
-
-    /*!
-     * @brief           Uses the detected markers to detect and map semantic
-     *                  objects, e.g., planes and doors
-     *
-     * @param[in]       p_atlas_in
-     *                  The current map in Atlas
-     *
-     * @param[in]       p_keyFrame_in
-     *                  The current keyframe in which the detection took place
-     *
-     * @param[in]       envRooms_in
-     *                  The list of rooms in the environment
-     */
-    [[nodiscard]] static GeoSemHelpersStatus markerSemanticAnalysis(
-        atlas::Atlas                                         *p_atlas_in,
-        keyframe::KeyFrame                     *p_keyFrame_in,
-        std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
-
-    /*!
-     * @brief           Creates a new marker object to be added to the map
-     *
-     * @param[in,out]   p_atlas_inout
-     *                  The current map in Atlas
-     *
-     * @param[in,out]   p_keyFrame_inout
-     *                  The address of the current keyframe
-     *
-     * @param[in]       p_visitedMarker_in
-     *                  The address of the visited marker
-     *
-     * @param[out]      p_mapMarker_out
-     *                  The new map marker
-     */
-    [[nodiscard]] static GeoSemHelpersStatus
-        createMapMarker(atlas::Atlas                  *p_atlas_inout,
-                        keyframe::KeyFrame               *p_keyFrame_inout,
-                        const semantic::Marker *p_visitedMarker_in,
-                        semantic::Marker      *&p_mapMarker_out);
-
-    /*!
-     * @brief           Creates a new passage object to be added to the map
-     *
-     * @param[in,out]   p_atlas_inout
-     *                  The current map in Atlas
-     *
-     * @param[in]       p_doorPlane_in
-     *                  Optional semantic plane representing a closed door.
-     *
-     * @param[in]       p_wallPlane_in
-     *                  Plane representing the wall containing the opening.
-     *
-     * @param[in]       isOpenPassage_in
-     *                  True when connected free-space evidence confirms that
-     *                  the opening is traversable.
-     *
-     * @param[in]       passageCentroid_world_m_in
-     *                  Open-passage centroid in the active map frame, in
-     *                  metres.
-     */
-    [[nodiscard]] static GeoSemHelpersStatus createMapPassage(
-        atlas::Atlas            *p_atlas_inout,
-        vs_graphs::core::geometric::Plane *p_doorPlane_in,
-        vs_graphs::core::geometric::Plane *p_wallPlane_in,
-        bool                               isOpenPassage_in = false,
-        Eigen::Vector3d passageCentroid_world_m_in = Eigen::Vector3d::Zero());
 
     /*!
      * @brief           Creates a blank room object (undefined variant) to be
@@ -215,69 +136,34 @@ class GeoSemHelpers
      *                  The current map in Atlas
      *
      * @param[out]      p_blankRoomCandidate_out
-     *                  The new room, or nullptr when the Atlas is null or the
-     *                  map already holds one room more than its passable
-     *                  passages
+     *                  The new room, owned by the caller until it is passed to
+     *                  SemanticsManager::addCandidateRoom(); null when the
+     * Atlas is null or the map already holds one room more than its passable
+     * passages
      *
      * @param[in]       centroid_in
      *                  The centroid of the room (optional)
      *
-     * @param[in]       stableRoomId_in
-     *                  Identity to restore after a tracking-loss reset (not
-     *                  limited by the passage count); when absent a new
-     *                  identity is reserved from the Atlas
+     * @param[in]       isRecoveryRoom_in
+     *                  True when the room is recreated after a tracking-loss
+     *                  reset; it is then not limited by the passage count. The
+     *                  identity is always reserved fresh from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus createBlankRoomCandidate(
-        atlas::Atlas                            *p_atlas_inout,
-        vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
-        Eigen::Vector3d                   centroid_in = Eigen::Vector3d::Zero(),
-        std::optional<int>                stableRoomId_in = std::nullopt);
+        atlas::Atlas                    *p_atlas_inout,
+        std::unique_ptr<semantic::Room> &p_blankRoomCandidate_out,
+        Eigen::Vector3d                  centroid_in = Eigen::Vector3d::Zero(),
+        bool                             isRecoveryRoom_in = false);
 
     /*!
-     * @brief           Chooses a ground plane from the Atlas to be associated
-     *                  with the room
-     *
-     * @param[in]       p_atlas_in
-     *                  The current map in Atlas
-     *
-     * @param[in,out]   p_givenRoom_inout
-     *                  The address of the detected room
-     */
-    [[nodiscard]] static GeoSemHelpersStatus associateGroundPlaneToRoom(
-        atlas::Atlas                           *p_atlas_in,
-        vs_graphs::core::semantic::Room *p_givenRoom_inout);
-
-    /*!
-     * @brief           Counts the number of points in the ground plane that are
-     *                  within the walls of the room
-     *
-     * @param[in]       roomWalls_in
-     *                  The vector of walls detected in the room
-     *
-     * @param[in]       p_groundPlane_in
-     *                  The ground plane associated with the room
-     *
-     * @param[out]      groundPlanePoints_out
-     *                  Number of ground-plane points within the walls
-     */
-    [[nodiscard]] static GeoSemHelpersStatus countGroundPlanePointsWithinWalls(
-        std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
-        vs_graphs::core::geometric::Plane                *p_groundPlane_in,
-        size_t &groundPlanePoints_out);
-
-    /*!
-     * @brief           Creates a new floor object to be added to the map
+     * @brief           Creates a new floor object to be added to the map; its
+     *                  identity is reserved fresh from the Atlas
      *
      * @param[in,out]   p_atlas_inout
      *                  The current map in Atlas
-     *
-     * @param[in]       stableFloorId_in
-     *                  Identity to restore after a tracking-loss reset; when
-     *                  absent a new identity is reserved from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus
-        createMapFloor(atlas::Atlas *p_atlas_inout,
-                       std::optional<int>      stableFloorId_in = std::nullopt);
+        createMapFloor(atlas::Atlas *p_atlas_inout);
 
     /*!
      * @brief           Refits a mapped plane equation from its accumulated
@@ -294,6 +180,6 @@ class GeoSemHelpers
         vs_graphs::core::geometric::Plane *p_plane_inout,
         bool                              &wasPlaneRefit_out);
 };
-}
+} // namespace vs_graphs::core::utils::geo_sem_helpers
 
 #endif /* VS_GRAPHS_UTILS_GEO_SEM_HELPERS_OBJECTS_GEOSEMHELPERSCLASS_H */

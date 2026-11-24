@@ -30,11 +30,12 @@
  *                  LoopClosing.h.
  */
 
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingClass.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <limits>
 #include <rclcpp/logging.hpp>
@@ -46,21 +47,38 @@ namespace core
 
 /* Declared in LoopClosing.h: shared with SemanticVerify. */
 loop_closing::LoopClosingStatus verifyLoopMergeFloors(
-    map::Map        *p_survivingMap_in,
-    map::Map        *p_absorbedMap_in,
-    const g2o::Sim3 &mergeTransform_absorbedWorldToSurvivingWorld_in,
-    std::string     &result_out,
-    bool            &isVerified_out)
+    SemanticsManager *p_semanticsManager_in,
+    map::Map         *p_survivingMap_in,
+    map::Map         *p_absorbedMap_in,
+    const g2o::Sim3  &mergeTransform_absorbedWorldToSurvivingWorld_in,
+    std::string      &result_out,
+    bool             &isVerified_out)
 {
-    semantic::Floor               *p_survivingFloor = nullptr;
-    std::vector<semantic::Floor *> survivingMapAllFloors{};
-    if (p_survivingMap_in->getAllFloors(survivingMapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    unsigned long survivingMapId{};
+    unsigned long absorbedMapId{};
+    if ((p_survivingMap_in->getId(survivingMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_absorbedMap_in->getId(absorbedMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
+                     "%s: getId returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
+    }
+    semantic::Floor               *p_survivingFloor = nullptr;
+    std::vector<semantic::Floor *> survivingMapAllFloors{};
+    if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->getMapFloorsInIdOrder(survivingMapId,
+                                                      survivingMapAllFloors) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its floors.",
+            __func__,
+            survivingMapId);
     }
     if (semantic::Floor::selectBestObservedFloor(survivingMapAllFloors,
                                                  p_survivingFloor) !=
@@ -73,13 +91,17 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     }
     semantic::Floor               *p_absorbedFloor = nullptr;
     std::vector<semantic::Floor *> absorbedMapAllFloors{};
-    if (p_absorbedMap_in->getAllFloors(absorbedMapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->getMapFloorsInIdOrder(absorbedMapId,
+                                                      absorbedMapAllFloors) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its floors.",
+            __func__,
+            absorbedMapId);
     }
     if (semantic::Floor::selectBestObservedFloor(absorbedMapAllFloors,
                                                  p_absorbedFloor) !=
@@ -120,24 +142,6 @@ loop_closing::LoopClosingStatus verifyLoopMergeFloors(
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
         result_out = "DEFERRED";
-        unsigned long survivingMapId{};
-        if (p_survivingMap_in->getId(survivingMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        unsigned long absorbedMapId{};
-        if (p_absorbedMap_in->getId(absorbedMapId) !=
-            map::MapStatus::MAP_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
         std::cout << "[FloorVerify] map::Map#" << survivingMapId
                   << " and map::Map#" << absorbedMapId
                   << " floor verification deferred (current="

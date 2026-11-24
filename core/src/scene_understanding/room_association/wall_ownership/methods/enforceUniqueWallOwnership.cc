@@ -1,0 +1,414 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            enforceUniqueWallOwnership.cc
+ *
+ * @brief           Implements SemanticsManager::enforceUniqueWallOwnership(),
+ *                  declared in SemanticsManager.h.
+ */
+
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/keyframe/keyframe.h"
+#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
+#include "map_state/map/map.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+
+#include "scene_understanding/semantic/value_order/value_order.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+
+#include <algorithm>
+#include <limits>
+#include <rclcpp/logging.hpp>
+#include <unordered_map>
+#include <unordered_set>
+
+#include "execution/profiling/profiling.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+
+SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
+{
+    PROFILE_FUNCTION();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
+                     __func__);
+    }
+    std::sort(allRooms.begin(),
+              allRooms.end(),
+              semantic::isEntityIdLess<semantic::Room>);
+
+    std::vector<semantic::Passage *> allPassages{};
+    if (getAllPassagesInIdOrder(allPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
+                     __func__);
+    }
+    std::sort(allPassages.begin(),
+              allPassages.end(),
+              semantic::isEntityIdLess<semantic::Passage>);
+
+    Eigen::Vector3d   groundNormal_world = Eigen::Vector3d::Zero();
+    geometric::Plane *p_groundPlane      = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const Eigen::Vector4d groundEquation =
+            groundPlaneGetGlobalEquation.coeffs();
+        const double groundNormalNorm = groundEquation.head<3>().norm();
+        if (groundEquation.allFinite() && groundNormalNorm > 1e-8)
+        {
+            groundNormal_world = groundEquation.head<3>() / groundNormalNorm;
+        }
+    }
+
+    std::unordered_map<geometric::Plane *, std::vector<semantic::Room *>>
+        wallOwners;
+
+    for (semantic::Room *p_room : allRooms)
+    {
+        bool roomIsBad{};
+        if (!(p_room == nullptr) &&
+            p_room->isBad(roomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_room == nullptr || roomIsBad)
+        {
+            continue;
+        }
+
+        std::vector<geometric::Plane *> roomWalls{};
+        if (p_room->getWalls(roomWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (geometric::Plane *p_wall : roomWalls)
+        {
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_wall == nullptr || wallIsBad)
+            {
+                continue;
+            }
+
+            std::vector<semantic::Room *> &owners = wallOwners[p_wall];
+            if (std::find(owners.begin(), owners.end(), p_room) == owners.end())
+            {
+                owners.push_back(p_room);
+            }
+        }
+    }
+
+    /* wallOwners is hashed by address; resolve contested walls in id order so
+     * a run does not depend on where the planes were allocated. */
+    std::vector<geometric::Plane *> wallsInIdOrder{};
+    wallsInIdOrder.reserve(wallOwners.size());
+    for (const std::pair<geometric::Plane *const, std::vector<semantic::Room *>>
+             &wallEntry : wallOwners)
+    {
+        wallsInIdOrder.push_back(wallEntry.first);
+    }
+    std::sort(wallsInIdOrder.begin(),
+              wallsInIdOrder.end(),
+              semantic::isEntityIdLess<geometric::Plane>);
+
+    for (geometric::Plane *p_wall : wallsInIdOrder)
+    {
+        std::vector<semantic::Room *> &owners = wallOwners[p_wall];
+        if (owners.size() < 2U)
+        {
+            continue;
+        }
+
+        semantic::Room                      *p_retainedOwner = nullptr;
+        std::unordered_set<semantic::Room *> passageRejectedOwners;
+
+        if (resolvePassageSideWallOwner(p_wall,
+                                        owners,
+                                        allPassages,
+                                        groundNormal_world,
+                                        p_retainedOwner,
+                                        passageRejectedOwners) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: resolvePassageSideWallOwner returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        /* Existing confirmed ownership outranks camera proximity. */
+        if (p_retainedOwner == nullptr)
+        {
+            for (semantic::Room *p_owner : owners)
+            {
+                semantic::Room::RoomVariant ownerRoomVariant{};
+                if ((passageRejectedOwners.count(p_owner) == 0U) &&
+                    p_owner->getRoomVariant(ownerRoomVariant) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (passageRejectedOwners.count(p_owner) == 0U &&
+                    ownerRoomVariant == semantic::Room::RoomVariant::ROOM)
+                {
+                    p_retainedOwner = p_owner;
+                    break;
+                }
+            }
+        }
+
+        /* Camera proximity is the final fallback among equivalent/provisional
+         * owners only. */
+        if (p_retainedOwner == nullptr)
+        {
+            Eigen::Vector3d meanObservationPosition_world_m =
+                Eigen::Vector3d::Zero();
+            std::size_t validObservationCount = 0U;
+
+            std::map<keyframe::KeyFrame *, geometric::Plane::Observation>
+                wallGetObservations{};
+            if (p_wall->getObservations(wallGetObservations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (const auto &[p_keyFrame, observation] : wallGetObservations)
+            {
+                static_cast<void>(observation);
+
+                bool keyFrameIsBad{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame != nullptr && !keyFrameIsBad)
+                {
+                    Eigen::Vector3f keyFrameCameraCenter{};
+                    if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+                        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    const Eigen::Vector3d cameraCenter_world_m =
+                        keyFrameCameraCenter.cast<double>();
+
+                    if (cameraCenter_world_m.allFinite())
+                    {
+                        meanObservationPosition_world_m += cameraCenter_world_m;
+                        validObservationCount++;
+                    }
+                }
+            }
+
+            if (validObservationCount > 0U)
+            {
+                meanObservationPosition_world_m /=
+                    static_cast<double>(validObservationCount);
+                double bestDistance_m = std::numeric_limits<double>::infinity();
+
+                for (semantic::Room *p_owner : owners)
+                {
+                    if (passageRejectedOwners.count(p_owner) > 0U)
+                    {
+                        continue;
+                    }
+
+                    Eigen::Vector3d ownerCentroid{};
+                    if (p_owner->getCentroid(ownerCentroid) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    const double distance_m =
+                        (ownerCentroid - meanObservationPosition_world_m)
+                            .norm();
+                    if (distance_m < bestDistance_m)
+                    {
+                        bestDistance_m  = distance_m;
+                        p_retainedOwner = p_owner;
+                    }
+                }
+            }
+
+            if (p_retainedOwner == nullptr)
+            {
+                for (semantic::Room *p_owner : owners)
+                {
+                    if (passageRejectedOwners.count(p_owner) == 0U)
+                    {
+                        p_retainedOwner = p_owner;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (semantic::Room *p_owner : owners)
+        {
+            bool ownerWasWallRemoved{};
+            if ((p_owner != p_retainedOwner) &&
+                p_owner->removeWall(p_wall, ownerWasWallRemoved) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                ownerWasWallRemoved = false;
+                RCLCPP_WARN(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: removeWall rejected its input; continuing as before.",
+                    __func__);
+            }
+            if (p_owner != p_retainedOwner && ownerWasWallRemoved)
+            {
+                int retainedOwnerId2{};
+                if ((p_retainedOwner != nullptr) &&
+                    p_retainedOwner->getId(retainedOwnerId2) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                int ownerId{};
+                if (p_owner->getId(ownerId) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                int wallGetId{};
+                if (p_wall->getId(wallGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                std::cerr << "[SemMgr] Corrected duplicate ownership of Wall#"
+                          << wallGetId << ": "
+                          << (p_retainedOwner != nullptr
+                                  ? "retained Room#" +
+                                        std::to_string(retainedOwnerId2)
+                                  : "left orphaned")
+                          << ", detached Room#" << ownerId << "." << std::endl;
+            }
+        }
+
+        if (p_retainedOwner != nullptr &&
+            std::find(owners.begin(), owners.end(), p_retainedOwner) ==
+                owners.end())
+        {
+            if (p_retainedOwner->setWalls(p_wall) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */

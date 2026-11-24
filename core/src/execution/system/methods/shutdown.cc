@@ -200,16 +200,6 @@ SystemStatus System::shutdown()
         }
     }
 
-#ifdef REGISTER_TIMES
-    if (p_tracker->printTimeStats() != tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: printTimeStats returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-#endif
-
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 

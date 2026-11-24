@@ -97,12 +97,6 @@ class RgbdImageGrabber : public rclcpp::Node
     void requestStop();
 
     /*!
-     * @brief           Logs a cumulative summary without holding
-     *                  packet/accounting locks.
-     */
-    void logRgbdObservabilitySummary(const std::string &event_in) const;
-
-    /*!
      * @brief           Callback function to get the skeleton graph from the
      *                  `voxblox` module
      *
@@ -195,8 +189,8 @@ class RgbdImageGrabber : public rclcpp::Node
      */
     const bool              directGazeboFluCloud;
     /*!
-     * @brief           Thread-safe counters and timings, updated from both
-     *                  the executor thread and the worker thread.
+     * @brief           Thread-safe frontend counters, updated from both the
+     *                  executor thread and the worker thread.
      */
     vs_graphs::observability::RgbdObservability rgbdObservability;
 };

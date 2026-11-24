@@ -39,6 +39,8 @@
 #include <cstdlib>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs::image_grabber
 {
 
@@ -47,10 +49,7 @@ void RgbdImageGrabber::grabRgbd(
     const sensor_msgs::msg::Image::ConstSharedPtr       &p_depthImageMessage_in,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr &p_pointCloudMessage_in)
 {
-    const std::chrono::steady_clock::time_point callbackArrival =
-        std::chrono::steady_clock::now();
-    rgbdObservability.recordCallbackAdmission(callbackArrival);
-
+    PROFILE_FUNCTION();
     const rclcpp::Time rgbTimestamp(p_rgbImageMessage_in->header.stamp);
     const rclcpp::Time depthTimestamp(p_depthImageMessage_in->header.stamp);
     const rclcpp::Time pointCloudTimestamp(
@@ -63,7 +62,6 @@ void RgbdImageGrabber::grabRgbd(
         std::abs((rgbTimestamp - depthTimestamp).nanoseconds());
     if (rgbDepthSkew_ns > MAXIMUM_RGB_DEPTH_SKEW_NS)
     {
-        rgbdObservability.recordRgbDepthSkewReject();
         RCLCPP_WARN_THROTTLE(
             get_logger(),
             *get_clock(),
@@ -79,7 +77,6 @@ void RgbdImageGrabber::grabRgbd(
         std::abs((depthTimestamp - pointCloudTimestamp).nanoseconds()));
     if (cloudImageSkew_ns > MAXIMUM_CLOUD_IMAGE_SKEW_NS)
     {
-        rgbdObservability.recordCloudImageSkewReject();
         RCLCPP_WARN_THROTTLE(
             get_logger(),
             *get_clock(),
@@ -112,8 +109,7 @@ void RgbdImageGrabber::grabRgbd(
                 p_rgbImageMessage_in,
                 p_depthImageMessage_in,
                 p_pointCloudMessage_in,
-                rclcpp::Time(p_rgbImageMessage_in->header.stamp).nanoseconds(),
-                callbackArrival};
+                rclcpp::Time(p_rgbImageMessage_in->header.stamp).nanoseconds()};
             hasPendingRgbdPacket              = true;
             hasReceivedRgbdPacket             = true;
             lastReceivedRgbdTimestamp_seconds = rgbTimestamp_seconds;
@@ -122,7 +118,6 @@ void RgbdImageGrabber::grabRgbd(
 
     if (didRejectShutdown)
     {
-        rgbdObservability.recordShutdownAdmissionReject();
         RCLCPP_WARN_THROTTLE(get_logger(),
                              *get_clock(),
                              5000,
@@ -133,7 +128,6 @@ void RgbdImageGrabber::grabRgbd(
 
     if (didRejectNonMonotonic)
     {
-        rgbdObservability.recordNonMonotonicReject();
         RCLCPP_WARN_THROTTLE(get_logger(),
                              *get_clock(),
                              5000,
@@ -141,7 +135,7 @@ void RgbdImageGrabber::grabRgbd(
         return;
     }
 
-    rgbdObservability.recordPendingStore(1U, didOverwritePending);
+    rgbdObservability.recordPendingStore(didOverwritePending);
     publishRgbdFrontendHealth();
     rgbdPacketCondition.notify_one();
 }

@@ -25,6 +25,13 @@
  */
 
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
+#include "scene_understanding/semantic_segmentation/private_functions/private_functions.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+
+#include "execution/profiling/profiling.h"
 
 namespace vs_graphs
 {
@@ -39,6 +46,7 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_out,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_thisKeyFramePointCloud_in)
 {
+    PROFILE_FUNCTION();
     /* Extract parameters on thresholds */
     const uint8_t confidenceThreshold =
         static_cast<uint8_t>(p_sysParams->semSeg.confThresh * 255);
@@ -152,28 +160,25 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 point.g = origPoint.g;
                 point.b = origPoint.b;
 
+                uint8_t depthWeight = 0;
+                if (computeDepthWeight(point.z,
+                                       distanceThresholdNear,
+                                       distanceThresholdFar,
+                                       depthWeight) !=
+                    SemanticSegmentationStatus::
+                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+                {
+                    /* computeDepthWeight cannot fail; continue as before. */
+                }
+
                 /*!
-                 * Confidence as the squared inverse depth - interpolated
-                 * between near and far thresholds confidence = 255 for near, 45
-                 * for far, and interpolated according to squared distance
+                 * The vote weight is the class probability (0..1) times the
+                 * depth weight, so a vote says how sure the segmenter is as
+                 * well as how close the point is.
                  */
-                if (point.z < distanceThresholdNear)
-                {
-                    point.a = 255;
-                }
-                else if (point.z > distanceThresholdFar)
-                {
-                    point.a = 45;
-                }
-                else
-                {
-                    point.a = static_cast<uint8_t>(
-                        255 -
-                        static_cast<int>(
-                            210 * std::sqrt((point.z - distanceThresholdNear) /
-                                            (distanceThresholdFar -
-                                             distanceThresholdNear))));
-                }
+                point.a =
+                    static_cast<uint8_t>(std::clamp(probability, 0.0F, 1.0F) *
+                                         static_cast<float>(depthWeight));
 
                 /* Add the point to the respective class specific point cloud */
                 p_clsCloudPtrs_out[j]->push_back(point);

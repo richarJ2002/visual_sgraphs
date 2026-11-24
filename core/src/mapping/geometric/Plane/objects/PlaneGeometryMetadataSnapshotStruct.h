@@ -31,6 +31,8 @@
 
 #include <Eigen/Core>
 
+#include "mapping/geometric/Plane/objects/InPlaneAxesStruct.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -79,6 +81,24 @@ struct PlaneGeometryMetadataSnapshot
      * @brief           Maximum in-plane grid coordinate along axis V, meters.
      */
     double maxPlaneV_m{0.0};
+
+    /*!
+     * @brief           Width of the plane, maxPlaneU_m - minPlaneU_m, meters;
+     *                  0 while the bounds are unset.
+     */
+    double planeWidth_m{0.0};
+
+    /*!
+     * @brief           Height of the plane, maxPlaneV_m - minPlaneV_m, meters;
+     *                  0 while the bounds are unset.
+     */
+    double planeHeight_m{0.0};
+
+    /*!
+     * @brief           In-plane axes U and V the bounds above were measured
+     *                  on, world frame.
+     */
+    InPlaneAxes boundsAxes{};
 
     /*!
      * @brief           Count of finite-support grid cells from the last

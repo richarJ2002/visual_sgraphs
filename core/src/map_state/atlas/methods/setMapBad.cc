@@ -33,6 +33,7 @@
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -51,7 +52,23 @@ AtlasStatus Atlas::setMapBad(map::Map *p_map_inout)
 
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
-    maps.erase(p_map_inout);
+    unsigned long badMapId{};
+    if (p_map_inout->getId(badMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    /* The map keeps its owner: it moves from maps to badMaps. A map that is
+     * not in maps is already owned by badMaps or retiredMaps. */
+    std::map<unsigned long, std::unique_ptr<map::Map>>::iterator mapEntry =
+        maps.find(badMapId);
+    if (mapEntry != maps.end() && mapEntry->second.get() == p_map_inout)
+    {
+        badMaps.push_back(std::move(mapEntry->second));
+        maps.erase(mapEntry);
+    }
     if (p_map_inout->setBad() != map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -60,7 +77,15 @@ AtlasStatus Atlas::setMapBad(map::Map *p_map_inout)
                      __func__);
     }
 
-    badMaps.insert(p_map_inout);
+    /* The map left maps, so its scene graph goes too. */
+    if (p_semanticsManager->eraseSceneGraph(badMapId) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: eraseSceneGraph returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

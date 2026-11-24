@@ -30,6 +30,7 @@
 #include <cmath>
 #include <limits>
 #include <pcl/octree/octree_search.h>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -55,17 +56,14 @@ PlaneStatus Plane::setMapClouds(
         planeCloud->points.push_back(point);
     }
 
-    /* Direct writes to the points container do not update PCL's organization
-     * metadata. Mapped planes accumulate observations over time, so retaining
-     * the first observation's width eventually makes every later copy or
-     * transform report an invalid width/size combination. */
-    planeCloud->width  = static_cast<uint32_t>(planeCloud->size());
-    planeCloud->height = 1;
-
-    /* Update the octree */
-    p_octree->deleteTree();
-    p_octree->setInputCloud(planeCloud);
-    p_octree->addPointsFromInputCloud();
+    /* Thinning also resets the organization metadata and the octree. */
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: thinMapCloudWithoutLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     ++cloudGeneration;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

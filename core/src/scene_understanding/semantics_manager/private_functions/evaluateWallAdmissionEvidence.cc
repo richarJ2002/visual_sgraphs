@@ -184,8 +184,8 @@ SemanticsManagerStatus
     const double majorExtent_m = std::max(extentU_m, extentV_m);
     const double minorExtent_m = std::min(extentU_m, extentV_m);
     const double area_m2       = majorExtent_m * minorExtent_m;
-    const types::SystemParams::SemSeg::WallCreation &wallCreation =
-        p_systemParams_in->semSeg.wallCreation;
+    const types::SystemParams::PlaneCheckpoint::WallSize &wallSize =
+        p_systemParams_in->planeCheckpoint.wallSize;
     const double fitSupportRatio =
         evidence.finitePointCount > 0U
             ? static_cast<double>(evidence.fittedPointCount) /
@@ -197,16 +197,16 @@ SemanticsManagerStatus
         fitSupportRatio >= p_systemParams_in->roomSeg.minimumWallSupportRatio &&
         std::isfinite(majorExtent_m) && std::isfinite(minorExtent_m) &&
         std::isfinite(area_m2) &&
-        majorExtent_m >= wallCreation.minimumMajorExtent_m &&
-        minorExtent_m >= wallCreation.minimumMinorExtent_m &&
-        area_m2 >= wallCreation.minimumArea_m2;
+        majorExtent_m >= wallSize.minimumMajorExtent_m &&
+        minorExtent_m >= wallSize.minimumMinorExtent_m &&
+        area_m2 >= wallSize.minimumArea_m2;
 
     const std::size_t strongObservationPointCount =
-        wallCreation.connectivity.enabled
+        wallSize.connectivity.enabled
             ? std::max<std::size_t>(
-                  wallCreation.minimumPointCount,
-                  wallCreation.connectivity.minimumComponentPointCount)
-            : wallCreation.minimumPointCount;
+                  wallSize.minimumPointCount,
+                  wallSize.connectivity.minimumComponentPointCount)
+            : wallSize.minimumPointCount;
     const bool strongFirstObservationEvidence =
         evidence.hasAdequateFiniteFit &&
         evidence.fittedPointCount >= strongObservationPointCount;

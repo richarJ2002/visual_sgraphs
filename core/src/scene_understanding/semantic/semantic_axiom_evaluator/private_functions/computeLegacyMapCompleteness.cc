@@ -64,8 +64,8 @@
  *                  function.
  */
 
+#include "scene_understanding/scene_graph/room/Room.h"
 #include "scene_understanding/semantic/semantic_axiom_evaluator/private_functions/private_functions.h"
-#include "scene_understanding/semantic/room/room.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/semantic_graph_snapshot.h"
 #include <rclcpp/logging.hpp>
 

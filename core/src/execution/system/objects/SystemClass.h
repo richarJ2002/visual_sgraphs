@@ -49,7 +49,6 @@
 #include "execution/system/objects/SensorTypeEnum.h"
 #include "execution/system/objects/VerboseStatusEnum.h"
 
-#include "views_io/database_parser/database_parser.h"
 #include "sensor_models/imu_types/point/point.h"
 #include "views_io/map_drawer/map_drawer.h"
 #include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
@@ -1072,23 +1071,19 @@ class System
      * @param[in]       filename_in
      *                  the name of the file.
      *
-     * @param[in]       markers_in
-     *                  the vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackStereo(
-        const cv::Mat                 &imageLeft_in,
-        const cv::Mat                 &imageRight_in,
-        const double                  &timestamp_in,
-        Sophus::SE3f                  &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackStereo(const cv::Mat                              &imageLeft_in,
+                    const cv::Mat                              &imageRight_in,
+                    const double                               &timestamp_in,
+                    Sophus::SE3f                               &cameraPose_out,
+                    const std::vector<imu_types::point::Point> &imuMeas_in =
+                        std::vector<imu_types::point::Point>(),
+                    std::string filename_in = "");
 
     /*!
      * @brief           Process the given rgbd frame for tracking. The DepthMap
@@ -1112,24 +1107,20 @@ class System
      * @param[in]       filename_in
      *                  The name of the file.
      *
-     * @param[in]       markers_in
-     *                  The vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackRGBD(
-        const cv::Mat                                &colorImage_in,
-        const cv::Mat                                &depthmap_in,
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
-        const double                                 &timestamp_in,
-        Sophus::SE3f                                 &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackRGBD(const cv::Mat                                &colorImage_in,
+                  const cv::Mat                                &depthmap_in,
+                  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
+                  const double                                 &timestamp_in,
+                  Sophus::SE3f                                 &cameraPose_out,
+                  const std::vector<imu_types::point::Point>   &imuMeas_in =
+                      std::vector<imu_types::point::Point>(),
+                  std::string filename_in = "");
 
     /*!
      * @brief           Process the given stereo frame for tracking. Images must
@@ -1148,22 +1139,18 @@ class System
      * @param[in]       filename_in
      *                  The name of the file.
      *
-     * @param[in]       markers_in
-     *                  The vector of fiducial markers.
-     *
      * @param[out]      cameraPose_out
      *                  The camera pose (empty if tracking fails)
      *
      * @return          SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus trackMonocular(
-        const cv::Mat                 &image_in,
-        const double                  &timestamp_in,
-        Sophus::SE3f                  &cameraPose_out,
-        const std::vector<imu_types::point::Point> &imuMeas_in  = std::vector<imu_types::point::Point>(),
-        std::string                    filename_in = "",
-        const std::vector<semantic::Marker *> markers_in =
-            std::vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus
+        trackMonocular(const cv::Mat &image_in,
+                       const double  &timestamp_in,
+                       Sophus::SE3f  &cameraPose_out,
+                       const std::vector<imu_types::point::Point> &imuMeas_in =
+                           std::vector<imu_types::point::Point>(),
+                       std::string filename_in = "");
 
     /*!
      * @brief           This stops local mapping thread (map building) and
@@ -1267,6 +1254,32 @@ class System
     [[nodiscard]] SystemStatus getSemanticReportCacheEntry(
         semantic::SemanticReportCacheEntry &getSemanticReportCacheEntry_out)
         const;
+
+    /*!
+     * @brief           Copies the latest wall-slab queries of the semantic
+     *                  thread; empty when no SemanticsManager exists yet.
+     *                  Thread-safe; never takes the semantic update lock.
+     *
+     * @param[out]      wallSlabQueries_out
+     *                  Queries in the SLAM world frame.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SystemStatus getWallSlabQueries(
+        std::vector<WallSlabQuery> &wallSlabQueries_out) const;
+
+    /*!
+     * @brief           Hands a Voxblox wall-slab answer to the semantic
+     *                  thread; ignored when no SemanticsManager exists yet.
+     *                  Thread-safe; never takes the semantic update lock.
+     *
+     * @param[in]       wallSlabProfiles_in
+     *                  Profiles in the SLAM world frame.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SystemStatus setWallSlabProfiles(
+        const std::vector<WallSlabProfile> &wallSlabProfiles_in);
 
     /*!
      * @brief           True once p_semanticsManager exists and has cached at
@@ -1500,33 +1513,6 @@ class System
     [[nodiscard]] SystemStatus getCurrentFrame(cv::Mat &currentFrame_out);
 
     /*!
-     * @brief           Get all rooms in the current map. Rooms are semantic
-     *                  elements that group related passages and have associated
-     *                  traversal statistics.
-     *
-     * @param[out]      allRooms_out
-     *                  Vector of pointers to Room objects. May be empty if no
-     *                  rooms have been created yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus
-        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
-
-    /*!
-     * @brief           Get all floors in the current map. Floors are semantic
-     *                  elements that group related rooms.
-     *
-     * @param[out]      allFloors_out
-     *                  Vector of pointers to Floor objects. May be empty if no
-     *                  floors have been created yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus getAllFloors(
-        std::vector<vs_graphs::core::semantic::Floor *> &allFloors_out);
-
-    /*!
      * @brief           Get all planes in the current map. Planes represent
      *                  geometric planes detected in the environment (e.g.,
      *                  walls, floors, ceilings).
@@ -1539,34 +1525,6 @@ class System
      */
     [[nodiscard]] SystemStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
-
-    /*!
-     * @brief           Get all markers (fiducial markers/AprilTags) in the
-     *                  current map. Markers are used for place recognition and
-     *                  localization.
-     *
-     * @param[out]      allMarkers_out
-     *                  Vector of pointers to Marker objects. May be empty if no
-     *                  markers have been detected yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus
-        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
-
-    /*!
-     * @brief           Get all passages in the current map. Passages connect
-     *                  rooms and have traversal statistics tracking how many
-     *                  times they have been crossed.
-     *
-     * @param[out]      allPassages_out
-     *                  Vector of pointers to Passage objects. May be empty if
-     *                  no passages have been detected yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus getAllPassages(
-        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief           Get all keyframes in the current map. Keyframes
@@ -1723,6 +1681,23 @@ class System
     [[nodiscard]] SystemStatus getTimeFromIMUInit(double &timeFromIMUInit_out);
 
     /*!
+     * @brief           Get the configured IMU sample rate (IMU.Frequency in the
+     *                  settings file).
+     *
+     * @param[out]      imuFrequency_hz_out
+     *                  IMU sample rate in hertz; written only on success.
+     *
+     * @return          SYSTEM_STATUS_SUCCESS, or
+     *                  SYSTEM_STATUS_SETTING_UNAVAILABLE when the settings file
+     *                  is not in the File.version 1.0 format.
+     *
+     * @note            Read-only after initialize(); safe to call from any
+     *                  thread once initialize() has returned.
+     */
+    [[nodiscard]] SystemStatus
+        getImuFrequency(double &imuFrequency_hz_out) const;
+
+    /*!
      * @brief           Check whether the system considers its current state as
      *                  finished/initialized. The system is considered finished
      *                  when the IMU has been initialized for a sufficient
@@ -1788,20 +1763,15 @@ class System
     [[nodiscard]] SystemStatus incrementSegmentationPublishedCount();
 
     /*!
-     * @brief           Parse the JSON file containing the environment data
-     *
-     * @param[in]       jsonFilePath_in
-     *                  The path to the JSON file
-     */
-    [[nodiscard]] SystemStatus parseJsonDatabase(std::string jsonFilePath_in);
-
-    /*!
      * @brief           Add the segmented image to the buffer in the
      *                  SemanticSegmentation
      *
      * @param[in]       p_tuple_in
-     *                  The address of the tuple of segmented image and
-     *                  pointcloud
+     *                  The address of the tuple of keyframe id, segmented
+     *                  image and pointcloud; with the segmenter off
+     *                  (mode_of_operation 2) the image is empty and the
+     *                  pointcloud null, and the keyframe cloud is extracted
+     *                  whole.
      */
     [[nodiscard]] SystemStatus addSegmentedImage(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
@@ -1832,12 +1802,6 @@ class System
     [[nodiscard]] SystemStatus setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             &skeletonEdges_world_m_in);
-
-#ifdef REGISTER_TIMES
-    [[nodiscard]] SystemStatus insertRectTime(double &time_inout);
-    [[nodiscard]] SystemStatus insertResizeTime(double &time_inout);
-    [[nodiscard]] SystemStatus insertTrackTime(double &time_inout);
-#endif
 
   private:
     /*!
@@ -2193,10 +2157,8 @@ class System
      *                               segmenter; `mSegmentationReturnedCount` and
      *                               `mLastReturnedKeyFrameId` increment/advance
      *                               in `addSegmentedImage` once the result
-     *                               comes back, on every code path -- including
-     *                               the GEO-mode early return, which does not
-     *                               reach the semantic buffer but still ends
-     *                               that keyframe's time in flight.
+     *                               comes back (with the segmenter off, at
+     *                               once from the publish site).
      *                               `std::atomic` rather than a mutex: written
      *                               from the publish thread and the
      *                               segmentation-callback
@@ -2279,13 +2241,6 @@ class System
      *                  recognition and feature matching.
      */
     std::string vocabularyFilePath;
-
-    /*!
-     * @brief           Vector of Room pointers from the environment. Maintained
-     *                  for quick access to room objects without traversing the
-     *                  atlas::Atlas.
-     */
-    std::vector<vs_graphs::core::semantic::Room *> envRooms;
 
     /*!
      * @brief           Settings object. Contains all configuration parameters

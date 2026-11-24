@@ -12,27 +12,33 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_PRIVATE_FUNCTIONS_H
 
+#include "scene_understanding/semantic/semantic_verify/objects/MergePairStruct.h"
+#include "scene_understanding/semantic/semantic_verify/objects/MergePairingStruct.h"
+#include "scene_understanding/semantic/semantic_verify/objects/PlaneGapStruct.h"
+#include "scene_understanding/semantic/semantic_verify/objects/RoomPairStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticVerifyStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/objects/WallRelationEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <set>
+#include <string>
 
 namespace vs_graphs
 {
@@ -98,52 +104,6 @@ struct TranslationFit
      */
     double          conditionNumber{std::numeric_limits<double>::infinity()};
 };
-
-/*!
- * @brief           Result of one consistency check between two maps' evidence:
- *                  evidence agrees, evidence is missing, or evidence
- *                  contradicts.
- */
-enum class AlignmentCheck
-{
-    ALIGNED,
-    MISSING,
-    CONTRADICTION
-};
-
-/*!
- * @brief           Consecutive-map anchor: one tag-matched room pair. Tags are
- *                  the only correspondence key; map-local IDs are never
- *                  compared across maps.
- */
-struct ConsecutiveAnchorPair
-{
-    /*!
-     * @brief           Room of the surviving map in the pair; borrowed, never
-     *                  null.
-     */
-    const SemanticMergeRoomEvidence *p_surviving{nullptr};
-    /*!
-     * @brief           Room of the absorbed map with the same tag; borrowed,
-     *                  never null.
-     */
-    const SemanticMergeRoomEvidence *p_absorbed{nullptr};
-};
-
-/*!
- * @brief           Minimum known-side direction agreement for paired passages.
- *                  Mirrors the verification default
- *                  (SemanticVerifyConfig::minAbsCosNormalAngle).
- */
-constexpr double kConsecutiveMinDirectionAgreement = 0.85;
-
-/*!
- * @brief           Maximum plane offset for wall pairing. Mirrors the
- *                  verification default (SemanticVerifyConfig::maxOffset_m);
- *                  the mapMerge section tunes the angle and the edge overlap,
- *                  not the offset.
- */
-constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
 
 /*!
  * @brief           Tells whether a vector contains only finite numbers.
@@ -219,103 +179,14 @@ constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
                              double                      &distance_out);
 
 /*!
- * @brief           Returns the name a room is known by across maps.
- *
- * @param[in]       context_in
- *                  Room snapshot.
- *
- * @param[out]      identity_out
- *                  The room tag, or "room_<id>" when the tag is empty.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @brief           Degrees in one radian; shared by the pairing helpers.
  */
-[[nodiscard]] SemanticVerifyStatus
-    stableRoomIdentity(const RoomContextSnapshot &context_in,
-                       std::string               &identity_out);
+inline constexpr double DEGREES_PER_RADIAN = 57.29577951308232;
 
 /*!
- * @brief           Counts the absorbed walls that coincide with a surviving
- *                  wall under a given transform, without searching for a better
- *                  one.
- *
- * @param[in]       survivingWalls_in
- *                  Wall observations of the surviving room.
- *
- * @param[in]       absorbedWalls_in
- *                  Wall observations of the absorbed room.
- *
- * @param[in]       transform_in
- *                  Maps absorbed-map world points into the surviving map's
- *                  world frame.
- *
- * @param[in]       configuration_in
- *                  Angle, offset and inlier ratio thresholds.
- *
- * @param[out]      matchedCount_out
- *                  Number of absorbed walls matched one-to-one to a surviving
- *                  wall.
- *
- * @param[out]      alignmentCheck_out
- *                  MISSING when either room has fewer than three walls; ALIGNED
- *                  when at least three walls match and the matched fraction of
- *                  the larger wall set reaches minInlierRatio; CONTRADICTION
- *                  otherwise, including an unusable transform.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticVerifyStatus checkFixedTransformWalls(
-    const std::vector<VerifyWallObservation> &survivingWalls_in,
-    const std::vector<VerifyWallObservation> &absorbedWalls_in,
-    const g2o::Sim3                          &transform_in,
-    const SemanticVerifyConfig               &configuration_in,
-    std::size_t                              &matchedCount_out,
-    AlignmentCheck                           &alignmentCheck_out);
-
-/*!
- * @brief           Checks that the two rooms' passages, paired by passage id,
- *                  agree on whether they are passable, which rooms they join
- *                  and which way they face.
- *
- * @param[in]       survivingContext_in
- *                  Snapshot of the surviving room.
- *
- * @param[in]       absorbedContext_in
- *                  Snapshot of the absorbed room.
- *
- * @param[in]       transform_in
- *                  Maps absorbed-map world points into the surviving map's
- *                  world frame; only its rotation is used.
- *
- * @param[in]       configuration_in
- *                  Supplies minAbsCosNormalAngle, the smallest direction
- *                  agreement.
- *
- * @param[out]      matchedCount_out
- *                  Number of absorbed passages whose id exists in the surviving
- *                  room.
- *
- * @param[out]      contradictionReason_out
- *                  Reason for a CONTRADICTION; untouched otherwise.
- *
- * @param[out]      alignmentCheck_out
- *                  MISSING when either room has no passages or some evidence is
- *                  incomplete; CONTRADICTION when passable flag, endpoint rooms
- *                  or direction disagree, or no id matches; ALIGNED otherwise.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticVerifyStatus
-    checkPassageTopology(const RoomContextSnapshot  &survivingContext_in,
-                         const RoomContextSnapshot  &absorbedContext_in,
-                         const g2o::Sim3            &transform_in,
-                         const SemanticVerifyConfig &configuration_in,
-                         std::size_t                &matchedCount_out,
-                         SemanticMergeReason        &contradictionReason_out,
-                         AlignmentCheck             &alignmentCheck_out);
-
-/*!
- * @brief           Copies one room's identity, walls and passages into plain
- *                  data so no live map pointer leaves the merge lock.
+ * @brief           Copies one room's identity, floor plane, walls and passages
+ *                  into plain data so no live map pointer leaves the merge
+ *                  lock.
  *
  * @param[in]       p_room_in
  *                  Room to copy; must not be null. Borrowed. The caller holds
@@ -326,7 +197,8 @@ constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
  *
  * @param[out]      evidence_out
  *                  Copy of the room's id, tag, centroid, floor id (-1 when it
- *                  has no floor), walls and non-bad passages.
+ *                  has no floor), floor plane, walls and non-bad passages with
+ *                  their planes.
  *
  * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
  */
@@ -336,214 +208,364 @@ constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
                           SemanticMergeRoomEvidence  &evidence_out);
 
 /*!
- * @brief           Pairs rooms of two maps by room tag; map-local ids are never
- *                  compared.
+ * @brief           Copies one passage's measured geometry and sides into plain
+ *                  data.
  *
- * @param[in]       survivingRooms_in
- *                  Evidence of the surviving map's rooms.
+ * @param[in]       p_passage_in
+ *                  Passage to copy; must not be null. Borrowed. The caller
+ *                  holds the merge lock.
  *
- * @param[in]       absorbedRooms_in
- *                  Evidence of the absorbed map's rooms.
- *
- * @param[out]      consecutiveAnchors_out
- *                  One pair per absorbed room whose non-empty tag also names a
- *                  surviving room. The pointers borrow from the input vectors
- *                  and are valid only while they live.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          The passage's id, passable flag, centre, aperture size,
+ *                  plane (unit normal; absent when the plane is degenerate),
+ *                  recovery-proxy flag and known-side and far-side
+ *                  information.
  */
-[[nodiscard]] SemanticVerifyStatus collectConsecutiveAnchors(
-    const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
-    std::vector<ConsecutiveAnchorPair>           &consecutiveAnchors_out);
+[[nodiscard]] PassageContext copyPassageContext(const Passage *p_passage_in);
 
 /*!
- * @brief           Maps a point from the absorbed map into the surviving map.
+ * @brief           Copies the evidence of every confirmed room in a list.
  *
- * @param[in]       transform_in
- *                  Similarity transform from the absorbed map's world frame to
+ * @param[in]       rooms_in
+ *                  Rooms of one map; null, bad and unconfirmed (prospective)
+ *                  rooms are skipped.
+ *
+ * @param[in]       configuration_in
+ *                  Limits for the wall observations.
+ *
+ * @param[out]      admittedRooms_out
+ *                  The rooms that were copied, in the order of evidence_out.
+ *                  Borrowed.
+ *
+ * @param[out]      evidence_out
+ *                  One evidence copy per admitted room.
+ */
+void collectRoomEvidence(const std::vector<Room *>  &rooms_in,
+                         const SemanticVerifyConfig &configuration_in,
+                         std::vector<Room *>        &admittedRooms_out,
+                         std::vector<SemanticMergeRoomEvidence> &evidence_out);
+
+/*!
+ * @brief           Copies every live passage in a list into plain data.
+ *
+ * @param[in]       passages_in
+ *                  Passages of one map; null and bad passages are skipped.
+ *
+ * @param[out]      admittedPassages_out
+ *                  The passages that were copied, in the order of
+ *                  contexts_out. Borrowed.
+ *
+ * @param[out]      contexts_out
+ *                  One copy per admitted passage.
+ */
+void collectPassageContexts(const std::vector<Passage *> &passages_in,
+                            std::vector<Passage *>       &admittedPassages_out,
+                            std::vector<PassageContext>  &contexts_out);
+
+/*!
+ * @brief           Moves a plane from the absorbed map's world frame into the
+ *                  surviving map's world frame.
+ *
+ * @param[in]       plane_absorbedWorld_in
+ *                  Plane (n^T x + d = 0) with a unit normal, in the absorbed
+ *                  world frame.
+ *
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity mapping a point as p_surviving = scale * R *
+ *                  p_absorbed + t.
+ *
+ * @return          The same plane in the surviving world frame: normal R * n,
+ *                  offset scale * d - (R * n)^T t. The normal stays a unit
+ *                  vector.
+ */
+[[nodiscard]] Eigen::Vector4d transformPlaneBetweenMaps(
+    const Eigen::Vector4d &plane_absorbedWorld_in,
+    const g2o::Sim3       &mergeTransform_absorbedToSurviving_in);
+
+/*!
+ * @brief           Moves one wall observation (plane, centroid and support
+ *                  sample) into the surviving map's world frame.
+ *
+ * @param[in]       wall_absorbedWorld_in
+ *                  Wall observation in the absorbed world frame.
+ *
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity from the absorbed to the surviving world frame.
+ *
+ * @return          The wall observation in the surviving world frame; the wall
+ *                  id is kept for logging only.
+ */
+[[nodiscard]] VerifyWallObservation transformWallBetweenMaps(
+    const VerifyWallObservation &wall_absorbedWorld_in,
+    const g2o::Sim3             &mergeTransform_absorbedToSurviving_in);
+
+/*!
+ * @brief           Moves one passage (centre, plane, direction and size) into
  *                  the surviving map's world frame.
  *
- * @param[in]       point_in
- *                  Point in the absorbed map's world frame, metres.
+ * @param[in]       passage_absorbedWorld_in
+ *                  Passage description in the absorbed world frame.
  *
- * @param[out]      mapped_out
- *                  Point in the surviving map's world frame, metres; written
- *                  only on success.
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity from the absorbed to the surviving world frame.
  *
- * @return          SEMANTIC_VERIFY_STATUS_SUCCESS on success;
- *                  SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT when the scale is
- *                  not finite and positive or the transform or point is not
- *                  finite; SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE when the
- *                  result is not finite.
+ * @return          The passage in the surviving world frame; width and height
+ *                  are multiplied by the transform scale.
  */
-[[nodiscard]] SemanticVerifyStatus
-    transformAbsorbedPoint(const g2o::Sim3       &transform_in,
-                           const Eigen::Vector3d &point_in,
-                           Eigen::Vector3d       &mapped_out);
+[[nodiscard]] PassageContext transformPassageBetweenMaps(
+    const PassageContext &passage_absorbedWorld_in,
+    const g2o::Sim3      &mergeTransform_absorbedToSurviving_in);
 
 /*!
- * @brief           Compares the best observed floor of each map under the
- *                  proposed transform.
+ * @brief           Moves one room's evidence (centroid, floor plane, walls and
+ *                  passages) into the surviving map's world frame.
  *
- * @param[in]       p_survivingMap_in
- *                  Surviving map; must not be null. Borrowed.
+ * @param[in]       room_absorbedWorld_in
+ *                  Room evidence in the absorbed world frame.
  *
- * @param[in]       p_absorbedMap_in
- *                  Absorbed map; must not be null. Borrowed.
+ * @param[in]       mergeTransform_absorbedToSurviving_in
+ *                  Similarity from the absorbed to the surviving world frame.
  *
- * @param[in]       transform_in
- *                  Maps absorbed-map world points into the surviving map's
- *                  world frame.
- *
- * @param[in]       maximumOffset_m_in
- *                  Largest allowed floor plane offset difference, metres.
- *
- * @param[out]      decision_out
- *                  "DEFERRED" when either map has no floor plane, otherwise
- *                  "ACCEPTED" or "REJECTED".
- *
- * @param[out]      floorsMatch_out
- *                  True only when the decision is "ACCEPTED".
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          The room evidence in the surviving world frame; ids are
+ *                  kept.
  */
-[[nodiscard]] SemanticVerifyStatus
-    checkConsecutiveFloors(map::Map       *p_survivingMap_in,
-                           map::Map       *p_absorbedMap_in,
-                           const g2o::Sim3 &transform_in,
-                           double           maximumOffset_m_in,
-                           std::string     &decision_out,
-                           bool            &floorsMatch_out);
+[[nodiscard]] SemanticMergeRoomEvidence transformRoomEvidenceBetweenMaps(
+    const SemanticMergeRoomEvidence &room_absorbedWorld_in,
+    const g2o::Sim3                 &mergeTransform_absorbedToSurviving_in);
 
 /*!
- * @brief           Checks that each absorbed anchor room lands on its surviving
- *                  partner after the proposed transform.
+ * @brief           Measures how far two planes in one frame lie apart.
  *
- * @param[in]       pairs_in
- *                  Tag-matched room pairs.
+ * @param[in]       firstPlane_world_in
+ *                  First plane (n^T x + d = 0); the normal need not be unit.
  *
- * @param[in]       transform_in
- *                  Maps absorbed-map world points into the surviving map's
- *                  world frame.
+ * @param[in]       secondPlane_world_in
+ *                  Second plane in the same frame.
  *
- * @param[in]       maximumDistance_m_in
- *                  Largest allowed centroid distance, metres.
+ * @param[in]       referencePoint_world_in
+ *                  Point on the first plane, metres, at which the offset is
+ *                  measured; measuring locally keeps a small rotation error
+ *                  from growing with the distance to the frame origin.
  *
- * @param[out]      alignmentCheck_out
- *                  ALIGNED when every mapped absorbed centroid lies within the
- *                  distance of its surviving partner; MISSING when there are no
- *                  pairs or a centroid is not usable; CONTRADICTION when one is
- *                  too far.
+ * @param[in]       isOrientationSignificant_in
+ *                  True when opposite normals describe different faces (walls,
+ *                  floors); false when the second plane may be flipped to face
+ *                  the first (passage planes).
  *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          The normal angle in degrees and the offset in metres; both
+ *                  infinite when a plane or the point is not finite or a normal
+ *                  is degenerate.
  */
-[[nodiscard]] SemanticVerifyStatus
-    checkAnchorRoomCentroids(const std::vector<ConsecutiveAnchorPair> &pairs_in,
-                             const g2o::Sim3 &transform_in,
-                             double           maximumDistance_m_in,
-                             AlignmentCheck  &alignmentCheck_out);
+[[nodiscard]] PlaneGap
+    measurePlaneGap(const Eigen::Vector4d &firstPlane_world_in,
+                    const Eigen::Vector4d &secondPlane_world_in,
+                    const Eigen::Vector3d &referencePoint_world_in,
+                    bool                   isOrientationSignificant_in);
 
 /*!
- * @brief           Tells whether a passage snapshot has geometry good enough to
- *                  compare.
+ * @brief           Measures the in-plane gap between two wall patches that lie
+ *                  in one frame.
  *
- * @param[in]       context_in
- *                  Passage snapshot to test.
+ * @param[in]       firstWall_world_in
+ *                  First wall; its support sample gives its extent.
  *
- * @param[out]      isUsable_out
- *                  True when the centroid is finite and width and height are
- *                  finite and positive.
+ * @param[in]       secondWall_world_in
+ *                  Second wall in the same frame; its normal defines the
+ *                  in-plane axes.
  *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          Largest gap, metres, between the two patches' extents along
+ *                  the two in-plane axes; 0 when they overlap on both. Infinite
+ *                  when either wall has no support sample.
  */
-[[nodiscard]] SemanticVerifyStatus
-    passageGeometryIsUsable(const PassageContext &context_in,
-                            bool                 &isUsable_out);
+[[nodiscard]] double
+    measureWallExtentGap(const VerifyWallObservation &firstWall_world_in,
+                         const VerifyWallObservation &secondWall_world_in);
 
 /*!
- * @brief           Pairs passages across two maps by room tag, passage lineage
- *                  or endpoints, and checks that paired passages agree under
- *                  the transform.
+ * @brief           Relates one absorbed wall to one surviving wall.
+ *
+ * @param[in]       absorbedWall_survivingWorld_in
+ *                  Absorbed wall already moved into the surviving frame.
+ *
+ * @param[in]       survivingWall_in
+ *                  Surviving wall.
+ *
+ * @param[in]       configuration_in
+ *                  Supplies the coplanar angle, wall offset and edge overlap.
+ *
+ * @return          PAIRED when the normals agree (orientation included), the
+ *                  offset at the absorbed centroid is small and the patches
+ *                  overlap or touch; OFFSET_MISMATCH when only the offset is
+ *                  too large; UNRELATED otherwise.
+ */
+[[nodiscard]] WallRelation classifyWallRelation(
+    const VerifyWallObservation &absorbedWall_survivingWorld_in,
+    const VerifyWallObservation &survivingWall_in,
+    const SemanticVerifyConfig  &configuration_in);
+
+/*!
+ * @brief           Pairs walls of the two maps by geometry, never by id.
+ *
+ * @param[in]       absorbedWalls_survivingWorld_in
+ *                  Absorbed walls already moved into the surviving frame.
+ *
+ * @param[in]       survivingWalls_in
+ *                  Surviving walls.
+ *
+ * @param[in]       configuration_in
+ *                  Pairing thresholds.
+ *
+ * @return          Every PAIRED combination as a pair. A contradiction is an
+ *                  OFFSET_MISMATCH combination whose two walls both have no
+ *                  PAIRED partner. A wall without any relation appears in
+ *                  neither list: it gives no answer.
+ */
+[[nodiscard]] MergePairing pairWalls(
+    const std::vector<VerifyWallObservation> &absorbedWalls_survivingWorld_in,
+    const std::vector<VerifyWallObservation> &survivingWalls_in,
+    const SemanticVerifyConfig               &configuration_in);
+
+/*!
+ * @brief           Pairs rooms whose floors are coplanar.
+ *
+ * @param[in]       absorbedRooms_survivingWorld_in
+ *                  Absorbed rooms already moved into the surviving frame.
  *
  * @param[in]       survivingRooms_in
- *                  Evidence of the surviving map's rooms.
+ *                  Surviving rooms.
  *
- * @param[in]       absorbedRooms_in
- *                  Evidence of the absorbed map's rooms.
+ * @param[in]       configuration_in
+ *                  Supplies the coplanar angle and the floor tolerance.
  *
- * @param[in]       transform_in
- *                  Maps absorbed-map world points into the surviving map's
- *                  world frame.
- *
- * @param[in]       maximumCentroidDistance_m_in
- *                  Largest allowed passage centroid distance, metres.
- *
- * @param[out]      matchedCount_out
- *                  Number of absorbed passages paired with a surviving one.
- *
- * @param[out]      contradictionReason_out
- *                  Reason for a CONTRADICTION, or PASSAGE_EVIDENCE_MISSING when
- *                  the absorbed side has no usable passage; untouched
- *                  otherwise.
- *
- * @param[out]      alignmentCheck_out
- *                  ALIGNED when every passage pairs and agrees; MISSING when
- *                  evidence is absent or incomplete; CONTRADICTION when a pair
- *                  disagrees or none pairs.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          One pair per absorbed and surviving room whose floor planes
+ *                  agree in orientation and, at the absorbed room's centroid,
+ *                  in height. Rooms without a floor plane are not paired.
  */
-[[nodiscard]] SemanticVerifyStatus checkConsecutivePassageTopology(
-    const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
-    const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
-    const g2o::Sim3                              &transform_in,
-    double                                        maximumCentroidDistance_m_in,
-    std::size_t                                  &matchedCount_out,
-    SemanticMergeReason                          &contradictionReason_out,
-    AlignmentCheck                               &alignmentCheck_out);
+[[nodiscard]] std::vector<MergePair>
+    pairFloors(const std::vector<SemanticMergeRoomEvidence>
+                   &absorbedRooms_survivingWorld_in,
+               const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
+               const SemanticVerifyConfig                   &configuration_in);
 
 /*!
- * @brief           Finds the stretch of an axis that a wall's support samples
- *                  cover.
+ * @brief           Pairs rooms of the two maps through their walls, never by
+ *                  tag or id.
  *
- * @param[in]       wall_in
- *                  Wall whose support samples are projected.
+ * @param[in]       absorbedRooms_survivingWorld_in
+ *                  Absorbed rooms already moved into the surviving frame.
  *
- * @param[in]       axis_in
- *                  Axis to project onto; metres when unit length.
+ * @param[in]       survivingRooms_in
+ *                  Surviving rooms.
  *
- * @param[in]       origin_in
- *                  Point in the same frame as the samples that sits at
- *                  coordinate zero.
+ * @param[in]       configuration_in
+ *                  Supplies the wall pairing thresholds, the room pair wall
+ *                  fraction and the minimum wall pairs.
  *
- * @param[out]      minimum_out
- *                  Smallest coordinate of the finite samples; written only when
- *                  hasFiniteSample_out is true.
- *
- * @param[out]      maximum_out
- *                  Largest coordinate of the finite samples; written only when
- *                  hasFiniteSample_out is true.
- *
- * @param[out]      hasFiniteSample_out
- *                  True when the wall has at least one finite sample.
- *
- * @return          Always SEMANTIC_VERIFY_STATUS_SUCCESS.
+ * @return          One entry per room combination in which at least the
+ *                  minimum number of walls pair and the paired fraction of the
+ *                  smaller room's walls reaches the room pair wall fraction.
  */
-[[nodiscard]] SemanticVerifyStatus
-    wallSamplesSpanInterval(const VerifyWallObservation &wall_in,
-                            const Eigen::Vector3d       &axis_in,
-                            const Eigen::Vector3d       &origin_in,
-                            double                      &minimum_out,
-                            double                      &maximum_out,
-                            bool                        &hasFiniteSample_out);
+[[nodiscard]] std::vector<RoomPair>
+    pairRooms(const std::vector<SemanticMergeRoomEvidence>
+                  &absorbedRooms_survivingWorld_in,
+              const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
+              const SemanticVerifyConfig                   &configuration_in);
 
-[[nodiscard]] SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
-    const std::vector<ConsecutiveAnchorPair> &pairs_in,
-    const g2o::Sim3                          &transform_in,
-    double                                    maximumNormalAngle_deg_in,
-    double                                    minimumOverlap_m_in,
-    AlignmentCheck                           &alignmentCheck_out);
+/*!
+ * @brief           Pairs passages of the two maps by geometry, never by id.
+ *
+ * @param[in]       absorbedPassages_survivingWorld_in
+ *                  Absorbed passages already moved into the surviving frame.
+ *
+ * @param[in]       survivingPassages_in
+ *                  Surviving passages.
+ *
+ * @param[in]       configuration_in
+ *                  Supplies the coplanar angle and the wall plane offset.
+ *
+ * @return          Two passages pair when both have a plane and a valid
+ *                  aperture and are not recovery proxies, lie on the same plane
+ *                  (normal angle and offset, orientation ignored) and their
+ *                  centres are no further apart, measured in that plane, than
+ *                  half the narrower passage's width. Passages never
+ *                  contradict: a difference in the passable flag is only
+ *                  a partial view, so it gives no answer.
+ */
+[[nodiscard]] MergePairing pairPassages(
+    const std::vector<PassageContext> &absorbedPassages_survivingWorld_in,
+    const std::vector<PassageContext> &survivingPassages_in,
+    const SemanticVerifyConfig        &configuration_in);
+
+/*!
+ * @brief           Finds the anchor room pairs, the only elements matched by
+ *                  identity.
+ *
+ * @param[in]       survivingRooms_in
+ *                  Surviving rooms, in evidence order; borrowed.
+ *
+ * @param[in]       absorbedRooms_in
+ *                  Absorbed rooms, in evidence order; borrowed.
+ *
+ * @param[in]       p_survivingAnchorRoom_in
+ *                  Surviving map's room of the map chain link
+ *                  (Map::getLinkedRooms); may be null.
+ *
+ * @param[in]       p_absorbedAnchorRoom_in
+ *                  Absorbed map's room of that link; may be null.
+ *
+ * @return          The one pair of list indices of the two linked rooms, or
+ *                  no pair when either room is null or not in its list. No
+ *                  other room is matched this way.
+ */
+[[nodiscard]] std::vector<MergePair>
+    findAnchorRoomPairs(const std::vector<Room *> &survivingRooms_in,
+                        const std::vector<Room *> &absorbedRooms_in,
+                        const Room                *p_survivingAnchorRoom_in,
+                        const Room                *p_absorbedAnchorRoom_in);
+
+/*!
+ * @brief           Tells whether any element appears in more than one pair on
+ *                  the same side.
+ *
+ * @param[in]       pairs_in
+ *                  Pairs to inspect.
+ *
+ * @return          True when an absorbed or a surviving index occurs twice:
+ *                  one element then pairs with two counterparts.
+ */
+[[nodiscard]] bool hasRepeatedElement(const std::vector<MergePair> &pairs_in);
+
+/*!
+ * @brief           Lists each passage of a map once.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms of one map; a passage between two rooms appears in
+ *                  both.
+ *
+ * @return          The passages with distinct ids within this map. Ids are
+ *                  compared inside one map only, never across maps.
+ */
+[[nodiscard]] std::vector<PassageContext> collectUniquePassages(
+    const std::vector<SemanticMergeRoomEvidence> &rooms_in);
+
+/*!
+ * @brief           Formats pairs for the pairs log line.
+ *
+ * @param[in]       pairs_in
+ *                  Pairs to format.
+ *
+ * @param[in]       absorbedIds_in
+ *                  Printable id of each absorbed element.
+ *
+ * @param[in]       survivingIds_in
+ *                  Printable id of each surviving element.
+ *
+ * @return          "a<id>~s<id>" entries separated by commas, or "-" when
+ *                  there are no pairs. The ids are for reading logs only.
+ */
+[[nodiscard]] std::string
+    formatMergePairs(const std::vector<MergePair> &pairs_in,
+                     const std::vector<int>       &absorbedIds_in,
+                     const std::vector<int>       &survivingIds_in);
 
 } /* namespace semantic */
 } /* namespace core */

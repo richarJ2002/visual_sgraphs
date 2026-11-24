@@ -62,13 +62,20 @@ SystemParamsStatus
     try
     {
         /* General Parameters */
-        general.envDatabase =
-            config["general"]["env_database"].as<std::string>();
-        general.modeOfOperation = static_cast<General::ModeOfOperation>(
-            config["general"]["mode_of_operation"].as<int>());
-
-        /* Marker Parameters */
-        markers.impact = config["markers"]["impact"].as<float>();
+        const int modeOfOperationValue =
+            config["general"]["mode_of_operation"].as<int>();
+        if (modeOfOperationValue !=
+                static_cast<int>(General::ModeOfOperation::SEM) &&
+            modeOfOperationValue !=
+                static_cast<int>(General::ModeOfOperation::GEO))
+        {
+            throw std::invalid_argument(
+                "general.mode_of_operation must be 1 (segmenter on) or 2 "
+                "(segmenter off), got " +
+                std::to_string(modeOfOperationValue));
+        }
+        general.modeOfOperation =
+            static_cast<General::ModeOfOperation>(modeOfOperationValue);
 
         /* Tracking Refinement Parameters */
         refineMapPoints.enabled =
@@ -96,29 +103,16 @@ SystemParamsStatus
         /* Common Segmentation Parameters */
         seg.pointcloudsThresh =
             config["seg"]["pointclouds_thresh"].as<unsigned int>();
-        seg.planePointDistThresh =
-            config["seg"]["plane_point_dist_thresh"].as<float>();
         seg.planeAssociation.ominusThresh =
             config["seg"]["plane_association"]["ominus_thresh"].as<float>();
         seg.planeAssociation.distanceThresh =
             config["seg"]["plane_association"]["distance_thresh"].as<float>();
         seg.planeAssociation.centroidThresh =
             config["seg"]["plane_association"]["centroid_thresh"].as<float>();
-        seg.planeAssociation.clusterSeparation.enabled =
-            config["seg"]["plane_association"]["cluster_separation"]["enabled"]
-                .as<bool>();
         seg.planeAssociation.clusterSeparation.tolerance =
             config["seg"]["plane_association"]["cluster_separation"]
                   ["tolerance"]
                       .as<float>();
-        seg.planeAssociation.clusterSeparation.downsample.leafSize =
-            config["seg"]["plane_association"]["cluster_separation"]
-                  ["downsample"]["leaf_size"]
-                      .as<float>();
-        seg.planeAssociation.clusterSeparation.downsample.minPointsPerVoxel =
-            config["seg"]["plane_association"]["cluster_separation"]
-                  ["downsample"]["min_points_per_voxel"]
-                      .as<unsigned int>();
         seg.ransac.maxPlanes =
             config["seg"]["ransac"]["max_planes"].as<unsigned int>();
         seg.ransac.distanceThresh =
@@ -143,24 +137,64 @@ SystemParamsStatus
         optimization.planeMapPoint.informationGain =
             config["optimization"]["plane_map_point"]["information_gain"]
                 .as<float>();
-
-        /* Geometric Segmentation Parameters */
-        geoSeg.pointcloud.downsample.leafSize =
-            config["geo_seg"]["pointcloud"]["downsample"]["leaf_size"]
+        optimization.wallThickness.enabled =
+            config["optimization"]["wall_thickness"]["enabled"].as<bool>();
+        optimization.minimumThickness_m =
+            config["optimization"]["wall_thickness"]["minimum_thickness"]
                 .as<float>();
-        geoSeg.pointcloud.downsample.minPointsPerVoxel =
-            config["geo_seg"]["pointcloud"]["downsample"]
-                  ["min_points_per_voxel"]
+        optimization.wallThickness.informationGain =
+            config["optimization"]["wall_thickness"]["information_gain"]
+                .as<float>();
+        optimization.roomWall.enabled =
+            config["optimization"]["room_wall"]["enabled"].as<bool>();
+        optimization.roomWall.informationGain =
+            config["optimization"]["room_wall"]["information_gain"].as<float>();
+        optimization.maxPlaneNormalCorrection_deg =
+            config["optimization"]["max_plane_normal_correction"].as<float>();
+
+        /* Plane Checkpoint Parameters */
+        planeCheckpoint.minimumPointCount =
+            config["plane_checkpoint"]["minimum_point_count"]
+                .as<unsigned int>();
+        planeCheckpoint.maximumFitRms_m =
+            config["plane_checkpoint"]["maximum_fit_rms"].as<float>();
+        planeCheckpoint.maxTiltGround =
+            config["plane_checkpoint"]["max_tilt_ground"].as<float>();
+        planeCheckpoint.maxTiltWall =
+            config["plane_checkpoint"]["max_tilt_wall"].as<float>();
+        planeCheckpoint.wallSize.minimumPointCount =
+            config["plane_checkpoint"]["wall_size"]["minimum_point_count"]
+                .as<unsigned int>();
+        planeCheckpoint.wallSize.minimumMajorExtent_m =
+            config["plane_checkpoint"]["wall_size"]["minimum_major_extent"]
+                .as<float>();
+        planeCheckpoint.wallSize.minimumMinorExtent_m =
+            config["plane_checkpoint"]["wall_size"]["minimum_minor_extent"]
+                .as<float>();
+        planeCheckpoint.wallSize.minimumArea_m2 =
+            config["plane_checkpoint"]["wall_size"]["minimum_area"].as<float>();
+        planeCheckpoint.wallSize.connectivity.enabled =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]["enabled"]
+                .as<bool>();
+        planeCheckpoint.wallSize.connectivity.clusterTolerance_m =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["cluster_tolerance"]
+                      .as<float>();
+        planeCheckpoint.wallSize.connectivity.minimumComponentPointCount =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["minimum_component_point_count"]
                       .as<unsigned int>();
+        planeCheckpoint.wallSize.connectivity.minimumComponentRatio =
+            config["plane_checkpoint"]["wall_size"]["connectivity"]
+                  ["minimum_component_ratio"]
+                      .as<float>();
 
         /* Semantic Segmentation Parameters */
         semSeg.minVotes      = config["sem_seg"]["min_votes"].as<float>();
         semSeg.probThresh    = config["sem_seg"]["prob_thresh"].as<float>();
         semSeg.confThresh    = config["sem_seg"]["conf_thresh"].as<float>();
-        semSeg.maxTiltWall   = config["sem_seg"]["max_tilt_wall"].as<float>();
         semSeg.maxDoorWidth  = config["sem_seg"]["max_door_width"].as<float>();
         semSeg.maxDoorHeight = config["sem_seg"]["max_door_height"].as<float>();
-        semSeg.maxTiltGround = config["sem_seg"]["max_tilt_ground"].as<float>();
         semSeg.passageKfWindow =
             config["sem_seg"]["passage_kf_window"].as<int>();
         semSeg.maxStepElevation =
@@ -175,13 +209,6 @@ SystemParamsStatus
             config["sem_seg"]["passage_centroid_distance_thresh"].as<float>();
         semSeg.passageDetection.minimumSideDistance_m =
             config["sem_seg"]["passage_detection"]["minimum_side_distance"]
-                .as<float>();
-        semSeg.passageDetection.minimumEdgeNormalAlignment =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_edge_normal_alignment"]
-                      .as<float>();
-        semSeg.passageDetection.minimumOpeningRadius_m =
-            config["sem_seg"]["passage_detection"]["minimum_opening_radius"]
                 .as<float>();
         semSeg.passageDetection.wallBoundsMargin_m =
             config["sem_seg"]["passage_detection"]["wall_bounds_margin"]
@@ -200,28 +227,56 @@ SystemParamsStatus
             config["sem_seg"]["passage_detection"]
                   ["ambiguous_duplicate_plane_separation"]
                       .as<float>();
-        semSeg.passageDetection.crossingClusterDistance_m =
-            config["sem_seg"]["passage_detection"]["crossing_cluster_distance"]
+        semSeg.passageDetection.doorBandMinHeight_m =
+            config["sem_seg"]["passage_detection"]["door_band_min_height_m"]
                 .as<float>();
-        semSeg.passageDetection.minimumConfirmationSnapshots =
+        semSeg.passageDetection.doorBandMaxHeight_m =
+            config["sem_seg"]["passage_detection"]["door_band_max_height_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumOpeningWidth_m =
+            config["sem_seg"]["passage_detection"]["minimum_opening_width_m"]
+                .as<float>();
+        semSeg.passageDetection.maximumOpeningWidth_m =
+            config["sem_seg"]["passage_detection"]["maximum_opening_width_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumOpeningHeight_m =
+            config["sem_seg"]["passage_detection"]["minimum_opening_height_m"]
+                .as<float>();
+        semSeg.passageDetection.maximumSillHeight_m =
+            config["sem_seg"]["passage_detection"]["maximum_sill_height_m"]
+                .as<float>();
+        semSeg.passageDetection.slabCellSize_m =
+            config["sem_seg"]["passage_detection"]["slab_cell_size_m"]
+                .as<float>();
+        semSeg.passageDetection.slabHalfThickness_m =
+            config["sem_seg"]["passage_detection"]["slab_half_thickness_m"]
+                .as<float>();
+        semSeg.passageDetection.minimumBoundedBandFraction =
             config["sem_seg"]["passage_detection"]
-                  ["minimum_confirmation_snapshots"]
-                      .as<unsigned int>();
-        semSeg.passageDetection.minimumCrossingClusterSize =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_crossing_cluster_size"]
-                      .as<unsigned int>();
-        semSeg.passageDetection.maximumMissedSnapshots =
-            config["sem_seg"]["passage_detection"]["maximum_missed_snapshots"]
-                .as<unsigned int>();
-        semSeg.passageDetection.minimumHorizontalFlankExtent_m =
-            config["sem_seg"]["passage_detection"]
-                  ["minimum_horizontal_flank_extent"]
+                  ["minimum_bounded_band_fraction"]
                       .as<float>();
-        semSeg.passageDetection.minimumHorizontalFlankPointCount =
+        semSeg.passageDetection.minimumObservedFraction =
+            config["sem_seg"]["passage_detection"]["minimum_observed_fraction"]
+                .as<float>();
+        semSeg.passageDetection.maximumApertureWallPoints =
             config["sem_seg"]["passage_detection"]
-                  ["minimum_horizontal_flank_points"]
+                  ["maximum_aperture_wall_points"]
                       .as<unsigned int>();
+        semSeg.passageDetection.minimumOpenVerdicts =
+            config["sem_seg"]["passage_detection"]["minimum_open_verdicts"]
+                .as<unsigned int>();
+        semSeg.passageDetection.closedConfirmationCount =
+            config["sem_seg"]["passage_detection"]["closed_confirmation_count"]
+                .as<unsigned int>();
+        semSeg.passageDetection.reopenConfirmationCount =
+            config["sem_seg"]["passage_detection"]["reopen_confirmation_count"]
+                .as<unsigned int>();
+        semSeg.passageDetection.planeMatchAngle_deg =
+            config["sem_seg"]["passage_detection"]["plane_match_angle_deg"]
+                .as<float>();
+        semSeg.passageDetection.planeMatchOffset_m =
+            config["sem_seg"]["passage_detection"]["plane_match_offset_m"]
+                .as<float>();
         semSeg.pointcloud.downsample.leafSize =
             config["sem_seg"]["pointcloud"]["downsample"]["leaf_size"]
                 .as<float>();
@@ -229,34 +284,6 @@ SystemParamsStatus
             config["sem_seg"]["pointcloud"]["downsample"]
                   ["min_points_per_voxel"]
                       .as<unsigned int>();
-        semSeg.wallCreation.minimumPointCount =
-            config["sem_seg"]["wall_creation"]["minimum_point_count"]
-                .as<unsigned int>();
-        semSeg.wallCreation.minimumMajorExtent_m =
-            config["sem_seg"]["wall_creation"]["minimum_major_extent"]
-                .as<float>();
-        semSeg.wallCreation.minimumMinorExtent_m =
-            config["sem_seg"]["wall_creation"]["minimum_minor_extent"]
-                .as<float>();
-        semSeg.wallCreation.minimumArea_m2 =
-            config["sem_seg"]["wall_creation"]["minimum_area"].as<float>();
-        semSeg.wallCreation.connectivity.enabled =
-            config["sem_seg"]["wall_creation"]["connectivity"]["enabled"]
-                .as<bool>();
-        semSeg.wallCreation.connectivity.clusterTolerance_m =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["cluster_tolerance"]
-                      .as<float>();
-        semSeg.wallCreation.connectivity.minimumComponentPointCount =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["minimum_component_point_count"]
-                      .as<unsigned int>();
-        semSeg.wallCreation.connectivity.minimumComponentRatio =
-            config["sem_seg"]["wall_creation"]["connectivity"]
-                  ["minimum_component_ratio"]
-                      .as<float>();
-        semSeg.wallPairing.minimumThickness_m =
-            config["sem_seg"]["wall_pairing"]["minimum_thickness"].as<float>();
         semSeg.wallPairing.maximumThickness_m =
             config["sem_seg"]["wall_pairing"]["maximum_thickness"].as<float>();
         semSeg.wallPairing.minimumOverlapRatio =
@@ -296,9 +323,6 @@ SystemParamsStatus
         roomSeg.minClusterVertices =
             config["room_seg"]["skeleton_based"]["min_cluster_vertices"]
                 .as<unsigned int>();
-        roomSeg.markerWallDistanceThresh =
-            config["room_seg"]["geo_based"]["marker_wall_distance_thresh"]
-                .as<float>();
         roomSeg.clusterPointWallDistanceThresh =
             config["room_seg"]["skeleton_based"]
                   ["cluster_point_wall_distance_thresh"]
@@ -313,10 +337,6 @@ SystemParamsStatus
         roomSeg.minimumWallObservationCount =
             config["room_seg"]["skeleton_based"]["minimum_wall_observations"]
                 .as<unsigned int>();
-        roomSeg.minimumUndefendedWallHoldCycles =
-            config["room_seg"]["skeleton_based"]
-                  ["minimum_undefended_wall_hold_cycles"]
-                      .as<unsigned int>();
         roomSeg.minimumWallSupportRatio =
             config["room_seg"]["skeleton_based"]["minimum_wall_support_ratio"]
                 .as<float>();
@@ -375,28 +395,27 @@ SystemParamsStatus
             config["room_seg"]["passage_partition"]
                   ["wall_centroid_minimum_side_distance"]
                       .as<float>();
+        roomSeg.isSeeThroughGateEnabled =
+            config["room_seg"]["see_through_gate"]["enabled"].as<bool>();
+        roomSeg.isObserverSightLineEnabled =
+            config["room_seg"]["see_through_gate"]["observer_sight_lines"]
+                .as<bool>();
 
         /* Map-merge and axiom thresholds. */
-        mapMerge.passageMatchTolerance_m =
-            config["map_merge"]["passage_match_tolerance_m"].as<float>();
         mapMerge.wallCoplanarAngle_deg =
             config["map_merge"]["wall_coplanar_angle_deg"].as<float>();
+        mapMerge.wallCoplanarOffset_m =
+            config["map_merge"]["wall_coplanar_offset_m"].as<float>();
         mapMerge.wallEdgeOverlap_m =
             config["map_merge"]["wall_edge_overlap_m"].as<float>();
         mapMerge.floorMatchTolerance_m =
             config["map_merge"]["floor_match_tolerance_m"].as<float>();
-        mapMerge.observationRayCheckCap =
-            config["map_merge"]["observation_ray_check_cap"].as<unsigned int>();
-        mapMerge.mergeCooldown_s =
-            config["map_merge"]["merge_cooldown_s"].as<unsigned int>();
-        mapMerge.minAnchorRooms =
-            config["map_merge"]["min_anchor_rooms"].as<unsigned int>();
-        mapMerge.minRoomsPerMap =
-            config["map_merge"]["min_rooms_per_map"].as<unsigned int>();
-        mapMerge.minWallsPerMap =
-            config["map_merge"]["min_walls_per_map"].as<unsigned int>();
-        mapMerge.roomCentroidTolerance_m =
-            config["map_merge"]["room_centroid_tolerance_m"].as<float>();
+        mapMerge.roomPairWallFraction =
+            config["map_merge"]["room_pair_wall_fraction"].as<float>();
+        mapMerge.roomPairMinWalls =
+            config["map_merge"]["room_pair_min_walls"].as<unsigned int>();
+        mapMerge.isLoopRoomCheckEnabled =
+            config["map_merge"]["loop_room_check"].as<bool>();
 
         /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =
@@ -413,6 +432,103 @@ SystemParamsStatus
             config["room_tracking"]["reacquire_max_retries"].as<unsigned int>();
         roomTracking.reacquireMinPlanes =
             config["room_tracking"]["reacquire_min_planes"].as<unsigned int>();
+
+        semanticsManager.runInterval_s =
+            config["semantics_manager"]["run_interval_s"].as<double>();
+
+        /* Map-wide plane point density cap. */
+        semantics.pointDensity.voxelSize_m =
+            config["semantics"]["point_density"]["voxel_m"].as<float>();
+        const int maxPointsPerVoxelValue =
+            config["semantics"]["point_density"]["max_points"].as<int>();
+        if (!std::isfinite(semantics.pointDensity.voxelSize_m) ||
+            semantics.pointDensity.voxelSize_m <= 0.0F ||
+            maxPointsPerVoxelValue < 1)
+        {
+            throw std::invalid_argument(
+                "semantics.point_density needs voxel_m > 0 and "
+                "max_points >= 1");
+        }
+        semantics.pointDensity.maxPointsPerVoxel =
+            static_cast<unsigned int>(maxPointsPerVoxelValue);
+
+        /* Plane lifetime limits; read as int so a negative value is caught
+         * here instead of wrapping. */
+        const int maxUnassignedCyclesValue =
+            config["semantics"]["plane"]["max_unassigned_cycles"].as<int>();
+        const int minRejectingViewsValue =
+            config["semantics"]["visibility"]["min_rejecting_views"].as<int>();
+        if (maxUnassignedCyclesValue < 1 || minRejectingViewsValue < 1)
+        {
+            throw std::invalid_argument(
+                "semantics.plane.max_unassigned_cycles and "
+                "semantics.visibility.min_rejecting_views need >= 1");
+        }
+        semantics.maxUnassignedPlaneCycles =
+            static_cast<unsigned int>(maxUnassignedCyclesValue);
+        semantics.minRejectingViewCount =
+            static_cast<unsigned int>(minRejectingViewsValue);
+        semantics.isDeletedRoomKeyFrameErasureEnabled =
+            config["semantics"]["room"]["erase_deleted_room_keyframes"]
+                .as<bool>();
+
+        /* Semantic layout factors of bundle adjustment. */
+        const YAML::Node wallEdgeNode =
+            config["semantics"]["factors"]["wall_edge"];
+        const YAML::Node roomOverlapNode =
+            config["semantics"]["factors"]["room_overlap"];
+        Semantics::Factors &factors = semantics.factors;
+        factors.wallEdge.isEnabled  = wallEdgeNode["enabled"].as<bool>();
+        factors.wallEdge.maxGap_m   = wallEdgeNode["max_gap_m"].as<float>();
+        factors.wallEdge.informationGain =
+            wallEdgeNode["information_gain"].as<float>();
+        factors.roomOverlap.isEnabled = roomOverlapNode["enabled"].as<bool>();
+        factors.roomOverlap.margin_m  = roomOverlapNode["margin_m"].as<float>();
+        factors.roomOverlap.maxWallInset_m =
+            roomOverlapNode["max_wall_inset_m"].as<float>();
+        factors.roomOverlap.informationGain =
+            roomOverlapNode["information_gain"].as<float>();
+        if (!std::isfinite(factors.wallEdge.maxGap_m) ||
+            factors.wallEdge.maxGap_m <= 0.0F ||
+            !std::isfinite(factors.wallEdge.informationGain) ||
+            factors.wallEdge.informationGain <= 0.0F ||
+            !std::isfinite(factors.roomOverlap.margin_m) ||
+            factors.roomOverlap.margin_m < 0.0F ||
+            !std::isfinite(factors.roomOverlap.maxWallInset_m) ||
+            factors.roomOverlap.maxWallInset_m < 0.0F ||
+            !std::isfinite(factors.roomOverlap.informationGain) ||
+            factors.roomOverlap.informationGain <= 0.0F)
+        {
+            throw std::invalid_argument(
+                "semantics.factors needs wall_edge.max_gap_m > 0, "
+                "room_overlap.margin_m >= 0, room_overlap.max_wall_inset_m "
+                ">= 0 and information_gain > 0");
+        }
+
+        /* Absent key: the mission starts indoors. Any other text than
+         * "indoor" or "outdoor" is rejected here, at the boundary. */
+        const YAML::Node startEnvironmentNode =
+            config["semantics_manager"]["start_environment"];
+        const std::string startEnvironmentText =
+            startEnvironmentNode ? startEnvironmentNode.as<std::string>()
+                                 : std::string("indoor");
+        if (startEnvironmentText == "indoor")
+        {
+            semanticsManager.startEnvironment =
+                scene_graph::StartEnvironment::START_ENVIRONMENT_INDOOR;
+        }
+        else if (startEnvironmentText == "outdoor")
+        {
+            semanticsManager.startEnvironment =
+                scene_graph::StartEnvironment::START_ENVIRONMENT_OUTDOOR;
+        }
+        else
+        {
+            throw std::invalid_argument(
+                "semantics_manager.start_environment must be 'indoor' or "
+                "'outdoor', got '" +
+                startEnvironmentText + "'");
+        }
 
         this->candidateGen.topK =
             config["candidate_gen"]["top_k"].as<unsigned int>();
@@ -487,10 +603,9 @@ SystemParamsStatus
         const RoomSeg::PassagePartition &passagePartition =
             roomSeg.passagePartition;
 
-        if (passageDetection.minimumSideDistance_m <= 0.0F ||
-            passageDetection.minimumEdgeNormalAlignment <= 0.0F ||
-            passageDetection.minimumEdgeNormalAlignment > 1.0F ||
-            passageDetection.minimumOpeningRadius_m <= 0.0F ||
+        if (!std::isfinite(optimization.maxPlaneNormalCorrection_deg) ||
+            optimization.maxPlaneNormalCorrection_deg <= 0.0F ||
+            passageDetection.minimumSideDistance_m <= 0.0F ||
             passageDetection.wallBoundsMargin_m < 0.0F ||
             passageDetection.duplicatePassageDistance_m <= 0.0F ||
             passageDetection.duplicateNormalAlignment <= 0.0F ||
@@ -499,18 +614,31 @@ SystemParamsStatus
             passageDetection.ambiguousDuplicateNormalAlignment >
                 passageDetection.duplicateNormalAlignment ||
             passageDetection.ambiguousDuplicatePlaneSeparation_m < 0.30F ||
-            passageDetection.crossingClusterDistance_m <= 0.0F ||
-            passageDetection.minimumConfirmationSnapshots < 2U ||
-            passageDetection.minimumCrossingClusterSize < 1U ||
-            passageDetection.minimumHorizontalFlankExtent_m <= 0.0F ||
-            passageDetection.minimumHorizontalFlankPointCount < 1U ||
+            passageDetection.doorBandMinHeight_m < 0.0F ||
+            passageDetection.doorBandMaxHeight_m <=
+                passageDetection.doorBandMinHeight_m ||
+            passageDetection.minimumOpeningWidth_m <= 0.0F ||
+            passageDetection.maximumOpeningWidth_m <=
+                passageDetection.minimumOpeningWidth_m ||
+            passageDetection.minimumOpeningHeight_m <= 0.0F ||
+            passageDetection.maximumSillHeight_m < 0.0F ||
+            passageDetection.slabCellSize_m <= 0.0F ||
+            passageDetection.slabHalfThickness_m < 0.0F ||
+            passageDetection.minimumBoundedBandFraction <= 0.0F ||
+            passageDetection.minimumBoundedBandFraction > 1.0F ||
+            passageDetection.minimumObservedFraction <= 0.0F ||
+            passageDetection.minimumObservedFraction > 1.0F ||
+            passageDetection.minimumOpenVerdicts < 1U ||
+            passageDetection.closedConfirmationCount < 1U ||
+            passageDetection.reopenConfirmationCount < 1U ||
+            passageDetection.planeMatchAngle_deg <= 0.0F ||
+            passageDetection.planeMatchOffset_m <= 0.0F ||
             passagePartition.edgeVertexAssociationDistance_m <= 0.0F ||
             passagePartition.minimumGraphCoverageRatio <= 0.0F ||
             passagePartition.minimumGraphCoverageRatio > 1.0F ||
             passagePartition.openingMargin_m < 0.0F ||
             passagePartition.minimumSideDistance_m < 0.0F ||
             passagePartition.wallCentroidMinimumSideDistance_m < 0.0F ||
-            roomSeg.minimumUndefendedWallHoldCycles < 1U ||
             boundaryTopology.minimumWallCount < 3U ||
             boundaryTopology.minimumWallLength_m <= 0.0F ||
             boundaryTopology.maximumCornerGap_m < 0.0F ||
@@ -532,6 +660,8 @@ SystemParamsStatus
             !std::isfinite(roomTracking.reacquireRetryInterval_s) ||
             roomTracking.reacquireMaxRetries < 1U ||
             roomTracking.reacquireMinPlanes < 1U ||
+            semanticsManager.runInterval_s <= 0.0 ||
+            !std::isfinite(semanticsManager.runInterval_s) ||
             this->candidateGen.topK < 1U ||
             this->candidateGen.candidatePairCap < 1U ||
             this->candidateGen.topologyNodesCap < 1U ||

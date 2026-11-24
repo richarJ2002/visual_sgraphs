@@ -7,7 +7,6 @@
 #ifndef VS_GRAPHS_IMAGE_GRABBER_RGBD_PACKET_STRUCT_H
 #define VS_GRAPHS_IMAGE_GRABBER_RGBD_PACKET_STRUCT_H
 
-#include <chrono>
 #include <cstdint>
 
 #include <sensor_msgs/msg/image.hpp>
@@ -40,10 +39,6 @@ struct RgbdPacket
      * @brief           RGB header time in nanoseconds on the ROS sensor clock.
      */
     std::int64_t                                  sensorTimestampNanoseconds{0};
-    /*!
-     * @brief           Steady-clock admission used for queue-wait timing.
-     */
-    std::chrono::steady_clock::time_point         callbackArrival{};
 };
 } /* namespace vs_graphs::image_grabber */
 

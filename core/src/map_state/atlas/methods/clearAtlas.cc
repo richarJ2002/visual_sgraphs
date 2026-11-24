@@ -32,6 +32,8 @@
 
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,8 +45,27 @@ namespace atlas
 AtlasStatus Atlas::clearAtlas()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
-    /* Readers may still hold these maps: retire them; ~Atlas frees them. */
-    retiredMaps.insert(maps.begin(), maps.end());
+    /* The maps leave maps, so their scene graphs go too. */
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
+    {
+        if (p_semanticsManager->eraseSceneGraph(mapEntry.first) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseSceneGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    /* Readers may still hold these maps: retire them, in id order; ~Atlas
+     * frees them. */
+    for (std::pair<const unsigned long, std::unique_ptr<map::Map>> &mapEntry :
+         maps)
+    {
+        retiredMaps.push_back(std::move(mapEntry.second));
+    }
     maps.clear();
     p_activeMap        = static_cast<map::Map *>(nullptr);
     lastInitKeyFrameId = 0;

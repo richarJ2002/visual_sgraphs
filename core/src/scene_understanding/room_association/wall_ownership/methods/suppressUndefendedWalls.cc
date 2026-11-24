@@ -1,0 +1,556 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            suppressUndefendedWalls.cc
+ *
+ * @brief           Implements SemanticsManager::suppressUndefendedWalls(),
+ *                  declared in SemanticsManager.h.
+ */
+
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "map_state/keyframe/keyframe.h"
+#include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
+#include "map_state/map/map.h"
+#include "map_state/map/objects/MapStatusEnum.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantics_manager/private_functions/private_functions.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <rclcpp/logging.hpp>
+#include <unordered_set>
+
+#include "execution/profiling/profiling.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+
+SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
+{
+    PROFILE_FUNCTION();
+    map::Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    if (p_currentMap == nullptr)
+    {
+        undefendedWalls.clear();
+        visibilityRejections.clear();
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    std::vector<semantic::Room *> allRooms{};
+    unsigned long                 currentMapId{};
+    if (p_currentMap->getId(currentMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (getMapRoomsInIdOrder(currentMapId, allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapRoomsInIdOrder returned a failure status; "
+                     "continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Passage *> allPassages{};
+    if (getMapPassagesInIdOrder(currentMapId, allPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPassagesInIdOrder returned a failure status; "
+                     "continuing as before.",
+                     __func__);
+    }
+    std::vector<geometric::Plane *> allPlanes{};
+    if (p_currentMap->getAllPlanes(allPlanes) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<std::vector<Eigen::Vector3d>> skeletonClusters{};
+    if (p_currentMap->getSkeletonClusterPoints(skeletonClusters) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::unordered_set<int> mappedWallIds;
+    std::unordered_set<int> liveWallIds;
+
+    /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
+     * gate (see the comment at its definition). */
+    geometric::Plane *p_groundPlaneForEvidence = nullptr;
+    if (p_currentMap->getBiggestGroundPlane(p_groundPlaneForEvidence) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3d groundNormalForEvidence_world = Eigen::Vector3d::Zero();
+    bool            groundPlaneForEvidenceIsBad{};
+    if ((p_groundPlaneForEvidence != nullptr) &&
+        p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
+    {
+        g2o::Plane3D groundPlaneForEvidenceGetGlobalEquation{};
+        if (p_groundPlaneForEvidence->getGlobalEquation(
+                groundPlaneForEvidenceGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const Eigen::Vector4d groundEq =
+            groundPlaneForEvidenceGetGlobalEquation.coeffs();
+        const double groundNorm = groundEq.head<3>().norm();
+        if (groundEq.allFinite() && groundNorm > 1e-8)
+        {
+            groundNormalForEvidence_world = groundEq.head<3>() / groundNorm;
+        }
+    }
+
+    for (geometric::Plane *p_wall : allPlanes)
+    {
+        if (p_wall == nullptr)
+        {
+            continue;
+        }
+
+        int wallId{};
+        if (p_wall->getId(wallId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        mappedWallIds.insert(wallId);
+
+        bool wallIsBad{};
+        if (p_wall->isBad(wallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        geometric::Plane::PlaneVariant wallPlaneType{};
+        if (!(wallIsBad) && p_wall->getPlaneType(wallPlaneType) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (wallIsBad || wallPlaneType != geometric::Plane::PlaneVariant::WALL)
+        {
+            undefendedWalls.erase(wallId);
+            continue;
+        }
+        liveWallIds.insert(wallId);
+
+        bool ownedByLiveRoom{};
+        if (isWallOwnedByLiveRoom(p_wall, allRooms, ownedByLiveRoom) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isWallOwnedByLiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool associatedWithPassage{};
+        if (isWallAssociatedWithPassage(p_wall,
+                                        allPassages,
+                                        associatedWithPassage) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: isWallAssociatedWithPassage returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        WallAdmissionEvidence evidence{};
+        if (evaluateWallAdmissionEvidence(p_wall,
+                                          p_sysParams,
+                                          groundNormalForEvidence_world,
+                                          evidence) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateWallAdmissionEvidence returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+
+        bool hasCompatibleLiveCluster{};
+        if (hasWallLiveClusterSupport(p_wall,
+                                      skeletonClusters,
+                                      hasCompatibleLiveCluster) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: hasWallLiveClusterSupport returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+
+        /*!
+         * Good geometry alone does NOT defend a wall (user rule: a wall
+         * with no room does not get to persist as a wall plane, regardless
+         * of how clean its evidence looks). Only an actual owning room or
+         * a real passage association counts. A wall genuinely mid-way
+         * through bootstrapping a brand-new room is still protected below
+         * by the stagnant-cycle counter resetting on cloudGrew/
+         * observationGrew -- it keeps gaining points/observations every
+         * cycle the UAV still looks at it, so it never goes stagnant long
+         * enough to retire while real room-formation is in progress.
+         */
+        if (ownedByLiveRoom || associatedWithPassage ||
+            hasCompatibleLiveCluster)
+        {
+            undefendedWalls.erase(wallId);
+            if (hasCompatibleLiveCluster && !ownedByLiveRoom &&
+                !associatedWithPassage)
+            {
+                std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                             "\"map_id\":"
+                          << currentMapId
+                          << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                          << ",\"wall_id\":" << wallId
+                          << ",\"class\":\"WALL\","
+                             "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                             "\"reason\":\"LIVE_CLUSTER_SUPPORT\",\"support\":"
+                          << evidence.fittedPointCount
+                          << ",\"observations\":" << evidence.observationCount
+                          << ",\"pending_age\":0}" << std::endl;
+            }
+            continue;
+        }
+
+        geometric::Plane::GeometrySnapshot wallGetGeometrySnapshot{};
+        if (p_wall->getGeometrySnapshot(wallGetGeometrySnapshot) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
+            wallGetGeometrySnapshot.supportCloud;
+        const std::size_t cloudPointCount =
+            p_cloud != nullptr ? p_cloud->size() : 0U;
+        std::size_t observationCount{};
+        if (p_wall->getObservationCount(observationCount) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservationCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        auto [stateIterator, inserted] = undefendedWalls.try_emplace(
+            wallId,
+            UndefendedWallState{p_wall, 0U, cloudPointCount, observationCount});
+
+        if (!inserted && stateIterator->second.p_wall != p_wall)
+        {
+            stateIterator->second = UndefendedWallState{p_wall,
+                                                        0U,
+                                                        cloudPointCount,
+                                                        observationCount};
+            inserted              = true;
+        }
+
+        UndefendedWallState &state = stateIterator->second;
+
+        if (inserted)
+        {
+            /* The first sighting is recent evidence; age starts next cycle. */
+            continue;
+        }
+
+        const bool cloudGrew       = cloudPointCount > state.cloudPointCount;
+        const bool observationGrew = observationCount > state.observationCount;
+        state.cloudPointCount      = cloudPointCount;
+        state.observationCount     = observationCount;
+
+        /* Most consecutive visibility-refused cycles for any one room. */
+        unsigned int visibilityRejectedCycles = 0U;
+        for (std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
+                 rejectionIterator = visibilityRejections.lower_bound(
+                     {wallId, std::numeric_limits<int>::min()});
+             rejectionIterator != visibilityRejections.end() &&
+             rejectionIterator->first.first == wallId;
+             ++rejectionIterator)
+        {
+            visibilityRejectedCycles =
+                std::max(visibilityRejectedCycles,
+                         rejectionIterator->second.rejectedCycles);
+        }
+
+        /* Growth does not spare a wall the visibility rules keep refusing:
+         * a plane seen only through a solid wall gets deleted. */
+        if (visibilityRejectedCycles <
+                p_sysParams->semantics.minRejectingViewCount &&
+            ((evidence.hasAdequateFiniteFit && cloudGrew) || observationGrew))
+        {
+            state.unresolvedCycles = 0U;
+            continue;
+        }
+
+        state.unresolvedCycles++;
+
+        if (state.unresolvedCycles <
+            p_sysParams->semantics.maxUnassignedPlaneCycles)
+        {
+            std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
+                         "\"map_id\":"
+                      << currentMapId
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                      << ",\"wall_id\":" << wallId
+                      << ",\"class\":\"WALL\","
+                         "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
+                         "\"reason\":\"GRACE_ACTIVE_NO_GROWTH\","
+                         "\"support\":"
+                      << evidence.fittedPointCount
+                      << ",\"observations\":" << evidence.observationCount
+                      << ",\"pending_age\":" << state.unresolvedCycles
+                      << ",\"visibility_rejections\":"
+                      << visibilityRejectedCycles << "}" << std::endl;
+            continue;
+        }
+
+        const unsigned int retiredAfterCycles = state.unresolvedCycles;
+
+        /* Relationships were checked above under the semantic transaction. */
+        std::map<keyframe::KeyFrame *, geometric::Plane::Observation>
+            wallObservations{};
+        if (p_wall->getObservations(wallObservations) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /* Sweep every keyframe that references this plane, including
+         * those that hold it in mvpMapPlanes without an Observation
+         * entry, so no stale pointer survives retirement. */
+        std::vector<keyframe::KeyFrame *> allKeyFrames{};
+        if (p_currentMap->getAllKeyFrames(allKeyFrames) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (keyframe::KeyFrame *p_keyFrame : allKeyFrames)
+        {
+            if (p_keyFrame != nullptr)
+            {
+                if (p_keyFrame->removeMapPlane(p_wall) !=
+                    keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: removeMapPlane returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+            }
+        }
+
+        for (const auto &[p_keyFrame, observation] : wallObservations)
+        {
+            static_cast<void>(observation);
+            if (p_keyFrame != nullptr)
+            {
+                if (p_wall->eraseObservation(p_keyFrame) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+            }
+        }
+
+        /* The twin face must not keep pointing at the retired plane. */
+        geometric::Plane *p_twinWall     = nullptr;
+        geometric::Plane *p_twinWallLink = nullptr;
+        if (p_wall->getTwinFace(p_twinWall) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+            p_wall->clearTwinFace() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+            (p_twinWall != nullptr &&
+             (p_twinWall->getTwinFace(p_twinWallLink) !=
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS ||
+              (p_twinWallLink == p_wall &&
+               p_twinWall->clearTwinFace() !=
+                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS))))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTwinFace/clearTwinFace returned a failure "
+                         "status although they cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+
+        if (p_wall->setBad() != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->eraseRoomWallPlane(p_wall) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseRoomWallPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->eraseMapPlane(p_wall) !=
+            map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_wall->p_refKeyFrame = nullptr;
+        if (p_wall->setMap(nullptr) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        undefendedWalls.erase(wallId);
+        liveWallIds.erase(wallId);
+        retiredPlanesUnfreedCount++;
+
+        if (loggedRetiredWallIds.insert(wallId).second)
+        {
+            std::cout << "SG_PIPELINE {\"event\":\"wall_retirement\","
+                         "\"map_id\":"
+                      << currentMapId
+                      << ",\"semantic_cycle\":" << pipelineSemanticCycle
+                      << ",\"wall_id\":" << wallId
+                      << ",\"class\":\"WALL\",\"lifecycle\":\"RETIRED\","
+                         "\"reason\":\"GRACE_EXPIRED_NO_GROWTH_NO_OWNER_NO_"
+                         "PASSAGE_NO_CLUSTER\","
+                         "\"support\":"
+                      << evidence.fittedPointCount
+                      << ",\"observations\":" << evidence.observationCount
+                      << ",\"pending_age\":" << retiredAfterCycles
+                      << ",\"visibility_rejections\":"
+                      << visibilityRejectedCycles << "}" << std::endl;
+        }
+    }
+
+    for (std::unordered_map<int, UndefendedWallState>::iterator stateIterator =
+             undefendedWalls.begin();
+         stateIterator != undefendedWalls.end();)
+    {
+        stateIterator = mappedWallIds.count(stateIterator->first) == 0U
+                            ? undefendedWalls.erase(stateIterator)
+                            : std::next(stateIterator);
+    }
+
+    /* Forget visibility refusals of walls and rooms that are gone. */
+    std::unordered_set<int> liveRoomIds;
+    for (semantic::Room *p_room : allRooms)
+    {
+        int roomId{};
+        if (p_room != nullptr &&
+            p_room->getId(roomId) == semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            liveRoomIds.insert(roomId);
+        }
+    }
+    for (std::map<std::pair<int, int>, VisibilityRejectionState>::iterator
+             rejectionIterator = visibilityRejections.begin();
+         rejectionIterator != visibilityRejections.end();)
+    {
+        rejectionIterator =
+            liveWallIds.count(rejectionIterator->first.first) == 0U ||
+                    liveRoomIds.count(rejectionIterator->first.second) == 0U
+                ? visibilityRejections.erase(rejectionIterator)
+                : std::next(rejectionIterator);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */

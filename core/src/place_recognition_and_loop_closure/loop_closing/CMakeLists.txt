@@ -1,6 +1,7 @@
 # LoopClosing object sources: exactly this object's translation units.
 set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkLoopRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkNewKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkObservations.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/correctLoop.cc
@@ -29,7 +30,40 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setMergeStatus.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setTracker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/stopGlobalBundleAdjustment.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collapseMergedFloors.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/mergeFloorEvidenceAndRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/applyInertialMapAlignment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildCurrentLocalWindow.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/buildMergeLocalWindow.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/calculateMergeMapTransform.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/clearDerivedSkeleton.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectKeyFramePoses.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectMergeMapContents.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectWindowMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/commitMapMerge.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/correctMapPointsToCurrentWorld.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/correctMergeKeyFramePoses.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/correctMergeMapMonocular.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/correctMergeMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/evaluateSemanticMergeGate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/expandWindowByCovisibility.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/formatMergeTransform.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/gatherInertialFusionCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/hasMergeMapKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/initializeInertialMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockAndRevalidateMergeCandidate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/lockMergeGraphs.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/optimizeMergeWindow.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/propagateInertialPoseCorrections.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/propagateMergedPoseCorrections.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/recordAcceptedMerge.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/resumeMergeWorkers.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/reverseMergeSpanningTree.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/runInertialMergeBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/selectMergeMaps.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/shouldRelaunchGlobalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stopLocalMapping.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferKeyFramesAndMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferMergeWindow.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transferPlanes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/updateKeyFrameConnections.cc
   ${CMAKE_CURRENT_LIST_DIR}/private_functions/verifyLoopMergeFloors.cc
 )

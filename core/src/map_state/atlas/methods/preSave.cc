@@ -75,34 +75,12 @@ AtlasStatus Atlas::preSave()
         }
     }
 
-    struct CompFunctor
+    /* maps is keyed by id, so backupMaps is filled in ascending id order. */
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
     {
-        inline bool operator()(map::Map *p_firstMap_in,
-                               map::Map *p_secondMap_in)
-        {
-            unsigned long firstMapId{};
-            if (p_firstMap_in->getId(firstMapId) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            unsigned long secondMapId{};
-            if (p_secondMap_in->getId(secondMapId) !=
-                map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstMapId < secondMapId;
-        }
-    };
-    std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
-    std::sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
+        backupMaps.push_back(mapEntry.second.get());
+    }
 
     std::set<camera_models::geometric_camera::GeometricCamera *> cameraSet(
         cameras.begin(),

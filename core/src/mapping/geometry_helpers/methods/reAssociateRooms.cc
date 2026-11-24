@@ -23,13 +23,14 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -50,13 +51,25 @@ UtilsStatus Utils::reAssociateRooms(atlas::Atlas *p_atlas_in)
      *                  allows a confirmed room or corridor to absorb redundant,
      *                  single-wall provisional structural elements.
      */
-    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
-    if (p_atlas_in->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_semanticsManager->getAllRoomsInIdOrder(allRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its rooms.",
+            __func__);
     }
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms)

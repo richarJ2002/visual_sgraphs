@@ -40,8 +40,8 @@ bool isUnresolvedWallHypothesisRecordLessTotalOrder(
     /* UnresolvedWallHypothesisRecord (unresolvedCycles, cloudPointCount,
      * observationCount) carries no geometric field, so one total order
      * already serves both the topology-only and full-geometry projections
-     * identically -- unlike OpenPassageHypothesisRecord, no split into
-     * separate TopologyOnly and FullGeometry comparators is needed here. */
+     * identically, so no split into separate TopologyOnly and
+     * FullGeometry comparators is needed. */
     if (isRawPlaneRefLess(lhs_in.wallRef, rhs_in.wallRef))
     {
         return true;

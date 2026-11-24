@@ -46,6 +46,12 @@ PlaneStatus Plane::applyTransform(
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
+    if (observationOrigin_world_m.has_value())
+    {
+        observationOrigin_world_m =
+            alignmentTransform_oldWorldToNewWorld_in.map(
+                observationOrigin_world_m.value());
+    }
 
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
@@ -71,9 +77,15 @@ PlaneStatus Plane::applyTransform(
     }
     globalEquation = transformedEquation;
 
-    p_octree->deleteTree();
-    p_octree->setInputCloud(planeCloud);
-    p_octree->addPointsFromInputCloud();
+    /* Moved points can enter other voxels: thin and re-admit them so the
+     * map density table follows the cloud. */
+    if (thinMapCloudWithoutLock(nullptr) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: thinMapCloudWithoutLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Recompute the finite bounds in the transformed frame. */
     if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)

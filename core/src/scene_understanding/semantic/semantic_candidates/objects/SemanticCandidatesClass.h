@@ -13,7 +13,7 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_CANDIDATES_OBJECTS_SEMANTIC_CANDIDATES_CLASS_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_CANDIDATES_OBJECTS_SEMANTIC_CANDIDATES_CLASS_H
 
-#include "scene_understanding/semantic/room/objects/RoomContextSnapshotStruct.h"
+#include "scene_understanding/scene_graph/room/objects/RoomContextSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/CandidateCueBreakdownStruct.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidateConfigRejectionReasonEnum.h"
 #include "scene_understanding/semantic/semantic_candidates/objects/SemanticCandidateConfigStruct.h"

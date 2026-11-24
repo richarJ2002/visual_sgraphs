@@ -5,21 +5,21 @@
  *                  Semantic/SemanticVerify.h.
  */
 
-#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 #include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
@@ -37,8 +37,9 @@ namespace semantic
 
 SemanticVerifyStatus SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
-    map::Map               *p_survivingMap_in,
-    map::Map               *p_absorbedMap_in,
+    SemanticsManager        *p_semanticsManager_in,
+    map::Map                *p_survivingMap_in,
+    map::Map                *p_absorbedMap_in,
     const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,
     bool                    &hasPassed_out)
 {
@@ -48,7 +49,8 @@ SemanticVerifyStatus SemanticVerify::runFloorGate(
         1.0);
     std::string resultText;
     bool        passed{};
-    if (verifyLoopMergeFloors(p_survivingMap_in,
+    if (verifyLoopMergeFloors(p_semanticsManager_in,
+                              p_survivingMap_in,
                               p_absorbedMap_in,
                               transform,
                               resultText,

@@ -36,7 +36,7 @@
 
 #include <Eigen/Core>
 
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 
 namespace vs_graphs
 {
@@ -146,7 +146,7 @@ struct RoomRecord
 
     /*!
      * @brief           One EntityRef per non-null Room::getPassages() entry
-     *                  (the Room::doorways side of the relationship), sorted
+     *                  (the Room::passages side of the relationship), sorted
      *                  deterministically. Captured independently of each
      *                  Passage's own knownSideProvenance/ p_prospectiveRoom
      *                  fields -- the two directions are not kept synchronized
@@ -174,9 +174,9 @@ struct RoomRecord
     /*!
      * @brief           Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
      *                  field recording how/why it was created (confirmed by
-     *                  direct source read of Room.h/Room.cc -- roomTag,
-     *                  p_matchedContext, and the meta-marker fields record
-     *                  identity/labelling, not creation provenance). A
+     *                  direct source read of Room.h/Room.cc --
+     *                  p_matchedContext records identity/labelling, not
+     *                  creation provenance). A
      *                  future extension that adds a provenance field on
      *                  Room is the owner of resolving this to an actual
      *                  value.

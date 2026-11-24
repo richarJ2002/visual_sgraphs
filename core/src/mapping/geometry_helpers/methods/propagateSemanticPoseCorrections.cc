@@ -24,28 +24,21 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
-#include "mapping/geometry_helpers/objects/UtilsClass.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "mapping/geometry_helpers/objects/UtilsClass.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <rclcpp/logging.hpp>
-#include <set>
+#include <shared_mutex>
 
 namespace vs_graphs
 {
@@ -57,7 +50,8 @@ namespace utils
 {
 
 UtilsStatus Utils::propagateSemanticPoseCorrections(
-    map::Map                   *p_map_inout,
+    map::Map              *p_map_inout,
+    SemanticsManager      *p_semanticsManager_in,
     const KeyFramePoseMap &keyFramePosesBefore_worldToCamera_in,
     const KeyFramePoseMap &keyFramePosesAfter_worldToCamera_in,
     const g2o::Sim3       &fallbackTransform_oldWorldToNewWorld_in)
@@ -66,14 +60,31 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     {
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
+    unsigned long  mapId{};
+    GraphLockScope graphLockScope{};
+    /* This edits rooms, passages and storeys in place: exclusive graph lock
+     * for the whole pass (re-entrant when the caller already holds it). */
+    if ((p_map_inout->getId(mapId) != map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->lockGraphs(
+             {mapId},
+             GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+             graphLockScope) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId/lockGraphs returned a failure status "
+                     "although they cannot fail; continuing as before.",
+                     __func__);
+    }
 
     struct PoseCorrectionNode
     {
-        keyframe::KeyFrame       *p_keyFrame;
-        g2o::Sim3       poseBefore_worldToCamera;
-        g2o::Sim3       poseAfter_worldToCamera;
-        g2o::Sim3       poseCorrection_oldWorldToNewWorld;
-        Eigen::Vector3d cameraCenter_oldWorld_m;
+        keyframe::KeyFrame *p_keyFrame;
+        g2o::Sim3           poseBefore_worldToCamera;
+        g2o::Sim3           poseAfter_worldToCamera;
+        g2o::Sim3           poseCorrection_oldWorldToNewWorld;
+        Eigen::Vector3d     cameraCenter_oldWorld_m;
     };
 
     const auto isFiniteSim3 = [](const g2o::Sim3 &transform_in)
@@ -142,8 +153,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         { return firstNode_in.p_keyFrame->id < secondNode_in.p_keyFrame->id; });
 
     const auto findNodeForKeyFrame =
-        [&correctionNodes](
-            const keyframe::KeyFrame *p_keyFrame_in) -> const PoseCorrectionNode *
+        [&correctionNodes](const keyframe::KeyFrame *p_keyFrame_in)
+        -> const PoseCorrectionNode *
     {
         if (p_keyFrame_in == nullptr)
         {
@@ -160,50 +171,16 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                                                      : &(*nodeIterator);
     };
 
-    const auto findNearestNode =
-        [&correctionNodes](const Eigen::Vector3d &semanticPoint_oldWorld_m)
-        -> const PoseCorrectionNode *
+    PoseCorrectionField correctionField{};
+    correctionField.anchors.reserve(correctionNodes.size());
+    for (const PoseCorrectionNode &node : correctionNodes)
     {
-        if (!semanticPoint_oldWorld_m.allFinite())
-        {
-            return nullptr;
-        }
-
-        const PoseCorrectionNode *p_nearestNode = nullptr;
-        double                    nearestSquaredDistance_m2 =
-            std::numeric_limits<double>::infinity();
-
-        for (const PoseCorrectionNode &node : correctionNodes)
-        {
-            const double squaredDistance_m2 =
-                (node.cameraCenter_oldWorld_m - semanticPoint_oldWorld_m)
-                    .squaredNorm();
-
-            if (squaredDistance_m2 < nearestSquaredDistance_m2)
-            {
-                nearestSquaredDistance_m2 = squaredDistance_m2;
-                p_nearestNode             = &node;
-            }
-        }
-
-        return p_nearestNode;
-    };
-
-    const auto selectCorrectionForPoint =
-        [&findNearestNode, &fallbackTransform_oldWorldToNewWorld_in](
-            const Eigen::Vector3d &semanticPoint_oldWorld_m)
-        -> const g2o::Sim3 &
-    {
-        const PoseCorrectionNode *p_nearestNode =
-            findNearestNode(semanticPoint_oldWorld_m);
-
-        return p_nearestNode != nullptr
-                   ? p_nearestNode->poseCorrection_oldWorldToNewWorld
-                   : fallbackTransform_oldWorldToNewWorld_in;
-    };
-
-    std::map<geometric::Plane *, g2o::Sim3> planeCorrections_oldWorldToNewWorld;
-    std::map<geometric::Plane *, Eigen::Vector3d> planeCentroids_oldWorld_m;
+        correctionField.anchors.push_back(
+            {node.cameraCenter_oldWorld_m,
+             node.poseCorrection_oldWorldToNewWorld});
+    }
+    correctionField.fallbackCorrection_oldWorldToNewWorld =
+        fallbackTransform_oldWorldToNewWorld_in;
 
     std::vector<geometric::Plane *> mapAllPlanes{};
     if (p_map_inout->getAllPlanes(mapAllPlanes) !=
@@ -241,8 +218,9 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                          __func__);
         }
 
-        planeCentroids_oldWorld_m.insert_or_assign(p_plane,
-                                                   planeCentroid_oldWorld_m);
+        correctionField.planeCentroids_oldWorld_m.insert_or_assign(
+            p_plane,
+            planeCentroid_oldWorld_m);
 
         const PoseCorrectionNode *p_selectedNode =
             findNodeForKeyFrame(p_plane->p_refKeyFrame);
@@ -291,7 +269,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         const g2o::Sim3 &poseCorrection_oldWorldToNewWorld =
             p_selectedNode != nullptr
                 ? p_selectedNode->poseCorrection_oldWorldToNewWorld
-                : selectCorrectionForPoint(planeCentroid_oldWorld_m);
+                : correctionField.selectCorrectionForPoint(
+                      planeCentroid_oldWorld_m);
 
         if (p_plane->applyTransform(poseCorrection_oldWorldToNewWorld) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -301,453 +280,23 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        planeCorrections_oldWorldToNewWorld.insert_or_assign(
+        correctionField.planeCorrections_oldWorldToNewWorld.insert_or_assign(
             p_plane,
             poseCorrection_oldWorldToNewWorld);
     }
 
-    std::map<semantic::Marker *, g2o::Sim3>
-        markerCorrections_oldWorldToNewWorld;
-
-    std::vector<semantic::Marker *> mapAllMarkers{};
-    if (p_map_inout->getAllMarkers(mapAllMarkers) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
+    if ((p_semanticsManager_in == nullptr) ||
+        (p_semanticsManager_in->applyPoseCorrectionField(mapId,
+                                                         p_map_inout,
+                                                         correctionField) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (semantic::Marker *p_marker : mapAllMarkers)
-    {
-        if (p_marker == nullptr)
-        {
-            continue;
-        }
-
-        Sophus::SE3f markerPose_markerToOldWorld{};
-        if (p_marker->getGlobalPose(markerPose_markerToOldWorld) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        const PoseCorrectionNode *p_selectedNode = nullptr;
-        double                    smallestReconstructionError_m2 =
-            std::numeric_limits<double>::infinity();
-
-        std::map<keyframe::KeyFrame *, Sophus::SE3f> markerObservations{};
-        if (p_marker->getObservations(markerObservations) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getObservations returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (const auto &[p_observingKeyFrame, markerPose_markerToCamera] :
-             markerObservations)
-        {
-            const PoseCorrectionNode *p_observerNode =
-                findNodeForKeyFrame(p_observingKeyFrame);
-
-            if (p_observerNode == nullptr)
-            {
-                continue;
-            }
-
-            const Eigen::Vector3d reconstructedPosition_oldWorld_m =
-                p_observerNode->poseBefore_worldToCamera.inverse().map(
-                    markerPose_markerToCamera.translation().cast<double>());
-
-            const double reconstructionError_m2 =
-                (reconstructedPosition_oldWorld_m -
-                 markerPose_markerToOldWorld.translation().cast<double>())
-                    .squaredNorm();
-
-            if (reconstructionError_m2 < smallestReconstructionError_m2)
-            {
-                smallestReconstructionError_m2 = reconstructionError_m2;
-                p_selectedNode                 = p_observerNode;
-            }
-        }
-
-        const g2o::Sim3 &markerCorrection_oldWorldToNewWorld =
-            p_selectedNode != nullptr
-                ? p_selectedNode->poseCorrection_oldWorldToNewWorld
-                : selectCorrectionForPoint(
-                      markerPose_markerToOldWorld.translation().cast<double>());
-
-        /*
-         * Preserve the fused global marker estimate. Reconstructing it from a
-         * single noisy observation would move the marker even for an identity
-         * pose correction, and repeated GBA/remerge cycles would accumulate
-         * that observation noise.
-         */
-        if (p_marker->applyTransform(markerCorrection_oldWorldToNewWorld) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyTransform returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        markerCorrections_oldWorldToNewWorld.insert_or_assign(
-            p_marker,
-            markerCorrection_oldWorldToNewWorld);
-    }
-
-    std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-    if (p_map_inout->getAllPassages(mapAllPassages) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (vs_graphs::core::semantic::Passage *p_passage : mapAllPassages)
-    {
-        if (p_passage == nullptr)
-        {
-            continue;
-        }
-
-        Eigen::Vector3d passageCentroid_oldWorld_m{};
-        if (p_passage->getCentroid(passageCentroid_oldWorld_m) !=
-            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        const g2o::Sim3 *p_passageCorrection = nullptr;
-
-        vs_graphs::core::geometric::Plane *p_passageAssociateDoor = nullptr;
-        if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
-            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAssociateDoor returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (geometric::Plane *p_doorPlane = p_passageAssociateDoor;
-            p_doorPlane != nullptr)
-        {
-            const std::map<geometric::Plane *, g2o::Sim3>::iterator
-                correctionIterator =
-                    planeCorrections_oldWorldToNewWorld.find(p_doorPlane);
-
-            if (correctionIterator != planeCorrections_oldWorldToNewWorld.end())
-            {
-                p_passageCorrection = &correctionIterator->second;
-            }
-        }
-
-        if (p_passageCorrection == nullptr)
-        {
-            double closestWallSquaredDistance_m2 =
-                std::numeric_limits<double>::infinity();
-
-            std::vector<vs_graphs::core::geometric::Plane *>
-                passageAssociateWalls{};
-            if (p_passage->getAssociateWalls(passageAssociateWalls) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAssociateWalls returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (geometric::Plane *p_wall : passageAssociateWalls)
-            {
-                const std::map<geometric::Plane *, g2o::Sim3>::iterator
-                    correctionIterator =
-                        planeCorrections_oldWorldToNewWorld.find(p_wall);
-
-                if (p_wall == nullptr ||
-                    correctionIterator ==
-                        planeCorrections_oldWorldToNewWorld.end())
-                {
-                    continue;
-                }
-
-                const std::map<geometric::Plane *, Eigen::Vector3d>::iterator
-                    centroidIterator = planeCentroids_oldWorld_m.find(p_wall);
-
-                if (centroidIterator == planeCentroids_oldWorld_m.end())
-                {
-                    continue;
-                }
-
-                const double squaredDistance_m2 =
-                    (centroidIterator->second - passageCentroid_oldWorld_m)
-                        .squaredNorm();
-
-                if (squaredDistance_m2 < closestWallSquaredDistance_m2)
-                {
-                    closestWallSquaredDistance_m2 = squaredDistance_m2;
-                    p_passageCorrection           = &correctionIterator->second;
-                }
-            }
-        }
-
-        if (p_passage->applyTransform(
-                p_passageCorrection != nullptr
-                    ? *p_passageCorrection
-                    : selectCorrectionForPoint(passageCentroid_oldWorld_m)) !=
-            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyTransform returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-    }
-
-    std::map<semantic::Room *, g2o::Sim3> roomCorrections_oldWorldToNewWorld;
-    std::map<semantic::Room *, Eigen::Vector3d> roomCentroids_oldWorld_m;
-    std::set<semantic::Room *>                  correctedRooms;
-    std::vector<semantic::Room *>               rooms{};
-    if (p_map_inout->getAllDetectedMapRooms(rooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllDetectedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    std::vector<semantic::Room *> markerRooms{};
-    if (p_map_inout->getAllMarkerBasedMapRooms(markerRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkerBasedMapRooms returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
-    rooms.insert(rooms.end(), markerRooms.begin(), markerRooms.end());
-
-    for (semantic::Room *p_room : rooms)
-    {
-        bool roomIsBad{};
-        if (!(p_room == nullptr) &&
-            p_room->isBad(roomIsBad) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room == nullptr || roomIsBad ||
-            !correctedRooms.insert(p_room).second)
-        {
-            continue;
-        }
-
-        Eigen::Vector3d roomCentroid_oldWorld_m{};
-        if (p_room->getCentroid(roomCentroid_oldWorld_m) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomCentroids_oldWorld_m.insert_or_assign(p_room,
-                                                  roomCentroid_oldWorld_m);
-
-        const g2o::Sim3  *p_roomCorrection = nullptr;
-        semantic::Marker *p_metaMarker     = nullptr;
-        if (p_room->getMetaMarker(p_metaMarker) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMetaMarker returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        if (p_metaMarker != nullptr)
-        {
-            const std::map<semantic::Marker *, g2o::Sim3>::iterator
-                markerCorrectionIterator =
-                    markerCorrections_oldWorldToNewWorld.find(p_metaMarker);
-
-            if (markerCorrectionIterator !=
-                markerCorrections_oldWorldToNewWorld.end())
-            {
-                p_roomCorrection = &markerCorrectionIterator->second;
-            }
-        }
-
-        if (p_roomCorrection == nullptr)
-        {
-            double closestWallSquaredDistance_m2 =
-                std::numeric_limits<double>::infinity();
-
-            std::vector<geometric::Plane *> roomWalls{};
-            if (p_room->getWalls(roomWalls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (geometric::Plane *p_wall : roomWalls)
-            {
-                const std::map<geometric::Plane *, g2o::Sim3>::iterator
-                    correctionIterator =
-                        planeCorrections_oldWorldToNewWorld.find(p_wall);
-                const std::map<geometric::Plane *, Eigen::Vector3d>::iterator
-                    centroidIterator = planeCentroids_oldWorld_m.find(p_wall);
-
-                if (correctionIterator ==
-                        planeCorrections_oldWorldToNewWorld.end() ||
-                    centroidIterator == planeCentroids_oldWorld_m.end())
-                {
-                    continue;
-                }
-
-                const double squaredDistance_m2 =
-                    (centroidIterator->second - roomCentroid_oldWorld_m)
-                        .squaredNorm();
-
-                if (squaredDistance_m2 < closestWallSquaredDistance_m2)
-                {
-                    closestWallSquaredDistance_m2 = squaredDistance_m2;
-                    p_roomCorrection              = &correctionIterator->second;
-                }
-            }
-        }
-
-        const g2o::Sim3 &roomCorrection_oldWorldToNewWorld =
-            p_roomCorrection != nullptr
-                ? *p_roomCorrection
-                : selectCorrectionForPoint(roomCentroid_oldWorld_m);
-
-        if (p_room->applyTransform(roomCorrection_oldWorldToNewWorld) !=
-            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyTransform returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomCorrections_oldWorldToNewWorld.insert_or_assign(
-            p_room,
-            roomCorrection_oldWorldToNewWorld);
-    }
-
-    std::vector<semantic::Floor *> mapAllFloors{};
-    if (p_map_inout->getAllFloors(mapAllFloors) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (semantic::Floor *p_floor : mapAllFloors)
-    {
-        if (p_floor == nullptr)
-        {
-            continue;
-        }
-
-        Eigen::Vector3d floorCentroid_oldWorld_m{};
-        if (p_floor->getCentroid(floorCentroid_oldWorld_m) !=
-            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        const g2o::Sim3 *p_floorCorrection = nullptr;
-        double           closestRoomSquaredDistance_m2 =
-            std::numeric_limits<double>::infinity();
-
-        std::vector<vs_graphs::core::semantic::Room *> floorRooms{};
-        if (p_floor->getRooms(floorRooms) !=
-            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRooms returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (semantic::Room *p_room : floorRooms)
-        {
-            bool roomIsBad2{};
-            if (!(p_room == nullptr) &&
-                p_room->isBad(roomIsBad2) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            map::Map *p_roomMap = nullptr;
-            if (!(p_room == nullptr || roomIsBad2) &&
-                p_room->getMap(p_roomMap) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getMap returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_room == nullptr || roomIsBad2 || p_roomMap != p_map_inout)
-            {
-                continue;
-            }
-
-            const std::map<semantic::Room *, g2o::Sim3>::iterator
-                correctionIterator =
-                    roomCorrections_oldWorldToNewWorld.find(p_room);
-            const std::map<semantic::Room *, Eigen::Vector3d>::iterator
-                centroidIterator = roomCentroids_oldWorld_m.find(p_room);
-
-            if (correctionIterator ==
-                    roomCorrections_oldWorldToNewWorld.end() ||
-                centroidIterator == roomCentroids_oldWorld_m.end())
-            {
-                continue;
-            }
-
-            const double squaredDistance_m2 =
-                (centroidIterator->second - floorCentroid_oldWorld_m)
-                    .squaredNorm();
-
-            if (squaredDistance_m2 < closestRoomSquaredDistance_m2)
-            {
-                closestRoomSquaredDistance_m2 = squaredDistance_m2;
-                p_floorCorrection             = &correctionIterator->second;
-            }
-        }
-
-        if (p_floor->applyTransform(
-                p_floorCorrection != nullptr
-                    ? *p_floorCorrection
-                    : selectCorrectionForPoint(floorCentroid_oldWorld_m)) !=
-            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: applyTransform returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: map %lu has no semantics manager or no scene graph in it; "
+            "continuing without its passages, rooms and floors.",
+            __func__,
+            mapId);
     }
 
     std::vector<std::vector<Eigen::Vector3d>> skeletonClusters_oldWorld_m{};
@@ -778,7 +327,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             static_cast<double>(skeletonCluster_oldWorld_m.size());
 
         const g2o::Sim3 &clusterCorrection_oldWorldToNewWorld =
-            selectCorrectionForPoint(clusterCentroid_oldWorld_m);
+            correctionField.selectCorrectionForPoint(
+                clusterCentroid_oldWorld_m);
 
         for (Eigen::Vector3d &semanticPoint_oldWorld_m :
              skeletonCluster_oldWorld_m)
@@ -817,10 +367,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             skeletonEdge_oldWorld_m.second;
 
         skeletonEdge_oldWorld_m.first =
-            selectCorrectionForPoint(firstEndpoint_oldWorld_m)
+            correctionField.selectCorrectionForPoint(firstEndpoint_oldWorld_m)
                 .map(firstEndpoint_oldWorld_m);
         skeletonEdge_oldWorld_m.second =
-            selectCorrectionForPoint(secondEndpoint_oldWorld_m)
+            correctionField.selectCorrectionForPoint(secondEndpoint_oldWorld_m)
                 .map(secondEndpoint_oldWorld_m);
     }
 

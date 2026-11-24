@@ -42,6 +42,8 @@
 #include <iostream>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,6 +53,7 @@ namespace tracking
 
 TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
 {
+    PROFILE_FUNCTION();
     bool      isImuInitialized2{};
     map::Map *p_atlasCurrentMap = nullptr;
     if ((((sensor == system::System::IMU_MONOCULAR ||

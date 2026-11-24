@@ -39,6 +39,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -48,6 +50,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::processNewKeyFrame()
 {
+    PROFILE_FUNCTION();
     {
         std::unique_lock<std::mutex> newKeyFramesLock(newKeyFramesMutex);
         p_currentKeyFrame = newKeyFrames.front();

@@ -23,27 +23,30 @@
  *                  declared in GeoSemHelpers.h.
  */
 
-#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
 #include "map_state/atlas/atlas.h"
 #include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/map.h"
-#include "scene_understanding/semantic/passage/objects/PassageStatusEnum.h"
-#include "scene_understanding/semantic/passage/passage.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "scene_understanding/geo_sem_helpers/geo_sem_helpers.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/passage/objects/PassageStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <rclcpp/logging.hpp>
+#include <utility>
 
 namespace vs_graphs::core::utils::geo_sem_helpers
 {
 
 GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
-    atlas::Atlas           *p_atlas_inout,
-    vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
-    Eigen::Vector3d                   centroid_in,
-    std::optional<int>                stableRoomId_in)
+    atlas::Atlas                    *p_atlas_inout,
+    std::unique_ptr<semantic::Room> &p_blankRoomCandidate_out,
+    Eigen::Vector3d                  centroid_in,
+    bool                             isRecoveryRoom_in)
 {
     /* Confirm that the p_atlas_inout is valid */
     if (p_atlas_inout == nullptr)
@@ -51,19 +54,31 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         std::cerr << "[GeoSemHelper] Cannot create room: Atlas is null."
                   << std::endl;
 
-        p_blankRoomCandidate_out = nullptr;
+        p_blankRoomCandidate_out.reset();
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
+    }
+
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_inout->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getSemanticsManager returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
     }
 
     /* Extract the existing rooms from the map */
     std::vector<vs_graphs::core::semantic::Room *> existingRooms{};
-    if (p_atlas_inout->getAllRooms(existingRooms) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllRoomsInIdOrder(existingRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its rooms.",
+            __func__);
     }
 
     /*!
@@ -78,8 +93,8 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      *
      * Deliberately counts isPassable() passages only, not every registered
      * Passage object: a Passage can also be created "blocked" purely from a
-     * classified door plane sitting near a wall (detectDoorsAndDoorways(),
-     * GeoSemHelpers.cc's createMapPassage() called with isOpenPassage_in =
+     * classified door plane sitting near a wall (detectPassages(),
+     * SemanticsManager::createMapPassage() called with isOpenPassage_in =
      * false) -- no free-space evidence at all. Counting that toward the
      * budget would let a semantic door classification alone unlock a new
      * room the same way real passage evidence does, which is exactly the
@@ -93,13 +108,14 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      * passable/blocked state alone.
      */
     std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages{};
-    if (p_atlas_inout->getAllPassages(currentMapPassages) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    if (p_semanticsManager->getAllPassagesInIdOrder(currentMapPassages) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for the active map; "
+            "continuing without its passages.",
+            __func__);
     }
     const std::size_t passablePassageCount = std::count_if(
         currentMapPassages.begin(),
@@ -129,11 +145,10 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
             return p_passage != nullptr && !passageIsBad && passageIsPassable;
         });
 
-    /* Recovery (explicit stable ID) restores an already-discovered identity
-     * after a tracking-loss reset; it is not new discovery and must not be
-     * blocked by the passage budget. The budget gates discovery only. */
-    if (!stableRoomId_in.has_value() &&
-        existingRooms.size() > passablePassageCount)
+    /* Recovery recreates an already-discovered room after a tracking-loss
+     * reset; it is not new discovery and must not be blocked by the passage
+     * budget. The budget gates discovery only. */
+    if (!isRecoveryRoom_in && existingRooms.size() > passablePassageCount)
     {
         std::cerr << "[GeoSemHelper] Refusing to create a new room: "
                   << existingRooms.size() << " room(s) already exist against "
@@ -142,39 +157,29 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
                      "never exceed passable-passage count + 1."
                   << std::endl;
 
-        p_blankRoomCandidate_out = nullptr;
+        p_blankRoomCandidate_out.reset();
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    int atlasRoomId{};
-    if (!(stableRoomId_in.has_value()) &&
-        p_atlas_inout->reserveRoomIdentity(atlasRoomId) !=
-            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    /* Every room takes a fresh identity here; the bootstrap then gives a
+     * recovered room the id of the room it restores. */
+    int roomId{};
+    if (p_atlas_inout->reserveRoomIdentity(roomId) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: reserveRoomIdentity returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    const int roomId =
-        stableRoomId_in.has_value() ? *stableRoomId_in : atlasRoomId;
-    if (p_atlas_inout->observeRoomIdentity(roomId) !=
-        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: observeRoomIdentity returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
-    }
 
     /* Create new room */
-    vs_graphs::core::semantic::Room *p_newRoom =
-        new vs_graphs::core::semantic::Room();
+    std::unique_ptr<semantic::Room> p_newRoom =
+        std::make_unique<semantic::Room>();
 
     /*!
-     * Fill the parameters of room. The caller is responsible for inserting it
-     * with:
-     *      p_atlas_inout->AddCandidateMapRoom(newRoom);
+     * Fill the parameters of room. The caller owns the room until it hands
+     * it to the scene graph with SemanticsManager::addCandidateRoom().
      */
 
     if (p_newRoom->setId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -250,7 +255,7 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoomId << " at "
               << newRoomCentroid.transpose() << "." << std::endl;
 
-    p_blankRoomCandidate_out = p_newRoom;
+    p_blankRoomCandidate_out = std::move(p_newRoom);
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 

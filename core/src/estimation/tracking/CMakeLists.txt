@@ -7,7 +7,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/createMapInAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/findPointsCloseToLocation.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/findPointsCloseToMarker.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCamTwc.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImageScale.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuTwb.cc
@@ -23,7 +22,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuPreintegrated.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isStopped.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/loadTrackingParameters.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/localMapStats2File.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/monocularInitialization.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/needNewKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/newDataset.cc
@@ -33,7 +31,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/parseORBParamFile.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/predictStateIMU.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/preintegrateIMU.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/printTimeStats.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/release.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/relocalization.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestStop.cc
@@ -49,13 +46,10 @@ set(VS_GRAPHS_TRACKING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/track.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/trackLocalMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/trackReferenceKeyFrame.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/trackStats2File.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/trackWithMotionModel.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateFrameIMU.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateLastFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateLocalKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateLocalMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updateLocalPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/calcAverage.cc
-  ${CMAKE_CURRENT_LIST_DIR}/private_functions/calcDeviation.cc
 )

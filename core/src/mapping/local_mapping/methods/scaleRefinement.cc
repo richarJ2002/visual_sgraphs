@@ -46,6 +46,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -55,6 +57,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::scaleRefinement()
 {
+    PROFILE_FUNCTION();
     /*!
      * Minimum number of keyframes to compute a solution
      * Minimum time (seconds) between first and last keyframe to compute a
@@ -159,12 +162,31 @@ LocalMappingStatus LocalMapping::scaleRefinement()
     }
 
     std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+    /* mRwg is the gravity estimate in the frame before the rotation. */
+    if (p_activeMap->setUpFromGravity(mRwg) !=
+        map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setUpFromGravity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if ((fabs(scale - 1.f) > 0.002) || !isMonocular)
     {
         Sophus::SE3f alignmentPose_worldToGravity(
             mRwg.cast<float>().transpose(),
             Eigen::Vector3f::Zero());
-        if (p_activeMap->applyScaledRotation(alignmentPose_worldToGravity,
+        SemanticsManager *p_semanticsManager = nullptr;
+        if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSemanticsManager returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_activeMap->applyScaledRotation(p_semanticsManager,
+                                             alignmentPose_worldToGravity,
                                              scale,
                                              true) !=
             map::MapStatus::MAP_STATUS_SUCCESS)

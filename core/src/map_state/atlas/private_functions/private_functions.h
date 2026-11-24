@@ -14,178 +14,16 @@
 #define VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 
 #include "map_state/atlas/atlas.h"
-#include <algorithm>
+#include "map_state/atlas/objects/RoomContextExportStruct.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 #include <atomic>
-#include <cstddef>
-#include <iostream>
-#include <rclcpp/logging.hpp>
-#include <set>
-#include <string>
 #include <utility>
 #include <vector>
-
-namespace vs_graphs::core::map { class Map; }
 
 namespace vs_graphs
 {
 namespace core
 {
-
-
-
-namespace geometric
-{
-class Plane;
-} /* namespace geometric */
-
-namespace semantic
-{
-class Passage;
-} /* namespace semantic */
-
-/*!
- * @brief           Plans the ids that entities imported from a merged map
- *                  receive in the destination map. An imported entity keeps its
- *                  id when that id is not negative and the destination does not
- *                  use it; otherwise it gets the lowest unused id above the
- *                  highest reserved one.
- *
- * @param[in]       existingEntities_in
- *                  Entities already in the destination map; null entries are
- *                  skipped.
- *
- * @param[in]       importedEntities_in
- *                  Entities coming from the source map; null entries are
- *                  skipped.
- *
- * @param[in]       entityName_in
- *                  Entity kind, only used in the abort message.
- *
- * @param[out]      assignments_out
- *                  Imported entity and its planned id, in ascending order of
- *                  the original id; cleared and refilled only when planning
- *                  succeeds.
- *
- * @param[out]      isPlanned_out
- *                  False, with a message on stderr, when an imported entity is
- *                  already in the destination or two imported entities share an
- *                  id; true otherwise.
- *
- * @return          ATLAS_STATUS_SUCCESS always.
- */
-template <typename Entity>
-[[nodiscard]] atlas::AtlasStatus
-    planImportedIds(const std::vector<Entity *>           &existingEntities_in,
-                    const std::vector<Entity *>           &importedEntities_in,
-                    const char                            *entityName_in,
-                    std::vector<std::pair<Entity *, int>> &assignments_out,
-                    bool                                  &isPlanned_out)
-{
-    /*!
-     * Identity of an imported or existing entity. Every semantic status
-     * enumeration uses 0 for SUCCESS; getId cannot fail.
-     */
-    const auto idOf = [](const Entity *p_entity_in)
-    {
-        int entityId = -1;
-        if (p_entity_in->getId(entityId) !=
-            decltype(p_entity_in->getId(entityId)){})
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        return entityId;
-    };
-    const std::set<Entity *> importedEntities(importedEntities_in.begin(),
-                                              importedEntities_in.end());
-    std::set<int>            destinationIds;
-
-    for (Entity *p_entity : existingEntities_in)
-    {
-        if (p_entity == nullptr)
-        {
-            continue;
-        }
-
-        if (importedEntities.count(p_entity) > 0U)
-        {
-            std::cerr << "[Atlas::MergeMapPair] Aborting merge: source "
-                      << entityName_in
-                      << " already belongs to the destination container."
-                      << std::endl;
-            isPlanned_out = false;
-            return atlas::AtlasStatus::ATLAS_STATUS_SUCCESS;
-        }
-
-        if (idOf(p_entity) >= 0)
-        {
-            destinationIds.insert(idOf(p_entity));
-        }
-    }
-
-    std::vector<Entity *> orderedImportedEntities;
-    orderedImportedEntities.reserve(importedEntities_in.size());
-    std::set<int> importedOriginalIds;
-
-    for (Entity *p_entity : importedEntities_in)
-    {
-        if (p_entity == nullptr)
-        {
-            continue;
-        }
-
-        if (!importedOriginalIds.insert(idOf(p_entity)).second)
-        {
-            std::cerr << "[Atlas::MergeMapPair] Aborting merge: duplicate "
-                      << entityName_in << " ID " << idOf(p_entity)
-                      << " in source map." << std::endl;
-            isPlanned_out = false;
-            return atlas::AtlasStatus::ATLAS_STATUS_SUCCESS;
-        }
-
-        orderedImportedEntities.push_back(p_entity);
-    }
-
-    std::sort(orderedImportedEntities.begin(),
-              orderedImportedEntities.end(),
-              [&idOf](const Entity *p_first, const Entity *p_second)
-              { return idOf(p_first) < idOf(p_second); });
-
-    std::set<int> reservedIds = destinationIds;
-    for (Entity *p_entity : orderedImportedEntities)
-    {
-        if (idOf(p_entity) >= 0 && destinationIds.count(idOf(p_entity)) == 0U)
-        {
-            reservedIds.insert(idOf(p_entity));
-        }
-    }
-
-    int nextAvailableId = reservedIds.empty() ? 0 : *reservedIds.rbegin() + 1;
-    assignments_out.clear();
-    assignments_out.reserve(orderedImportedEntities.size());
-
-    for (Entity *p_entity : orderedImportedEntities)
-    {
-        int assignedId = idOf(p_entity);
-        if (assignedId < 0 || destinationIds.count(assignedId) > 0U)
-        {
-            while (reservedIds.count(nextAvailableId) > 0U)
-            {
-                ++nextAvailableId;
-            }
-            assignedId = nextAvailableId++;
-        }
-
-        reservedIds.insert(assignedId);
-        assignments_out.emplace_back(p_entity, assignedId);
-    }
-
-    isPlanned_out = true;
-
-    return atlas::AtlasStatus::ATLAS_STATUS_SUCCESS;
-}
 
 /*!
  * @brief           Moves an identity counter past an identity that already
@@ -205,117 +43,121 @@ template <typename Entity>
                              const int         observedIdentity_in);
 
 /*!
- * @brief           Counts the rooms that are not marked bad in a map. A null
- *                  map counts as 0.
+ * @brief           Fills a room snapshot from a live room: id, floor, centroid,
+ *                  confirmed or candidate variant, boundary status, capture
+ *                  time (steady clock) and per wall and per passage geometry in
+ *                  the world frame. Callers set the fields it does not touch
+ *                  (wasPreviouslyVisited).
  *
- * @param[in]       p_map_in
- *                  Map to inspect; borrowed.
+ * @param[in]       p_room_in
+ *                  Live room to read; must not be null.
  *
- * @param[out]      liveRooms_out
- *                  Number of live rooms.
- *
- * @return          ATLAS_STATUS_SUCCESS always.
+ * @param[out]      snapshot_out
+ *                  Snapshot to fill; expected to be default-constructed.
  */
-[[nodiscard]] atlas::AtlasStatus countLiveRooms(map::Map         *p_map_in,
-                                         std::size_t &liveRooms_out);
+void captureRoomContext(semantic::Room                *p_room_in,
+                        semantic::RoomContextSnapshot &snapshot_out);
 
 /*!
- * @brief           Counts the planes that are not marked bad and are wall
- *                  planes in a map. A null map counts as 0.
+ * @brief           Copies the room geometry of a map into plain data and finds
+ *                  the anchor rooms at departure: the room with id
+ *                  \p departureRoomId_in and, when a passage of it was in view
+ *                  from the newest key frame, the room beyond that passage.
+ *                  The caller holds a lock on the map's graph (shared or
+ *                  exclusive) while this runs; the result holds no pointer
+ *                  into the graph.
  *
- * @param[in]       p_map_in
- *                  Map to inspect; borrowed.
+ * @param[in]       semanticsManager_in
+ *                  Manager that serves the map's graph.
  *
- * @param[out]      liveWallPlanes_out
- *                  Number of live wall planes.
+ * @param[in]       map_in
+ *                  Map to read.
  *
- * @return          ATLAS_STATUS_SUCCESS always.
+ * @param[in]       departureRoomId_in
+ *                  Id of the room the robot is in, or negative for none.
+ *
+ * @param[out]      roomContext_out
+ *                  The context; isCaptured is true on return. Without any
+ *                  live room its roomSnapshots stay empty.
  */
-[[nodiscard]] atlas::AtlasStatus countLiveWallPlanes(map::Map         *p_map_in,
-                                              std::size_t &liveWallPlanes_out);
+void captureMapRoomContext(const SemanticsManager   &semanticsManager_in,
+                           map::Map                 &map_in,
+                           int                       departureRoomId_in,
+                           atlas::RoomContextExport &roomContext_out);
 
 /*!
- * @brief           Counts the passages that are not marked bad in a map. A null
- *                  map counts as 0.
+ * @brief           Tells whether a key frame's camera sees the whole opening
+ *                  of a passage: both opening edges (centre plus and minus
+ *                  half the width, across the passage plane) and the centre
+ *                  project inside the image columns (the camera's horizontal
+ *                  field of view) at a depth inside the sensor's range. When
+ *                  the camera sees the opening it sees through it, so the
+ *                  next map may build its first room from walls beyond it.
  *
- * @param[in]       p_map_in
- *                  Map to inspect; borrowed.
+ * @param[in]       p_passage_in
+ *                  Passage to test, in the key frame's map; must not be null.
  *
- * @param[out]      livePassages_out
- *                  Number of live passages.
+ * @param[in]       p_keyFrame_in
+ *                  Key frame whose pose and intrinsics (fx, cx, image column
+ *                  bounds) are used; must not be null.
  *
- * @return          ATLAS_STATUS_SUCCESS always.
+ * @param[in]       upDirection_world_in
+ *                  Unit up direction of the map's world frame.
+ *
+ * @param[in]       depthRange_m_in
+ *                  Near and far depth limits of the sensor along the camera
+ *                  z axis, metres.
+ *
+ * @param[out]      openingDepth_m_out
+ *                  Depth of the passage centre along the camera z axis,
+ *                  metres; 0 when the opening is not in view.
+ *
+ * @return          True when the whole opening is in view.
  */
-[[nodiscard]] atlas::AtlasStatus countLivePassages(map::Map         *p_map_in,
-                                            std::size_t &livePassages_out);
+[[nodiscard]] bool
+    isPassageOpeningInView(semantic::Passage             *p_passage_in,
+                           keyframe::KeyFrame            *p_keyFrame_in,
+                           const Eigen::Vector3d         &upDirection_world_in,
+                           const std::pair<float, float> &depthRange_m_in,
+                           double                        &openingDepth_m_out);
 
 /*!
- * @brief           Counts the floors that have a plane identity in a map. A
- *                  null map counts as 0.
+ * @brief           Finds the room beyond the passage of the final room that
+ *                  the camera saw when the map was left, the second anchor
+ *                  candidate of the map chain link.
  *
- * @param[in]       p_map_in
- *                  Map to inspect; borrowed.
+ * @param[in]       rooms_in
+ *                  Rooms of the map being left; borrowed, bad rooms skipped.
  *
- * @param[out]      liveFloors_out
- *                  Number of live floors.
+ * @param[in]       p_finalRoom_in
+ *                  Room the robot was in; borrowed, may be null.
  *
- * @return          ATLAS_STATUS_SUCCESS always.
+ * @param[in]       p_keyFrame_in
+ *                  Last key frame of the map; borrowed, may be null.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Unit up direction of the map's world frame.
+ *
+ * @param[in]       depthRange_m_in
+ *                  Near and far depth limits of the sensor, metres.
+ *
+ * @param[out]      p_passageInView_out
+ *                  Passage that gave the room; nullptr when none did.
+ *
+ * @return          Among the final room's passages whose whole opening is in
+ *                  view (isPassageOpeningInView), the nearest one's other
+ *                  room: the other room listing that passage, else the
+ *                  passage's far-side room when it is a room of rooms_in.
+ *                  nullptr when no passage is in view or none has a room
+ *                  beyond it. Borrowed.
  */
-[[nodiscard]] atlas::AtlasStatus countLiveFloors(map::Map         *p_map_in,
-                                          std::size_t &liveFloors_out);
-
-/*!
- * @brief           Condenses the live room, wall plane, passage and floor
- *                  counts of the old map and then of the current map into one
- *                  number. Two equal numbers mean neither map gained or lost
- *                  such content, so a merge attempt can be skipped. A null map
- *                  counts as empty.
- *
- * @param[in]       p_oldMap_in
- *                  Older map of the pair; borrowed.
- *
- * @param[in]       p_currentMap_in
- *                  Current map of the pair; borrowed.
- *
- * @param[out]      contentHash_out
- *                  Combined count value (counts folded with a factor of 31).
- *
- * @return          ATLAS_STATUS_SUCCESS always.
- */
-[[nodiscard]] atlas::AtlasStatus consecutiveContentHash(map::Map         *p_oldMap_in,
-                                                 map::Map         *p_currentMap_in,
-                                                 std::size_t &contentHash_out);
-
-[[nodiscard]] atlas::AtlasStatus consecutiveSeedTagsMatch(map::Map  *p_oldMap_in,
-                                                   map::Map  *p_currentMap_in,
-                                                   bool &isMatch_out);
-
-/*!
- * @brief           Collects the room tags that appear on a live room in both
- *                  maps; such rooms anchor the old map to the current one.
- *                  Rooms that are bad, untagged or have an empty tag are
- *                  ignored. The set is empty when either map is null.
- *
- * @param[in]       p_oldMap_in
- *                  Older map of the pair; borrowed.
- *
- * @param[in]       p_currentMap_in
- *                  Current map of the pair; borrowed.
- *
- * @param[out]      anchorTags_out
- *                  Tags present in both maps.
- *
- * @return          ATLAS_STATUS_SUCCESS always.
- */
-[[nodiscard]] atlas::AtlasStatus
-    collectAnchorTags(map::Map                   *p_oldMap_in,
-                      map::Map                   *p_currentMap_in,
-                      std::set<std::string> &anchorTags_out);
-
-[[nodiscard]] atlas::AtlasStatus
-    resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
-                                  semantic::Passage *p_transferred_in,
-                                  bool              &wasResurfaced_out);
+[[nodiscard]] semantic::Room *
+    findRoomBeyondPassageInView(const std::vector<semantic::Room *> &rooms_in,
+                                semantic::Room        *p_finalRoom_in,
+                                keyframe::KeyFrame    *p_keyFrame_in,
+                                const Eigen::Vector3d &upDirection_world_in,
+                                const std::pair<float, float> &depthRange_m_in,
+                                semantic::Passage *&p_passageInView_out);
 
 } /* namespace core */
 } /* namespace vs_graphs */

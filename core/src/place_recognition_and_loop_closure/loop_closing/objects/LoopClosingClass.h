@@ -39,74 +39,65 @@
 #include <mutex>
 #include <thread>
 
-#include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
-#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 #include "map_state/atlas/atlas.h"
 #include "map_state/keyframe/keyframe.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
-
-namespace vs_graphs::core::atlas { class Atlas; }
-namespace vs_graphs::core::keyframe { class KeyFrame; }
-namespace vs_graphs::core::keyframe_database { class KeyFrameDatabase; }
-namespace vs_graphs::core::local_mapping { class LocalMapping; }
-namespace vs_graphs::core::map { class Map; }
-namespace vs_graphs::core::map_point { class MapPoint; }
-namespace vs_graphs::core::tracking { class Tracking; }
+#include "place_recognition_and_loop_closure/keyframe_database/objects/OrbVocabulary.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include <vs_graphs_g2o/types/types_seven_dof_expmap.h>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-} /* namespace core */
-} /* namespace vs_graphs */
+class SemanticsManager;
 
-namespace vs_graphs
-{
-namespace core
-{
 namespace types
 {
 class SystemParams;
-}
-
-
-
-
-
-
-
+} // namespace types
 
 namespace tracking
 {
 class Tracking;
-} /* namespace tracking */
+} // namespace tracking
+
 namespace local_mapping
 {
 class LocalMapping;
-} /* namespace local_mapping */
+} // namespace local_mapping
+
 namespace keyframe
 {
 class KeyFrame;
-} /* namespace keyframe */
+} // namespace keyframe
+
+namespace keyframe_database
+{
+class KeyFrameDatabase;
+} // namespace keyframe_database
+
 namespace map
 {
 class Map;
-} /* namespace map */
+} // namespace map
+
 namespace map_point
 {
 class MapPoint;
-} /* namespace map_point */
+} // namespace map_point
+
 namespace atlas
 {
 class Atlas;
-} /* namespace atlas */
+} // namespace atlas
+
 namespace semantic
 {
 enum class SemanticMergeDecision;
-}
+} // namespace semantic
 
 /*!
  * @brief           Confirms both maps have observed floors with matching
@@ -119,6 +110,10 @@ enum class SemanticMergeDecision;
  *                  which is why this declaration lives here rather
  *                  than staying local to LoopClosing.cc's anonymous
  *                  namespace.
+ *
+ * @param[in]       p_semanticsManager_in
+ *                  Semantics manager that serves both maps' S-Graphs;
+ *                  borrowed.
  *
  * @param[in]       p_survivingMap_in
  *                  The map that remains active after the merge.
@@ -140,11 +135,12 @@ enum class SemanticMergeDecision;
  * @return          LOOP_CLOSING_STATUS_SUCCESS.
  */
 [[nodiscard]] loop_closing::LoopClosingStatus verifyLoopMergeFloors(
-    map::Map             *p_survivingMap_in,
-    map::Map             *p_absorbedMap_in,
-    const g2o::Sim3 &mergeTransform_absorbedWorldToSurvivingWorld_in,
-    std::string     &result_out,
-    bool            &isVerified_out);
+    SemanticsManager *p_semanticsManager_in,
+    map::Map         *p_survivingMap_in,
+    map::Map         *p_absorbedMap_in,
+    const g2o::Sim3  &mergeTransform_absorbedWorldToSurvivingWorld_in,
+    std::string      &result_out,
+    bool             &isVerified_out);
 
 /*!
  * @brief           The loop-closing thread: finds places the camera has seen
@@ -271,11 +267,11 @@ class LoopClosing
      *                  False switches loop closing off: key frames are queued
      *                  but no loop or merge is detected.
      */
-    LoopClosing(atlas::Atlas     *p_atlas_in,
+    LoopClosing(atlas::Atlas                        *p_atlas_in,
                 keyframe_database::KeyFrameDatabase *p_database_in,
-                ORBVocabulary    *p_vocabulary_in,
-                const bool        isScaleFixed_in,
-                const bool        isActiveLc_in) :
+                ORBVocabulary                       *p_vocabulary_in,
+                const bool                           isScaleFixed_in,
+                const bool                           isActiveLc_in) :
         isResetRequested(false),
         isResetActiveMapRequested(false),
         isFinishRequested(false),
@@ -297,36 +293,6 @@ class LoopClosing
         fullBundleAdjustmentIndex(0),
         isLoopClosingActive(isActiveLc_in)
     {
-#ifdef REGISTER_TIMES
-
-        dataQueryTimes_ms.clear();
-        sim3EstimationTimes_ms.clear();
-        placeRecognitionTotalTimes_ms.clear();
-
-        mergeMapsTimes_ms.clear();
-        weldingBaTimes_ms.clear();
-        mergeEssentialGraphTimes_ms.clear();
-        mergeTotalTimes_ms.clear();
-        mergeKeyFrameCounts.clear();
-        mergeMapPointCounts.clear();
-        mergeCount = 0;
-
-        loopFusionTimes_ms.clear();
-        loopEssentialGraphTimes_ms.clear();
-        loopTotalTimes_ms.clear();
-        loopKeyFrameCounts.clear();
-        loopCount = 0;
-
-        gbaTimes_ms.clear();
-        updateMapTimes_ms.clear();
-        fullGbaTotalTimes_ms.clear();
-        gbaKeyFrameCounts.clear();
-        gbaMapPointCounts.clear();
-        fullGbaExecutionCount = 0;
-        fullGbaAbortCount     = 0;
-
-#endif
-
         numCorrection = 0;
         correctionGBA = 0;
     }
@@ -479,36 +445,6 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus
         getLoopCorrectionStatus(loop_closing::LoopClosing::LoopCorrectionStatus
                                     &getLoopCorrectionStatus_out) const;
-
-#ifdef REGISTER_TIMES
-
-    std::vector<double> dataQueryTimes_ms;
-    std::vector<double> sim3EstimationTimes_ms;
-    std::vector<double> placeRecognitionTotalTimes_ms;
-
-    std::vector<double> mergeMapsTimes_ms;
-    std::vector<double> weldingBaTimes_ms;
-    std::vector<double> mergeEssentialGraphTimes_ms;
-    std::vector<double> mergeTotalTimes_ms;
-    std::vector<int>    mergeKeyFrameCounts;
-    std::vector<int>    mergeMapPointCounts;
-    int                 mergeCount;
-
-    std::vector<double> loopFusionTimes_ms;
-    std::vector<double> loopEssentialGraphTimes_ms;
-    std::vector<double> loopTotalTimes_ms;
-    std::vector<int>    loopKeyFrameCounts;
-    int                 loopCount;
-
-    std::vector<double> gbaTimes_ms;
-    std::vector<double> updateMapTimes_ms;
-    std::vector<double> fullGbaTotalTimes_ms;
-    std::vector<int>    gbaKeyFrameCounts;
-    std::vector<int>    gbaMapPointCounts;
-    int                 fullGbaExecutionCount;
-    int                 fullGbaAbortCount;
-
-#endif /* VS_GRAPHS_CORE_SRC_LOOP_CLOSING_OBJECTS_LOOP_CLOSING_CLASS_H */
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -1056,6 +992,25 @@ class LoopClosing
      *                  adjustment.
      */
     [[nodiscard]] LoopClosingStatus correctLoop(void);
+
+    /*!
+     * @brief           Checks the rooms of a confirmed same-map loop before it
+     *                  is corrected: the rooms of the current and the matched
+     *                  key frame must be one room or neighbours (on one
+     *                  passage, or the two faces of one wall). A key frame
+     *                  without a live room passes. Logs one SG_PIPELINE
+     *                  loop_room_check line. Reject-only: it never makes a
+     *                  loop. Takes the map's graph lock shared, so the caller
+     *                  holds no graph, atlas or map lock.
+     *
+     * @param[out]      isLoopRejected_out
+     *                  True when the rooms differ, are not neighbours and
+     *                  map_merge.loop_room_check is on; the rejection is then
+     *                  recorded as loop correction event "room_mismatch".
+     *
+     * @return          LOOP_CLOSING_STATUS_SUCCESS.
+     */
+    [[nodiscard]] LoopClosingStatus checkLoopRooms(bool &isLoopRejected_out);
 
     /*!
      * @brief           Stops and joins the owned global bundle-adjustment

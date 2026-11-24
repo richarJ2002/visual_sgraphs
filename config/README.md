@@ -8,16 +8,7 @@ These parameters are grouped under the `general` category and define system-wide
 
 | Category  | Parameter           | Description                                                                                                      |
 | --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `general` | `mode_of_operation` | Operating mode: <br> `0` = SemSeg + GeoSeg <br> `1` = SemSeg only (default - recommended) <br> `2` = GeoSeg only |
-| `general` | `env_database`      | Path to the `JSON` file containing information about fiducial markers in the environment                         |
-
-## 🏷️ Marker Parameters
-
-These parameters are grouped under the `markers` category and control configurations related to ArUco markers:
-
-| Category  | Parameter | Description                                                 |
-| --------- | --------- | ----------------------------------------------------------- |
-| `markers` | `impact`  | Defines the weight or trust level assigned to marker poses. |
+| `general` | `mode_of_operation` | Segmentation switch (geometry always decides the plane label): <br> `1` = segmenter on, planes extracted per class (default) <br> `2` = segmenter off, planes extracted from the whole keyframe cloud |
 
 ## 🧮 Optimization Parameters
 
@@ -30,6 +21,9 @@ These parameters are grouped under the `optimization` category and define config
 | `optimization` | `plane_kf`           | `information_gain` | Sets the information gain for plane-to-KeyFrame associations       |
 | `optimization` | `plane_point`        | `enabled`          | Enables plane-to-points factors in the optimization graph          |
 | `optimization` | `plane_point`        | `information_gain` | Sets the information gain for plane-to-points associations         |
+| `optimization` | `room_wall`          | `enabled`          | Ties each room centre to the midpoints of its facing wall pairs in global and local BA |
+| `optimization` | `room_wall`          | `information_gain` | Information (1/m^2) of the room-wall factor, along the wall normals |
+| `optimization` | `max_plane_normal_correction` | —         | Largest normal change (degrees) an optimised equation may apply to a mapped plane; larger corrections are refused |
 
 ## 🗺️ Map Point Refinement Parameters
 
@@ -61,22 +55,29 @@ These parameters are grouped under the `seg` category and define common settings
 | -------- | -------------------------- | ----------------- | ------------------------------------------------------------------------ |
 | `seg`    | `pointclouds_thresh`       | —                 | Minimum number of points required to fit a plane                         |
 | `seg`    | `plane_association_thresh` | —                 | Minimum ominus threshold to consider two planes as the same              |
-| `seg`    | `plane_point_dist_thresh`  | —                 | Maximum distance a point can be from a plane to be considered part of it |
 | `seg`    | `plane_cutting_threshold`  | —                 | Maximum spatial separation between two planes to avoid being segmented   |
 | `seg`    | `ransac`                   | `max_planes`      | Maximum number of planes to extract from a single point cloud            |
 | `seg`    | `ransac`                   | `distance_thresh` | Maximum distance from a point to a plane to be considered an inlier      |
 | `seg`    | `ransac`                   | `max_iterations`  | Maximum number of RANSAC iterations during plane fitting                 |
 
-## 📐 Geometric Segmentation Parameters
+## ✅ Plane Checkpoint Parameters
 
-These parameters fall under the `geo_seg` category and configure the behavior of the Geometric Segmentation (GeoSeg) module:
+These parameters belong to the `plane_checkpoint` category. Every candidate plane patch of a keyframe must pass them before it may match a mapped plane or vote; a failed patch is dropped. The orientation tolerances are also used by the map-level re-check after bundle adjustment or a merge.
 
-| Category  | Component    | Process           | Parameter              | Description                                                          |
-| --------- | ------------ | ----------------- | ---------------------- | -------------------------------------------------------------------- |
-| `geo_seg` | `pointcloud` | `downsample`      | `leaf_size`            | Leaf size (uniform across all axes) used for voxel grid downsampling |
-| `geo_seg` | `pointcloud` | `downsample`      | `min_points_per_voxel` | Minimum number of points required per voxel to retain it             |
-| `geo_seg` | `pointcloud` | `outlier_removal` | `std_threshold`        | Standard deviation threshold for statistical outlier removal         |
-| `geo_seg` | `pointcloud` | `outlier_removal` | `mean_threshold`       | Minimum number of neighboring points for a point to be retained      |
+| Category           | Component   | Parameter                       | Description                                                                                  |
+| ------------------ | ----------- | ------------------------------- | -------------------------------------------------------------------------------------------- |
+| `plane_checkpoint` | —           | `minimum_point_count`           | Minimum points in any patch                                                                  |
+| `plane_checkpoint` | —           | `maximum_fit_rms`               | Largest RMS distance of the patch points from its plane (metres)                             |
+| `plane_checkpoint` | —           | `max_tilt_ground`               | Largest sine of the angle between a ground normal and the map up direction                   |
+| `plane_checkpoint` | —           | `max_tilt_wall`                 | Largest absolute cosine of the angle between a wall, door or window normal and up            |
+| `plane_checkpoint` | `wall_size` | `minimum_point_count`           | Minimum points in a wall patch's connected support                                           |
+| `plane_checkpoint` | `wall_size` | `minimum_major_extent`          | Minimum largest in-plane dimension of a wall patch (metres)                                  |
+| `plane_checkpoint` | `wall_size` | `minimum_minor_extent`          | Minimum smallest in-plane dimension of a wall patch (metres)                                 |
+| `plane_checkpoint` | `wall_size` | `minimum_area`                  | Minimum wall patch area (square metres)                                                      |
+| `plane_checkpoint` | `wall_size` | `connectivity.enabled`          | Keep only the largest connected part of a wall patch and check it                            |
+| `plane_checkpoint` | `wall_size` | `connectivity.cluster_tolerance` | Maximum neighbour gap within one connected part (metres)                                    |
+| `plane_checkpoint` | `wall_size` | `connectivity.minimum_component_point_count` | Minimum points in the largest connected part                                    |
+| `plane_checkpoint` | `wall_size` | `connectivity.minimum_component_ratio` | Minimum fraction of the patch in the largest connected part                           |
 
 ## 🧠 Semantic Segmentation Parameters
 
@@ -91,13 +92,11 @@ These parameters belong to the `sem_seg` category and configure the Semantic Seg
 | `sem_seg` | —             | —                 | `prob_thresh`                      | Minimum class probability threshold (e.g., > 0.5)                  |
 | `sem_seg` | —             | —                 | `conf_thresh`                      | Minimum confidence threshold for class probabilities               |
 | `sem_seg` | —             | —                 | `max_step_elevation`               | Maximum step height over the ground plane                          |
-| `sem_seg` | —             | —                 | `max_tilt_wall`                    | Maximum tilt angle for wall classification                         |
-| `sem_seg` | —             | —                 | `max_tilt_ground`                  | Maximum tilt angle for ground classification                       |
 | `sem_seg` | —             | —                 | `enable_passage_detection`         | Enables detection of passages (doorways)                           |
 | `sem_seg` | —             | —                 | `max_wall_door_distance`           | Maximum distance from wall to door for association                 |
 | `sem_seg` | —             | —                 | `max_door_width`                   | Maximum width for a door to be valid                               |
 | `sem_seg` | —             | —                 | `max_door_height`                  | Maximum height for a door to be valid                              |
-| `sem_seg` | —             | —                 | `max_kf_passage_distance`          | Maximum distance from keyframe to doorway                          |
+| `sem_seg` | —             | —                 | `max_kf_passage_distance`          | Camera to passage distance that blocks retiring it as closed       |
 | `sem_seg` | —             | —                 | `passage_centroid_distance_thresh` | Maximum distance from passage association                          |
 | `sem_seg` | —             | —                 | `passage_kf_window`                | Size of the KeyFrame window to check for passing through a doorway |
 | `sem_seg` | —             | —                 | `min_votes`                        | Minimum number of votes needed for a plane to get a label          |
@@ -116,7 +115,6 @@ These parameters belong to the `room_seg` category and configure the detection a
 | `room_seg` | —                | `perpendicularity_thresh`                        | Threshold in degrees for walls perpendicularity                                                                             |
 | `room_seg` | —                | `parallelism_thresh`                             | Threshold in degrees for walls parallelism                                                                                  |
 | `room_seg` | —                | `center_distance_thresh`                         | Maximum distance (meters) between room centroids to be associated                                                           |
-| `room_seg` | `geo_based`      | `marker_wall_distance_thresh`                    | Max distance from marker to wall to consider marker part of the room (geometric method)                                     |
 | `room_seg` | `skeleton_based` | `min_cluster_vertices`                           | Minimum number of points to form a cluster (voxblox free-space room segmentation)                                           |
 | `room_seg` | `skeleton_based` | `cluster_point_wall_distance_thresh`             | Max distance from a cluster points to a wall to be considered part of the room (voxblox free-space segmentation)            |
 | `room_seg` | `skeleton_based` | `cluster_centroid_wall_centroid_distance_thresh` | Max distance from a cluster centroid to a wall centroid to be considered part of the room (voxblox free-space segmentation) |

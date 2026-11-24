@@ -27,6 +27,7 @@
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEGMENTATION_OBJECTS_SEMANTICSEGMENTATION_CLASS_H
 
 #include "map_state/atlas/atlas.h"
+#include "scene_understanding/semantic_segmentation/objects/PlanePatchStruct.h"
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationStatusEnum.h"
 #include "configuration/types/types.h"
 
@@ -186,11 +187,12 @@ class SemanticSegmentation
     static constexpr std::size_t MAX_BUFFERED_WORK_ITEMS = 32U;
 
     /*!
-     * @brief           False only in the semantic-only mode of operation; run()
-     *                  then decides itself whether a plane observation is large
-     *                  enough to become a new map plane.
+     * @brief           True when general.mode_of_operation is GEO: keyframes
+     *                  arrive without a segmentation result, the whole
+     *                  keyframe cloud is extracted and labels come from
+     *                  geometry alone. Set once by the constructor.
      */
-    bool isGeometricSegmentationRunning;
+    bool isSegmenterOff;
 
     /*!
      * @brief           Borrowed pointer to the atlas that holds the maps and
@@ -361,10 +363,8 @@ class SemanticSegmentation
         }
         p_sysParams = p_params;
 
-        /* Set the booleans according to the mode of operation */
-        isGeometricSegmentationRunning =
-            !(p_sysParams->general.modeOfOperation ==
-              types::SystemParams::General::ModeOfOperation::SEM);
+        isSegmenterOff = p_sysParams->general.modeOfOperation ==
+                         types::SystemParams::General::ModeOfOperation::GEO;
     }
 
     /* Semantic segmentation frame buffer processing */
@@ -423,6 +423,41 @@ class SemanticSegmentation
             &p_thisKeyFramePointCloud_in);
 
     /*!
+     * @brief           Turns a keyframe's cloud into the clouds planes are
+     *                  extracted from: per class with the segmenter on
+     *                  (threshSeparatePointCloud(), logging a near-empty wall
+     *                  class), the whole cloud in one slot with it off, each
+     *                  point weighted by its depth.
+     *
+     * @param[in]       p_keyFrame_in
+     *                  Borrowed keyframe the cloud belongs to; non-null.
+     *
+     * @param[in]       p_segmentationCloud_in
+     *                  Per-pixel class probabilities; unused (may be null)
+     *                  with the segmenter off.
+     *
+     * @param[in]       uncertaintyImage_in
+     *                  Per-pixel uncertainty image; unused with the segmenter
+     *                  off.
+     *
+     * @param[in]       p_keyFrameCloud_in
+     *                  The keyframe's organised camera-frame cloud; non-null.
+     *
+     * @param[out]      p_clsCloudPtrs_out
+     *                  One cloud per class with the segmenter on, exactly one
+     *                  with it off; alpha holds the point weight.
+     *
+     * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] SemanticSegmentationStatus separateKeyFrameCloud(
+        keyframe::KeyFrame                           *p_keyFrame_in,
+        const pcl::PCLPointCloud2::Ptr               &p_segmentationCloud_in,
+        const cv::Mat                                &uncertaintyImage_in,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_keyFrameCloud_in,
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
+            &p_clsCloudPtrs_out);
+
+    /*!
      * @brief           Extracts the planes of every class point cloud with
      *                  RANSAC, after filtering each cloud by depth and thinning
      *                  it with a voxel grid. The plane semantics are not set
@@ -434,22 +469,53 @@ class SemanticSegmentation
      *                  filtering is overwritten with its filtered copy.
      *
      * @param[out]      planesFromClassClouds_out
-     *                  For each class whose filtered cloud is not empty, the
-     *                  extracted planes as pairs of the plane's points and its
-     *                  equation (a, b, c, d); classes with an empty cloud get
-     *                  no entry, so the index need not match
-     *                  p_classCloudPtrs_in. Planes are searched only in clouds
-     *                  with more than seg.pointcloudsThresh points.
+     *                  The extracted camera-frame patches of every class, in
+     *                  class order; each patch's label is its class
+     *                  (Utils::getPlaneTypeFromClassId()) as a guess, or
+     *                  UNDEFINED with the segmenter off. Planes
+     *                  are searched only in clouds with more than
+     *                  seg.pointcloudsThresh points.
      *
      * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
      */
     [[nodiscard]] SemanticSegmentationStatus getPlanesFromClassClouds(
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
-            &p_classCloudPtrs_in,
-        std::vector<
-            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                  Eigen::Vector4d>>>
-            &planesFromClassClouds_out);
+                                &p_classCloudPtrs_in,
+        std::vector<PlanePatch> &planesFromClassClouds_out);
+
+    /*!
+     * @brief           Plane checkpoint between the segmenter and the map.
+     *                  Gives every candidate plane patch its label from its
+     *                  orientation against the map up direction
+     *                  (semantic_constraints::assignPlaneLabel(); the incoming
+     *                  label is only the guess). Drops every patch that has
+     *                  too few points, a poor plane fit, no label from
+     *                  geometry (slanted) or, for a wall, too little
+     *                  connected size. Runs before matching and voting, so a
+     *                  dropped patch can neither match a mapped plane nor
+     *                  vote.
+     *
+     * @param[in]       p_keyFrame_in
+     *                  Borrowed keyframe the patches were observed in; shall
+     *                  be non-null. Its pose turns the map up direction into
+     *                  the camera frame.
+     *
+     * @param[in,out]   planePatches_inout
+     *                  Camera-frame patches with their label guess. Failed
+     *                  patches are removed and kept ones carry their label
+     *                  from geometry, in the same order; a kept wall patch
+     *                  keeps only its largest connected part when
+     *                  connectivity is enabled.
+     *
+     * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS always.
+     *
+     * @note            Uses the plane_checkpoint parameters. The same size
+     *                  check applies to every wall patch, new or matching a
+     *                  mapped wall.
+     */
+    [[nodiscard]] SemanticSegmentationStatus
+        applyPlaneCheckpoint(keyframe::KeyFrame      *p_keyFrame_in,
+                             std::vector<PlanePatch> &planePatches_inout);
 
     /*!
      * @brief           Adds the planes to the Atlas
@@ -457,33 +523,15 @@ class SemanticSegmentation
      * @param[in]       p_keyFrame_in
      *                  the key frame the planes were observed in
      *
-     * @param[in]       p_clsPlanes_in
-     *                  the planes to be added
+     * @param[in]       planePatches_in
+     *                  the patches to be added, each with the label it votes
+     *                  for
      *
      * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS
      */
-    [[nodiscard]] SemanticSegmentationStatus updatePlaneData(
-        keyframe::KeyFrame *p_keyFrame_in,
-        std::vector<
-            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                  Eigen::Vector4d>>> &p_clsPlanes_in);
-
-    /*!
-     * @brief           Updates the map plane
-     *
-     * @param[in]       planeId_in
-     *                  the plane id
-     *
-     * @param[in]       clsId_in
-     *                  the class id
-     *
-     * @param[in]       confidence_in
-     *                  the confidence of the class predictions
-     */
     [[nodiscard]] SemanticSegmentationStatus
-        updatePlaneSemantics(int    planeId_in,
-                             int    clsId_in,
-                             double confidence_in);
+        updatePlaneData(keyframe::KeyFrame            *p_keyFrame_in,
+                        const std::vector<PlanePatch> &planePatches_in);
 
     /* Shutdown control */
     /*!

@@ -5,31 +5,38 @@
  *                  in Semantic/SemanticVerify.h.
  */
 
-#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
-#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/scene_graph/room/objects/RoomStatusEnum.h"
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <rclcpp/logging.hpp>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
 
@@ -41,8 +48,9 @@ namespace semantic
 {
 
 SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
-    map::Map                  *p_survivingMap_in,
-    map::Map                  *p_absorbedMap_in,
+    atlas::Atlas               *p_atlas_in,
+    map::Map                   *p_survivingMap_in,
+    map::Map                   *p_absorbedMap_in,
     const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
@@ -51,14 +59,26 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     if (p_survivingMap_in == nullptr || p_absorbedMap_in == nullptr ||
         p_survivingMap_in == p_absorbedMap_in)
     {
-        result.decision = SemanticMergeDecision::REJECT;
-        result.reason   = SemanticMergeReason::INVALID_INPUT;
-        result_out      = result;
+        result.decision   = SemanticMergeDecision::REJECT;
+        result.reason     = SemanticMergeReason::INVALID_INPUT;
+        result.pairDetail = "input=invalid";
+        result_out        = result;
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
+    SemanticsManager *p_semanticsManager = nullptr;
+    if (p_atlas_in->getSemanticsManager(p_semanticsManager) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSemanticsManager returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     bool isVerified{};
-    if (verifyLoopMergeFloors(p_survivingMap_in,
+    if (verifyLoopMergeFloors(p_semanticsManager,
+                              p_survivingMap_in,
                               p_absorbedMap_in,
                               mergeTransform_absorbedToSurviving_in,
                               result.floorDecision,
@@ -72,124 +92,241 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     }
     if (!isVerified)
     {
-        result.decision = result.floorDecision == "REJECTED"
-                              ? SemanticMergeDecision::REJECT
-                              : SemanticMergeDecision::DEFER;
-        result.reason   = result.decision == SemanticMergeDecision::REJECT
-                              ? SemanticMergeReason::FLOOR_CONTRADICTION
-                              : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
-        result_out      = result;
+        result.decision   = result.floorDecision == "REJECTED"
+                                ? SemanticMergeDecision::REJECT
+                                : SemanticMergeDecision::DEFER;
+        result.reason     = result.decision == SemanticMergeDecision::REJECT
+                                ? SemanticMergeReason::FLOOR_CONTRADICTION
+                                : SemanticMergeReason::FLOOR_EVIDENCE_MISSING;
+        result.pairDetail = "floor_gate=" + result.floorDecision;
+        result_out        = result;
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
+    unsigned long survivingMapId{};
+    unsigned long absorbedMapId{};
+    if ((p_survivingMap_in->getId(survivingMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS) ||
+        (p_absorbedMap_in->getId(absorbedMapId) !=
+         map::MapStatus::MAP_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<Room *> survivingMapAllRooms{};
+    if (p_semanticsManager->getMapRoomsInIdOrder(survivingMapId,
+                                                 survivingMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            survivingMapId);
+    }
+    std::vector<Room *> absorbedMapAllRooms{};
+    if (p_semanticsManager->getMapRoomsInIdOrder(absorbedMapId,
+                                                 absorbedMapAllRooms) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: the semantics manager has no scene graph for map %lu; "
+            "continuing without its rooms.",
+            __func__,
+            absorbedMapId);
+    }
+    std::vector<Room *>                    survivingAdmittedRooms{};
+    std::vector<Room *>                    absorbedAdmittedRooms{};
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
-    std::vector<semantic::Room *>          survivingMapAllRooms{};
-    if (p_survivingMap_in->getAllRooms(survivingMapAllRooms) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    for (Room *p_room : survivingMapAllRooms)
-    {
-        bool roomIsBad{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        Room::RoomVariant roomVariant{};
-        if ((p_room != nullptr && !roomIsBad) &&
-            p_room->getRoomVariant(roomVariant) !=
-                RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad &&
-            roomVariant == Room::RoomVariant::ROOM)
-        {
-            SemanticMergeRoomEvidence evidence{};
-            if (copyMergeRoomEvidence(p_room, configuration_in, evidence) !=
-                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyMergeRoomEvidence returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            survivingRooms.push_back(evidence);
-        }
-    }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
-    std::vector<semantic::Room *>          absorbedMapAllRooms{};
-    if (p_absorbedMap_in->getAllRooms(absorbedMapAllRooms) !=
+    collectRoomEvidence(survivingMapAllRooms,
+                        configuration_in,
+                        survivingAdmittedRooms,
+                        survivingRooms);
+    collectRoomEvidence(absorbedMapAllRooms,
+                        configuration_in,
+                        absorbedAdmittedRooms,
+                        absorbedRooms);
+
+    /* The anchor candidates are the map chain link: the earlier map's final
+     * room (and the room beyond the passage in view at departure) with the
+     * later map's starting room. */
+    std::vector<int> survivingLinkedRoomIds{};
+    std::vector<int> absorbedLinkedRoomIds{};
+    if (p_survivingMap_in->getLinkedRoomIds(p_absorbedMap_in,
+                                            survivingLinkedRoomIds,
+                                            absorbedLinkedRoomIds) !=
         map::MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getLinkedRoomIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
                      __func__);
     }
-    for (Room *p_room : absorbedMapAllRooms)
-    {
-        bool roomIsBad2{};
-        if ((p_room != nullptr) &&
-            p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        Room::RoomVariant roomVariant2{};
-        if ((p_room != nullptr && !roomIsBad2) &&
-            p_room->getRoomVariant(roomVariant2) !=
-                RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room != nullptr && !roomIsBad2 &&
-            roomVariant2 == Room::RoomVariant::ROOM)
-        {
-            SemanticMergeRoomEvidence evidence2{};
-            if (copyMergeRoomEvidence(p_room, configuration_in, evidence2) !=
-                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: copyMergeRoomEvidence returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            absorbedRooms.push_back(evidence2);
-        }
-    }
-    SemanticMergeGateResult result2{};
-    if (evaluateMergeAlignment(survivingRooms,
-                               absorbedRooms,
-                               mergeTransform_absorbedToSurviving_in,
-                               result2,
-                               configuration_in) !=
-        SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+
+    /* Each id is resolved in its own map's graph; an id whose room was
+     * deleted or merged away drops out, and the gate then defers for a missing
+     * anchor if none is left. */
+    std::vector<Room *> survivingLinkedRooms{};
+    std::vector<Room *> absorbedLinkedRooms{};
+    if ((p_semanticsManager->getMapRoomsByIds(survivingMapId,
+                                              survivingLinkedRoomIds,
+                                              survivingLinkedRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS) ||
+        (p_semanticsManager->getMapRoomsByIds(absorbedMapId,
+                                              absorbedLinkedRoomIds,
+                                              absorbedLinkedRooms) !=
+         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: evaluateMergeAlignment returned a failure status "
-                     "although it cannot fail; continuing as before.",
-                     __func__);
+                     "%s: the semantics manager has no scene graph for map "
+                     "%lu or %lu; continuing without the linked rooms.",
+                     __func__,
+                     survivingMapId,
+                     absorbedMapId);
     }
-    result               = result2;
+    std::vector<std::pair<Room *, Room *>> anchorCandidates{};
+    for (Room *p_survivingLinkedRoom : survivingLinkedRooms)
+    {
+        for (Room *p_absorbedLinkedRoom : absorbedLinkedRooms)
+        {
+            anchorCandidates.emplace_back(p_survivingLinkedRoom,
+                                          p_absorbedLinkedRoom);
+        }
+    }
+    /* Without a link the one empty candidate defers for a missing anchor. */
+    if (anchorCandidates.empty())
+    {
+        anchorCandidates.emplace_back(nullptr, nullptr);
+    }
+
+    std::vector<MergePair>               allCandidatePairs{};
+    std::vector<SemanticMergeGateResult> candidateResults{};
+    for (const std::pair<Room *, Room *> &anchorCandidate : anchorCandidates)
+    {
+        const std::vector<MergePair> anchorPairs =
+            findAnchorRoomPairs(survivingAdmittedRooms,
+                                absorbedAdmittedRooms,
+                                anchorCandidate.first,
+                                anchorCandidate.second);
+        allCandidatePairs.insert(allCandidatePairs.end(),
+                                 anchorPairs.begin(),
+                                 anchorPairs.end());
+        SemanticMergeGateResult candidateResult{};
+        if (evaluateMergeAlignment(survivingRooms,
+                                   absorbedRooms,
+                                   anchorPairs,
+                                   mergeTransform_absorbedToSurviving_in,
+                                   candidateResult,
+                                   configuration_in) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: evaluateMergeAlignment returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+        candidateResult.p_survivingAnchorRoom = anchorCandidate.first;
+        candidateResult.p_absorbedAnchorRoom  = anchorCandidate.second;
+        candidateResults.push_back(candidateResult);
+        if (anchorCandidates.size() < 2U)
+        {
+            continue;
+        }
+
+        /* With two candidates every try is logged; the caller logs only the
+         * chosen one. */
+        const char *p_decisionName = nullptr;
+        const char *p_reasonName   = nullptr;
+        if (mergeDecisionName(candidateResult.decision, p_decisionName) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS ||
+            mergeReasonName(candidateResult.reason, p_reasonName) !=
+                SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: mergeDecisionName/mergeReasonName returned a "
+                         "failure status although they cannot fail; "
+                         "continuing as before.",
+                         __func__);
+        }
+        std::cout << "[SemanticMergePairs] surviving_map=" << survivingMapId
+                  << " absorbed_map=" << absorbedMapId
+                  << " anchor_candidate=" << candidateResults.size() << "/"
+                  << anchorCandidates.size() << " decision=" << p_decisionName
+                  << " reason=" << p_reasonName << " "
+                  << candidateResult.pairDetail << std::endl;
+    }
+
+    /* Exactly one accepted candidate is the anchor. Two accepted candidates
+     * are checked together, where the shared starting room pairs twice and
+     * the existing pairing rule rejects. With none accepted, a deferred
+     * candidate may still pass later, so it is kept; otherwise the final
+     * room's result stands. */
+    std::size_t acceptedCount = 0U;
+    std::size_t acceptedIndex = 0U;
+    std::size_t deferredIndex = candidateResults.size();
+    for (std::size_t candidateIndex = 0U;
+         candidateIndex < candidateResults.size();
+         candidateIndex++)
+    {
+        const SemanticMergeDecision candidateDecision =
+            candidateResults[candidateIndex].decision;
+        if (candidateDecision == SemanticMergeDecision::ACCEPT)
+        {
+            acceptedCount++;
+            acceptedIndex = candidateIndex;
+        }
+        else if (candidateDecision == SemanticMergeDecision::DEFER &&
+                 deferredIndex == candidateResults.size())
+        {
+            deferredIndex = candidateIndex;
+        }
+    }
+    std::string anchorChoice;
+    if (acceptedCount == 1U)
+    {
+        result       = candidateResults[acceptedIndex];
+        anchorChoice = std::to_string(acceptedIndex + 1U);
+    }
+    else if (acceptedCount > 1U)
+    {
+        if (evaluateMergeAlignment(survivingRooms,
+                                   absorbedRooms,
+                                   allCandidatePairs,
+                                   mergeTransform_absorbedToSurviving_in,
+                                   result,
+                                   configuration_in) !=
+            SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: evaluateMergeAlignment returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
+                         __func__);
+        }
+        anchorChoice = "ambiguous";
+    }
+    else if (deferredIndex < candidateResults.size())
+    {
+        result       = candidateResults[deferredIndex];
+        anchorChoice = "none_passed";
+    }
+    else
+    {
+        result       = candidateResults.front();
+        anchorChoice = "none_passed";
+    }
+    if (anchorCandidates.size() > 1U)
+    {
+        result.pairDetail = "anchor_choice=" + anchorChoice + "/" +
+                            std::to_string(anchorCandidates.size()) + " " +
+                            result.pairDetail;
+    }
     result.floorDecision = "ACCEPTED";
     result_out           = result;
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;

@@ -42,7 +42,23 @@ namespace atlas
 
 AtlasStatus Atlas::createNewMap()
 {
+    /* Snapshot room geometry before the map is stranded so that rooms in the
+     * new map can inherit identity tags. It takes graph locks, which come
+     * before atlasMutex in the lock order, so it runs before the atlas is
+     * locked. */
+    if (exportRoomContextFromCurrentMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: exportRoomContextFromCurrentMap returned a failure status "
+            "although it cannot fail; continuing as before.",
+            __func__);
+    }
+
+    /* Lock the atlas object */
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
+
+    /* Create the new map */
     if (createNewMapWhileAtlasLocked() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

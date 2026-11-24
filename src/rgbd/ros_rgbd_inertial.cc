@@ -31,6 +31,9 @@
  */
 
 #include "common/common.h"
+
+#include "execution/profiling/profiling.h"
+
 #include "image_grabber/image_grabber.h"
 #include "imu_grabber/imu_grabber.h"
 #include "execution/reset_cause/reset_cause.h"
@@ -333,10 +336,13 @@ int main(int argc, char **argv)
                 { vs_graphs::common::observeVoxbloxSkeletonPublication(*msg); },
                 skeletonSubscriptionOptions);
 
-    static std::shared_ptr<image_transport::ImageTransport> image_transport =
+    std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
     vs_graphs::common::setupPublishers(node, image_transport, nodeName);
     vs_graphs::common::setupServices(node, nodeName);
+
+    /* Exchange wall slabs with Voxblox in the skeleton callback group */
+    vs_graphs::common::setupWallSlabProfileClient(node, skeletonCallbackGroup);
 
     /* Syncing images with IMU */
     std::thread sync_thread(
@@ -349,6 +355,8 @@ int main(int argc, char **argv)
     executor.add_node(imugb);
     executor.add_node(igb);
     executor.spin();
+    vs_graphs::core::profiling::writeTimerReport(
+        vs_graphs::common::sgraphArchiveTestRunDir);
 
     /* Signal the sync thread to stop and wait for it */
     igb->mustStop = true;
@@ -363,7 +371,11 @@ int main(int argc, char **argv)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-
+    /* ~System joins the worker threads: none may outlive main(). */
+    delete vs_graphs::common::p_slamSystem;
+    vs_graphs::common::p_slamSystem = nullptr;
+    vs_graphs::common::shutdownRosInterfaces();
+    image_transport.reset();
     rclcpp::shutdown();
 
     return 0;

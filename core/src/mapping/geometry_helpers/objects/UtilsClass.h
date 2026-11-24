@@ -19,6 +19,9 @@
 #ifndef VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_UTILSCLASS_H
 #define VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_UTILSCLASS_H
 
+#include "mapping/geometry_helpers/objects/PlaneEvidenceStruct.h"
+#include "mapping/geometry_helpers/objects/PlaneMatchSettingsStruct.h"
+#include "mapping/geometry_helpers/objects/PlaneMatchVerdictStruct.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
 
 /*!
@@ -99,25 +102,6 @@ class Utils
                                    double &euclideanDistance_out);
 
     /*!
-     * @brief           Calculate the distance between a point and a plane.
-     *
-     * @param[in]       plane_in
-     *                  Plane equation.
-     *
-     * @param[in]       point_in
-     *                  Given point.
-     *
-     * @param[out]      distance_out
-     *                  Absolute distance in the input length units.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        calculateDistancePointToPlane(const Eigen::Vector4d &plane_in,
-                                      const Eigen::Vector3d &point_in,
-                                      double                &distance_out);
-
-    /*!
      * @brief           Calculates the intersection point of a line and a
      *                  plane. The line shall not be parallel to the plane.
      *
@@ -140,31 +124,6 @@ class Utils
                             const Eigen::Vector3d &lineStart_in,
                             const Eigen::Vector3d &lineEnd_in,
                             Eigen::Vector3d       &intersection_out);
-
-    /*!
-     * @brief           Checks to see if two planes are apart enough from
-     *                  each other, given a threshold.
-     *
-     * @param[in]       p_plane1_in
-     *                  First plane; may be null.
-     *
-     * @param[in]       p_plane2_in
-     *                  Second plane; may be null.
-     *
-     * @param[in]       threshold_in
-     *                  Threshold value for perpendicularity, in metres.
-     *
-     * @param[out]      arePlanesApartEnough_out
-     *                  True when both planes are valid and their perpendicular
-     *                  separation exceeds the threshold.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        arePlanesApartEnough(const geometric::Plane *p_plane1_in,
-                             const geometric::Plane *p_plane2_in,
-                             const double           &threshold_in,
-                             bool                   &arePlanesApartEnough_out);
 
     /*!
      * @brief           Checks to see if two planes are perpendicular to each
@@ -228,43 +187,6 @@ class Utils
         const vs_graphs::core::geometric::Plane *p_plane1_in,
         const vs_graphs::core::geometric::Plane *p_plane2_in,
         bool                                    &arePlanesFacingEachOther_out);
-
-    /*!
-     * @brief           Returns the planes that are facing each other from
-     *                  the given list.
-     *
-     * @param[in]       planes_in
-     *                  List of planes to be checked.
-     *
-     * @param[out]      facingPlanes_out
-     *                  Facing plane pairs whose separation passes the
-     *                  configured minimum. Pointers are borrowed from the input
-     *                  list.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus getFacingPlanes(
-        const std::vector<geometric::Plane *> &planes_in,
-        std::vector<std::pair<vs_graphs::core::geometric::Plane *,
-                              vs_graphs::core::geometric::Plane *>>
-            &facingPlanes_out);
-
-    /*!
-     * @brief           Corrects the given plane equations to apply
-     *                  calculations.
-     *
-     * @param[in]       plane_in
-     *                  Input plane.
-     *
-     * @param[out]      planeDirection_out
-     *                  Plane with negated coefficients when the offset is
-     *                  positive; unchanged otherwise.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        correctPlaneDirection(const Eigen::Vector4d &plane_in,
-                              Eigen::Vector4d       &planeDirection_out);
 
     /*!
      * @brief           Converts the plane equation from local to global.
@@ -383,96 +305,53 @@ class Utils
                               Eigen::Vector4d>> &planes_out);
 
     /*!
-     * @brief           Checks to see if the given point is on the plane or
-     *                  not.
+     * @brief           Finds the mapped plane that best matches an observed
+     *                  plane under one settings bundle. Compare planes of two
+     *                  maps by transforming one into the other's world frame
+     *                  first.
      *
-     * @param[in]       planeEquation_in
-     *                  Plane equation.
+     *                  SAME_FACE rejects a candidate whose type fails the
+     *                  type rule, whose normal or perpendicular offset is too
+     *                  far off, whose support cloud neither lies near nor
+     *                  extends the observed one, or, for a wall, that was
+     *                  observed from the other side. The best remaining
+     *                  candidate has the lowest weighted sum of angle,
+     *                  offset, centroid and cloud distances.
      *
-     * @param[in]       p_mapPoint_in
-     *                  Borrowed point to be checked; shall be non-null.
-     *
-     * @param[out]      isOnPlane_out
-     *                  True when the point lies within the configured distance
-     *                  of the plane.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        pointOnPlane(Eigen::Vector4d planeEquation_in,
-                     map_point::MapPoint       *p_mapPoint_in,
-                     bool           &isOnPlane_out);
-
-    /*!
-     * @brief           Associates given planes with the mapped planes.
+     *                  OPPOSITE_FACE accepts a candidate that is parallel, no
+     *                  more than the maximum thickness away, observed from
+     *                  the opposite side (stamped observation origins) and
+     *                  overlapping in footprint by the minimum ratio. The
+     *                  accepted candidate with the most observations wins;
+     *                  the earliest wins a tie.
      *
      * @param[in]       mappedPlanes_in
-     *                  Mapped planes.
+     *                  Candidate planes, non-owning; null and bad planes are
+     *                  skipped.
      *
      * @param[in]       observedPlane_in
-     *                  Given plane (in the same frame as the
-     *                  keyframePose_in, global if keyframePose_in is
-     *                  identity).
+     *                  Observed plane evidence, in the candidates' world
+     *                  frame.
      *
-     * @param[in]       p_observedCloud_in
-     *                  Given plane's support cloud.
-     *
-     * @param[in]       keyframePose_in
-     *                  Pose of the current keyframe.
-     *
-     * @param[in]       observedPlaneType_in
-     *                  Observed plane variant.
-     *
-     * @param[in]       threshold_in
-     *                  Threshold value for association.
-     *
-     * @param[in]       maximumFiniteCloudDistance_m_in
-     *                  Optional finite-cloud gap override, in metres.
-     *
-     * @param[in]       observationOrigin_world_m_in
-     *                  Optional observing camera origin in the world frame,
-     *                  in metres, used to keep opposite wall faces separate.
+     * @param[in]       matchSettings_in
+     *                  Match mode, type rule and thresholds.
      *
      * @param[out]      matchedPlaneId_out
-     *                  Plane id of the mapped plane.
+     *                  Id of the best matching mapped plane, or -1 when none
+     *                  matches.
+     *
+     * @param[out]      p_candidateVerdicts_out
+     *                  Optional, may be null. OPPOSITE_FACE fills one verdict
+     *                  per mapped plane, in input order; SAME_FACE clears it.
      *
      * @return          UTILS_STATUS_SUCCESS.
      */
-    [[nodiscard]] static UtilsStatus associatePlanes(
-        const std::vector<geometric::Plane *>       &mappedPlanes_in,
-        g2o::Plane3D                                 observedPlane_in,
-        pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
-        const Eigen::Matrix4d                       &keyframePose_in,
-        const geometric::Plane::PlaneVariant         observedPlaneType_in,
-        const float                                  threshold_in,
-        int                                         &matchedPlaneId_out,
-        const float maximumFiniteCloudDistance_m_in = -1.0F,
-        const std::optional<Eigen::Vector3d> &observationOrigin_world_m_in =
-            std::nullopt);
-
-    /*!
-     * @brief           Clusters the point cloud into separate clouds based
-     *                  on the plane detection.
-     *
-     * @param[in]       p_cloud_in
-     *                  Point cloud to be clustered.
-     *
-     * @param[in,out]   clusterIndices_inout
-     *                  Vector of point indices for each cluster.
-     */
-    [[nodiscard]] static UtilsStatus clusterPlaneClouds(
-        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &p_cloud_in,
-        std::vector<pcl::PointIndices>                &clusterIndices_inout);
-
-    /*!
-     * @brief           Re-associates semantically classified planes if they get
-     *                  closer after optimization
-     *
-     * @param[in]       p_atlas_in
-     *                  A pointer to the Atlas
-     */
-    [[nodiscard]] static UtilsStatus
-        reAssociateSemanticPlanes(atlas::Atlas *p_atlas_in);
+    [[nodiscard]] static UtilsStatus findMatchingPlane(
+        const std::vector<geometric::Plane *> &mappedPlanes_in,
+        const PlaneEvidence                   &observedPlane_in,
+        const PlaneMatchSettings              &matchSettings_in,
+        int                                   &matchedPlaneId_out,
+        std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out);
 
     /*!
      * @brief           Re-associates semantically classified planes if they get
@@ -482,27 +361,6 @@ class Utils
      *                  a pointer to the Atlas
      */
     [[nodiscard]] static UtilsStatus reAssociateRooms(atlas::Atlas *p_atlas_in);
-
-    /*!
-     * @brief           Fuses duplicate confirmed rooms introduced by a
-     *                   map merge.
-     *
-     *                  Only rooms imported from the obsolete submap are
-     *                  considered for retirement. A candidate must agree
-     *                  with a pre-existing room in type, centroid
-     *                  proximity, shared-wall side, and unobstructed
-     *                  free-space geometry. This prevents adjacent rooms
-     *                  on opposite sides of a wall from being collapsed.
-     *
-     * @param[in,out]   p_map_inout
-     *                  Surviving map whose room graph is reconciled.
-     *
-     * @param[in]       importedRooms_in
-     *                  Rooms transferred from the obsolete submap.
-     */
-    [[nodiscard]] static UtilsStatus fuseDuplicateRoomsAfterMerge(
-        map::Map                                 *p_map_inout,
-        const std::vector<semantic::Room *> &importedRooms_in);
 
     /*!
      * @brief           Fuses duplicate passage entities after optimization or
@@ -522,11 +380,15 @@ class Utils
      *                  entities are stored independently in the world
      *                  frame. This method applies the corresponding
      *                  old-world to corrected-world deformation exactly
-     *                  once to planes, markers, passages, rooms, floors,
-     *                  and free-space skeleton geometry.
+     *                  once to planes, passages, rooms, floors, and
+     *                  free-space skeleton geometry.
      *
      * @param[in,out]   p_map_inout
      *                  Map whose semantic geometry is updated.
+     *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph;
+     *                  borrowed.
      *
      * @param[in]       keyFramePosesBefore_worldToCamera_in
      *                  World-to-camera poses immediately before
@@ -542,7 +404,8 @@ class Utils
      *                  identity for an in-place BA.
      */
     [[nodiscard]] static UtilsStatus propagateSemanticPoseCorrections(
-        map::Map                   *p_map_inout,
+        map::Map              *p_map_inout,
+        SemanticsManager      *p_semanticsManager_in,
         const KeyFramePoseMap &keyFramePosesBefore_worldToCamera_in,
         const KeyFramePoseMap &keyFramePosesAfter_worldToCamera_in,
         const g2o::Sim3       &fallbackTransform_oldWorldToNewWorld_in);
@@ -578,145 +441,6 @@ class Utils
         getPlaneTypeFromClassId(int classId_in,
                                 vs_graphs::core::geometric::Plane::PlaneVariant
                                     &planeTypeFromClassId_out);
-
-    /*!
-     * @brief           Gets the class id from the PlaneVariant type.
-     *
-     * @param[in]       planeType_in
-     *                  PlaneVariant type.
-     *
-     * @param[out]      classIdFromPlaneType_out
-     *                  Class id 0 to 3 for known types; -1 otherwise.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus getClassIdFromPlaneType(
-        vs_graphs::core::geometric::Plane::PlaneVariant planeType_in,
-        int &classIdFromPlaneType_out);
-
-    /*!
-     * @brief           Computes the rigid transform mapping map A into map B
-     *                  using Horn's closed-form solution on oriented
-     *                  wall-normal correspondences.
-     *
-     *                  The transform maps points from map A's frame into map
-     *                  B's frame such that p_B = T * p_A.
-     *
-     * @param[in]       normalsA_in
-     *                  Unit wall normals of map A.
-     *
-     * @param[in]       centroidsA_in
-     *                  Wall centroids of map A.
-     *
-     * @param[in]       normalsB_in
-     *                  Unit wall normals of map B.
-     *
-     * @param[in]       centroidsB_in
-     *                  Wall centroids of map B.
-     *
-     * @param[out]      mapTransform_Horn_out
-     *                  Rigid transform from map A to map B, or identity when
-     *                  the input data is invalid.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus computeMapTransform_Horn(
-        const std::vector<Eigen::Vector3d> &normalsA_in,
-        const std::vector<Eigen::Vector3d> &centroidsA_in,
-        const std::vector<Eigen::Vector3d> &normalsB_in,
-        const std::vector<Eigen::Vector3d> &centroidsB_in,
-        Eigen::Isometry3d                  &mapTransform_Horn_out);
-
-    /*!
-     * @brief           Pairs the walls of two matched rooms by greedy
-     *                  best-first normal alignment.
-     *
-     * @param[in]       p_roomA_in
-     *                  Room in the surviving map; may be null.
-     *
-     * @param[in]       p_roomB_in
-     *                  Same physical room in the map to be absorbed; may
-     *                  be null.
-     *
-     * @param[in,out]   normalsA_inout
-     *                  Matched wall normals of room A.
-     *
-     * @param[in,out]   centroidsA_inout
-     *                  Matched wall centroids of room A.
-     *
-     * @param[in,out]   normalsB_inout
-     *                  Matched wall normals of room B.
-     *
-     * @param[in,out]   centroidsB_inout
-     *                  Matched wall centroids of room B.
-     *
-     * @param[out]      matchedWallCount_out
-     *                  Number of accepted wall pairs; zero when either room is
-     *                  null.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus
-        matchWallsBetweenRooms(const semantic::Room         *p_roomA_in,
-                               const semantic::Room         *p_roomB_in,
-                               std::vector<Eigen::Vector3d> &normalsA_inout,
-                               std::vector<Eigen::Vector3d> &centroidsA_inout,
-                               std::vector<Eigen::Vector3d> &normalsB_inout,
-                               std::vector<Eigen::Vector3d> &centroidsB_inout,
-                               std::size_t &matchedWallCount_out);
-
-    /*!
-     * @brief           Gathers wall correspondences across two maps using
-     *                  their shared room identity tags.
-     *
-     * @param[in]       p_mapA_in
-     *                  Surviving map; may be null.
-     *
-     * @param[in]       p_mapB_in
-     *                  Map to be absorbed; may be null.
-     *
-     * @param[in,out]   normalsA_inout
-     *                  Matched wall normals of map A.
-     *
-     * @param[in,out]   centroidsA_inout
-     *                  Matched wall centroids of map A.
-     *
-     * @param[in,out]   normalsB_inout
-     *                  Matched wall normals of map B.
-     *
-     * @param[in,out]   centroidsB_inout
-     *                  Matched wall centroids of map B.
-     *
-     * @param[out]      hasEnoughCorrespondences_out
-     *                  True when at least three valid correspondences were
-     *                  collected.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus collectCorrespondingWalls(
-        map::Map                          *p_mapA_in,
-        map::Map                          *p_mapB_in,
-        std::vector<Eigen::Vector3d> &normalsA_inout,
-        std::vector<Eigen::Vector3d> &centroidsA_inout,
-        std::vector<Eigen::Vector3d> &normalsB_inout,
-        std::vector<Eigen::Vector3d> &centroidsB_inout,
-        bool                         &hasEnoughCorrespondences_out);
-
-    /*!
-     * @brief           Calculates the soft-min approximation of the given
-     *                  values. Soft-min estimates segment quality from
-     *                  per-pixel uncertainties.
-     *
-     * @param[in]       values_in
-     *                  Input values; shall hold at least one value.
-     *
-     * @param[out]      softMin_out
-     *                  Soft-min value.
-     *
-     * @return          UTILS_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static UtilsStatus calcSoftMin(std::vector<double> &values_in,
-                                                 double &softMin_out);
 };
 } /* namespace utils */
 } /* namespace utils */

@@ -6,19 +6,16 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/calculateCheckSum.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeDataset.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/deactivateLocalizationMode.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloors.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllKeyframePoses.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllMarkers.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPlanes.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRooms.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCamTwc.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentMap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImageScale.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getImuFrequency.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuTwb.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuVwb.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getKeyFramePose.cc
@@ -29,12 +26,10 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackedKeyPointsUn.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackedMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTrackingState.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getWallSlabQueries.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/haveWorkersFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/incrementSegmentationPublishedCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/initialize.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertRectTime.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertResizeTime.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertTrackTime.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuPreintegrated.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isLost.cc
@@ -42,7 +37,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/isShutDown.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/loadAtlas.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/mapChanged.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/parseJsonDatabase.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/requestResetActiveMapWithCause.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/reset.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetActiveMap.cc
@@ -56,6 +50,7 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/saveTrajectoryTUM.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonCluster.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setSkeletonEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setWallSlabProfiles.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/shutdown.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/trackMonocular.cc

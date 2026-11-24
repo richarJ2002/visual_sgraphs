@@ -40,11 +40,11 @@
 
 #include "common/common.h"
 
+#include "common/private_functions/private_functions.h"
+
 #include "views_io/mission_health_topology_json/mission_health_topology_json.h"
 
 #include "sparse/sparse.h"
-
-#include "observability/observability.h"
 
 #include <opencv2/imgcodecs.hpp>
 
@@ -54,9 +54,15 @@
 #include <limits>
 #include <mutex>
 #include <rclcpp/logging.hpp>
+#include <set>
+#include <shared_mutex>
 #include <sstream>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "execution/profiling/profiling.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 
 /* -------------------------------------------------------------------------- *
  * ORB-SLAM3 STATE
@@ -130,10 +136,6 @@ std::shared_ptr<tf2_ros::StaticTransformBroadcaster> staticTfBroadcaster =
 /* -------------------------------------------------------------------------- *
  * SHARED DATA BUFFERS
  * -------------------------------------------------------------------------- */
-
-std::vector<std::vector<vs_graphs::core::semantic::Marker *>> markersBuffer;
-
-std::vector<vs_graphs::core::semantic::Room *> gnnRoomCandidates;
 
 std::vector<std::vector<Eigen::Vector3d>> skeletonClusterPoints;
 
@@ -333,9 +335,6 @@ std::shared_ptr<image_transport::Publisher> pubTrackingImage = nullptr;
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubDoor =
     nullptr;
 
-rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    pubFiducialMarker = nullptr;
-
 /* -------------------------------------------------------------------------- *
  * BUILDING-COMPONENT PUBLISHERS
  * -------------------------------------------------------------------------- */
@@ -368,6 +367,12 @@ rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
 
 rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
     pubAllPassages = nullptr;
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr
+    pubIncompleteRooms = nullptr;
+
+rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+    pubFrontierPassages = nullptr;
 
 rclcpp::Publisher<vs_graphs::msg::VSGraphsAllFloorsData>::SharedPtr
     pubAllFloors = nullptr;
@@ -460,7 +465,6 @@ static void clearMapScopedVisualization(const rclcpp::Time &msgTime_s_in)
     clearPublishedMarkers(pubKeyFrameMarker, msgTime_s_in);
     clearPublishedMarkers(pubCameraPoseVis, msgTime_s_in);
     clearPublishedMarkers(pubDoor, msgTime_s_in);
-    clearPublishedMarkers(pubFiducialMarker, msgTime_s_in);
     clearPublishedMarkers(pubPlaneLabel, msgTime_s_in);
     clearPublishedMarkers(pubStructuralElements, msgTime_s_in);
 
@@ -511,6 +515,7 @@ void addSegmentationToSystem(
     const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in,
     const rclcpp::Logger                       &logger_in)
 {
+    PROFILE_FUNCTION();
     cv_bridge::CvImageConstPtr cv_imgSeg;
     const uint64_t             keyFrameId = msgSegImage_in.key_frame_id.data;
     try
@@ -560,9 +565,9 @@ const char *sensorModeName()
  * -------------------------------------------------------------------------- */
 
 void appendFloorMarkers(
-    const std::vector<vs_graphs::core::semantic::Floor *> &mappedFloors_in,
-    const rclcpp::Time                                    &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    const rclcpp::Time                        &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray      &structuralElementMarkerArray_out)
 {
     constexpr double floorDisplayOffset_m = -1.0;
 
@@ -617,51 +622,21 @@ void appendFloorMarkers(
             deleteFloorRoomLineMarker);
     };
 
-    for (vs_graphs::core::semantic::Floor *mappedFloor : mappedFloors_in)
+    for (const vs_graphs::core::SceneGraphFloorEntry &mappedFloor :
+         sceneGraph_in.floors)
     {
-        if (mappedFloor == nullptr)
-        {
-            continue;
-        }
-
-        int mappedFloorId{};
-        if (mappedFloor->getId(mappedFloorId) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        const int floorMarkerId = static_cast<int>(mappedFloorId);
-
-        std::vector<vs_graphs::core::semantic::Room *> associatedRooms{};
-        if (mappedFloor->getRooms(associatedRooms) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRooms returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        const int floorMarkerId = mappedFloor.id;
 
         /* Do not display floors without any associated rooms */
-        if (associatedRooms.empty())
+        if (mappedFloor.roomIds.empty())
         {
             appendFloorDeleteMarkers(floorMarkerId);
 
             continue;
         }
 
-        Eigen::Vector3d floorCentroid_world_m{};
-        if (mappedFloor->getCentroid(floorCentroid_world_m) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
+        const Eigen::Vector3d &floorCentroid_world_m =
+            mappedFloor.centroid_world_m;
 
         if (!floorCentroid_world_m.allFinite())
         {
@@ -739,16 +714,7 @@ void appendFloorMarkers(
 
         floorLabelMarker.action = visualization_msgs::msg::Marker::ADD;
 
-        std::string mappedFloorName{};
-        if (mappedFloor->getName(mappedFloorName) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getName returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        floorLabelMarker.text = mappedFloorName;
+        floorLabelMarker.text = mappedFloor.name;
 
         floorLabelMarker.pose.position.x = floorDisplayPosition_world_m.x();
         floorLabelMarker.pose.position.y = floorDisplayPosition_world_m.y();
@@ -811,37 +777,22 @@ void appendFloorMarkers(
 
         floorRoomAssociationMarker.lifetime = rclcpp::Duration::from_seconds(0);
 
-        floorRoomAssociationMarker.points.reserve(associatedRooms.size() * 2);
+        floorRoomAssociationMarker.points.reserve(mappedFloor.roomIds.size() *
+                                                  2);
 
-        for (vs_graphs::core::semantic::Room *associatedRoom : associatedRooms)
+        for (const int associatedRoomId : mappedFloor.roomIds)
         {
-            bool associatedRoomIsBad{};
-            if (!(associatedRoom == nullptr) &&
-                associatedRoom->isBad(associatedRoomIsBad) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (associatedRoom == nullptr || associatedRoomIsBad)
+            /* A room the snapshot does not list is flagged bad. */
+            const vs_graphs::core::SceneGraphRoomEntry *p_associatedRoom =
+                sceneGraph_in.findRoom(associatedRoomId);
+            if (p_associatedRoom == nullptr || p_associatedRoom->isBad)
             {
                 continue;
             }
 
-            vs_graphs::core::semantic::Room::RoomVariant roomType{};
-            if (associatedRoom->getRoomVariant(roomType) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomVariant returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-
             const bool isConfirmedRoom =
-                roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
+                p_associatedRoom->variant ==
+                vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
             if (!isConfirmedRoom)
             {
@@ -851,7 +802,7 @@ void appendFloorMarkers(
             geometry_msgs::msg::PointStamped roomDisplayPoint_SE;
             geometry_msgs::msg::PointStamped roomDisplayPoint_world;
 
-            if (!getRoomDisplayPoints(associatedRoom,
+            if (!getRoomDisplayPoints(p_associatedRoom->centroid_world_m,
                                       msgTime_s_in,
                                       roomDisplayPoint_SE,
                                       roomDisplayPoint_world))
@@ -885,9 +836,9 @@ void appendFloorMarkers(
 }
 
 void appendPassageMarkers(
-    const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                                      &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    const rclcpp::Time                        &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray      &structuralElementMarkerArray_out)
 {
     constexpr double textOffset_m = -0.5;
 
@@ -919,39 +870,17 @@ void appendPassageMarkers(
         structuralElementMarkerArray_out.markers.push_back(
             deletePassageLabelMarker);
     };
-    for (vs_graphs::core::semantic::Passage *mappedPassage : mappedPassages_in)
+    for (const vs_graphs::core::SceneGraphPassageEntry &mappedPassage :
+         sceneGraph_in.passages)
     {
-        if (mappedPassage == nullptr)
-        {
-            continue;
-        }
-
-        int mappedPassageId{};
-        if (mappedPassage->getId(mappedPassageId) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        const int passageMarkerId = static_cast<int>(mappedPassageId);
+        const int passageMarkerId = mappedPassage.id;
 
         /* Remove invalidated passages from RViz. Passage::isBad() is a
          * per-session addition (0-associated-room invalidation); until now
          * every passage the Atlas ever created stayed drawn forever, since
          * this loop had no equivalent to appendRoomMarkers()'s own
          * isBad()-checks-delete pattern above. */
-        bool mappedPassageIsBad{};
-        if (mappedPassage->isBad(mappedPassageIsBad) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (mappedPassageIsBad)
+        if (mappedPassage.isBad)
         {
             appendPassageDeleteMarkers(passageMarkerId);
             continue;
@@ -961,36 +890,10 @@ void appendPassageMarkers(
          * geometry until re-observed: drawing them would plant doorways at
          * unlocated coordinates. Fresh passages always carry aperture
          * dimensions from detection, so only proxies trip this gate. */
-        double proxyWidth_m{};
-        if (mappedPassage->getWidth(proxyWidth_m) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWidth returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        double proxyHeight_m{};
-        if (mappedPassage->getHeight(proxyHeight_m) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHeight returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        bool mappedPassageIsRecoveryProxy{};
-        if (mappedPassage->isRecoveryProxy(mappedPassageIsRecoveryProxy) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isRecoveryProxy returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (mappedPassageIsRecoveryProxy &&
-            (!std::isfinite(proxyWidth_m) || !std::isfinite(proxyHeight_m) ||
-             proxyWidth_m <= 0.0 || proxyHeight_m <= 0.0))
+        if (mappedPassage.isRecoveryProxy &&
+            (!std::isfinite(mappedPassage.width_m) ||
+             !std::isfinite(mappedPassage.height_m) ||
+             mappedPassage.width_m <= 0.0 || mappedPassage.height_m <= 0.0))
         {
             continue;
         }
@@ -998,7 +901,7 @@ void appendPassageMarkers(
         geometry_msgs::msg::PointStamped passageDisplayPoint_SE;
         geometry_msgs::msg::PointStamped passageDisplayPoint_world;
 
-        if (!getPassageDisplayPoints(mappedPassage,
+        if (!getPassageDisplayPoints(mappedPassage.centroid_world_m,
                                      msgTime_s_in,
                                      0.0,
                                      passageDisplayPoint_SE,
@@ -1014,15 +917,7 @@ void appendPassageMarkers(
         const float passageColourGreen = 0.3F;
         const float passageColourBlue  = 1.0F;
 
-        bool isPassageOpen{};
-        if (mappedPassage->isPassable(isPassageOpen) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isPassable returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        const bool isPassageOpen = mappedPassage.isPassable;
 
         /* ------------------------------------------------------------------ *
          * PASSAGE NODE
@@ -1109,318 +1004,11 @@ void appendPassageMarkers(
     }
 }
 
-/*
- * Computes the ordered horizontal corner polygon of a room boundary.
- *
- * Each wall is treated as a vertical line in the horizontal plane: the wall
- * plane is projected onto the plane orthogonal to the room ground normal to
- * obtain a two-dimensional supporting line. The walls are then ordered by the
- * angle of their centroid around the room centroid and consecutive supporting
- * lines are intersected. Recovering corners in this way reproduces the closure
- * the core boundary validator uses and ignores partial finite extents.
- *
- * @param[in] room_in Room whose boundary corners are required.
- *
- * @return Ordered world-frame corner points forming the closed boundary loop.
- *         The loop is empty when the room, its ground plane, or the wall set is
- *         degenerate, or when any consecutive wall pair is parallel.
- */
-std::vector<Eigen::Vector3d>
-    computeRoomCorners(const vs_graphs::core::semantic::Room *room_in)
-{
-    std::vector<Eigen::Vector3d> roomCorners_world_m;
-
-    if (room_in == nullptr)
-    {
-        return roomCorners_world_m;
-    }
-
-    std::vector<vs_graphs::core::geometric::Plane *> walls{};
-    if (room_in->getWalls(walls) !=
-        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getWalls returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    if (walls.size() < 3)
-    {
-        return roomCorners_world_m;
-    }
-
-    /* Resolve the horizontal plane from the room's ground plane, falling back
-     * to the world vertical axis when no ground surface is available. */
-    Eigen::Vector3d groundNormal_world_m = Eigen::Vector3d::UnitZ();
-
-    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
-    if (room_in->getGroundPlane(p_groundPlane) !=
-        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getGroundPlane returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    bool   hasFloorPlane = false;
-    double floorHeight_m = 0.0;
-
-    bool groundPlaneIsBad{};
-    if ((p_groundPlane != nullptr) &&
-        p_groundPlane->isBad(groundPlaneIsBad) !=
-            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: isBad returned a failure status although it cannot "
-                     "fail; continuing as before.",
-                     __func__);
-    }
-    if (p_groundPlane != nullptr && !groundPlaneIsBad)
-    {
-        g2o::Plane3D groundPlaneGetGlobalEquation{};
-        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
-            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalEquation returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        const Eigen::Vector4d groundEquation_world =
-            groundPlaneGetGlobalEquation.coeffs();
-        const double groundNormalNorm = groundEquation_world.head<3>().norm();
-
-        if (groundEquation_world.allFinite() && groundNormalNorm > 1e-8)
-        {
-            groundNormal_world_m =
-                groundEquation_world.head<3>() / groundNormalNorm;
-
-            /* The ground plane is n . x + d = 0, so a point on the floor has
-             * coordinate -d / norm along the ground normal. */
-            hasFloorPlane = true;
-            floorHeight_m = -groundEquation_world[3] / groundNormalNorm;
-        }
-    }
-
-    const Eigen::Vector3d axisU_world_m =
-        groundNormal_world_m.unitOrthogonal().normalized();
-    const Eigen::Vector3d axisV_world_m =
-        groundNormal_world_m.cross(axisU_world_m).normalized();
-
-    Eigen::Vector3d roomCentroid_world_m{};
-    if (room_in->getCentroid(roomCentroid_world_m) !=
-        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCentroid returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    if (!roomCentroid_world_m.allFinite())
-    {
-        return roomCorners_world_m;
-    }
-
-    /* Record the two-dimensional wall with its horizontal normal and the
-     * projected centroid used for angular ordering. */
-    struct HorizontalWall
-    {
-        Eigen::Vector2d normal2D   = Eigen::Vector2d::Zero();
-        double          offset2d   = 0.0;
-        Eigen::Vector2d centroid2D = Eigen::Vector2d::Zero();
-    };
-
-    std::vector<HorizontalWall> horizontalWalls;
-    horizontalWalls.reserve(walls.size());
-
-    for (vs_graphs::core::geometric::Plane *p_wall : walls)
-    {
-        bool wallIsBad{};
-        if (!(p_wall == nullptr) &&
-            p_wall->isBad(wallIsBad) !=
-                vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_wall == nullptr || wallIsBad)
-        {
-            continue;
-        }
-
-        g2o::Plane3D wallGetGlobalEquation{};
-        if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
-            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalEquation returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        const Eigen::Vector4d wallEquation_world =
-            wallGetGlobalEquation.coeffs();
-        const double wallNormalNorm = wallEquation_world.head<3>().norm();
-
-        if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
-        {
-            continue;
-        }
-
-        const Eigen::Vector3d wallNormal_world_m =
-            wallEquation_world.head<3>() / wallNormalNorm;
-
-        /* Keep only the horizontal component of the wall normal. */
-        Eigen::Vector3d horizontalNormal_world_m =
-            wallNormal_world_m -
-            wallNormal_world_m.dot(groundNormal_world_m) * groundNormal_world_m;
-
-        if (horizontalNormal_world_m.norm() < 1e-8)
-        {
-            continue;
-        }
-
-        horizontalNormal_world_m.normalize();
-
-        Eigen::Vector3d wallCentroid2D_world_m{};
-        if (p_wall->getCentroid(wallCentroid2D_world_m) !=
-            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        if (!wallCentroid2D_world_m.allFinite())
-        {
-            continue;
-        }
-
-        /* A point on the vertical wall projected onto the horizontal plane. */
-        Eigen::Vector3d wallPoint_world_m =
-            wallCentroid2D_world_m -
-            wallCentroid2D_world_m.dot(groundNormal_world_m) *
-                groundNormal_world_m;
-
-        const Eigen::Vector2d normal2D(
-            horizontalNormal_world_m.dot(axisU_world_m),
-            horizontalNormal_world_m.dot(axisV_world_m));
-
-        if (normal2D.norm() < 1e-8)
-        {
-            continue;
-        }
-
-        HorizontalWall horizontalWall;
-        horizontalWall.normal2D = normal2D;
-        horizontalWall.offset2d =
-            normal2D.dot(Eigen::Vector2d(wallPoint_world_m.dot(axisU_world_m),
-                                         wallPoint_world_m.dot(axisV_world_m)));
-        horizontalWall.centroid2D = {wallCentroid2D_world_m.dot(axisU_world_m),
-                                     wallCentroid2D_world_m.dot(axisV_world_m)};
-
-        horizontalWalls.push_back(horizontalWall);
-    }
-
-    if (horizontalWalls.size() < 3)
-    {
-        return roomCorners_world_m;
-    }
-
-    const Eigen::Vector2d roomCentroid2D(
-        roomCentroid_world_m.dot(axisU_world_m),
-        roomCentroid_world_m.dot(axisV_world_m));
-
-    /* Order walls around the room centroid so adjacent walls are consecutive.
-     */
-    std::sort(horizontalWalls.begin(),
-              horizontalWalls.end(),
-              [&roomCentroid2D](const HorizontalWall &firstWall,
-                                const HorizontalWall &secondWall)
-              {
-                  const Eigen::Vector2d firstMidpoint =
-                      firstWall.centroid2D - roomCentroid2D;
-                  const Eigen::Vector2d secondMidpoint =
-                      secondWall.centroid2D - roomCentroid2D;
-
-                  return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
-                         std::atan2(secondMidpoint.y(), secondMidpoint.x());
-              });
-
-    /* Intersect consecutive supporting lines to obtain the shared corners. */
-    std::vector<Eigen::Vector2d> corners2D;
-    corners2D.reserve(horizontalWalls.size());
-
-    for (std::size_t wallIndex = 0U; wallIndex < horizontalWalls.size();
-         ++wallIndex)
-    {
-        const HorizontalWall &currentWall = horizontalWalls[wallIndex];
-        const HorizontalWall &nextWall =
-            horizontalWalls[(wallIndex + 1U) % horizontalWalls.size()];
-
-        /* The wall line is normal2D . x = offset2d. Intersect the two
-         * supporting lines by solving the 2x2 linear system N c = offsets. */
-        Eigen::Matrix2d lineMatrix;
-        lineMatrix(0, 0) = currentWall.normal2D.x();
-        lineMatrix(0, 1) = currentWall.normal2D.y();
-        lineMatrix(1, 0) = nextWall.normal2D.x();
-        lineMatrix(1, 1) = nextWall.normal2D.y();
-
-        const double determinant = lineMatrix(0, 0) * lineMatrix(1, 1) -
-                                   lineMatrix(0, 1) * lineMatrix(1, 0);
-
-        if (!std::isfinite(determinant) || std::abs(determinant) < 1e-8)
-        {
-            /* Parallel consecutive walls have no well-defined corner. */
-            roomCorners_world_m.clear();
-            return roomCorners_world_m;
-        }
-
-        const Eigen::Vector2d offsets(currentWall.offset2d, nextWall.offset2d);
-
-        const Eigen::Vector2d corner2D = lineMatrix.inverse() * offsets;
-
-        if (!corner2D.allFinite())
-        {
-            roomCorners_world_m.clear();
-            return roomCorners_world_m;
-        }
-
-        corners2D.push_back(corner2D);
-    }
-
-    /* Mark the room-to-floor boundary at the floor height when the floor plane
-     * is available, falling back to the room centroid height otherwise. */
-    const double boundaryHeight_m =
-        hasFloorPlane ? floorHeight_m
-                      : roomCentroid_world_m.dot(groundNormal_world_m);
-
-    roomCorners_world_m.reserve(corners2D.size());
-
-    for (const Eigen::Vector2d &corner2D : corners2D)
-    {
-        roomCorners_world_m.emplace_back(
-            corner2D.x() * axisU_world_m[0] + corner2D.y() * axisV_world_m[0] +
-                boundaryHeight_m * groundNormal_world_m[0],
-            corner2D.x() * axisU_world_m[1] + corner2D.y() * axisV_world_m[1] +
-                boundaryHeight_m * groundNormal_world_m[1],
-            corner2D.x() * axisU_world_m[2] + corner2D.y() * axisV_world_m[2] +
-                boundaryHeight_m * groundNormal_world_m[2]);
-    }
-
-    return roomCorners_world_m;
-}
-
 void appendRoomMarkers(
-    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
-    const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                                      &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    vs_graphs::core::map::Map                 *p_map_in,
+    const rclcpp::Time                        &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray      &structuralElementMarkerArray_out)
 {
     constexpr double textOffset_m = -0.5;
 
@@ -1428,62 +1016,20 @@ void appendRoomMarkers(
      * state-driven appearance below, never as a parallel marker set. Other
      * provisional rooms stay hidden, as before. */
     const auto isLiveProspectiveRoom =
-        [&mappedRooms_in,
-         &mappedPassages_in](vs_graphs::core::semantic::Room *p_room_in)
+        [&sceneGraph_in](const vs_graphs::core::SceneGraphRoomEntry &room_in)
     {
-        bool room_inIsBad{};
-        if (!(p_room_in == nullptr) &&
-            p_room_in->isBad(room_inIsBad) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        vs_graphs::core::semantic::Room::RoomVariant room_inRoomVariant{};
-        if (!(p_room_in == nullptr || room_inIsBad) &&
-            p_room_in->getRoomVariant(room_inRoomVariant) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_room_in == nullptr || room_inIsBad ||
-            room_inRoomVariant !=
+        if (room_in.isBad ||
+            room_in.variant !=
                 vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
         {
             return false;
         }
         bool linkedByPassage = false;
-        for (vs_graphs::core::semantic::Passage *p_passage : mappedPassages_in)
+        for (const vs_graphs::core::SceneGraphPassageEntry &passage :
+             sceneGraph_in.passages)
         {
-            bool passageIsBad{};
-            if ((p_passage != nullptr) &&
-                p_passage->isBad(passageIsBad) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            vs_graphs::core::semantic::Room *p_passageProspectiveRoom = nullptr;
-            if ((p_passage != nullptr && !passageIsBad) &&
-                p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getProspectiveRoom returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_passage != nullptr && !passageIsBad &&
-                p_passageProspectiveRoom == p_room_in)
+            if (!passage.isBad && passage.prospectiveRoomId.has_value() &&
+                *passage.prospectiveRoomId == room_in.id)
             {
                 linkedByPassage = true;
                 break;
@@ -1495,55 +1041,16 @@ void appendRoomMarkers(
         }
         /* A hypothesis absorbed next to a confirmed room would stack its
          * label on the confirmed label at the same position. */
-        for (vs_graphs::core::semantic::Room *p_otherRoom : mappedRooms_in)
+        for (const vs_graphs::core::SceneGraphRoomEntry &otherRoom :
+             sceneGraph_in.rooms)
         {
-            bool otherRoomIsBad{};
-            if (!(p_otherRoom == nullptr || p_otherRoom == p_room_in) &&
-                p_otherRoom->isBad(otherRoomIsBad) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            vs_graphs::core::semantic::Room::RoomVariant otherRoomRoomVariant{};
-            if (!(p_otherRoom == nullptr || p_otherRoom == p_room_in ||
-                  otherRoomIsBad) &&
-                p_otherRoom->getRoomVariant(otherRoomRoomVariant) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRoomVariant returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_otherRoom == nullptr || p_otherRoom == p_room_in ||
-                otherRoomIsBad ||
-                otherRoomRoomVariant !=
+            if (otherRoom.id == room_in.id || otherRoom.isBad ||
+                otherRoom.variant !=
                     vs_graphs::core::semantic::Room::RoomVariant::ROOM)
             {
                 continue;
             }
-            Eigen::Vector3d otherRoomCentroid{};
-            if (p_otherRoom->getCentroid(otherRoomCentroid) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            Eigen::Vector3d room_inCentroid{};
-            if (p_room_in->getCentroid(room_inCentroid) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if ((otherRoomCentroid.cast<double>() - room_inCentroid).norm() <
+            if ((otherRoom.centroid_world_m - room_in.centroid_world_m).norm() <
                 1.5)
             {
                 return false;
@@ -1673,50 +1180,18 @@ void appendRoomMarkers(
             deleteRoomBoundaryLoopMarker);
     };
 
-    for (vs_graphs::core::semantic::Room *mappedRoom : mappedRooms_in)
+    for (const vs_graphs::core::SceneGraphRoomEntry &mappedRoom :
+         sceneGraph_in.rooms)
     {
-        /* Null pointers do not contain an ID that can be deleted */
-        if (mappedRoom == nullptr)
-        {
-            continue;
-        }
-
-        int mappedRoomId{};
-        if (mappedRoom->getId(mappedRoomId) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        const int roomMarkerId = static_cast<int>(mappedRoomId);
-
-        vs_graphs::core::semantic::Room::RoomVariant roomType{};
-        if (mappedRoom->getRoomVariant(roomType) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getRoomVariant returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
+        const int roomMarkerId = mappedRoom.id;
 
         const bool isConfirmedRoom =
-            roomType == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
+            mappedRoom.variant ==
+            vs_graphs::core::semantic::Room::RoomVariant::ROOM;
 
         /* Remove bad structural elements from RViz. Provisional rooms stay
          * hidden unless a live passage hypothesizes them. */
-        bool mappedRoomIsBad{};
-        if (mappedRoom->isBad(mappedRoomIsBad) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (mappedRoomIsBad)
+        if (mappedRoom.isBad)
         {
             appendRoomDeleteMarkers(roomMarkerId);
 
@@ -1739,7 +1214,7 @@ void appendRoomMarkers(
         geometry_msgs::msg::PointStamped roomDisplayPoint_SE;
         geometry_msgs::msg::PointStamped roomDisplayPoint_world;
 
-        if (!getRoomDisplayPoints(mappedRoom,
+        if (!getRoomDisplayPoints(mappedRoom.centroid_world_m,
                                   msgTime_s_in,
                                   roomDisplayPoint_SE,
                                   roomDisplayPoint_world))
@@ -1807,17 +1282,7 @@ void appendRoomMarkers(
 
         std::string boundaryStatusLabel;
 
-        vs_graphs::core::semantic::Room::BoundaryStatus
-            mappedRoomBoundaryStatus{};
-        if (mappedRoom->getBoundaryStatus(mappedRoomBoundaryStatus) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getBoundaryStatus returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        switch (mappedRoomBoundaryStatus)
+        switch (mappedRoom.boundaryStatus)
         {
         case vs_graphs::core::semantic::Room::BoundaryStatus::UNOBSERVED:
             boundaryStatusLabel = " [unobserved]";
@@ -1838,29 +1303,9 @@ void appendRoomMarkers(
          * it in the room label makes incomplete but traversable observations
          * explicit without changing the semantic graph topology.
          */
-        std::string mappedRoomName{};
-        if ((isConfirmedRoom) &&
-            mappedRoom->getName(mappedRoomName) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getName returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        std::string mappedRoomName2{};
-        if (!(isConfirmedRoom) &&
-            mappedRoom->getName(mappedRoomName2) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getName returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
         roomLabelMarker.text = isConfirmedRoom
-                                   ? mappedRoomName + boundaryStatusLabel
-                                   : mappedRoomName2 + " [prospective]";
+                                   ? mappedRoom.name + boundaryStatusLabel
+                                   : mappedRoom.name + " [prospective]";
 
         /* Keep the X, Y, and Z coordinates in their original order */
         roomLabelMarker.pose.position.x = roomDisplayPoint_SE.point.x;
@@ -1893,27 +1338,10 @@ void appendRoomMarkers(
          * Room::getBoundaryCorners_world_m()).
          * ------------------------------------------------------------------ */
 
-        std::vector<Eigen::Vector3d> boundaryCorners_world_m{};
-        if (mappedRoom->getBoundaryCorners_world_m(boundaryCorners_world_m) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: getBoundaryCorners_world_m returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
+        const std::vector<Eigen::Vector3d> &boundaryCorners_world_m =
+            mappedRoom.boundaryCorners_world_m;
 
-        bool mappedRoomIsBoundaryComplete{};
-        if (mappedRoom->isBoundaryComplete(mappedRoomIsBoundaryComplete) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBoundaryComplete returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (mappedRoomIsBoundaryComplete &&
+        if (mappedRoom.isBoundaryComplete &&
             boundaryCorners_world_m.size() >= 3U)
         {
             visualization_msgs::msg::Marker roomBoundaryLoopMarker;
@@ -2016,21 +1444,14 @@ void appendRoomMarkers(
 
         roomWallAssociationMarker.lifetime = rclcpp::Duration::from_seconds(0);
 
-        std::vector<vs_graphs::core::geometric::Plane *> associatedWalls{};
-        if (mappedRoom->getWalls(associatedWalls) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
+        roomWallAssociationMarker.points.reserve(
+            mappedRoom.wallPlaneIds.size() * 2);
 
-        roomWallAssociationMarker.points.reserve(associatedWalls.size() * 2);
-
-        for (vs_graphs::core::geometric::Plane *associatedWall :
-             associatedWalls)
+        for (const int associatedWallId : mappedRoom.wallPlaneIds)
         {
+            /* Wall geometry lives in the map's planes, not in the graph. */
+            vs_graphs::core::geometric::Plane *associatedWall =
+                findMapPlaneById(p_map_in, associatedWallId);
             bool associatedWallIsBad{};
             if (!(associatedWall == nullptr) &&
                 associatedWall->isBad(associatedWallIsBad) !=
@@ -2141,37 +1562,18 @@ void appendRoomMarkers(
         roomPassageAssociationMarker.lifetime =
             rclcpp::Duration::from_seconds(0);
 
-        std::vector<vs_graphs::core::semantic::Passage *> associatedPassages{};
-        if (mappedRoom->getPassages(associatedPassages) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        roomPassageAssociationMarker.points.reserve(
+            mappedRoom.passageIds.size() * 2);
+
+        roomPassageAssociationMarker.colors.reserve(
+            mappedRoom.passageIds.size() * 2);
+
+        for (const int associatedPassageId : mappedRoom.passageIds)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getPassages returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        roomPassageAssociationMarker.points.reserve(associatedPassages.size() *
-                                                    2);
-
-        roomPassageAssociationMarker.colors.reserve(associatedPassages.size() *
-                                                    2);
-
-        for (vs_graphs::core::semantic::Passage *associatedPassage :
-             associatedPassages)
-        {
-            bool associatedPassageIsBad{};
-            if (!(associatedPassage == nullptr) &&
-                associatedPassage->isBad(associatedPassageIsBad) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (associatedPassage == nullptr || associatedPassageIsBad)
+            /* A passage the snapshot does not list is flagged bad. */
+            const vs_graphs::core::SceneGraphPassageEntry *p_associatedPassage =
+                sceneGraph_in.findPassage(associatedPassageId);
+            if (p_associatedPassage == nullptr || p_associatedPassage->isBad)
             {
                 continue;
             }
@@ -2180,41 +1582,11 @@ void appendRoomMarkers(
              * unpositioned proxy reports the origin as its centroid, which
              * would pin a room-to-origin line (and, at reset time, a line
              * onto the camera itself). */
-            double proxyWidth_m{};
-            if (associatedPassage->getWidth(proxyWidth_m) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWidth returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            double proxyHeight_m{};
-            if (associatedPassage->getHeight(proxyHeight_m) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getHeight returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            bool associatedPassageIsRecoveryProxy{};
-            if (associatedPassage->isRecoveryProxy(
-                    associatedPassageIsRecoveryProxy) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isRecoveryProxy returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (associatedPassageIsRecoveryProxy &&
-                (!std::isfinite(proxyWidth_m) ||
-                 !std::isfinite(proxyHeight_m) || proxyWidth_m <= 0.0 ||
-                 proxyHeight_m <= 0.0))
+            if (p_associatedPassage->isRecoveryProxy &&
+                (!std::isfinite(p_associatedPassage->width_m) ||
+                 !std::isfinite(p_associatedPassage->height_m) ||
+                 p_associatedPassage->width_m <= 0.0 ||
+                 p_associatedPassage->height_m <= 0.0))
             {
                 continue;
             }
@@ -2222,7 +1594,7 @@ void appendRoomMarkers(
             geometry_msgs::msg::PointStamped passageDisplayPoint_SE;
             geometry_msgs::msg::PointStamped passageDisplayPoint_world;
 
-            if (!getPassageDisplayPoints(associatedPassage,
+            if (!getPassageDisplayPoints(p_associatedPassage->centroid_world_m,
                                          msgTime_s_in,
                                          0.0,
                                          passageDisplayPoint_SE,
@@ -2247,17 +1619,7 @@ void appendRoomMarkers(
 
             passageLineColour.a = 0.9F;
 
-            bool associatedPassageIsPassable{};
-            if (associatedPassage->isPassable(associatedPassageIsPassable) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isPassable returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (associatedPassageIsPassable)
+            if (p_associatedPassage->isPassable)
             {
                 passageLineColour.r = 0.0F;
                 passageLineColour.g = 1.0F;
@@ -2318,68 +1680,15 @@ cv::Mat convertSE3fToCvMat(const Sophus::SE3f &transformation_SE3f_in)
     return transformationMatrix_OpenCV;
 }
 
-std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
-    findNearestMarker(double frameTimestamp_in)
-{
-    /* Init variable of the minimum time difference */
-    double minTimeDifference = 100;
-
-    /* Init a variable which will be used to find best match to marker */
-    std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers;
-
-    /* Loop through the markersBuffer */
-    for (const std::vector<vs_graphs::core::semantic::Marker *> &markers :
-         markersBuffer)
-    {
-        /* Find the time difference */
-        double time2{};
-        if (markers[0]->getTime(time2) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getTime returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        double timeDifference = time2 - frameTimestamp_in;
-
-        /* If better match found, update */
-        if (timeDifference < minTimeDifference)
-        {
-            matchedMarkers    = markers;
-            minTimeDifference = timeDifference;
-        }
-    }
-
-    /* Return the minimum time difference and best matched marker */
-    return std::make_pair(minTimeDifference, matchedMarkers);
-}
-
 bool getPassageDisplayPoints(
-    vs_graphs::core::semantic::Passage *passage_in,
-    const rclcpp::Time                 &msgTime_in,
-    const double                        verticalOffset_in,
-    geometry_msgs::msg::PointStamped   &passagePointSE_out,
-    geometry_msgs::msg::PointStamped   &passagePointWorld_out)
+    const Eigen::Vector3d            &passageCentroid_world_m_in,
+    const rclcpp::Time               &msgTime_in,
+    const double                      verticalOffset_in,
+    geometry_msgs::msg::PointStamped &passagePointSE_out,
+    geometry_msgs::msg::PointStamped &passagePointWorld_out)
 {
-    /* Confirm that the passage and TF buffer are valid */
-    if (passage_in == nullptr || tfBuffer_ == nullptr)
-    {
-        return false;
-    }
-
-    /* Extract the physical passage centroid */
-    Eigen::Vector3d passageCentroid{};
-    if (passage_in->getCentroid(passageCentroid) !=
-        vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCentroid returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    if (!passageCentroid.allFinite())
+    /* Confirm that the TF buffer and the passage position are valid */
+    if (tfBuffer_ == nullptr || !passageCentroid_world_m_in.allFinite())
     {
         return false;
     }
@@ -2392,9 +1701,9 @@ bool getPassageDisplayPoints(
     passagePointWorldPhysical.header.frame_id = frameWorld;
 
     /* Update the coordinates of the passage in the world frame */
-    passagePointWorldPhysical.point.x = passageCentroid.x();
-    passagePointWorldPhysical.point.y = passageCentroid.y();
-    passagePointWorldPhysical.point.z = passageCentroid.z();
+    passagePointWorldPhysical.point.x = passageCentroid_world_m_in.x();
+    passagePointWorldPhysical.point.y = passageCentroid_world_m_in.y();
+    passagePointWorldPhysical.point.z = passageCentroid_world_m_in.z();
 
     try
     {
@@ -2449,29 +1758,14 @@ bool getPassageDisplayPoints(
     return true;
 }
 
-bool getRoomDisplayPoints(vs_graphs::core::semantic::Room  *room_in,
-                          const rclcpp::Time               &msgTime_in,
+bool getRoomDisplayPoints(const Eigen::Vector3d &roomCentroid_world_m_in,
+                          const rclcpp::Time    &msgTime_in,
                           geometry_msgs::msg::PointStamped &roomPointSE_out,
                           geometry_msgs::msg::PointStamped &roomPointWorld_out)
 {
-    /* Confirm the required objects are valid */
-    if (room_in == nullptr || tfBuffer_ == nullptr)
-    {
-        return false;
-    }
-
-    /* The room centroid is stored in the world frame */
-    Eigen::Vector3d roomCentroid{};
-    if (room_in->getCentroid(roomCentroid) !=
-        vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getCentroid returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    if (!roomCentroid.allFinite())
+    /* Confirm the required objects are valid; the room centroid is stored in
+     * the world frame */
+    if (tfBuffer_ == nullptr || !roomCentroid_world_m_in.allFinite())
     {
         return false;
     }
@@ -2479,9 +1773,9 @@ bool getRoomDisplayPoints(vs_graphs::core::semantic::Room  *room_in,
     /* Create the physical room point in the world frame */
     roomPointWorld_out.header.stamp    = msgTime_in;
     roomPointWorld_out.header.frame_id = frameWorld;
-    roomPointWorld_out.point.x         = roomCentroid.x();
-    roomPointWorld_out.point.y         = roomCentroid.y();
-    roomPointWorld_out.point.z         = roomCentroid.z();
+    roomPointWorld_out.point.x         = roomCentroid_world_m_in.x();
+    roomPointWorld_out.point.y         = roomCentroid_world_m_in.y();
+    roomPointWorld_out.point.z         = roomCentroid_world_m_in.z();
 
     try
     {
@@ -2526,113 +1820,11 @@ bool getSkeletonMarkerWorldTransform(
                                           ? frameMap
                                           : skeletonMarker_in.header.frame_id;
 
-    if (sourceFrameId.empty())
-    {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot transform Voxblox marker: source frame is empty.");
-
-        return false;
-    }
-
-    if (frameWorld.empty())
-    {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot transform Voxblox marker: world frame is empty.");
-
-        return false;
-    }
-
-    /*!
-     * Transformation from the source coordinate frame into the configured
-     * world frame.
-     */
+    /* Transformation from the source coordinate frame into the world. */
     tf2::Transform T_world_sourceFrame;
-
-    T_world_sourceFrame.setIdentity();
-
-    if (sourceFrameId != frameWorld)
+    if (!lookupWorldFromFrameTransform(sourceFrameId, T_world_sourceFrame))
     {
-        if (tfBuffer_ == nullptr)
-        {
-            RCLCPP_WARN(
-                rclcpp::get_logger("visual_sgraphs"),
-                "Cannot transform Voxblox marker: TF buffer is unavailable.");
-
-            return false;
-        }
-
-        try
-        {
-            const geometry_msgs::msg::TransformStamped
-                worldFromSourceTransformMessage =
-                    tfBuffer_->lookupTransform(frameWorld,
-                                               sourceFrameId,
-                                               tf2::TimePointZero,
-                                               tf2::durationFromSec(0.1));
-
-            const geometry_msgs::msg::Transform &transformMessage =
-                worldFromSourceTransformMessage.transform;
-
-            if (!std::isfinite(transformMessage.translation.x) ||
-                !std::isfinite(transformMessage.translation.y) ||
-                !std::isfinite(transformMessage.translation.z) ||
-                !std::isfinite(transformMessage.rotation.x) ||
-                !std::isfinite(transformMessage.rotation.y) ||
-                !std::isfinite(transformMessage.rotation.z) ||
-                !std::isfinite(transformMessage.rotation.w))
-            {
-                RCLCPP_WARN(
-                    rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot transform Voxblox marker: TF from '%s' to '%s' "
-                    "contains non-finite values.",
-                    sourceFrameId.c_str(),
-                    frameWorld.c_str());
-
-                return false;
-            }
-
-            tf2::Quaternion sourceOrientation_world(
-                transformMessage.rotation.x,
-                transformMessage.rotation.y,
-                transformMessage.rotation.z,
-                transformMessage.rotation.w);
-
-            constexpr tf2Scalar minimumQuaternionNormSquared =
-                static_cast<tf2Scalar>(1e-12);
-
-            if (sourceOrientation_world.length2() <
-                minimumQuaternionNormSquared)
-            {
-                RCLCPP_WARN(
-                    rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot transform Voxblox marker: TF quaternion from '%s' "
-                    "to '%s' is invalid.",
-                    sourceFrameId.c_str(),
-                    frameWorld.c_str());
-
-                return false;
-            }
-
-            sourceOrientation_world.normalize();
-
-            T_world_sourceFrame.setOrigin(
-                tf2::Vector3(transformMessage.translation.x,
-                             transformMessage.translation.y,
-                             transformMessage.translation.z));
-
-            T_world_sourceFrame.setRotation(sourceOrientation_world);
-        }
-        catch (const tf2::TransformException &exception)
-        {
-            RCLCPP_WARN(
-                rclcpp::get_logger("visual_sgraphs"),
-                "Could not resolve Voxblox transform from '%s' to '%s': %s",
-                sourceFrameId.c_str(),
-                frameWorld.c_str(),
-                exception.what());
-
-            return false;
-        }
+        return false;
     }
 
     /* Extract and validate the marker-local pose */
@@ -2921,8 +2113,10 @@ void publishAllMappedWalls(
 }
 
 void publishAllMappedRooms(
-    std::vector<vs_graphs::core::semantic::Room *> roomsList_in,
-    rclcpp::Time                                   msgTime_s_in)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<
+        vs_graphs::msg::VSGraphsAllDetectdetRooms>::SharedPtr &roomPublisher_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllDetectdetRooms roomDataMsg;
@@ -2932,78 +2126,18 @@ void publishAllMappedRooms(
     roomDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the room data for each room in vector */
-    for (vs_graphs::core::semantic::Room *const &room : roomsList_in)
+    for (const vs_graphs::core::SceneGraphRoomEntry &room : sceneGraph_in.rooms)
     {
-        if (!room)
-            continue;
-
         vs_graphs::msg::VSGraphsRoomData roomData;
-        int                              roomId{};
-        if (room->getId(roomId) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomData.id = roomId;
-        Eigen::Vector3d roomCentroid{};
-        if (room->getCentroid(roomCentroid) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomData.centroid.x = roomCentroid.x();
-        Eigen::Vector3d roomCentroid2{};
-        if (room->getCentroid(roomCentroid2) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomData.centroid.y = roomCentroid2.y();
-        Eigen::Vector3d roomCentroid3{};
-        if (room->getCentroid(roomCentroid3) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        roomData.centroid.z = roomCentroid3.z();
 
-        std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-        if (room->getWalls(roomWalls) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        roomData.id         = room.id;
+        roomData.centroid.x = room.centroid_world_m.x();
+        roomData.centroid.y = room.centroid_world_m.y();
+        roomData.centroid.z = room.centroid_world_m.z();
+
+        for (const int wallId : room.wallPlaneIds)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (vs_graphs::core::geometric::Plane *const &wall : roomWalls)
-        {
-            if (wall)
-            {
-                int wallGetId{};
-                if (wall->getId(wallGetId) !=
-                    vs_graphs::core::geometric::PlaneStatus::
-                        PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                roomData.wall_ids.push_back(wallGetId);
-            }
+            roomData.wall_ids.push_back(wallId);
         }
 
         /* Add the room to the message */
@@ -3011,13 +2145,14 @@ void publishAllMappedRooms(
     }
 
     /* Publish all mapped rooms */
-    pubAllRooms->publish(roomDataMsg);
+    roomPublisher_in->publish(roomDataMsg);
 }
 
 void publishAllMappedPassages(
-    std::vector<vs_graphs::core::semantic::Passage *> passagesList_in,
-    std::vector<vs_graphs::core::semantic::Room *>    roomsList_in,
-    rclcpp::Time                                      msgTime_s_in)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    rclcpp::Time                               msgTime_s_in,
+    const rclcpp::Publisher<vs_graphs::msg::VSGraphsAllPassagesData>::SharedPtr
+        &passagePublisher_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllPassagesData passageDataMsg;
@@ -3027,92 +2162,21 @@ void publishAllMappedPassages(
     passageDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the passage data for each passage in vector */
-    for (vs_graphs::core::semantic::Passage *const &passage : passagesList_in)
+    for (const vs_graphs::core::SceneGraphPassageEntry &passage :
+         sceneGraph_in.passages)
     {
-        bool passageIsBad{};
-        if (!(!passage) && passage->isBad(passageIsBad) !=
-                               vs_graphs::core::semantic::PassageStatus::
-                                   PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (!passage || passageIsBad)
+        if (passage.isBad)
             continue;
 
         vs_graphs::msg::VSGraphsPassageData passageData;
-        int                                 passageId{};
-        if (passage->getId(passageId) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.id = passageId;
-        bool passageIsPassable{};
-        if (passage->isPassable(passageIsPassable) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isPassable returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.passable = passageIsPassable;
-        Eigen::Vector3d passageCentroid{};
-        if (passage->getCentroid(passageCentroid) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.centroid.x = passageCentroid.x();
-        Eigen::Vector3d passageCentroid2{};
-        if (passage->getCentroid(passageCentroid2) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.centroid.y = passageCentroid2.y();
-        Eigen::Vector3d passageCentroid3{};
-        if (passage->getCentroid(passageCentroid3) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getCentroid returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.centroid.z = passageCentroid3.z();
-        double passageWidth{};
-        if (passage->getWidth(passageWidth) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWidth returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.width = static_cast<float>(passageWidth);
-        double passageHeight{};
-        if (passage->getHeight(passageHeight) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getHeight returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        passageData.height = static_cast<float>(passageHeight);
+
+        passageData.id         = passage.id;
+        passageData.passable   = passage.isPassable;
+        passageData.centroid.x = passage.centroid_world_m.x();
+        passageData.centroid.y = passage.centroid_world_m.y();
+        passageData.centroid.z = passage.centroid_world_m.z();
+        passageData.width      = static_cast<float>(passage.width_m);
+        passageData.height     = static_cast<float>(passage.height_m);
 
         /*!
          * The "known-side" room is whichever mapped room owns one of this
@@ -3121,100 +2185,35 @@ void publishAllMappedPassages(
          * rooms claim any of them.
          */
         passageData.known_room_id = -1;
-        std::vector<vs_graphs::core::geometric::Plane *> associatedWalls{};
-        if (passage->getAssociateWalls(associatedWalls) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        for (const vs_graphs::core::SceneGraphRoomEntry &room :
+             sceneGraph_in.rooms)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getAssociateWalls returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (vs_graphs::core::semantic::Room *const &room : roomsList_in)
-        {
-            if (!room)
-                continue;
-
             bool ownsAssociatedWall = false;
-            std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-            if (room->getWalls(roomWalls) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            for (const int roomWallId : room.wallPlaneIds)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (vs_graphs::core::geometric::Plane *const &roomWall : roomWalls)
-            {
-                if (!roomWall)
-                    continue;
-
-                for (vs_graphs::core::geometric::Plane *const &associatedWall :
-                     associatedWalls)
+                for (const int associatedWallId : passage.associatedWallIds)
                 {
-                    int associatedWallGetId{};
-                    if ((associatedWall) &&
-                        associatedWall->getId(associatedWallGetId) !=
-                            vs_graphs::core::geometric::PlaneStatus::
-                                PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    int roomWallGetId{};
-                    if ((associatedWall) &&
-                        roomWall->getId(roomWallGetId) !=
-                            vs_graphs::core::geometric::PlaneStatus::
-                                PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (associatedWall && associatedWallGetId == roomWallGetId)
+                    if (associatedWallId == roomWallId)
                     {
                         ownsAssociatedWall = true;
                         break;
                     }
                 }
-
                 if (ownsAssociatedWall)
                     break;
             }
 
             if (ownsAssociatedWall)
             {
-                int roomId{};
-                if (room->getId(roomId) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                passageData.known_room_id = roomId;
+                passageData.known_room_id = room.id;
                 break;
             }
         }
 
-        std::optional<int> prospectiveRoomId{};
-        if (passage->getProspectiveRoomId(prospectiveRoomId) !=
-            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getProspectiveRoomId returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
         passageData.prospective_room_id =
-            prospectiveRoomId.has_value() ? prospectiveRoomId.value() : -1;
+            passage.prospectiveRoomId.has_value()
+                ? passage.prospectiveRoomId.value()
+                : -1;
 
         /*!
          * Populate associated wall plane IDs from the passage's wall
@@ -3222,24 +2221,10 @@ void publishAllMappedPassages(
          * which walls each passage belongs to.
          */
         passageData.associated_wall_ids.clear();
-        for (vs_graphs::core::geometric::Plane *const &associatedWall :
-             associatedWalls)
+        for (const int associatedWallId : passage.associatedWallIds)
         {
-            if (associatedWall)
-            {
-                int associatedWallGetId2{};
-                if (associatedWall->getId(associatedWallGetId2) !=
-                    vs_graphs::core::geometric::PlaneStatus::
-                        PLANE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                passageData.associated_wall_ids.push_back(
-                    static_cast<int>(associatedWallGetId2));
-            }
+            passageData.associated_wall_ids.push_back(
+                static_cast<int>(associatedWallId));
         }
 
         /* Add the passage to the message */
@@ -3247,12 +2232,12 @@ void publishAllMappedPassages(
     }
 
     /* Publish all mapped passages */
-    pubAllPassages->publish(passageDataMsg);
+    passagePublisher_in->publish(passageDataMsg);
 }
 
 void publishAllMappedFloors(
-    std::vector<vs_graphs::core::semantic::Floor *> floorsList_in,
-    rclcpp::Time                                    msgTime_s_in)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    rclcpp::Time                               msgTime_s_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllFloorsData floorDataMsg;
@@ -3262,45 +2247,25 @@ void publishAllMappedFloors(
     floorDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the floor data for each floor in vector */
-    for (vs_graphs::core::semantic::Floor *const &floor : floorsList_in)
+    for (const vs_graphs::core::SceneGraphFloorEntry &floor :
+         sceneGraph_in.floors)
     {
-        if (!floor)
-            continue;
-
         vs_graphs::msg::VSGraphsFloorData floorData;
-        int                               floorId{};
-        if (floor->getId(floorId) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        floorData.id = floorId;
 
-        std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity>
-            planeIdentity{};
-        if (floor->getPlaneIdentity(planeIdentity) !=
-            vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        floorData.id = floor.id;
+
+        floorData.has_plane_identity = floor.planeIdentity.has_value();
+        if (floor.planeIdentity.has_value())
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getPlaneIdentity returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
-        floorData.has_plane_identity = planeIdentity.has_value();
-        if (planeIdentity.has_value())
-        {
-            floorData.normal.x = planeIdentity->planeEquation_world.x();
-            floorData.normal.y = planeIdentity->planeEquation_world.y();
-            floorData.normal.z = planeIdentity->planeEquation_world.z();
-            floorData.offset_d =
-                static_cast<float>(planeIdentity->planeEquation_world.w());
+            floorData.normal.x = floor.planeIdentity->planeEquation_world.x();
+            floorData.normal.y = floor.planeIdentity->planeEquation_world.y();
+            floorData.normal.z = floor.planeIdentity->planeEquation_world.z();
+            floorData.offset_d = static_cast<float>(
+                floor.planeIdentity->planeEquation_world.w());
             floorData.finite_support_count =
-                static_cast<int32_t>(planeIdentity->finiteSupportCount);
+                static_cast<int32_t>(floor.planeIdentity->finiteSupportCount);
             floorData.observation_count =
-                static_cast<int32_t>(planeIdentity->observationCount);
+                static_cast<int32_t>(floor.planeIdentity->observationCount);
         }
 
         /* Add the floor to the message */
@@ -3343,16 +2308,28 @@ Json archiveVector3(const Eigen::Vector3d &vector_in)
 }
 
 /*!
- * @brief           Deletes the oldest SGraph archives beyond the retain limit.
+ * @brief           Deletes the oldest files of one snapshot series beyond the
+ *                  retain limit.
+ *
+ *                  Only files named `<prefix><sec>_<nsec><extension>` count,
+ *                  so other files in the directory are never removed.
  *
  * @param[in]       archiveDir_in
- *                  Directory holding `sgraph_<sec>_<nsec>.json` files.
+ *                  Directory holding the series.
+ *
+ * @param[in]       fileNamePrefix_in
+ *                  File-name prefix of the series, e.g. `sgraph_`.
+ *
+ * @param[in]       fileExtension_in
+ *                  File extension of the series, with the dot, e.g. `.json`.
  *
  * @param[in]       maxFiles_in
  *                  Maximum number of files to retain (positive by contract).
  */
-void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
-                         const int                    maxFiles_in)
+void pruneArchiveSeries(const std::filesystem::path &archiveDir_in,
+                        const std::string           &fileNamePrefix_in,
+                        const std::string           &fileExtension_in,
+                        const int                    maxFiles_in)
 {
     std::error_code          error;
     std::vector<std::string> fileNames;
@@ -3367,9 +2344,9 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
         {
             continue;
         }
-        const std::string fileName  = entry.path().filename().string();
-        const bool        isArchive = fileName.rfind("sgraph_", 0U) == 0U &&
-                               entry.path().extension() == ".json";
+        const std::string fileName = entry.path().filename().string();
+        const bool isArchive = fileName.rfind(fileNamePrefix_in, 0U) == 0U &&
+                               entry.path().extension() == fileExtension_in;
         if (isArchive)
         {
             fileNames.push_back(fileName);
@@ -3378,7 +2355,7 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
     if (error)
     {
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot prune SGraph archives in '%s'.",
+                    "Cannot prune archives in '%s'.",
                     archiveDir_in.string().c_str());
         return;
     }
@@ -3393,21 +2370,222 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
         if (removeError)
         {
             RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                        "Cannot remove old SGraph archive '%s'.",
+                        "Cannot remove old archive '%s'.",
                         fileNames.front().c_str());
             break;
         }
         fileNames.erase(fileNames.begin());
     }
 }
+
+/*!
+ * @brief           Writes one archive file so that a reader never sees it
+ *                  half written.
+ *
+ *                  The text goes to `<file>.partial`, which is renamed to the
+ *                  final name only after the write and close succeed. On any
+ *                  failure a warning is logged and the partial file removed;
+ *                  the node keeps running.
+ *
+ * @param[in]       archiveFile_in
+ *                  Final path of the file; its directory is created.
+ *
+ * @param[in]       fileText_in
+ *                  Complete file contents.
+ *
+ * @return          True when the final file holds the text.
+ */
+bool writeArchiveFile(const std::filesystem::path &archiveFile_in,
+                      const std::string           &fileText_in)
+{
+    std::filesystem::path partialFile = archiveFile_in;
+    partialFile += ".partial";
+    std::error_code fileError;
+    std::filesystem::create_directories(archiveFile_in.parent_path(),
+                                        fileError);
+    if (!fileError)
+    {
+        std::ofstream fileOutput(partialFile);
+        fileOutput << fileText_in;
+        fileOutput.close();
+        if (fileOutput.fail())
+        {
+            fileError = std::make_error_code(std::errc::io_error);
+        }
+        else
+        {
+            std::filesystem::rename(partialFile, archiveFile_in, fileError);
+        }
+    }
+    if (fileError)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Cannot write archive '%s': %s.",
+                    archiveFile_in.string().c_str(),
+                    fileError.message().c_str());
+        std::error_code removeError;
+        std::filesystem::remove(partialFile, removeError);
+        return false;
+    }
+    return true;
+}
+
+/*!
+ * @brief           Names a start environment for the archive.
+ *
+ * @param[in]       startEnvironment_in
+ *                  Start environment of a scene graph.
+ *
+ * @return          "indoor" or "outdoor".
+ */
+const char *startEnvironmentName(
+    const vs_graphs::core::scene_graph::StartEnvironment startEnvironment_in)
+{
+    return startEnvironment_in ==
+                   vs_graphs::core::scene_graph::StartEnvironment::
+                       START_ENVIRONMENT_OUTDOOR
+               ? "outdoor"
+               : "indoor";
+}
+
+/*!
+ * @brief           Writes the environment node and the building level of one
+ *                  map's scene graph into its archive object (schema 3).
+ *
+ * @param[in]       sceneGraph_in
+ *                  Snapshot of the map's scene graph.
+ *
+ * @param[in,out]   mapJson_inout
+ *                  Archive object of the map; gets "environment" and
+ *                  "buildings".
+ *
+ * @param[in,out]   buildingIds_inout
+ *                  Receives the id of every building written.
+ */
+void archiveBuildingLevel(
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    Json                                      &mapJson_inout,
+    std::set<int>                             &buildingIds_inout)
+{
+    Json environmentJson;
+    environmentJson["environment_id"]   = sceneGraph_in.environment.id;
+    environmentJson["environment_name"] = sceneGraph_in.environment.name;
+    environmentJson["start_environment"] =
+        startEnvironmentName(sceneGraph_in.environment.startEnvironment);
+    mapJson_inout["environment"] = std::move(environmentJson);
+
+    /* Buildings own their floors; readers join a floor to its building
+     * through "floor_ids" and the floor's own "building_id". */
+    Json buildingsJson = Json::array();
+    for (const vs_graphs::core::SceneGraphBuildingEntry &buildingEntry :
+         sceneGraph_in.buildings)
+    {
+        Json buildingJson;
+        buildingJson["building_id"] = buildingEntry.id;
+        buildingJson["floor_ids"]   = buildingEntry.floorIds;
+        buildingsJson.push_back(std::move(buildingJson));
+        buildingIds_inout.insert(buildingEntry.id);
+    }
+    mapJson_inout["buildings"] = std::move(buildingsJson);
+}
+
+/*!
+ * @brief           Writes the id of the building that holds a floor into the
+ *                  floor's archive object (schema 3).
+ *
+ * @param[in]       sceneGraph_in
+ *                  Snapshot of the map's scene graph.
+ *
+ * @param[in]       p_floor_in
+ *                  The floor, or null for the synthetic floor an empty map is
+ *                  archived with.
+ *
+ * @param[in,out]   floorJson_inout
+ *                  Archive object of the floor; gets "building_id", -1 when no
+ *                  building holds the floor.
+ */
+void archiveFloorBuilding(
+    const vs_graphs::core::SceneGraphSnapshot   &sceneGraph_in,
+    const vs_graphs::core::SceneGraphFloorEntry *p_floor_in,
+    Json                                        &floorJson_inout)
+{
+    floorJson_inout["building_id"] = -1;
+    if (p_floor_in == nullptr)
+    {
+        return;
+    }
+    for (const vs_graphs::core::SceneGraphBuildingEntry &buildingEntry :
+         sceneGraph_in.buildings)
+    {
+        if (std::find(buildingEntry.floorIds.begin(),
+                      buildingEntry.floorIds.end(),
+                      p_floor_in->id) != buildingEntry.floorIds.end())
+        {
+            floorJson_inout["building_id"] = buildingEntry.id;
+            return;
+        }
+    }
+}
+
+/*!
+ * @brief           Builds the "metadata" object of an S-Graph archive.
+ *
+ * @param[in]       stampSeconds_in
+ *                  Whole seconds of the ROS time stamp.
+ *
+ * @param[in]       stampNanoseconds_in
+ *                  Nanoseconds part of the ROS time stamp.
+ *
+ * @param[in]       captureCycle_in
+ *                  Number of this capture.
+ *
+ * @param[in]       mapCount_in
+ *                  Number of maps archived.
+ *
+ * @param[in]       floorCount_in
+ *                  Number of distinct floor ids.
+ *
+ * @param[in]       buildingCount_in
+ *                  Number of distinct building ids.
+ *
+ * @param[in]       roomCount_in
+ *                  Number of distinct room ids.
+ *
+ * @param[in]       passageCount_in
+ *                  Number of distinct passage ids.
+ *
+ * @return          The metadata object, schema version 3.
+ */
+Json makeArchiveMetadata(const std::int64_t  stampSeconds_in,
+                         const std::int64_t  stampNanoseconds_in,
+                         const std::uint64_t captureCycle_in,
+                         const std::size_t   mapCount_in,
+                         const std::size_t   floorCount_in,
+                         const std::size_t   buildingCount_in,
+                         const std::size_t   roomCount_in,
+                         const std::size_t   passageCount_in)
+{
+    Json metadata;
+    metadata["schema_version"]        = 3;
+    metadata["sim_timestamp_sec"]     = stampSeconds_in;
+    metadata["sim_timestamp_nanosec"] = stampNanoseconds_in;
+    metadata["ros_node"]              = "vs_graphs";
+    metadata["capture_cycle"]         = captureCycle_in;
+    metadata["sensor_mode"]           = sensorModeName();
+    metadata["map_count"]             = mapCount_in;
+    metadata["floor_count_total"]     = floorCount_in;
+    metadata["building_count_total"]  = buildingCount_in;
+    metadata["room_count_total"]      = roomCount_in;
+    metadata["passage_count_total"]   = passageCount_in;
+    return metadata;
+}
 } /* namespace */
 
 void maybeArchiveSGraph(
-    const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
-    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
-    const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                                      &msgTime_s_in)
+    const vs_graphs::core::SceneGraphSnapshot &activeSceneGraph_in,
+    const rclcpp::Time                        &msgTime_s_in)
 {
+    PROFILE_FUNCTION();
     static double        lastArchiveTime_s = -1.0e100;
     static std::uint64_t captureCycle      = 0U;
     static bool          warnedMissingDir  = false;
@@ -3456,12 +2634,12 @@ void maybeArchiveSGraph(
      * current-map snapshot when the Atlas is unavailable. */
     struct SgraphMapInput
     {
-        long                                              mapId{-1};
-        bool                                              isActive{true};
-        std::uint64_t                                     worldFrameEpoch{0U};
-        std::vector<vs_graphs::core::semantic::Floor *>   floorsRaw;
-        std::vector<vs_graphs::core::semantic::Room *>    roomsRaw;
-        std::vector<vs_graphs::core::semantic::Passage *> passagesRaw;
+        /* Borrowed Atlas map; null for the fallback snapshot. */
+        vs_graphs::core::map::Map          *p_map{nullptr};
+        long                                mapId{-1};
+        bool                                isActive{true};
+        std::uint64_t                       worldFrameEpoch{0U};
+        vs_graphs::core::SceneGraphSnapshot sceneGraph;
     };
     std::vector<SgraphMapInput>    mapInputs;
     vs_graphs::core::atlas::Atlas *p_slamSystemAtlas = nullptr;
@@ -3515,6 +2693,16 @@ void maybeArchiveSGraph(
                 }
                 return firstId < secondId;
             });
+        vs_graphs::core::SemanticsManager *p_semanticsManager = nullptr;
+        if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+            vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getSemanticsManager returned a failure status although "
+                "it cannot fail; continuing as before.",
+                __func__);
+        }
         for (vs_graphs::core::map::Map *p_map : atlasMaps)
         {
             bool mapIsBad{};
@@ -3532,7 +2720,8 @@ void maybeArchiveSGraph(
                 continue;
             }
             SgraphMapInput mapInput;
-            unsigned long  mapId2{};
+            mapInput.p_map = p_map;
+            unsigned long mapId2{};
             if (p_map->getId(mapId2) !=
                 vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
             {
@@ -3564,52 +2753,46 @@ void maybeArchiveSGraph(
                              __func__);
             }
             mapInput.worldFrameEpoch = mapWorldFrameEpoch;
-            std::vector<vs_graphs::core::semantic::Floor *> mapAllFloors{};
-            if (p_map->getAllFloors(mapAllFloors) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            if (p_semanticsManager->getSceneGraphSnapshot(
+                    mapId2,
+                    mapInput.sceneGraph) !=
+                vs_graphs::core::SemanticsManagerStatus::
+                    SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllFloors returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
+                             "%s: getSceneGraphSnapshot found no scene graph "
+                             "for map %lu; archiving it without its floors, "
+                             "rooms and passages.",
+                             __func__,
+                             mapId2);
             }
-            mapInput.floorsRaw = mapAllFloors;
-            std::vector<vs_graphs::core::semantic::Room *> mapAllRooms{};
-            if (p_map->getAllRooms(mapAllRooms) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllRooms returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            mapInput.roomsRaw = mapAllRooms;
-            std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
-            if (p_map->getAllPassages(mapAllPassages) !=
-                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAllPassages returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            mapInput.passagesRaw = mapAllPassages;
             mapInputs.push_back(std::move(mapInput));
         }
     }
     if (mapInputs.empty())
     {
         SgraphMapInput fallbackInput;
-        fallbackInput.floorsRaw   = mappedFloors_in;
-        fallbackInput.roomsRaw    = mappedRooms_in;
-        fallbackInput.passagesRaw = mappedPassages_in;
+        fallbackInput.sceneGraph = activeSceneGraph_in;
         mapInputs.push_back(std::move(fallbackInput));
     }
 
-    Json        archive;
-    std::size_t totalFloors   = 0U;
-    std::size_t totalRooms    = 0U;
-    std::size_t totalPassages = 0U;
+    /* Floor, room and passage ids are global across the Atlas: a recovery
+     * map re-creates the lost map's last floor and room under the same ids
+     * (an unverified label link), so totals count distinct ids, not
+     * per-map objects. */
+    Json          archive;
+    std::set<int> floorIds_all{};
+    std::set<int> buildingIds_all{};
+    std::set<int> roomIds_all{};
+    std::set<int> passageIds_all{};
+
+    /* The two CSVs of this snapshot are filled in the same map loop as the
+     * S-Graph, so the Atlas is traversed once. */
+    std::ostringstream trajectoryCsv;
+    trajectoryCsv << std::fixed
+                  << "map_id,keyframe_id,timestamp_s,x_m,y_m,z_m,qx,qy,qz,qw\n";
+    std::ostringstream mapPointCsv;
+    mapPointCsv << std::fixed << std::setprecision(3) << "map_id,x_m,y_m,z_m\n";
 
     for (std::size_t mapOrdinal = 0U; mapOrdinal < mapInputs.size();
          ++mapOrdinal)
@@ -3617,174 +2800,67 @@ void maybeArchiveSGraph(
         const SgraphMapInput &mapInput = mapInputs[mapOrdinal];
 
         /* Keep only live elements, sorted by raw atlas id for determinism. */
-        std::vector<vs_graphs::core::semantic::Floor *> floors;
-        for (vs_graphs::core::semantic::Floor *p_floor : mapInput.floorsRaw)
+        const vs_graphs::core::SceneGraphSnapshot &sceneGraph =
+            mapInput.sceneGraph;
+        std::vector<const vs_graphs::core::SceneGraphFloorEntry *> floors;
+        for (const vs_graphs::core::SceneGraphFloorEntry &floorEntry :
+             sceneGraph.floors)
         {
-            if (p_floor != nullptr)
-            {
-                floors.push_back(p_floor);
-            }
+            floors.push_back(&floorEntry);
         }
         std::sort(floors.begin(),
                   floors.end(),
-                  [](vs_graphs::core::semantic::Floor *first_in,
-                     vs_graphs::core::semantic::Floor *second_in)
-                  {
-                      int first_inId{};
-                      if (first_in->getId(first_inId) !=
-                          vs_graphs::core::semantic::FloorStatus::
-                              FLOOR_STATUS_SUCCESS)
-                      {
-                          RCLCPP_ERROR(
-                              rclcpp::get_logger("vs_graphs"),
-                              "%s: getId returned a failure status although it "
-                              "cannot fail; continuing as before.",
-                              __func__);
-                      }
-                      int second_inId{};
-                      if (second_in->getId(second_inId) !=
-                          vs_graphs::core::semantic::FloorStatus::
-                              FLOOR_STATUS_SUCCESS)
-                      {
-                          RCLCPP_ERROR(
-                              rclcpp::get_logger("vs_graphs"),
-                              "%s: getId returned a failure status although it "
-                              "cannot fail; continuing as before.",
-                              __func__);
-                      }
-                      return first_inId < second_inId;
-                  });
+                  [](const vs_graphs::core::SceneGraphFloorEntry *first_in,
+                     const vs_graphs::core::SceneGraphFloorEntry *second_in)
+                  { return first_in->id < second_in->id; });
 
-        std::vector<vs_graphs::core::semantic::Room *> rooms;
-        for (vs_graphs::core::semantic::Room *p_room : mapInput.roomsRaw)
+        std::vector<const vs_graphs::core::SceneGraphRoomEntry *> rooms;
+        for (const vs_graphs::core::SceneGraphRoomEntry &roomEntry :
+             sceneGraph.rooms)
         {
-            bool roomIsBad{};
-            if ((p_room != nullptr) &&
-                p_room->isBad(roomIsBad) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            if (!roomEntry.isBad)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_room != nullptr && !roomIsBad)
-            {
-                rooms.push_back(p_room);
+                rooms.push_back(&roomEntry);
             }
         }
-        std::sort(
-            rooms.begin(),
-            rooms.end(),
-            [](vs_graphs::core::semantic::Room *first_in,
-               vs_graphs::core::semantic::Room *second_in)
-            {
-                int first_inId{};
-                if (first_in->getId(first_inId) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int second_inId{};
-                if (second_in->getId(second_inId) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return first_inId < second_inId;
-            });
+        std::sort(rooms.begin(),
+                  rooms.end(),
+                  [](const vs_graphs::core::SceneGraphRoomEntry *first_in,
+                     const vs_graphs::core::SceneGraphRoomEntry *second_in)
+                  { return first_in->id < second_in->id; });
 
-        std::vector<vs_graphs::core::semantic::Passage *> passages;
-        for (vs_graphs::core::semantic::Passage *p_passage :
-             mapInput.passagesRaw)
+        std::vector<const vs_graphs::core::SceneGraphPassageEntry *> passages;
+        for (const vs_graphs::core::SceneGraphPassageEntry &passageEntry :
+             sceneGraph.passages)
         {
-            bool passageIsBad{};
-            if ((p_passage != nullptr) &&
-                p_passage->isBad(passageIsBad) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
+            if (!passageEntry.isBad)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: isBad returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (p_passage != nullptr && !passageIsBad)
-            {
-                passages.push_back(p_passage);
+                passages.push_back(&passageEntry);
             }
         }
         std::sort(passages.begin(),
                   passages.end(),
-                  [](vs_graphs::core::semantic::Passage *first_in,
-                     vs_graphs::core::semantic::Passage *second_in)
-                  {
-                      int first_inId{};
-                      if (first_in->getId(first_inId) !=
-                          vs_graphs::core::semantic::PassageStatus::
-                              PASSAGE_STATUS_SUCCESS)
-                      {
-                          RCLCPP_ERROR(
-                              rclcpp::get_logger("vs_graphs"),
-                              "%s: getId returned a failure status although it "
-                              "cannot fail; continuing as before.",
-                              __func__);
-                      }
-                      int second_inId{};
-                      if (second_in->getId(second_inId) !=
-                          vs_graphs::core::semantic::PassageStatus::
-                              PASSAGE_STATUS_SUCCESS)
-                      {
-                          RCLCPP_ERROR(
-                              rclcpp::get_logger("vs_graphs"),
-                              "%s: getId returned a failure status although it "
-                              "cannot fail; continuing as before.",
-                              __func__);
-                      }
-                      return first_inId < second_inId;
-                  });
+                  [](const vs_graphs::core::SceneGraphPassageEntry *first_in,
+                     const vs_graphs::core::SceneGraphPassageEntry *second_in)
+                  { return first_in->id < second_in->id; });
 
         /* Group rooms by floor. Index zero is synthetic when no floor exists so
          * rooms and passages are still archived early in a run. */
         const bool        hasFloors  = !floors.empty();
         const std::size_t floorCount = hasFloors ? floors.size() : 1U;
-        std::vector<std::vector<vs_graphs::core::semantic::Room *>> floorRooms(
-            floorCount);
-        std::unordered_map<const vs_graphs::core::semantic::Room *, std::size_t>
+        std::vector<std::vector<const vs_graphs::core::SceneGraphRoomEntry *>>
+            floorRooms(floorCount);
+        std::unordered_map<const vs_graphs::core::SceneGraphRoomEntry *,
+                           std::size_t>
             roomFloorIndex;
-
         for (std::size_t floorIndex = 0U; floorIndex < floors.size();
              ++floorIndex)
         {
-            std::vector<vs_graphs::core::semantic::Room *> rooms2{};
-            if (floors[floorIndex]->getRooms(rooms2) !=
-                vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+            for (const int roomId : floors[floorIndex]->roomIds)
             {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getRooms returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (vs_graphs::core::semantic::Room *p_room : rooms2)
-            {
-                bool roomIsBad2{};
-                if (!(p_room == nullptr) &&
-                    p_room->isBad(roomIsBad2) !=
-                        vs_graphs::core::semantic::RoomStatus::
-                            ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: isBad returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (p_room == nullptr || roomIsBad2)
+                const vs_graphs::core::SceneGraphRoomEntry *p_room =
+                    sceneGraph.findRoom(roomId);
+                if (p_room == nullptr || p_room->isBad)
                 {
                     continue;
                 }
@@ -3794,33 +2870,22 @@ void maybeArchiveSGraph(
                 }
             }
         }
-
-        for (vs_graphs::core::semantic::Room *p_room : rooms)
+        for (const vs_graphs::core::SceneGraphRoomEntry *p_room : rooms)
         {
-            std::size_t                                     floorIndex = 0U;
-            const std::unordered_map<const vs_graphs::core::semantic::Room *,
-                                     std::size_t>::iterator claimed =
-                roomFloorIndex.find(p_room);
+            std::size_t floorIndex = 0U;
+            const std::unordered_map<
+                const vs_graphs::core::SceneGraphRoomEntry *,
+                std::size_t>::iterator claimed = roomFloorIndex.find(p_room);
             if (claimed != roomFloorIndex.end())
             {
                 floorIndex = claimed->second;
             }
-            else
+            else if (p_room->floorId.has_value())
             {
-                vs_graphs::core::semantic::Floor *p_floor = nullptr;
-                if (p_room->getFloor(p_floor) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getFloor returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
                 for (std::size_t candidate = 0U; candidate < floors.size();
                      ++candidate)
                 {
-                    if (floors[candidate] == p_floor)
+                    if (floors[candidate]->id == *p_room->floorId)
                     {
                         floorIndex = candidate;
                         break;
@@ -3832,10 +2897,11 @@ void maybeArchiveSGraph(
         }
 
         /* Zero-based room keys are scoped to their floor. */
-        std::unordered_map<const vs_graphs::core::semantic::Room *, std::string>
+        std::unordered_map<const vs_graphs::core::SceneGraphRoomEntry *,
+                           std::string>
             roomKeys;
-        for (std::vector<vs_graphs::core::semantic::Room *> &floorRoomList :
-             floorRooms)
+        for (std::vector<const vs_graphs::core::SceneGraphRoomEntry *>
+                 &floorRoomList : floorRooms)
         {
             for (std::size_t roomOrdinal = 0U;
                  roomOrdinal < floorRoomList.size();
@@ -3848,102 +2914,25 @@ void maybeArchiveSGraph(
 
         /* Assign each passage to the floor holding most of its rooms; passages
          * without any room evidence fall back to the first floor. */
-        std::vector<std::vector<vs_graphs::core::semantic::Passage *>>
+        std::vector<
+            std::vector<const vs_graphs::core::SceneGraphPassageEntry *>>
             floorPassages(floorCount);
-        std::unordered_map<const vs_graphs::core::semantic::Passage *,
-                           std::vector<int>>
-            passageWallIds;
-        for (vs_graphs::core::semantic::Passage *p_passage : passages)
+        for (const vs_graphs::core::SceneGraphPassageEntry *p_passage :
+             passages)
         {
-            std::vector<int> wallIds;
-            std::vector<vs_graphs::core::geometric::Plane *>
-                passageAssociateWalls{};
-            if (p_passage->getAssociateWalls(passageAssociateWalls) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getAssociateWalls returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            for (vs_graphs::core::geometric::Plane *p_wall :
-                 passageAssociateWalls)
-            {
-                if (p_wall != nullptr)
-                {
-                    int wallGetId{};
-                    if (p_wall->getId(wallGetId) !=
-                        vs_graphs::core::geometric::PlaneStatus::
-                            PLANE_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    wallIds.push_back(wallGetId);
-                }
-            }
-            passageWallIds[p_passage] = wallIds;
-
-            std::optional<int> prospectiveRoomId{};
-            if (p_passage->getProspectiveRoomId(prospectiveRoomId) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: getProspectiveRoomId returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
-            if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
-                vs_graphs::core::semantic::PassageStatus::
-                    PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getProspectiveRoom returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
+            const std::vector<int>   &wallIds = p_passage->associatedWallIds;
+            const std::optional<int> &prospectiveRoomId =
+                p_passage->prospectiveRoomId;
 
             std::vector<std::size_t> votes(floorCount, 0U);
-            for (vs_graphs::core::semantic::Room *p_room : rooms)
+            for (const vs_graphs::core::SceneGraphRoomEntry *p_room : rooms)
             {
                 bool ownsAssociatedWall = false;
-                std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
-                if (p_room->getWalls(roomWalls) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                for (const int roomWallId : p_room->wallPlaneIds)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
-                {
-                    if (p_wall == nullptr)
-                    {
-                        continue;
-                    }
                     for (const int wallId : wallIds)
                     {
-                        int wallGetId2{};
-                        if (p_wall->getId(wallGetId2) !=
-                            vs_graphs::core::geometric::PlaneStatus::
-                                PLANE_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(
-                                rclcpp::get_logger("vs_graphs"),
-                                "%s: getId returned a failure status although "
-                                "it cannot fail; continuing as before.",
-                                __func__);
-                        }
-                        if (wallGetId2 == wallId)
+                        if (roomWallId == wallId)
                         {
                             ownsAssociatedWall = true;
                             break;
@@ -3954,22 +2943,8 @@ void maybeArchiveSGraph(
                         break;
                     }
                 }
-                int roomId{};
-                if ((!ownsAssociatedWall) && (prospectiveRoomId.has_value()) &&
-                    p_room->getId(roomId) !=
-                        vs_graphs::core::semantic::RoomStatus::
-                            ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                if (!ownsAssociatedWall &&
-                    ((prospectiveRoomId.has_value() &&
-                      roomId == prospectiveRoomId.value()) ||
-                     (p_prospectiveRoom != nullptr &&
-                      p_room == p_prospectiveRoom)))
+                if (!ownsAssociatedWall && prospectiveRoomId.has_value() &&
+                    p_room->id == prospectiveRoomId.value())
                 {
                     ownsAssociatedWall = true;
                 }
@@ -3978,7 +2953,6 @@ void maybeArchiveSGraph(
                     votes[roomFloorIndex[p_room]]++;
                 }
             }
-
             std::size_t bestFloor = 0U;
             for (std::size_t candidate = 1U; candidate < floorCount;
                  ++candidate)
@@ -3995,7 +2969,7 @@ void maybeArchiveSGraph(
         std::vector<std::unordered_map<int, std::vector<std::string>>>
             floorWallPassages(floorCount);
         std::vector<
-            std::unordered_map<const vs_graphs::core::semantic::Passage *,
+            std::unordered_map<const vs_graphs::core::SceneGraphPassageEntry *,
                                std::string>>
             floorPassageKeys(floorCount);
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
@@ -4004,15 +2978,137 @@ void maybeArchiveSGraph(
                  passageOrdinal < floorPassages[floorIndex].size();
                  ++passageOrdinal)
             {
-                vs_graphs::core::semantic::Passage *p_passage =
+                const vs_graphs::core::SceneGraphPassageEntry *p_passage =
                     floorPassages[floorIndex][passageOrdinal];
                 const std::string passageKey =
                     "passage" + std::to_string(passageOrdinal);
                 floorPassageKeys[floorIndex][p_passage] = passageKey;
-                for (const int wallId : passageWallIds[p_passage])
+                for (const int wallId : p_passage->associatedWallIds)
                 {
                     floorWallPassages[floorIndex][wallId].push_back(passageKey);
                 }
+            }
+        }
+
+        /*!
+         * Keyframe and map-point rows of this map, in the map's world frame
+         * (the frame of its S-Graph entities). The fallback snapshot has no
+         * map, so it adds no rows and counts zero.
+         */
+        std::size_t keyFrameCount = 0U;
+        std::size_t mapPointCount = 0U;
+        if (mapInput.p_map != nullptr)
+        {
+            std::vector<vs_graphs::core::keyframe::KeyFrame *> mapKeyFrames{};
+            if (mapInput.p_map->getAllKeyFrames(mapKeyFrames) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::sort(mapKeyFrames.begin(),
+                      mapKeyFrames.end(),
+                      vs_graphs::core::keyframe::KeyFrame::lId);
+            for (vs_graphs::core::keyframe::KeyFrame *p_keyFrame : mapKeyFrames)
+            {
+                bool keyFrameIsBad{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        vs_graphs::core::keyframe::KeyFrameStatus::
+                            KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame == nullptr || keyFrameIsBad)
+                {
+                    continue;
+                }
+
+                /* Camera optical frame (x right, y down, z forward) to the
+                 * map's world frame; the translation is the camera centre. */
+                Sophus::SE3f cameraPose_cameraToWorld{};
+                if (p_keyFrame->getPoseInverse(cameraPose_cameraToWorld) !=
+                    vs_graphs::core::keyframe::KeyFrameStatus::
+                        KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getPoseInverse returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                const Eigen::Vector3f cameraPosition_world_m =
+                    cameraPose_cameraToWorld.translation();
+                const Eigen::Quaternionf cameraQuat_cameraToWorld =
+                    cameraPose_cameraToWorld.unit_quaternion();
+                trajectoryCsv << mapInput.mapId << ',' << p_keyFrame->id << ','
+                              << std::setprecision(9) << p_keyFrame->timeStamp
+                              << ',' << std::setprecision(6)
+                              << cameraPosition_world_m.x() << ','
+                              << cameraPosition_world_m.y() << ','
+                              << cameraPosition_world_m.z() << ','
+                              << cameraQuat_cameraToWorld.x() << ','
+                              << cameraQuat_cameraToWorld.y() << ','
+                              << cameraQuat_cameraToWorld.z() << ','
+                              << cameraQuat_cameraToWorld.w() << '\n';
+                keyFrameCount++;
+            }
+
+            std::vector<vs_graphs::core::map_point::MapPoint *> mapMapPoints{};
+            if (mapInput.p_map->getAllMapPoints(mapMapPoints) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::vector<Eigen::Vector3f> mapPointPositions_world_m;
+            mapPointPositions_world_m.reserve(mapMapPoints.size());
+            for (vs_graphs::core::map_point::MapPoint *p_mapPoint :
+                 mapMapPoints)
+            {
+                bool mapPointIsBad{};
+                if ((p_mapPoint != nullptr) &&
+                    p_mapPoint->isBad(mapPointIsBad) !=
+                        vs_graphs::core::map_point::MapPointStatus::
+                            MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_mapPoint == nullptr || mapPointIsBad)
+                {
+                    continue;
+                }
+                Eigen::Vector3f mapPointPosition_world_m{};
+                if (p_mapPoint->getWorldPos(mapPointPosition_world_m) !=
+                    vs_graphs::core::map_point::MapPointStatus::
+                        MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getWorldPos returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                mapPointPositions_world_m.push_back(mapPointPosition_world_m);
+            }
+            mapPointCount = mapPointPositions_world_m.size();
+
+            for (const Eigen::Vector3f &keptPosition_world_m :
+                 keepFirstPointPerVoxel(mapPointPositions_world_m))
+            {
+                mapPointCsv << mapInput.mapId << ',' << keptPosition_world_m.x()
+                            << ',' << keptPosition_world_m.y() << ','
+                            << keptPosition_world_m.z() << '\n';
             }
         }
 
@@ -4020,61 +3116,73 @@ void maybeArchiveSGraph(
         mapJson["map_id"]            = mapInput.mapId;
         mapJson["is_active"]         = mapInput.isActive;
         mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
+        mapJson["keyframe_count"]    = keyFrameCount;
+        mapJson["map_point_count"]   = mapPointCount;
+
+        /* Checked against semantics.point_density.max_points offline; null
+         * when no consistent count could be taken (unknown, not a pass). */
+        std::uint32_t maxPointsPerVoxel = 0U;
+        bool          isCountConsistent = mapInput.p_map == nullptr;
+        if (mapInput.p_map != nullptr &&
+            mapInput.p_map->getMaxPointsPerVoxel(maxPointsPerVoxel,
+                                                 isCountConsistent) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMaxPointsPerVoxel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        mapJson["max_points_per_voxel"] =
+            isCountConsistent ? Json(maxPointsPerVoxel) : Json(nullptr);
+        archiveBuildingLevel(sceneGraph, mapJson, buildingIds_all);
+
+        /* Exploration output of this map, as on the incomplete_rooms and
+         * frontier_passages topics. */
+        mapJson["incomplete_room_ids"]  = sceneGraph.incompleteRoomIds;
+        mapJson["frontier_passage_ids"] = sceneGraph.frontierPassageIds;
+
+        /* Merges this map survived; transforms map absorbed-map world points
+         * into this map's world as p = scale * R(qxyzw) * p_absorbed + t. */
+        mapJson["merge_records"] = Json::array();
+        if (mapInput.p_map != nullptr)
+        {
+            for (const vs_graphs::core::map::MapMergeRecord &mergeRecord :
+                 mapInput.p_map->getMergeRecords())
+            {
+                Json recordJson;
+                recordJson["absorbed_map_id"]  = mergeRecord.absorbedMapId;
+                recordJson["surviving_map_id"] = mergeRecord.survivingMapId;
+                recordJson["time_s"]           = mergeRecord.mergeTime_s;
+                recordJson["translation_absorbed_to_surviving_m"] =
+                    archiveVector3(
+                        mergeRecord.mergeTranslation_absorbedToSurviving_m);
+                recordJson["rotation_absorbed_to_surviving_qxyzw"] = {
+                    mergeRecord.mergeRotation_absorbedToSurviving.x(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.y(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.z(),
+                    mergeRecord.mergeRotation_absorbedToSurviving.w()};
+                recordJson["scale_absorbed_to_surviving"] =
+                    mergeRecord.mergeScale_absorbedToSurviving;
+                mapJson["merge_records"].push_back(recordJson);
+            }
+        }
 
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
-            Json                              floorJson;
-            vs_graphs::core::semantic::Floor *p_floor =
+            Json                                         floorJson;
+            const vs_graphs::core::SceneGraphFloorEntry *p_floor =
                 hasFloors ? floors[floorIndex] : nullptr;
             if (p_floor != nullptr)
             {
-                int floorId{};
-                if (p_floor->getId(floorId) !=
-                    vs_graphs::core::semantic::FloorStatus::
-                        FLOOR_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                floorJson["floor_id"] = floorId;
-                std::string floorName{};
-                if (p_floor->getName(floorName) !=
-                    vs_graphs::core::semantic::FloorStatus::
-                        FLOOR_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getName returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                floorJson["floor_name"] = floorName;
-                Eigen::Vector3d floorCentroid{};
-                if (p_floor->getCentroid(floorCentroid) !=
-                    vs_graphs::core::semantic::FloorStatus::
-                        FLOOR_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                floorJson["centroid"] = archiveVector3(floorCentroid);
-                std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity>
-                    identity{};
-                if (p_floor->getPlaneIdentity(identity) !=
-                    vs_graphs::core::semantic::FloorStatus::
-                        FLOOR_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getPlaneIdentity returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
+                floorJson["floor_id"] = p_floor->id;
+                floorIds_all.insert(p_floor->id);
+                floorJson["floor_name"] = p_floor->name;
+                floorJson["centroid"] =
+                    archiveVector3(p_floor->centroid_world_m);
+                const std::optional<
+                    vs_graphs::core::semantic::Floor::PlaneIdentity> &identity =
+                    p_floor->planeIdentity;
                 floorJson["has_plane_identity"] = identity.has_value();
                 if (identity.has_value())
                 {
@@ -4093,85 +3201,31 @@ void maybeArchiveSGraph(
                 floorJson["floor_id"]   = -1;
                 floorJson["floor_name"] = "synthetic";
             }
+            archiveFloorBuilding(sceneGraph, p_floor, floorJson);
 
             for (std::size_t roomOrdinal = 0U;
                  roomOrdinal < floorRooms[floorIndex].size();
                  ++roomOrdinal)
             {
-                vs_graphs::core::semantic::Room *p_room =
+                const vs_graphs::core::SceneGraphRoomEntry *p_room =
                     floorRooms[floorIndex][roomOrdinal];
                 const std::string roomKey =
                     "room" + std::to_string(roomOrdinal);
 
                 Json roomJson;
-                int  roomId2{};
-                if (p_room->getId(roomId2) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                roomJson["room_id"] = roomId2;
-                std::string roomName{};
-                if (p_room->getName(roomName) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getName returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomJson["room_name"] = roomName;
-                vs_graphs::core::semantic::Room::RoomVariant roomVariant{};
-                if (p_room->getRoomVariant(roomVariant) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getRoomVariant returned a failure status although "
-                        "it cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomJson["room_variant"] = static_cast<int>(roomVariant);
-                bool roomHasPreviouslyVisited{};
-                if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: hasPreviouslyVisited returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomJson["room_visited"] = roomHasPreviouslyVisited;
-                Eigen::Vector3d roomCentroid{};
-                if (p_room->getCentroid(roomCentroid) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                roomJson["centroid"] = archiveVector3(roomCentroid);
+                roomJson["room_id"] = p_room->id;
+                roomIds_all.insert(p_room->id);
+                roomJson["room_name"]    = p_room->name;
+                roomJson["room_variant"] = static_cast<int>(p_room->variant);
+                roomJson["room_visited"] = p_room->hasBeenVisited;
+                roomJson["centroid"] = archiveVector3(p_room->centroid_world_m);
 
+                /* Wall geometry lives in the map's planes, not in the graph. */
                 std::vector<vs_graphs::core::geometric::Plane *> walls;
-                std::vector<vs_graphs::core::geometric::Plane *> roomWalls2{};
-                if (p_room->getWalls(roomWalls2) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                for (const int wallPlaneId : p_room->wallPlaneIds)
                 {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWalls returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                for (vs_graphs::core::geometric::Plane *p_wall : roomWalls2)
-                {
+                    vs_graphs::core::geometric::Plane *p_wall =
+                        findMapPlaneById(mapInput.p_map, wallPlaneId);
                     bool wallIsBad{};
                     if (!(p_wall == nullptr) &&
                         p_wall->isBad(wallIsBad) !=
@@ -4236,7 +3290,6 @@ void maybeArchiveSGraph(
                               }
                               return firstGetId < secondGetId;
                           });
-
                 for (std::size_t wallOrdinal = 0U; wallOrdinal < walls.size();
                      ++wallOrdinal)
                 {
@@ -4307,6 +3360,10 @@ void maybeArchiveSGraph(
                         geometry.maxPlaneU_m - geometry.minPlaneU_m);
                     wallJson["wall_extent_v_m"] = sanitiseArchiveDouble(
                         geometry.maxPlaneV_m - geometry.minPlaneV_m);
+                    wallJson["wall_width_m"] =
+                        sanitiseArchiveDouble(geometry.planeWidth_m);
+                    wallJson["wall_height_m"] =
+                        sanitiseArchiveDouble(geometry.planeHeight_m);
                     wallJson["parent_room"] = roomKey;
 
                     Json passageList = Json::array();
@@ -4344,135 +3401,40 @@ void maybeArchiveSGraph(
                  passageOrdinal < floorPassages[floorIndex].size();
                  ++passageOrdinal)
             {
-                vs_graphs::core::semantic::Passage *p_passage =
+                const vs_graphs::core::SceneGraphPassageEntry *p_passage =
                     floorPassages[floorIndex][passageOrdinal];
                 const std::string passageKey =
                     "passage" + std::to_string(passageOrdinal);
-                const std::vector<int> &wallIds = passageWallIds[p_passage];
-                std::optional<int>      prospectiveRoomId{};
-                if (p_passage->getProspectiveRoomId(prospectiveRoomId) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getProspectiveRoomId returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
-                if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getProspectiveRoom returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
+                const std::vector<int> &wallIds = p_passage->associatedWallIds;
+                const std::optional<int> &prospectiveRoomId =
+                    p_passage->prospectiveRoomId;
 
                 Json passageJson;
-                int  passageId{};
-                if (p_passage->getId(passageId) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                passageJson["passage_id"] = passageId;
-                Eigen::Vector3d passageCentroid{};
-                if (p_passage->getCentroid(passageCentroid) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getCentroid returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                passageJson["centroid"] = archiveVector3(passageCentroid);
-                double passageWidth{};
-                if (p_passage->getWidth(passageWidth) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getWidth returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                passageJson["width_m"] = sanitiseArchiveDouble(passageWidth);
-                double passageHeight{};
-                if (p_passage->getHeight(passageHeight) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getHeight returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                passageJson["height_m"] = sanitiseArchiveDouble(passageHeight);
-                bool passageIsPassable{};
-                if (p_passage->isPassable(passageIsPassable) !=
-                    vs_graphs::core::semantic::PassageStatus::
-                        PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: isPassable returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
-                passageJson["passable"] = passageIsPassable;
+                passageJson["passage_id"] = p_passage->id;
+                passageIds_all.insert(p_passage->id);
+                passageJson["centroid"] =
+                    archiveVector3(p_passage->centroid_world_m);
+                passageJson["width_m"] =
+                    sanitiseArchiveDouble(p_passage->width_m);
+                passageJson["height_m"] =
+                    sanitiseArchiveDouble(p_passage->height_m);
+                passageJson["passable"]  = p_passage->isPassable;
+                passageJson["traversed"] = p_passage->isTraversed;
+                passageJson["blocked"]   = p_passage->isBlocked;
 
                 Json connects = Json::array();
                 for (std::size_t roomOrdinal = 0U;
                      roomOrdinal < floorRooms[floorIndex].size();
                      ++roomOrdinal)
                 {
-                    vs_graphs::core::semantic::Room *p_room =
+                    const vs_graphs::core::SceneGraphRoomEntry *p_room =
                         floorRooms[floorIndex][roomOrdinal];
                     bool connected = false;
-                    std::vector<vs_graphs::core::geometric::Plane *>
-                        roomWalls3{};
-                    if (p_room->getWalls(roomWalls3) !=
-                        vs_graphs::core::semantic::RoomStatus::
-                            ROOM_STATUS_SUCCESS)
+                    for (const int roomWallId : p_room->wallPlaneIds)
                     {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getWalls returned a failure status although "
-                            "it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    for (vs_graphs::core::geometric::Plane *p_wall : roomWalls3)
-                    {
-                        if (p_wall == nullptr)
-                        {
-                            continue;
-                        }
                         for (const int wallId : wallIds)
                         {
-                            int wallGetId5{};
-                            if (p_wall->getId(wallGetId5) !=
-                                vs_graphs::core::geometric::PlaneStatus::
-                                    PLANE_STATUS_SUCCESS)
-                            {
-                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                             "%s: getId returned a failure "
-                                             "status although it cannot fail; "
-                                             "continuing as before.",
-                                             __func__);
-                            }
-                            if (wallGetId5 == wallId)
+                            if (roomWallId == wallId)
                             {
                                 connected = true;
                                 break;
@@ -4483,22 +3445,8 @@ void maybeArchiveSGraph(
                             break;
                         }
                     }
-                    int roomId3{};
-                    if ((!connected) && (prospectiveRoomId.has_value()) &&
-                        p_room->getId(roomId3) !=
-                            vs_graphs::core::semantic::RoomStatus::
-                                ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (!connected && ((prospectiveRoomId.has_value() &&
-                                        roomId3 == prospectiveRoomId.value()) ||
-                                       (p_prospectiveRoom != nullptr &&
-                                        p_room == p_prospectiveRoom)))
+                    if (!connected && prospectiveRoomId.has_value() &&
+                        p_room->id == prospectiveRoomId.value())
                     {
                         connected = true;
                     }
@@ -4525,93 +3473,74 @@ void maybeArchiveSGraph(
         }
 
         archive["map" + std::to_string(mapOrdinal)] = std::move(mapJson);
-        totalFloors += floors.size();
-        totalRooms += rooms.size();
-        totalPassages += passages.size();
     }
 
-    Json metadata;
-    metadata["schema_version"]        = 2;
-    metadata["sim_timestamp_sec"]     = stampSeconds;
-    metadata["sim_timestamp_nanosec"] = stampNanoseconds;
-    metadata["ros_node"]              = "vs_graphs";
-    metadata["capture_cycle"]         = captureCycle;
-    metadata["sensor_mode"]           = sensorModeName();
-    metadata["map_count"]             = mapInputs.size();
-    metadata["floor_count_total"]     = totalFloors;
-    metadata["room_count_total"]      = totalRooms;
-    metadata["passage_count_total"]   = totalPassages;
-    archive["metadata"]               = std::move(metadata);
+    archive["metadata"] = makeArchiveMetadata(stampSeconds,
+                                              stampNanoseconds,
+                                              captureCycle,
+                                              mapInputs.size(),
+                                              floorIds_all.size(),
+                                              buildingIds_all.size(),
+                                              roomIds_all.size(),
+                                              passageIds_all.size());
 
     namespace filesystem = std::filesystem;
-    const filesystem::path archiveDir =
-        filesystem::path(sgraphArchiveTestRunDir) / "output" / "sgraph";
-    std::error_code makeError;
-    filesystem::create_directories(archiveDir, makeError);
-    if (makeError)
+    const filesystem::path testRunDir(sgraphArchiveTestRunDir);
+    const filesystem::path archiveDir = testRunDir / "archive" / "sgraph";
+
+    /* Fixed-width zero-padded stamp <sec:06>_<nsec:09>, shared by the three
+     * files of this snapshot, so lexical file order is chronological. */
+    std::ostringstream snapshotStamp;
+    snapshotStamp << std::setfill('0') << std::setw(6) << stampSeconds << "_"
+                  << std::setw(9) << stampNanoseconds;
+    const std::string      archiveText = archive.dump(2);
+    const filesystem::path archiveFile =
+        archiveDir / ("sgraph_" + snapshotStamp.str() + ".json");
+    if (!writeArchiveFile(archiveFile, archiveText))
     {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot create SGraph archive directory '%s'.",
-                    archiveDir.string().c_str());
         return;
     }
 
-    /* Fixed-width zero-padded stamp: sgraph_<sec:06>_<nsec:09>.json, so
-     * lexical file order matches chronological order. */
-    std::ostringstream fileName;
-    fileName << "sgraph_" << std::setfill('0') << std::setw(6) << stampSeconds
-             << "_" << std::setfill('0') << std::setw(9) << stampNanoseconds
-             << ".json";
-    const filesystem::path archiveFile = archiveDir / fileName.str();
-    std::ofstream          output(archiveFile);
-    if (!output.is_open())
-    {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot write SGraph archive '%s'.",
-                    archiveFile.string().c_str());
-        return;
-    }
-    output << archive.dump(2);
-    output.close();
+    /* CSV failures only warn, so the S-Graph files are kept. */
+    const filesystem::path trajectoryDir =
+        testRunDir / "archive" / "trajectory";
+    const filesystem::path mapPointDir = testRunDir / "archive" / "map_points";
+    writeArchiveFile(trajectoryDir /
+                         ("estimated_" + snapshotStamp.str() + ".csv"),
+                     trajectoryCsv.str());
+    writeArchiveFile(mapPointDir /
+                         ("map_points_" + snapshotStamp.str() + ".csv"),
+                     mapPointCsv.str());
 
-    /* Mirror the latest snapshot into archive/ (the live-UAV-RAM
-     * equivalent); the full time series stays in output/sgraph/. */
-    const filesystem::path liveArchiveDir =
-        filesystem::path(sgraphArchiveTestRunDir) / "archive";
-    filesystem::create_directories(liveArchiveDir, makeError);
-    if (!makeError)
-    {
-        const filesystem::path liveFile = liveArchiveDir / "sgraph_latest.json";
-        const filesystem::path stagingFile =
-            liveArchiveDir / "sgraph_latest.json.tmp";
-        std::ofstream liveOutput(stagingFile);
-        if (liveOutput.is_open())
-        {
-            liveOutput << archive.dump(2);
-            liveOutput.close();
-            filesystem::rename(stagingFile, liveFile, makeError);
-            if (makeError)
-            {
-                RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                            "Cannot publish latest SGraph to '%s'.",
-                            liveFile.string().c_str());
-            }
-        }
-    }
+    /* The latest snapshot is what a live UAV would hand on, so it goes to
+     * output/; the time series above stays in archive/. */
+    writeArchiveFile(testRunDir / "output" / "sgraph_latest.json", archiveText);
 
     RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
-                "Archived SGraph #%llu to '%s' (%zu maps, %zu floors, "
-                "%zu rooms, %zu passages).",
+                "Archived SGraph #%llu to '%s' (%zu maps, %zu buildings, "
+                "%zu floors, %zu rooms, %zu passages).",
                 static_cast<unsigned long long>(captureCycle),
                 archiveFile.string().c_str(),
                 mapInputs.size(),
-                totalFloors,
-                totalRooms,
-                totalPassages);
+                buildingIds_all.size(),
+                floorIds_all.size(),
+                roomIds_all.size(),
+                passageIds_all.size());
 
     if (sgraphArchiveMaxFiles > 0)
     {
-        pruneSgraphArchives(archiveDir, sgraphArchiveMaxFiles);
+        pruneArchiveSeries(archiveDir,
+                           "sgraph_",
+                           ".json",
+                           sgraphArchiveMaxFiles);
+        pruneArchiveSeries(trajectoryDir,
+                           "estimated_",
+                           ".csv",
+                           sgraphArchiveMaxFiles);
+        pruneArchiveSeries(mapPointDir,
+                           "map_points_",
+                           ".csv",
+                           sgraphArchiveMaxFiles);
     }
 
     lastArchiveTime_s = now_s;
@@ -4763,146 +3692,6 @@ void publishCameraPose(const Sophus::SE3f &cameraPose_world_in,
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
                     "Cannot publish camera visualisation: publisher is not "
                     "initialised.");
-    }
-}
-
-void publishFiducialMarkers(
-    const std::vector<vs_graphs::core::semantic::Marker *> &fiducialMarkers_in,
-    const rclcpp::Time                                     &msgTime_s_in)
-{
-    /* Confirm that the marker publisher has been initialised */
-    if (pubFiducialMarker == nullptr)
-    {
-        RCLCPP_WARN(
-            rclcpp::get_logger("visual_sgraphs"),
-            "Cannot publish fiducial markers: publisher is not initialised.");
-
-        return;
-    }
-
-    /* Return when there are no fiducial markers to publish */
-    if (fiducialMarkers_in.empty())
-    {
-        return;
-    }
-
-    /* Initialise the output marker array */
-    visualization_msgs::msg::MarkerArray fiducialMarkerArray;
-
-    /*!
-     * Reserve capacity without creating empty marker messages.
-     *
-     * resize() must not be used here because the markers are added using
-     * push_back().
-     */
-    fiducialMarkerArray.markers.reserve(fiducialMarkers_in.size());
-
-    /* Create one visualisation marker for every valid mapped marker */
-    for (vs_graphs::core::semantic::Marker *fiducialMarker : fiducialMarkers_in)
-    {
-        /* Skip invalid marker pointers */
-        if (fiducialMarker == nullptr)
-        {
-            continue;
-        }
-
-        /* Extract the globally expressed fiducial-marker pose */
-        Sophus::SE3f T_world_fiducial_SE3f{};
-        if (fiducialMarker->getGlobalPose(T_world_fiducial_SE3f) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /* Skip invalid poses */
-        if (!T_world_fiducial_SE3f.translation().allFinite() ||
-            !T_world_fiducial_SE3f.rotationMatrix().allFinite())
-        {
-            continue;
-        }
-
-        /* Extract the pose components once */
-        const Eigen::Vector3f fiducialPosition_world_m =
-            T_world_fiducial_SE3f.translation();
-
-        const Eigen::Quaternionf fiducialOrientation_world =
-            T_world_fiducial_SE3f.unit_quaternion();
-
-        /* Initialise the visualisation marker */
-        visualization_msgs::msg::Marker fiducialMarkerMessage;
-
-        fiducialMarkerMessage.header.frame_id = frameWorld;
-        fiducialMarkerMessage.header.stamp    = msgTime_s_in;
-        fiducialMarkerMessage.ns              = "fiducial_markers";
-
-        /*!
-         * Use the persistent semantic marker ID rather than the current array
-         * position. This keeps the RViz marker identity stable when marker
-         * ordering changes.
-         */
-        int fiducialMarkerId{};
-        if (fiducialMarker->getId(fiducialMarkerId) !=
-            vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getId returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        fiducialMarkerMessage.id     = fiducialMarkerId;
-        fiducialMarkerMessage.action = visualization_msgs::msg::Marker::ADD;
-
-        fiducialMarkerMessage.type =
-            visualization_msgs::msg::Marker::MESH_RESOURCE;
-
-        fiducialMarkerMessage.mesh_resource =
-            "package://vs_graphs/config/Assets/aruco_marker.dae";
-
-        fiducialMarkerMessage.mesh_use_embedded_materials = true;
-
-        /* Set the marker position in the world frame */
-        fiducialMarkerMessage.pose.position.x = fiducialPosition_world_m.x();
-        fiducialMarkerMessage.pose.position.y = fiducialPosition_world_m.y();
-        fiducialMarkerMessage.pose.position.z = fiducialPosition_world_m.z();
-
-        /* Set the marker orientation relative to the world frame */
-        fiducialMarkerMessage.pose.orientation.x =
-            fiducialOrientation_world.x();
-
-        fiducialMarkerMessage.pose.orientation.y =
-            fiducialOrientation_world.y();
-
-        fiducialMarkerMessage.pose.orientation.z =
-            fiducialOrientation_world.z();
-
-        fiducialMarkerMessage.pose.orientation.w =
-            fiducialOrientation_world.w();
-
-        /* Set the displayed mesh size */
-        fiducialMarkerMessage.scale.x = 0.2;
-        fiducialMarkerMessage.scale.y = 0.2;
-        fiducialMarkerMessage.scale.z = 0.2;
-
-        /*!
-         * Keep the marker fully visible. The embedded mesh materials determine
-         * its displayed colour.
-         */
-        fiducialMarkerMessage.color.a = 1.0;
-
-        /* Keep the marker visible until it is replaced or deleted */
-        fiducialMarkerMessage.lifetime = rclcpp::Duration::from_seconds(0);
-
-        /* Add the completed marker to the output array */
-        fiducialMarkerArray.markers.push_back(std::move(fiducialMarkerMessage));
-    }
-
-    /* Publish only when at least one valid marker was generated */
-    if (!fiducialMarkerArray.markers.empty())
-    {
-        pubFiducialMarker->publish(fiducialMarkerArray);
     }
 }
 
@@ -5095,6 +3884,20 @@ void publishKeyFrameImages(
         return;
     }
 
+    vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
+    if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
+        vs_graphs::core::types::SystemParamsStatus::
+            SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    const bool isSegmenterOff =
+        p_systemParams->general.modeOfOperation ==
+        vs_graphs::core::types::SystemParams::General::ModeOfOperation::GEO;
+
     /* Inspect every available keyframe */
     for (vs_graphs::core::keyframe::KeyFrame *keyFrame : keyFrames_in)
     {
@@ -5110,49 +3913,56 @@ void publishKeyFrameImages(
             continue;
         }
 
-        /* Skip keyframes that do not contain a valid image */
-        if (keyFrame->colorImg.empty())
+        /*!
+         * With the segmenter off nothing is sent to it, so no stage waits on
+         * segmenter output; the keyframe goes to plane extraction below.
+         */
+        if (!isSegmenterOff)
         {
-            continue;
+            /* Skip keyframes that do not contain a valid image */
+            if (keyFrame->colorImg.empty())
+            {
+                continue;
+            }
+
+            /* Initialise the common ROS message header */
+            std_msgs::msg::Header messageHeader;
+
+            messageHeader.stamp = msgTime_s_in;
+
+            messageHeader.frame_id = frameWorld;
+
+            /* Convert the OpenCV keyframe image into a ROS image message */
+            const sensor_msgs::msg::Image::SharedPtr keyFrameImageMessage =
+                cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->colorImg)
+                    .toImageMsg();
+
+            /* Confirm that the image conversion succeeded */
+            if (keyFrameImageMessage == nullptr)
+            {
+                RCLCPP_WARN(
+                    rclcpp::get_logger("visual_sgraphs"),
+                    "Failed to convert KeyFrame#%lu image into a ROS message.",
+                    static_cast<unsigned long>(keyFrame->id));
+
+                continue;
+            }
+
+            /* Create the persistent keyframe identifier message */
+            std_msgs::msg::UInt64 keyFrameIdMessage;
+
+            keyFrameIdMessage.data = keyFrame->id;
+
+            /* Package the keyframe identifier and image for segmentation */
+            segmenter_ros::msg::VSGraphDataMsg segmentationInputMessage;
+
+            segmentationInputMessage.header          = messageHeader;
+            segmentationInputMessage.key_frame_id    = keyFrameIdMessage;
+            segmentationInputMessage.key_frame_image = *keyFrameImageMessage;
+
+            /* Publish the keyframe image for semantic segmentation */
+            pubKFImage->publish(segmentationInputMessage);
         }
-
-        /* Initialise the common ROS message header */
-        std_msgs::msg::Header messageHeader;
-
-        messageHeader.stamp = msgTime_s_in;
-
-        messageHeader.frame_id = frameWorld;
-
-        /* Convert the OpenCV keyframe image into a ROS image message */
-        const sensor_msgs::msg::Image::SharedPtr keyFrameImageMessage =
-            cv_bridge::CvImage(messageHeader, "bgr8", keyFrame->colorImg)
-                .toImageMsg();
-
-        /* Confirm that the image conversion succeeded */
-        if (keyFrameImageMessage == nullptr)
-        {
-            RCLCPP_WARN(
-                rclcpp::get_logger("visual_sgraphs"),
-                "Failed to convert KeyFrame#%lu image into a ROS message.",
-                static_cast<unsigned long>(keyFrame->id));
-
-            continue;
-        }
-
-        /* Create the persistent keyframe identifier message */
-        std_msgs::msg::UInt64 keyFrameIdMessage;
-
-        keyFrameIdMessage.data = keyFrame->id;
-
-        /* Package the keyframe identifier and image for segmentation */
-        segmenter_ros::msg::VSGraphDataMsg segmentationInputMessage;
-
-        segmentationInputMessage.header          = messageHeader;
-        segmentationInputMessage.key_frame_id    = keyFrameIdMessage;
-        segmentationInputMessage.key_frame_image = *keyFrameImageMessage;
-
-        /* Publish the keyframe image for semantic segmentation */
-        pubKFImage->publish(segmentationInputMessage);
 
         /* Prevent the same keyframe from being published again */
         keyFrame->isPublished = true;
@@ -5168,6 +3978,23 @@ void publishKeyFrameImages(
                              "a failure status although it cannot fail; "
                              "continuing as before.",
                              __func__);
+            }
+
+            /* Hand the keyframe over without a segmentation result */
+            if (isSegmenterOff)
+            {
+                std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr>
+                    geometryOnlyItem(keyFrame->id, cv::Mat(), nullptr);
+                if (p_slamSystem->addSegmentedImage(&geometryOnlyItem) !=
+                    vs_graphs::core::system::SystemStatus::
+                        SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: addSegmentedImage returned a failure "
+                                 "status although it cannot fail; continuing "
+                                 "as before.",
+                                 __func__);
+                }
             }
         }
     }
@@ -5347,23 +4174,8 @@ void publishKeyFrameMarkers(
 
 void publishPlanes(
     const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
-    const rclcpp::Time                                     &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in);
-
-void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
+    const vs_graphs::core::SceneGraphSnapshot              &sceneGraph_in,
     const rclcpp::Time                                     &msgTime_s_in)
-{
-    publishPlanes(mappedPlanes_in, mappedRooms_in, msgTime_s_in, nullptr);
-}
-
-void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
-    const rclcpp::Time                                     &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in)
 {
     /* Return when neither required publisher has been initialised */
     if (pubBuildingComponents == nullptr && pubPlaneLabel == nullptr)
@@ -5392,9 +4204,6 @@ void publishPlanes(
     }
 
     lastPlanePublishTime = msgTime_s_in;
-
-    const std::chrono::steady_clock::time_point planePublishStart =
-        std::chrono::steady_clock::now();
 
     /* Initialise the combined building-component point cloud */
     pcl::PointCloud<pcl::PointXYZRGB> buildingComponentPointCloud_BC;
@@ -5487,48 +4296,17 @@ void publishPlanes(
      * a plane's RViz label can state its ownership directly instead of
      * requiring a reader to trace a possibly-cluttered roomWallLine back to
      * its wall. */
-    std::unordered_map<vs_graphs::core::geometric::Plane *, std::vector<int>>
-        owningRoomIdsByPlane;
-    for (vs_graphs::core::semantic::Room *p_mappedRoom : mappedRooms_in)
+    std::unordered_map<int, std::vector<int>> owningRoomIdsByPlane;
+    for (const vs_graphs::core::SceneGraphRoomEntry &mappedRoom :
+         sceneGraph_in.rooms)
     {
-        bool mappedRoomIsBad{};
-        if (!(p_mappedRoom == nullptr) &&
-            p_mappedRoom->isBad(mappedRoomIsBad) !=
-                vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: isBad returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_mappedRoom == nullptr || mappedRoomIsBad)
+        if (mappedRoom.isBad)
         {
             continue;
         }
-        std::vector<vs_graphs::core::geometric::Plane *> mappedRoomWalls{};
-        if (p_mappedRoom->getWalls(mappedRoomWalls) !=
-            vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        for (const int ownedWallId : mappedRoom.wallPlaneIds)
         {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getWalls returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        for (vs_graphs::core::geometric::Plane *p_ownedWall : mappedRoomWalls)
-        {
-            if (p_ownedWall != nullptr)
-            {
-                int mappedRoomId{};
-                if (p_mappedRoom->getId(mappedRoomId) !=
-                    vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                owningRoomIdsByPlane[p_ownedWall].push_back(mappedRoomId);
-            }
+            owningRoomIdsByPlane[ownedWallId].push_back(mappedRoom.id);
         }
     }
 
@@ -5823,11 +4601,24 @@ void publishPlanes(
         {
             semanticClass = "DOOR";
         }
+        else if (planeType ==
+                 vs_graphs::core::geometric::Plane::PlaneVariant::CEILING)
+        {
+            semanticClass = "CEILING";
+        }
 
         {
-            const std::unordered_map<vs_graphs::core::geometric::Plane *,
-                                     std::vector<int>>::iterator ownerIt =
-                owningRoomIdsByPlane.find(mappedPlane);
+            int mappedPlaneOwnerKey{};
+            if (mappedPlane->getId(mappedPlaneOwnerKey) !=
+                vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            const std::unordered_map<int, std::vector<int>>::iterator ownerIt =
+                owningRoomIdsByPlane.find(mappedPlaneOwnerKey);
             planeLabelText << '\n' << "class=" << semanticClass;
             if (planeType ==
                 vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
@@ -6093,23 +4884,6 @@ void publishPlanes(
     if (pubPlaneLabel != nullptr && !planeVisualizationArray.markers.empty())
     {
         pubPlaneLabel->publish(planeVisualizationArray);
-    }
-
-    if (p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr)
-    {
-        try
-        {
-            p_timingSink_in->callback(
-                p_timingSink_in->p_context,
-                vs_graphs::observability::PublishTopic::PLANES,
-                true,
-                planePublishStart,
-                std::chrono::steady_clock::now());
-        }
-        catch (...)
-        {
-            /* Timing is diagnostic only and must never affect publication. */
-        }
     }
 }
 
@@ -6429,10 +5203,9 @@ void publishStaticTFTransform(const std::string  &parentFrameId_in,
 }
 
 void publishStructuralElements(
-    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
-    const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
-    const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                                      &msgTime_s_in)
+    const vs_graphs::core::SceneGraphSnapshot &sceneGraph_in,
+    vs_graphs::core::map::Map                 *p_map_in,
+    const rclcpp::Time                        &msgTime_s_in)
 {
     if (pubStructuralElements == nullptr)
     {
@@ -6443,31 +5216,31 @@ void publishStructuralElements(
         return;
     }
 
-    if (mappedRooms_in.empty() && mappedFloors_in.empty() &&
-        mappedPassages_in.empty())
+    if (sceneGraph_in.rooms.empty() && sceneGraph_in.floors.empty() &&
+        sceneGraph_in.passages.empty())
     {
         return;
     }
 
     visualization_msgs::msg::MarkerArray structuralElementMarkerArray;
 
-    structuralElementMarkerArray.markers.reserve(mappedRooms_in.size() * 6 +
-                                                 mappedFloors_in.size() * 3 +
-                                                 mappedPassages_in.size() * 2);
+    structuralElementMarkerArray.markers.reserve(
+        sceneGraph_in.rooms.size() * 6 + sceneGraph_in.floors.size() * 3 +
+        sceneGraph_in.passages.size() * 2);
 
     /* Append the room markers */
-    appendRoomMarkers(mappedRooms_in,
-                      mappedPassages_in,
+    appendRoomMarkers(sceneGraph_in,
+                      p_map_in,
                       msgTime_s_in,
                       structuralElementMarkerArray);
 
     /* Append the floor markers */
-    appendFloorMarkers(mappedFloors_in,
+    appendFloorMarkers(sceneGraph_in,
                        msgTime_s_in,
                        structuralElementMarkerArray);
 
     /* Append the passage markers */
-    appendPassageMarkers(mappedPassages_in,
+    appendPassageMarkers(sceneGraph_in,
                          msgTime_s_in,
                          structuralElementMarkerArray);
 
@@ -6664,74 +5437,7 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                        &pointCloud_cameraMessage_in)
 {
-    publishTopics(msgTime_s_in,
-                  angularVelocity_body_radps_in,
-                  pointCloud_cameraMessage_in,
-                  nullptr);
-}
-
-void publishTopics(
-    const rclcpp::Time    &msgTime_s_in,
-    const Eigen::Vector3f &angularVelocity_body_radps_in,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
-        &pointCloud_cameraMessage_in,
-    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in,
-    const bool                                         publishAllPoints_in)
-{
-    const auto notifyTiming =
-        [p_timingSink_in](const vs_graphs::observability::PublishTopic topic_in,
-                          const bool isActualExecution_in,
-                          const std::chrono::steady_clock::time_point start_in,
-                          const std::chrono::steady_clock::time_point end_in)
-    {
-        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
-        {
-            return;
-        }
-        try
-        {
-            p_timingSink_in->callback(p_timingSink_in->p_context,
-                                      topic_in,
-                                      isActualExecution_in,
-                                      start_in,
-                                      end_in);
-        }
-        catch (...)
-        {
-            /* Timing is best-effort and must not alter publisher behaviour. */
-        }
-    };
-
-    const auto publishTimed =
-        [p_timingSink_in,
-         &notifyTiming](const vs_graphs::observability::PublishTopic topic_in,
-                        const auto &publishFunction_in)
-    {
-        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
-        {
-            publishFunction_in();
-            return;
-        }
-
-        const std::chrono::steady_clock::time_point startTime =
-            std::chrono::steady_clock::now();
-        try
-        {
-            publishFunction_in();
-        }
-        catch (...)
-        {
-            notifyTiming(topic_in,
-                         true,
-                         startTime,
-                         std::chrono::steady_clock::now());
-            throw;
-        }
-        notifyTiming(topic_in,
-                     true,
-                     startTime,
-                     std::chrono::steady_clock::now());
-    };
+    PROFILE_FUNCTION();
     /* Confirm that the SLAM system has been initialised */
     if (p_slamSystem == nullptr)
     {
@@ -6874,42 +5580,47 @@ void publishTopics(
                      __func__);
     }
 
-    std::vector<vs_graphs::core::semantic::Marker *> mappedFiducialMarkers{};
-    if (p_slamSystem->getAllMarkers(mappedFiducialMarkers) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    /* Rooms, floors and passages of the active map, from the semantics manager
+     */
+    vs_graphs::core::atlas::Atlas     *p_atlas            = nullptr;
+    vs_graphs::core::SemanticsManager *p_semanticsManager = nullptr;
+    if ((p_slamSystem->getAtlas(p_atlas) !=
+         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS) ||
+        (p_atlas->getSemanticsManager(p_semanticsManager) !=
+         vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS))
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAtlas/getSemanticsManager returned a failure status "
+            "although they cannot fail; continuing as before.",
+            __func__);
+    }
+
+    /*!
+     * The rooms, floors and passages of the active map are copied into plain
+     * data under the shared graph lock, which the manager releases before it
+     * returns: this function holds no node and no graph lock afterwards.
+     */
+    vs_graphs::core::SceneGraphSnapshot activeSceneGraph{};
+    if (p_semanticsManager->getActiveSceneGraphSnapshot(activeSceneGraph) !=
+        vs_graphs::core::SemanticsManagerStatus::
+            SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
+                     "%s: getActiveSceneGraphSnapshot found no scene graph "
+                     "for the active map; continuing without rooms, floors "
+                     "and passages.",
                      __func__);
     }
 
-    std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
-    if (p_slamSystem->getAllRooms(mappedRooms) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    /* Planes belong to the map, not to the graph: the markers look them up by
+     * id in the active map. */
+    vs_graphs::core::map::Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        vs_graphs::core::atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    std::vector<vs_graphs::core::semantic::Floor *> mappedFloors{};
-    if (p_slamSystem->getAllFloors(mappedFloors) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
-    std::vector<vs_graphs::core::semantic::Passage *> mappedPassages{};
-    if (p_slamSystem->getAllPassages(mappedPassages) !=
-        vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
+                     "%s: getCurrentMap returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
@@ -6930,7 +5641,6 @@ void publishTopics(
 
     publishKeyFrameImages(mappedKeyFrames, msgTime_s_in);
     publishKeyFrameMarkers(mappedKeyFrames, msgTime_s_in);
-    publishFiducialMarkers(mappedFiducialMarkers, msgTime_s_in);
     cv::Mat slamSystemCurrentFrame{};
     if (p_slamSystem->getCurrentFrame(slamSystemCurrentFrame) !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
@@ -6941,32 +5651,79 @@ void publishTopics(
                      __func__);
     }
     publishTrackingImage(slamSystemCurrentFrame, msgTime_s_in);
-    publishStructuralElements(mappedRooms,
-                              mappedFloors,
-                              mappedPassages,
-                              msgTime_s_in);
+    publishStructuralElements(activeSceneGraph, p_activeMap, msgTime_s_in);
 
     /*!
      * Publish mapped walls independently of the point-cloud visualisation
      * setting because they are consumed by GNN-based room detection.
      */
-    publishTimed(vs_graphs::observability::PublishTopic::ALL_MAPPED_WALLS,
-                 [&]() { publishAllMappedWalls(mappedPlanes, msgTime_s_in); });
+    publishAllMappedWalls(mappedPlanes, msgTime_s_in);
 
     /*!
      * Publish mapped rooms and passages alongside walls so an offline
      * evaluation run can reconstruct the full generated scene graph
      * (rooms, walls, passages) without loading a saved Atlas file.
      */
-    publishAllMappedRooms(mappedRooms, msgTime_s_in);
-    publishAllMappedPassages(mappedPassages, mappedRooms, msgTime_s_in);
-    publishAllMappedFloors(mappedFloors, msgTime_s_in);
+    publishAllMappedRooms(activeSceneGraph, msgTime_s_in, pubAllRooms);
+    publishAllMappedPassages(activeSceneGraph, msgTime_s_in, pubAllPassages);
+    publishAllMappedFloors(activeSceneGraph, msgTime_s_in);
+
+    /*!
+     * Exploration output: the rooms still to close and the passages still to
+     * explore. Their id lists come from the semantic cycle and change only at
+     * a cycle end, so publishing when they change publishes at most once per
+     * cycle. Plain data only: no graph lock is held here.
+     */
+    static unsigned long    lastFrontierMapId = 0UL;
+    static std::vector<int> lastIncompleteRoomIds{};
+    static std::vector<int> lastFrontierPassageIds{};
+    static bool             hasPublishedFrontier = false;
+    if (!hasPublishedFrontier || activeSceneGraph.mapId != lastFrontierMapId ||
+        activeSceneGraph.incompleteRoomIds != lastIncompleteRoomIds ||
+        activeSceneGraph.frontierPassageIds != lastFrontierPassageIds)
+    {
+        /* Rooms are kept whole in the passage copy: each passage's known-side
+         * room is resolved against them. Both id lists are ascending. */
+        vs_graphs::core::SceneGraphSnapshot incompleteRoomGraph{};
+        vs_graphs::core::SceneGraphSnapshot frontierPassageGraph{};
+        frontierPassageGraph.rooms = activeSceneGraph.rooms;
+        for (const vs_graphs::core::SceneGraphRoomEntry &room :
+             activeSceneGraph.rooms)
+        {
+            if (std::binary_search(activeSceneGraph.incompleteRoomIds.begin(),
+                                   activeSceneGraph.incompleteRoomIds.end(),
+                                   room.id))
+            {
+                incompleteRoomGraph.rooms.push_back(room);
+            }
+        }
+        for (const vs_graphs::core::SceneGraphPassageEntry &passage :
+             activeSceneGraph.passages)
+        {
+            if (std::binary_search(activeSceneGraph.frontierPassageIds.begin(),
+                                   activeSceneGraph.frontierPassageIds.end(),
+                                   passage.id))
+            {
+                frontierPassageGraph.passages.push_back(passage);
+            }
+        }
+        publishAllMappedRooms(incompleteRoomGraph,
+                              msgTime_s_in,
+                              pubIncompleteRooms);
+        publishAllMappedPassages(frontierPassageGraph,
+                                 msgTime_s_in,
+                                 pubFrontierPassages);
+        lastFrontierMapId      = activeSceneGraph.mapId;
+        lastIncompleteRoomIds  = activeSceneGraph.incompleteRoomIds;
+        lastFrontierPassageIds = activeSceneGraph.frontierPassageIds;
+        hasPublishedFrontier   = true;
+    }
 
     /*!
      * Archive the same snapshot to JSON. The archiver rate-limits itself on
      * the sim-clock timestamp and no-ops unless test_run_dir is set.
      */
-    maybeArchiveSGraph(mappedFloors, mappedRooms, mappedPassages, msgTime_s_in);
+    maybeArchiveSGraph(activeSceneGraph, msgTime_s_in);
 
     /* ------------------------------------------------------------------ *
      * POINT-CLOUD TOPICS
@@ -6974,86 +5731,43 @@ void publishTopics(
 
     if (pubPointClouds)
     {
-        publishTimed(vs_graphs::observability::PublishTopic::SEGMENTED_CLOUD,
-                     [&]() { publishSegmentedCloud(mappedKeyFrames); });
+        publishSegmentedCloud(mappedKeyFrames);
+        publishPlanes(mappedPlanes, activeSceneGraph, msgTime_s_in);
 
-        const std::chrono::steady_clock::time_point planeCallStart =
-            p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr
-                ? std::chrono::steady_clock::now()
-                : std::chrono::steady_clock::time_point{};
-        notifyTiming(vs_graphs::observability::PublishTopic::PLANES,
-                     false,
-                     planeCallStart,
-                     planeCallStart);
-        publishPlanes(mappedPlanes, mappedRooms, msgTime_s_in, p_timingSink_in);
+        std::vector<vs_graphs::core::map_point::MapPoint *>
+            slamSystemAllMapPoints{};
+        if (p_slamSystem->getAllMapPoints(slamSystemAllMapPoints) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        publishAllPoints(slamSystemAllMapPoints, msgTime_s_in);
 
-        if (publishAllPoints_in)
+        std::vector<vs_graphs::core::map_point::MapPoint *>
+            slamSystemTrackedMapPoints{};
+        if (p_slamSystem->getTrackedMapPoints(slamSystemTrackedMapPoints) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
         {
-            publishTimed(
-                vs_graphs::observability::PublishTopic::ALL_POINTS,
-                [&]()
-                {
-                    std::vector<vs_graphs::core::map_point::MapPoint *>
-                        slamSystemAllMapPoints{};
-                    if (p_slamSystem->getAllMapPoints(slamSystemAllMapPoints) !=
-                        vs_graphs::core::system::SystemStatus::
-                            SYSTEM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getAllMapPoints returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    publishAllPoints(slamSystemAllMapPoints, msgTime_s_in);
-                });
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTrackedMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
-        else
+        publishTrackedPoints(slamSystemTrackedMapPoints, msgTime_s_in);
+
+        std::vector<std::vector<Eigen::Vector3d>> slamSystemSkeletonCluster{};
+        if (p_slamSystem->getSkeletonCluster(slamSystemSkeletonCluster) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
         {
-            notifyTiming(vs_graphs::observability::PublishTopic::ALL_POINTS,
-                         false,
-                         std::chrono::steady_clock::time_point{},
-                         std::chrono::steady_clock::time_point{});
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSkeletonCluster returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
-        publishTimed(
-            vs_graphs::observability::PublishTopic::TRACKED_POINTS,
-            [&]()
-            {
-                std::vector<vs_graphs::core::map_point::MapPoint *>
-                    slamSystemTrackedMapPoints{};
-                if (p_slamSystem->getTrackedMapPoints(
-                        slamSystemTrackedMapPoints) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getTrackedMapPoints returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                publishTrackedPoints(slamSystemTrackedMapPoints, msgTime_s_in);
-            });
-        publishTimed(
-            vs_graphs::observability::PublishTopic::FREE_SPACE_CLUSTERS,
-            [&]()
-            {
-                std::vector<std::vector<Eigen::Vector3d>>
-                    slamSystemSkeletonCluster{};
-                if (p_slamSystem->getSkeletonCluster(
-                        slamSystemSkeletonCluster) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getSkeletonCluster returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                publishFreeSpaceClusters(slamSystemSkeletonCluster,
-                                         msgTime_s_in);
-            });
+        publishFreeSpaceClusters(slamSystemSkeletonCluster, msgTime_s_in);
     }
     else
     {
@@ -7234,13 +5948,13 @@ void publishTrackingImage(const cv::Mat      &trackingImage_bgr8_in,
             std::chrono::steady_clock::now() - std::chrono::hours(1);
         const std::chrono::steady_clock::time_point nowTime =
             std::chrono::steady_clock::now();
-        if (!sgraphArchiveTestRunDir.empty() &&
+        if (sgraphArchiveEnabled && !sgraphArchiveTestRunDir.empty() &&
             (nowTime - lastDumpTime) >= std::chrono::seconds(1))
         {
             lastDumpTime         = nowTime;
             namespace filesystem = std::filesystem;
             const filesystem::path loccamsDir =
-                filesystem::path(sgraphArchiveTestRunDir) / "output" /
+                filesystem::path(sgraphArchiveTestRunDir) / "archive" /
                 "loccams";
             std::error_code makeError;
             filesystem::create_directories(loccamsDir, makeError);
@@ -7699,11 +6413,6 @@ void setupPublishers(
         makeTopicName("doors"),
         standardPublisherQoS);
 
-    pubFiducialMarker =
-        node_in->create_publisher<visualization_msgs::msg::MarkerArray>(
-            makeTopicName("fiducial_markers"),
-            standardPublisherQoS);
-
     /* ---------------------------------------------------------------------- *
      * BUILDING-COMPONENT PUBLISHERS
      * ---------------------------------------------------------------------- */
@@ -7745,6 +6454,21 @@ void setupPublishers(
         node_in->create_publisher<vs_graphs::msg::VSGraphsAllPassagesData>(
             makeTopicName("all_mapped_passages"),
             standardPublisherQoS);
+
+    /* Exploration output: changes only at a semantic cycle end, so it is
+     * latched rather than streamed. */
+    const rclcpp::QoS latchedPublisherQoS =
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+
+    pubIncompleteRooms =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllDetectdetRooms>(
+            makeTopicName("incomplete_rooms"),
+            latchedPublisherQoS);
+
+    pubFrontierPassages =
+        node_in->create_publisher<vs_graphs::msg::VSGraphsAllPassagesData>(
+            makeTopicName("frontier_passages"),
+            latchedPublisherQoS);
 
     pubAllFloors =
         node_in->create_publisher<vs_graphs::msg::VSGraphsAllFloorsData>(
@@ -7814,12 +6538,16 @@ void shutdownRosInterfaces()
     pubCameraPoseVis.reset();
     pubTrackingImage.reset();
     pubDoor.reset();
-    pubFiducialMarker.reset();
     pubPlaneLabel.reset();
     pubBuildingComponents.reset();
     pubSegmentedPointcloud.reset();
     pubAllWalls_new.reset();
     pubAllWalls_legacy.reset();
+    pubAllRooms.reset();
+    pubAllPassages.reset();
+    pubIncompleteRooms.reset();
+    pubFrontierPassages.reset();
+    pubAllFloors.reset();
     pubStructuralElements.reset();
 
     srvSaveMap.reset();
@@ -7827,6 +6555,8 @@ void shutdownRosInterfaces()
     srvSaveTrajectory.reset();
     srvGetMissionHealth.reset();
     srvEstimatorHealth.reset();
+    p_wallSlabProfileTimer.reset();
+    p_wallSlabProfileClient.reset();
 
     tfListener_.reset();
     tfBroadcaster.reset();
@@ -8200,6 +6930,7 @@ void setupServices(const std::shared_ptr<rclcpp::Node> &node_in,
 void setVoxbloxSkeletonCluster(
     const visualization_msgs::msg::MarkerArray &skeletonMarkerArray_in)
 {
+    PROFILE_FUNCTION();
     /* Confirm that the SLAM system has been initialised */
     if (p_slamSystem == nullptr)
     {

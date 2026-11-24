@@ -3,11 +3,10 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/addChild.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addConnection.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addLoopEdge.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapMarker.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addMergeEdge.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCaptureTime.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/changeParent.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearClsClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearPointCloud.cc
@@ -24,7 +23,6 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getConnectedKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCovisiblesByWeight.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFrameMapPoints.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFrameMarkers.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentFramePointCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getFeaturesInArea.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getGyroBias.cc
@@ -34,8 +32,6 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getImuRotation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getLoopEdges.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapMarkers.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassages.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPlanes.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPoint.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPointCount.cc
@@ -67,7 +63,6 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/projectPointDistort.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/projectPointUnDistort.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/removeMapPlane.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/replaceMapPassage.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceMapPlane.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceMapPointMatch.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc

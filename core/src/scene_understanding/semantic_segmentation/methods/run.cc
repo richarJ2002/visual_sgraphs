@@ -124,7 +124,8 @@ void SemanticSegmentation::run()
             continue;
         }
 
-        if (workItem.segmentationCloud == nullptr)
+        /* With the segmenter off no segmentation result is expected */
+        if (!isSegmenterOff && workItem.segmentationCloud == nullptr)
         {
             if (recordTerminalOutcome(workItem.keyFrameId,
                                       TerminalOutcome::MISSING_CLOUD) !=
@@ -217,68 +218,22 @@ void SemanticSegmentation::run()
             continue;
         }
 
-        /* Extract the segmentation probabilities from the image */
-        pcl::PCLPointCloud2::Ptr pclPc2SegPrb = workItem.segmentationCloud;
-
-        /* Extract the segmentation uncertainties from the image */
-        cv::Mat segImageUncertainity = workItem.uncertaintyImage;
-
-        /* Init an object of point clouds for seperated classes */
-        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> p_clsCloudPtrs;
-
         /*!
-         * Seperate points into classes and filtering based on thresholds.
-         *
-         * clsCloudPtrs contains the points from the segmented point cloud
-         * seperated into a list of point clouds with the index of the list
-         * representing the semantic type of each point.
+         * Points per class with the segmenter on; the whole keyframe cloud in
+         * one slot with it off.
          */
-        if (threshSeparatePointCloud(pclPc2SegPrb,
-                                     segImageUncertainity,
-                                     p_clsCloudPtrs,
-                                     p_thisKeyFramePointCloud) !=
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> p_clsCloudPtrs;
+        if (separateKeyFrameCloud(p_thisKeyFrame,
+                                  workItem.segmentationCloud,
+                                  workItem.uncertaintyImage,
+                                  p_thisKeyFramePointCloud,
+                                  p_clsCloudPtrs) !=
             SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
-            RCLCPP_ERROR(
-                rclcpp::get_logger("vs_graphs"),
-                "%s: threshSeparatePointCloud returned a failure status "
-                "although it cannot fail; continuing as before.",
-                __func__);
-        }
-
-        /*!
-         * Diagnostic visibility for a previously-silent failure mode: if the
-         * model finds no (or very few) confident WALL-class pixels in this
-         * keyframe -- e.g. a close, texture-poor, low-context wall filling
-         * the frame -- getPlanesFromClassClouds() below simply `continue`s
-         * past an empty/undersized class cloud with no trace anywhere. That
-         * made "the segmenter found nothing this frame" indistinguishable
-         * from "there was nothing to find" in every existing log. Class
-         * index 1 is WALL (utils::utils::Utils::getPlaneTypeFromClassId). Gate
-         * on a small count, not just empty, so this stays quiet on ordinary
-         * frames.
-         */
-        constexpr std::size_t WALL_CLASS_INDEX               = 1U;
-        constexpr std::size_t WALL_SILENT_DROP_LOG_THRESHOLD = 50U;
-        if (p_clsCloudPtrs.size() > WALL_CLASS_INDEX &&
-            p_clsCloudPtrs[WALL_CLASS_INDEX]->size() <
-                WALL_SILENT_DROP_LOG_THRESHOLD)
-        {
-            Eigen::Vector3f cameraCenter_world{};
-            if (p_thisKeyFrame->getCameraCenter(cameraCenter_world) !=
-                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCameraCenter returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            std::cout << "[SemSeg] KF#" << p_thisKeyFrame->id
-                      << " wall-class points after confidence gating: "
-                      << p_clsCloudPtrs[WALL_CLASS_INDEX]->size()
-                      << " (camera at " << cameraCenter_world.x() << ','
-                      << cameraCenter_world.y() << ',' << cameraCenter_world.z()
-                      << ')' << std::endl;
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: separateKeyFrameCloud returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*!
@@ -397,13 +352,11 @@ void SemanticSegmentation::run()
         /*!
          * Extract planes from segmented point cloud.
          *
-         * @note            Does not define the semantic type the plane is
+         * @note            Each patch carries its class only as a guess;
+         *                  applyPlaneCheckpoint() decides the label.
          */
-        std::vector<
-            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
-                                  Eigen::Vector4d>>>
-            p_clsPlanes{};
-        if (getPlanesFromClassClouds(p_clsCloudPtrs, p_clsPlanes) !=
+        std::vector<PlanePatch> planePatches{};
+        if (getPlanesFromClassClouds(p_clsCloudPtrs, planePatches) !=
             SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -411,6 +364,20 @@ void SemanticSegmentation::run()
                 "%s: getPlanesFromClassClouds returned a failure status "
                 "although it cannot fail; continuing as before.",
                 __func__);
+        }
+
+        /*!
+         * Label the patches from geometry and drop failed ones (points, fit,
+         * no label, wall size) before the semantic lock, so they can neither
+         * match a mapped plane nor vote.
+         */
+        if (applyPlaneCheckpoint(p_thisKeyFrame, planePatches) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyPlaneCheckpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Set the class specific point clouds to the keyframe */
@@ -501,7 +468,7 @@ void SemanticSegmentation::run()
             }
 
             /* Add the planes to Atlas. */
-            if (updatePlaneData(p_thisKeyFrame, p_clsPlanes) !=
+            if (updatePlaneData(p_thisKeyFrame, planePatches) !=
                 SemanticSegmentationStatus::
                     SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
             {
@@ -520,6 +487,16 @@ void SemanticSegmentation::run()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+    }
+
+    /* Only now has every frame taken from the buffer been handled. */
+    if (setFinish() !=
+        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 }
 

@@ -82,11 +82,6 @@ namespace core
  */
 #define FRAME_GRID_COLS 64
 
-
-namespace semantic
-{
-class Marker;
-}
 namespace map_point
 {
 class MapPoint;
@@ -124,12 +119,7 @@ class Frame
         p_referenceKeyFrame(static_cast<keyframe::KeyFrame *>(nullptr)),
         isFrameSet(false),
         hasImuPreintegration(false)
-    {
-#ifdef REGISTER_TIMES
-        stereoMatchTime   = 0;
-        orbExtractionTime = 0;
-#endif
-    }
+    {}
 
     /*!
      * @brief           Copies a frame. Descriptors, calibration and distortion
@@ -278,11 +268,6 @@ class Frame
         }
 
         projectedPoints = frame_in.projectedPoints;
-
-#ifdef REGISTER_TIMES
-        stereoMatchTime   = frame_in.stereoMatchTime;
-        orbExtractionTime = frame_in.orbExtractionTime;
-#endif
     }
 
     /*!
@@ -340,10 +325,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat               &imageColor_in,
           const cv::Mat               &imageLeft_in,
@@ -358,8 +339,7 @@ class Frame
           const float                 &thresholdDepth_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -468,10 +448,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         std::thread threadLeft(&Frame::extractOrbFeatures,
                                this,
                                0,
@@ -486,15 +462,6 @@ class Frame
                                 0);
         threadLeft.join();
         threadRight.join();
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
         if (keyPoints.empty())
@@ -508,10 +475,6 @@ class Frame
                          __func__);
         }
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartStereoMatches =
-            std::chrono::steady_clock::now();
-#endif
         if (computeStereoMatches() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -519,23 +482,11 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndStereoMatches =
-            std::chrono::steady_clock::now();
-
-        stereoMatchTime = std::chrono::duration_cast<
-                              std::chrono::duration<double, std::milli>>(
-                              timeEndStereoMatches - timeStartStereoMatches)
-                              .count();
-#endif
 
         /* Initialize MapPoints */
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         projectedPoints.clear();
 
@@ -688,10 +639,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat               &imageColor_in,
           const cv::Mat               &imageLeft_in,
@@ -708,8 +655,7 @@ class Frame
           camera_models::geometric_camera::GeometricCamera *p_camera2_in,
           Sophus::SE3f                                     &Tlr_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -821,10 +767,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         std::thread threadLeft(
             &Frame::extractOrbFeatures,
             this,
@@ -849,15 +791,6 @@ class Frame
                 ->lappingArea[1]);
         threadLeft.join();
         threadRight.join();
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         leftKeyPointCount  = keyPoints.size();
         rightKeyPointCount = keyPointsRight.size();
@@ -904,10 +837,6 @@ class Frame
         rotationRlr    = poseTlr.rotationMatrix();
         translationTlr = poseTlr.translation();
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartStereoMatches =
-            std::chrono::steady_clock::now();
-#endif
         if (computeStereoFishEyeMatches() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -916,15 +845,6 @@ class Frame
                 "status although it cannot fail; continuing as before.",
                 __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndStereoMatches =
-            std::chrono::steady_clock::now();
-
-        stereoMatchTime = std::chrono::duration_cast<
-                              std::chrono::duration<double, std::milli>>(
-                              timeEndStereoMatches - timeStartStereoMatches)
-                              .count();
-#endif
 
         /* Put all descriptors in the same matrix */
         cv::vconcat(descriptors, descriptorsRight, descriptors);
@@ -933,9 +853,6 @@ class Frame
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         outlierFlags = std::vector<bool>(keyPointCount, false);
 
@@ -1008,10 +925,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat                                &imageColor_in,
           const cv::Mat                                &imageGray_in,
@@ -1026,8 +939,7 @@ class Frame
           const float                                  &thresholdDepth_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_in,
           Frame                                            *p_previousF_in,
-          const imu_types::calib::Calib                    &imuCalibration_in,
-          const std::vector<semantic::Marker *>             markers_in) :
+          const imu_types::calib::Calib                    &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -1137,10 +1049,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         if (extractOrbFeatures(0, imageGray_in, 0, 0) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
@@ -1149,15 +1057,6 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
         if (keyPoints.empty())
@@ -1184,9 +1083,6 @@ class Frame
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         /* Initialize PointCloud */
         pointClouds = p_pointcloud_in;
@@ -1326,10 +1222,6 @@ class Frame
      *
      * @param[in]       imuCalibration_in
      *                  IMU calibration, including the body-to-camera transform.
-     *
-     * @param[in]       markers_in
-     *                  Semantic markers seen in this image; stored as
-     *                  mapMarkers.
      */
     Frame(const cv::Mat                                    &imageColor_in,
           const cv::Mat                                    &imageGray_in,
@@ -1337,12 +1229,11 @@ class Frame
           orb_extractor::ORBextractor                      *p_extractor_in,
           ORBVocabulary                                    *p_vocabulary_in,
           camera_models::geometric_camera::GeometricCamera *p_camera_inout,
-          cv::Mat                              &distanceCoefficients_in,
-          const float                          &bf_in,
-          const float                          &thresholdDepth_in,
-          Frame                                *p_previousF_in,
-          const imu_types::calib::Calib        &imuCalibration_in,
-          const std::vector<semantic::Marker *> markers_in) :
+          cv::Mat                       &distanceCoefficients_in,
+          const float                   &bf_in,
+          const float                   &thresholdDepth_in,
+          Frame                         *p_previousF_in,
+          const imu_types::calib::Calib &imuCalibration_in) :
         p_poseImuConstraint(nullptr),
         isPoseAvailable(false),
         isVelocityAvailable(false),
@@ -1447,10 +1338,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         if (extractOrbFeatures(0, imageGray_in, 0, 1000) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
@@ -1459,15 +1346,6 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
 
@@ -1490,9 +1368,6 @@ class Frame
         mapPoints = std::vector<map_point::MapPoint *>(
             keyPointCount,
             static_cast<map_point::MapPoint *>(nullptr));
-
-        /* Initialize MapMarkers */
-        mapMarkers = markers_in;
 
         projectedPoints.clear();
 
@@ -2236,12 +2111,6 @@ class Frame
     std::vector<map_point::MapPoint *> mapPoints;
 
     /*!
-     * @brief           Semantic markers found in this frame; passed in at
-     *                  construction and not owned.
-     */
-    std::vector<semantic::Marker *> mapMarkers;
-
-    /*!
      * @brief           Right-image x coordinate, pixels, matched to each left
      *                  key point; negative when the key point has no stereo or
      *                  depth information (monocular).
@@ -2431,11 +2300,6 @@ class Frame
      *                  Tracking and carried to the key frame.
      */
     int datasetId;
-
-#ifdef REGISTER_TIMES
-    double orbExtractionTime;
-    double stereoMatchTime;
-#endif
 
   private:
     /*!

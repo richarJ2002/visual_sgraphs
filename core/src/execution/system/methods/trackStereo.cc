@@ -32,7 +32,6 @@
 
 #include "mapping/local_mapping/local_mapping.h"
 #include "sensor_models/imu_types/point/point.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "estimation/tracking/objects/TrackingStatusEnum.h"
 #include "configuration/settings/objects/SettingsStatusEnum.h"
 #include "execution/system/objects/SystemClass.h"
@@ -49,13 +48,12 @@ namespace system
 {
 
 SystemStatus
-    System::trackStereo(const cv::Mat                        &imageLeft_in,
-                        const cv::Mat                        &imageRight_in,
-                        const double                         &timestamp_in,
-                        Sophus::SE3f                         &cameraPose_out,
-                        const std::vector<imu_types::point::Point>        &imuMeas_in,
-                        std::string                           filename_in,
-                        const std::vector<semantic::Marker *> markers_in)
+    System::trackStereo(const cv::Mat &imageLeft_in,
+                        const cv::Mat &imageRight_in,
+                        const double  &timestamp_in,
+                        Sophus::SE3f  &cameraPose_out,
+                        const std::vector<imu_types::point::Point> &imuMeas_in,
+                        std::string                                 filename_in)
 {
     if (sensor != STEREO && sensor != IMU_STEREO)
     {
@@ -189,7 +187,6 @@ SystemStatus
                                    imRightToFeed,
                                    timestamp_in,
                                    filename_in,
-                                   markers_in,
                                    cameraPose_worldToCamera) !=
         tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

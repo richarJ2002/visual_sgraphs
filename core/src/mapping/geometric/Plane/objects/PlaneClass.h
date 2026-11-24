@@ -30,6 +30,7 @@
 #include <vs_graphs_g2o/types/plane3d.h>
 #include <vs_graphs_g2o/types/sim3.h>
 #include "configuration/types/types.h"
+#include "mapping/geometric/Plane/objects/InPlaneAxesStruct.h"
 #include "mapping/geometric/Plane/objects/PlaneGeometryMetadataSnapshotStruct.h"
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 
@@ -63,18 +64,13 @@ namespace vs_graphs
 namespace core
 {
 
-
-namespace semantic
-{
-class Marker;
-}
 namespace geometric
 {
 
 /*!
  * @brief           A plane in the map: its observations from key frames, the
  *                  point cloud supporting it and its semantic class (wall,
- *                  ground, door, window).
+ *                  ground, door, window, ceiling).
  */
 class Plane
 {
@@ -108,7 +104,15 @@ class Plane
         /*!
          * @brief           Window surface observed in a wall.
          */
-        WINDOW = 3
+        WINDOW = 3,
+
+        /*!
+         * @brief           Horizontal surface bounding a room from above.
+         *                  Appended last so the archived integers of the
+         *                  other classes and the tie order of
+         *                  getExpectedPlaneType() stay unchanged.
+         */
+        CEILING = 4
     };
 
     /*!
@@ -149,6 +153,8 @@ class Plane
 
         /*!
          * @brief           Confidence associated with this plane observation.
+         *                  Used only as the optimiser edge weight, never as a
+         *                  label vote.
          */
         double confidence;
 
@@ -159,8 +165,9 @@ class Plane
         PlaneVariant semanticType = PlaneVariant::UNDEFINED;
 
         /*!
-         * @brief           Semantic evidence retained when observations are
-         *                  fused.
+         * @brief           Label evidence of this keyframe, summed per class
+         *                  over every patch and fused record of the keyframe.
+         *                  The only store from which the plane type is derived.
          */
         std::map<PlaneVariant, double> semanticEvidence;
     };
@@ -213,6 +220,24 @@ class Plane
          *                  axis V, metres.
          */
         double maxPlaneV_m{0.0};
+
+        /*!
+         * @brief           Width of the plane, maxPlaneU_m - minPlaneU_m,
+         *                  metres; 0 while the bounds are unset.
+         */
+        double planeWidth_m{0.0};
+
+        /*!
+         * @brief           Height of the plane, maxPlaneV_m - minPlaneV_m,
+         *                  metres; 0 while the bounds are unset.
+         */
+        double planeHeight_m{0.0};
+
+        /*!
+         * @brief           In-plane axes U and V the bounds above were
+         *                  measured on, world frame.
+         */
+        InPlaneAxes boundsAxes{};
 
         /*!
          * @brief           Number of finite points in the support cloud at the
@@ -311,46 +336,73 @@ class Plane
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Largest projection of the support cloud onto the
+     *                  in-plane axis U of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double maxPlaneU;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Smallest projection of the support cloud onto the
+     *                  in-plane axis U of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double minPlaneU;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Largest projection of the support cloud onto the
+     *                  in-plane axis V of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double maxPlaneV;
 
     /*!
-     * @brief           The maximum distance of the plane in the U axis
-     *                  tangental to plane.
+     * @brief           Smallest projection of the support cloud onto the
+     *                  in-plane axis V of boundsAxes (outlier-trimmed).
      *
-     * @frame           Plane tangental
+     * @frame           World, projected onto boundsAxes
      *
      * @units           meters
      */
     double minPlaneV;
 
   private:
+    /*!
+     * @brief           Width of the plane: the extent of the support cloud
+     *                  along the in-plane axis U of boundsAxes
+     *                  (maxPlaneU - minPlaneU); 0 while the bounds are
+     *                  unset.
+     *
+     * @units           meters
+     */
+    double planeWidth_m{0.0};
+
+    /*!
+     * @brief           Height of the plane: the extent of the support cloud
+     *                  along the in-plane axis V of boundsAxes
+     *                  (maxPlaneV - minPlaneV); 0 while the bounds are
+     *                  unset.
+     *
+     * @units           meters
+     */
+    double planeHeight_m{0.0};
+
+    /*!
+     * @brief           In-plane axes the bounds minPlaneU/V and maxPlaneU/V
+     *                  were measured on; written with them under the same
+     *                  lock, so readers never pair bounds with other axes.
+     */
+    InPlaneAxes boundsAxes;
+
     /*!
      * @brief           The plane's identifier
      */
@@ -402,7 +454,10 @@ class Plane
      *                  refit (and its normal re-signed) over the plane's
      *                  lifetime, which would silently invert a stored sign,
      *                  whereas re-deriving the sign from this point against the
-     *                  current equation stays correct.
+     *                  current equation stays correct. Transforms of the plane
+     *                  move it with the cloud; a fusion keeps the survivor's
+     *                  point and takes the retired plane's only when the
+     *                  survivor has none.
      */
     std::optional<Eigen::Vector3d> observationOrigin_world_m;
 
@@ -440,7 +495,10 @@ class Plane
     std::set<map_point::MapPoint *> mapPoints;
 
     /*!
-     * @brief           The votes for the semantic type of the plane
+     * @brief           Per-class tally of the observations' label evidence.
+     *                  Rebuilt from observations under featuresMutex and
+     *                  typeMutex whenever they change; never written
+     *                  otherwise.
      */
     std::map<PlaneVariant, double> semanticVotes;
 
@@ -497,6 +555,28 @@ class Plane
      */
     [[nodiscard]] PlaneStatus rebuildSemanticVotesWithoutLock(void);
 
+    /*!
+     * @brief           Thins the plane cloud to one point per voxel, applies
+     *                  the map-wide density cap (Map::admitPlanePoints) and
+     *                  rebuilds the octree once, with featuresMutex already
+     *                  held by the caller. Runs on an empty cloud too, so
+     *                  the plane gives back its voxels.
+     *
+     * @param[in]       p_releasedPlane_in
+     *                  Plane whose map voxels are given back with this
+     *                  plane's (one being absorbed into this plane), or
+     *                  null; borrowed.
+     *
+     * @note            The thinning voxel edge is the octree resolution
+     *                  (refine_map_points.octree.resolution), so the cloud
+     *                  keeps the density its own neighbour search expects
+     *                  and stops growing as observations accumulate. A plane
+     *                  without a map is thinned but not capped. Takes this
+     *                  plane's mapMutex, then the map's pointDensityMutex.
+     */
+    [[nodiscard]] PlaneStatus
+        thinMapCloudWithoutLock(const Plane *p_releasedPlane_in);
+
   public:
     Plane(void)
     {
@@ -539,9 +619,11 @@ class Plane
      * @brief           Apply a rigid/similarity transform to the plane
      *                  geometry.
      *
-     *                  Updates the centroid, point cloud and plane equations so
-     *                  that the plane remains consistent with the merged map
-     *                  frame.
+     *                  Updates the centroid, point cloud, observation origin
+     *                  and plane equations so that the plane remains
+     *                  consistent with the merged map frame. The moved
+     *                  cloud is thinned and re-admitted under the map-wide
+     *                  density cap, which may drop points.
      *
      * @param[in]       alignmentTransform_oldWorldToNewWorld_in
      *                  Transform from the current plane frame to the new map
@@ -552,19 +634,35 @@ class Plane
 
     /*!
      * @brief           Aligns the complete finite plane geometry with an
-     *                  optimized
-     *                         world-frame equation.
+     *                  optimized world-frame equation.
      *
-     *                  A minimal rigid correction is applied to the centroid
-     *                  and supporting cloud before the target equation is
-     *                  stored. This keeps all plane representations mutually
-     *                  consistent after graph optimization.
+     *                  A minimal rigid correction is applied to the centroid,
+     *                  supporting cloud and observation origin (so the
+     *                  observed side is kept) before the target equation is
+     *                  stored; the moved cloud is thinned and re-admitted
+     *                  under the map-wide density cap (which may drop
+     *                  points), and the octree and in-plane bounds are
+     *                  rebuilt.
+     *                  This keeps all plane representations mutually
+     *                  consistent after graph optimization. A target whose
+     *                  normal is more than
+     *                  optimization.max_plane_normal_correction degrees from
+     *                  the current normal, or a non-finite target, is refused
+     *                  with nothing changed; a refused angle is logged as a
+     *                  warning.
      *
      * @param[in]       targetEquation_newWorld_in
      *                  Optimized plane equation in the active map frame.
+     *
+     * @param[out]      wasApplied_out
+     *                  True when the geometry was moved onto the target; false
+     *                  when the target was refused and the plane is unchanged.
+     *
+     * @return          PLANE_STATUS_SUCCESS always.
      */
     [[nodiscard]] PlaneStatus
-        alignGeometryToEquation(const g2o::Plane3D &targetEquation_newWorld_in);
+        alignGeometryToEquation(const g2o::Plane3D &targetEquation_newWorld_in,
+                                bool               &wasApplied_out);
 
     /*!
      * @brief           Tranforms the plane equation from an old world frame to
@@ -650,11 +748,6 @@ class Plane
         getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out);
 
     /*!
-     * @brief           Sets the accepted semantic classification.
-     */
-    [[nodiscard]] PlaneStatus setPlaneType(PlaneVariant planeType_in);
-
-    /*!
      * @brief           Associates a non-owning map point with the plane.
      */
     [[nodiscard]] PlaneStatus setMapPoints(map_point::MapPoint *p_mapPoint_in);
@@ -670,14 +763,6 @@ class Plane
      */
     [[nodiscard]] PlaneStatus
         getCentroid(Eigen::Vector3d &getCentroid_out) const;
-
-    /*!
-     * @brief           Method which takes the points in the map and calculates
-     *                  the bounds of the plane. Assumes that the plane already
-     *                  has points associated with it. Assumes that the plane is
-     *                  a rectangle.
-     */
-    [[nodiscard]] PlaneStatus updateSizeOfPlane(void);
 
     /*!
      * @brief           Sets the plane centroid in the active map frame.
@@ -743,18 +828,75 @@ class Plane
         setGlobalEquation(const g2o::Plane3D &globalEquation_in);
 
     /*!
-     * @brief           Records or replaces an observation from a keyframe.
+     * @brief           Records an observation from a keyframe and rebuilds
+     *                  semantics. A second patch from the same keyframe adds
+     *                  its label evidence to that keyframe's record; the
+     *                  first patch's geometry and confidence are kept.
      */
     [[nodiscard]] PlaneStatus addObservation(keyframe::KeyFrame *p_keyFrame_inout,
                                              const Observation &observation_in);
 
     /*!
-     * @brief           Inserts or fuses a same-keyframe observation and
-     *                  rebuilds semantics.
+     * @brief           Fuses a duplicate plane into this one and refreshes
+     *                  every derived member in one step.
+     *
+     *                  Under the locks of both planes, the retired plane's
+     *                  observations, label evidence, map points and cloud
+     *                  are added to this plane; the cloud is thinned; then
+     *                  the centroid, equation, finite bounds, support counts
+     *                  and labels are recomputed together, so no reader sees
+     *                  a half-merged plane. The earliest reference keyframe
+     *                  is kept, the observer side is taken from the retired
+     *                  plane when this one has none, and twin links to the
+     *                  retired plane are cleared.
+     *
+     * @param[in,out]   p_retiredPlane_inout
+     *                  Non-owning duplicate to absorb; its twin link is
+     *                  cleared, all else is left for the caller to retire.
+     *                  Ignored when null or this plane.
+     *
+     * @return          PLANE_STATUS_SUCCESS.
+     *
+     * @note            Self-locking; the caller must hold no lock of either
+     *                  plane. Bad keyframes and map points are skipped.
      */
-    [[nodiscard]] PlaneStatus
-        mergeObservation(keyframe::KeyFrame          *p_keyFrame_inout,
-                         const Observation &observation_in);
+    [[nodiscard]] PlaneStatus absorb(Plane *p_retiredPlane_inout);
+
+    /*!
+     * @brief           Fits a plane to a cloud by principal component
+     *                  analysis: the normal is the direction of least
+     *                  spread about the centroid of the finite points.
+     *
+     * @param[in]       supportCloud_world_in
+     *                  Points to fit, in the world frame, metres.
+     *
+     * @param[in]       previousEquation_world_in
+     *                  Current equation [a, b, c, d]; the fitted normal is
+     *                  signed to agree with it when it is valid.
+     *
+     * @param[out]      planeCentroid_world_m_out
+     *                  Centroid of the finite points, world frame, metres.
+     *
+     * @param[out]      planeEquation_world_out
+     *                  Fitted unit-normal equation, world frame.
+     *
+     * @param[out]      finitePointCount_out
+     *                  Number of finite points used.
+     *
+     * @param[out]      wasFitFound_out
+     *                  False when fewer than 20 finite points remain or the
+     *                  decomposition fails; the other outputs are then
+     *                  unspecified.
+     *
+     * @return          PLANE_STATUS_SUCCESS.
+     */
+    [[nodiscard]] static PlaneStatus fitEquationToCloud(
+        const pcl::PointCloud<pcl::PointXYZRGBA> &supportCloud_world_in,
+        const Eigen::Vector4d                    &previousEquation_world_in,
+        Eigen::Vector3d                          &planeCentroid_world_m_out,
+        Eigen::Vector4d                          &planeEquation_world_out,
+        std::size_t                              &finitePointCount_out,
+        bool                                     &wasFitFound_out);
 
     /*!
      * @brief           Removes the observation associated with a keyframe.
@@ -829,7 +971,9 @@ class Plane
         Plane::ObservationSideSnapshot &observationSideSnapshot_out) const;
 
     /*!
-     * @brief           Appends points to the accumulated plane cloud.
+     * @brief           Appends points to the accumulated plane cloud, then
+     *                  thins it to one point per octree voxel and applies
+     *                  the map-wide density cap.
      *
      *                  Use replaceMapClouds() to substitute the whole cloud.
      */
@@ -837,10 +981,24 @@ class Plane
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in);
 
     /*!
-     * @brief           Replaces the accumulated plane cloud contents.
+     * @brief           Replaces the accumulated plane cloud contents, thinned
+     *                  to one point per octree voxel.
      */
     [[nodiscard]] PlaneStatus replaceMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);
+
+    /*!
+     * @brief           Thins the current cloud and admits it to the owning
+     *                  map's density table again, dropping points over the
+     *                  cap; a changed cloud starts a new cloud generation.
+     *                  Used when the map rebuilds its table after a merge.
+     *
+     * @return          PLANE_STATUS_SUCCESS always.
+     *
+     * @note            Self-locking (featuresMutex); the caller must hold no
+     *                  lock of this plane nor the map's pointDensityMutex.
+     */
+    [[nodiscard]] PlaneStatus reapplyDensityCap(void);
 
     /*!
      * @brief           Claims and returns an immutable snapshot of a new cloud
@@ -872,17 +1030,14 @@ class Plane
                             bool                  &isPointinPlaneCloud_out);
 
     /*!
-     * @brief           Adds weighted evidence for a semantic classification.
-     */
-    [[nodiscard]] PlaneStatus castWeightedVote(PlaneVariant semanticType_in,
-                                               double       voteWeight_in);
-
-    /*!
-     * @brief           Clears semantic votes and restores undefined semantics.
+     * @brief           Clears semantic votes, including the label evidence of
+     *                  every keyframe record, and restores undefined
+     *                  semantics.
      *
      * @note            Geometric support and observation constraints are
      *                  preserved so that a temporarily rejected classification
-     *                  can recover on later observations.
+     *                  can recover on later observations. Because the records
+     *                  are cleared, no later rebuild can revive the old label.
      */
     [[nodiscard]] PlaneStatus resetPlaneSemantics(void);
 

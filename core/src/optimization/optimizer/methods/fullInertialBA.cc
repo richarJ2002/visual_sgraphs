@@ -57,6 +57,8 @@
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -75,6 +77,7 @@ OptimizerStatus
                               float                   accelBiasPriorWeight_in,
                               const std::atomic_bool *p_stopRequested_in)
 {
+    PROFILE_FUNCTION();
     unsigned long maxKeyFrameIdValue{};
     if (p_map_inout->getMaxKeyFrameId(maxKeyFrameIdValue) !=
         map::MapStatus::MAP_STATUS_SUCCESS)

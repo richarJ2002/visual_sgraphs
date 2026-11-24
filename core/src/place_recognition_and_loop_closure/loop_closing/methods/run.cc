@@ -36,15 +36,15 @@
 
 #include <rclcpp/logging.hpp>
 
-#include "optimization/g2o_types/g2o_types/public_functions/public_functions.h"
+#include "estimation/tracking/tracking.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
+#include "execution/system/system.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "optimization/g2o_types/g2o_types/public_functions/public_functions.h"
 #include "scene_understanding/semantic/semantic_verify/objects/SemanticMergeDecisionEnum.h"
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
-#include "execution/system/system.h"
-#include "estimation/tracking/tracking.h"
 
 namespace vs_graphs
 {
@@ -91,11 +91,6 @@ void LoopClosing::run(void)
         }
         if (hasNewKeyFrames)
         {
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point timeStartPr =
-                std::chrono::steady_clock::now();
-#endif
-
             /*!
              * Pop/process the next queued keyframe and look for a same-map loop
              * or cross-map merge candidate. This function consumes the next KF,
@@ -112,17 +107,6 @@ void LoopClosing::run(void)
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point timeEndPr =
-                std::chrono::steady_clock::now();
-
-            double timePrTotal = std::chrono::duration_cast<
-                                     std::chrono::duration<double, std::milli>>(
-                                     timeEndPr - timeStartPr)
-                                     .count();
-            placeRecognitionTotalTimes_ms.push_back(timePrTotal);
-#endif
 
             /* If a detected region is found, perform loop closure */
             if (isFindedRegion)
@@ -403,11 +387,6 @@ void LoopClosing::run(void)
                          */
                         mg2oMergeScw = mg2oMergeSlw;
 
-#ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point timeStartMerge =
-                            std::chrono::steady_clock::now();
-#endif
-
                         /* Set flag to indicate that mergins is happening */
                         if (setMergeStatus(true) !=
                             LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
@@ -466,23 +445,6 @@ void LoopClosing::run(void)
                                          "fail; continuing as before.",
                                          __func__);
                         }
-
-#ifdef REGISTER_TIMES
-                        if (mergeDecision ==
-                            semantic::SemanticMergeDecision::ACCEPT)
-                        {
-                            std::chrono::steady_clock::time_point timeEndMerge =
-                                std::chrono::steady_clock::now();
-
-                            double timeMergeTotal =
-                                std::chrono::duration_cast<
-                                    std::chrono::duration<double, std::milli>>(
-                                    timeEndMerge - timeStartMerge)
-                                    .count();
-                            mergeTotalTimes_ms.push_back(timeMergeTotal);
-                            mergeCount += 1;
-                        }
-#endif
                     }
 
                     if (mergeDecision ==
@@ -844,17 +806,22 @@ void LoopClosing::run(void)
                      * optimisation and updates keyframe/map point poses to
                      * remove accumulated drift.
                      */
+                    bool isLoopRejected = false;
+                    if (isGoodLoop &&
+                        checkLoopRooms(isLoopRejected) !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: checkLoopRooms returned a failure "
+                                     "status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    isGoodLoop = isGoodLoop && !isLoopRejected;
                     if (isGoodLoop)
                     {
                         loopMapPoints = loopMPs;
 
-#ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point timeStartLoop =
-                            std::chrono::steady_clock::now();
-
-                        loopCount += 1;
-
-#endif
                         /*!
                          * Apply the loop closure correction.
                          *
@@ -881,17 +848,6 @@ void LoopClosing::run(void)
                                          "continuing as before.",
                                          __func__);
                         }
-#ifdef REGISTER_TIMES
-                        std::chrono::steady_clock::time_point timeEndLoop =
-                            std::chrono::steady_clock::now();
-
-                        double timeLoopTotal =
-                            std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndLoop - timeStartLoop)
-                                .count();
-                        loopTotalTimes_ms.push_back(timeLoopTotal);
-#endif
 
                         /*!
                          * Track the number of successful loop closure

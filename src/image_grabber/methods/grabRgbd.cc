@@ -21,6 +21,8 @@
 
 #include "image_grabber/objects/ImageGrabberClass.h"
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs::image_grabber
 {
 
@@ -28,6 +30,7 @@ void ImageGrabber::grabRgbd(
     const sensor_msgs::msg::Image::ConstSharedPtr &p_rgbImageMessage_in,
     const sensor_msgs::msg::Image::ConstSharedPtr &p_depthImageMessage_in)
 {
+    PROFILE_FUNCTION();
     std::lock_guard<std::mutex> lock(mBufMutex);
     if (!p_latestPointCloudMessage)
     {
@@ -51,6 +54,7 @@ void ImageGrabber::grabRgbd(
             std::queue<sensor_msgs::msg::Imu::ConstSharedPtr> emptyImuBuffer;
             p_imuGrabber->imuBuf.swap(emptyImuBuffer);
         }
+        shouldDiscardImuContinuity = true;
         if (vs_graphs::common::p_slamSystem->requestResetActiveMapWithCause(
                 vs_graphs::core::reset_cause::ResetCause::
                     SENSOR_PROCESSING_OVERLOAD) !=

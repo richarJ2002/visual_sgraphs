@@ -1,0 +1,120 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            replacePlane.cc
+ *
+ * @brief           Implements SemanticsManager::replacePlane(), declared in
+ *                  semantics_manager/objects/SemanticsManagerClass.h.
+ */
+
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+
+#include <map>
+#include <memory>
+#include <mutex>
+#include <rclcpp/logging.hpp>
+#include <shared_mutex>
+
+#include "mapping/geometric/Plane/Plane.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
+#include "scene_understanding/semantics_manager/graph/private_functions/private_functions.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+
+SemanticsManagerStatus
+    SemanticsManager::replacePlane(geometric::Plane *p_retiredPlane_inout,
+                                   geometric::Plane *p_retainedPlane_inout)
+{
+    std::optional<unsigned long> activeMapIdCopy{};
+    {
+        std::shared_lock<std::shared_mutex> registryLock(registryMutex);
+        activeMapIdCopy = activeGraphMapId;
+    }
+    if (!activeMapIdCopy.has_value())
+    {
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+    GraphLockScope           graphScope{};
+    scene_graph::SceneGraph *p_sceneGraph = nullptr;
+    if (lockMapGraph(*activeMapIdCopy,
+                     GraphLockMode::GRAPH_LOCK_MODE_EXCLUSIVE,
+                     graphScope,
+                     p_sceneGraph) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    scene_graph::SceneGraph &sceneGraph = *p_sceneGraph;
+    for (std::map<int, std::unique_ptr<semantic::Room>> *p_roomsById :
+         {&sceneGraph.detectedRooms, &sceneGraph.candidateRooms})
+    {
+        for (std::pair<const int, std::unique_ptr<semantic::Room>> &roomEntry :
+             *p_roomsById)
+        {
+            if (!isRoomLive(roomEntry.second.get()))
+            {
+                continue;
+            }
+            bool roomWasWallReplaced{};
+            bool roomWasGroundPlaneReplaced{};
+            if (roomEntry.second->replaceWall(p_retiredPlane_inout,
+                                              p_retainedPlane_inout,
+                                              roomWasWallReplaced) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS ||
+                roomEntry.second->replaceGroundPlane(
+                    p_retiredPlane_inout,
+                    p_retainedPlane_inout,
+                    roomWasGroundPlaneReplaced) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                            "%s: replaceWall/replaceGroundPlane rejected "
+                            "its input; continuing as before.",
+                            __func__);
+            }
+        }
+    }
+
+    for (std::pair<const int, std::unique_ptr<semantic::Passage>>
+             &passageEntry : sceneGraph.passages)
+    {
+        bool passageWasAssociationReplaced{};
+        if (isPassageLive(passageEntry.second.get()) &&
+            passageEntry.second->replacePlaneAssociation(
+                p_retiredPlane_inout,
+                p_retainedPlane_inout,
+                passageWasAssociationReplaced) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                        "%s: replacePlaneAssociation rejected its input; "
+                        "continuing as before.",
+                        __func__);
+        }
+    }
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */

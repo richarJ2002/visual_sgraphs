@@ -14,13 +14,25 @@
 #define VS_GRAPHS_CORE_SRC_SEMANTICS_MANAGER_PRIVATE_FUNCTIONS_H
 
 #include <cmath>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <Eigen/Geometry>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
-#include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
 #include "configuration/types/types.h"
+#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
+#include "scene_understanding/semantics_manager/objects/FiniteWallSegment2dStruct.h"
+#include "scene_understanding/semantics_manager/objects/RoomWallFootprintStruct.h"
+#include "scene_understanding/semantics_manager/objects/SemanticsManagerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/WallAdmissionEvidenceStruct.h"
+#include "scene_understanding/semantics_manager/objects/WallLoopClosureStruct.h"
 
 namespace vs_graphs::core::map
 {
@@ -41,197 +53,6 @@ namespace semantic
 {
 class Passage;
 } /* namespace semantic */
-
-/*!
- * @brief           Finite horizontal representation of one observed room wall.
- */
-struct FiniteWallSegment2d
-{
-    /*!
-     * @brief           Wall the segment was built from; non-owning.
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    geometric::Plane *p_wall = nullptr;
-
-    /*!
-     * @brief           First end of the wall on the ground plane.
-     *
-     * @frame           World, projected onto the two ground axes
-     *
-     * @units           metres
-     */
-    Eigen::Vector2d wallStart_world_m = Eigen::Vector2d::Zero();
-
-    /*!
-     * @brief           Second end of the wall on the ground plane.
-     *
-     * @frame           World, projected onto the two ground axes
-     *
-     * @units           metres
-     */
-    Eigen::Vector2d wallEnd_world_m = Eigen::Vector2d::Zero();
-
-    /*!
-     * @brief           Distance between the two ends.
-     *
-     * @frame           N/A
-     *
-     * @units           metres
-     */
-    double length_m = 0.0;
-
-    /*!
-     * @brief           How well supported the wall is: observation count (at
-     *                  least
-     *                  1) times the square root of the length; larger wins when
-     *                     walls compete.
-     *
-     * @frame           N/A
-     *
-     * @units           square root of metres
-     */
-    double supportScore = 0.0;
-};
-
-/*!
- * @brief           Facts that decide whether a wall plane may join a room;
- *                  filled by evaluateWallAdmissionEvidence().
- */
-struct WallAdmissionEvidence
-{
-    /*!
-     * @brief           True when the wall may join a room: it is a wall by type
-     *                  and by expected type, its finite fit is adequate, and it
-     *                  was seen often enough or strongly enough at first sight.
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    bool isAdmissible = false;
-
-    /*!
-     * @brief           True when at least 20 points fit the plane, enough of
-     *                  the points fit, and the fitted extent is large enough
-     *                  (length, height and area).
-     *
-     * @frame           N/A
-     *
-     * @units           N/A
-     */
-    bool hasAdequateFiniteFit = false;
-
-    /*!
-     * @brief           Points of the support cloud with finite coordinates.
-     *
-     * @frame           N/A
-     *
-     * @units           number of points
-     */
-    std::size_t finitePointCount = 0U;
-
-    /*!
-     * @brief           Finite points within the RANSAC distance of the plane.
-     *
-     * @frame           N/A
-     *
-     * @units           number of points
-     */
-    std::size_t fittedPointCount = 0U;
-    /*!
-     * @brief           Number of times the wall has been observed.
-     *
-     * @frame           N/A
-     *
-     * @units           number of observations
-     */
-    std::size_t observationCount = 0U;
-};
-
-/*!
- * @brief           Result of attempting to close a set of wall segments into
- *                  one ordered, non-open loop.
- */
-struct WallLoopClosure
-{
-    /*!
-     * @brief           True when the walls do not form a closed loop (the
-     *                  default); false when every neighbouring pair of walls
-     *                  meets within the allowed corner gap.
-     */
-    bool hasOpenBoundary = true;
-
-    /*!
-     * @brief           Corners of the closed loop in the order of the walls
-     *                  around the room, in the world frame projected onto the
-     *                  two ground axes, metres; empty when the boundary is
-     *                  open.
-     */
-    std::vector<Eigen::Vector2d> loopCorners_world_m;
-};
-
-/*!
- * @brief           Computes Eigen's rotation between two directions in its
- *                  own translation unit.
- *
- * @param[in]       sourceDirection_in
- *                  Borrowed source direction; not modified or retained.
- *
- * @param[in]       targetDirection_in
- *                  Borrowed target direction; not modified or retained.
- *
- * @return          Double-precision quaternion from setFromTwoVectors.
- *
- * @note            Delegates unchanged to Eigen, including its normalization,
- *                  opposite-direction branch and degenerate/nonfinite behavior.
- *                  No additional validation or shared mutable state is added.
- *
- * @frame           Active source-to-target rotation, applied on the left of
- *                  column vectors; the caller supplies the frame conventions.
- *
- * @units           Dimensionless directions and quaternion coefficients.
- */
-Eigen::Quaterniond
-    computeRotationBetweenDirections(const Eigen::Vector3d &sourceDirection_in,
-                                     const Eigen::Vector3d &targetDirection_in);
-
-/*!
- * @brief           Tests whether an observed finite wall separates two
- *                  positions.
- *
- *                  The infinite plane performs the side test, while the mapped
- *                  cloud bounds reject unrelated coplanar wall segments. This
- *                  is used as a veto when connected free-space evidence
- *                  suggests two room hypotheses may describe the same physical
- *                  room.
- *
- * @param[in]       wallList_world_in
- *                  Candidate wall surfaces expressed in the active map frame.
- *
- * @param[in]       firstPoint_world_m_in
- *                  First position expressed in the active map frame, in metres.
- *
- * @param[in]       secondPoint_world_m_in
- *                  Second position expressed in the active map frame, in
- *                  metres.
- *
- * @param[in]       finiteBoundsMargin_m_in
- *                  Margin applied around the observed wall-cloud bounds.
- *
- * @param[out]      hasSeparatingFiniteWall_out
- *                  True when the segment crosses an observed finite wall patch.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus hasSeparatingFiniteWall(
-    const std::vector<geometric::Plane *> &wallList_world_in,
-    const Eigen::Vector3d                 &firstPoint_world_m_in,
-    const Eigen::Vector3d                 &secondPoint_world_m_in,
-    const double                           finiteBoundsMargin_m_in,
-    bool                                  &hasSeparatingFiniteWall_out);
 
 /*!
  * @brief           Decides whether a wall has enough evidence to join a room,
@@ -362,87 +183,9 @@ Eigen::Quaterniond
                              double                    &distance_m_out);
 
 /*!
- * @brief           Attempts to close the given wall segments (sorted here by
- *                  angle from the room centroid) into one ordered loop, exactly
- *                  as validateRoomBoundaries() always did for a room's full
- *                  wall set. Factored out so the caller can retry on a reduced
- *                  subset when the full set doesn't close (see
- *                  validateRoomBoundaries()'s single-outlier-exclusion retry).
- */
-[[nodiscard]] SemanticsManagerStatus tryCloseWallLoop(
-    std::vector<FiniteWallSegment2d> wallSegments_in,
-    const Eigen::Vector2d           &roomCentroidGround_m_in,
-    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in,
-    WallLoopClosure                                      &closure_out);
-
-/*!
- * @brief           Finds the angular sectors (from roomCentroidGround_m_in)
- *                  with no wall evidence -- the "where is this room still
- *                  unobserved" signal (user rule: track and expose
- *                  incomplete-room state, not just a pass/fail boundary
- *                  status).
- *
- *                  Deliberately coarser than the corner-closing algorithm
- *                  above: each wall is reduced to its 2D midpoint angle from
- *                  the centroid, not its true angular extent, trading a small
- *                  amount of precision (a wide wall's own angular span isn't
- *                  subtracted from a neighbouring gap) for a computation that
- *                  stays meaningful at any wall count, including 0 or 1 -- the
- *                  boundary-loop algorithm's own machinery only starts
- *                  producing useful output once minimumWallCount is met.
- *
- * @param[in]       wallSegments_in
- *                  Finite wall segments of the room.
- *
- * @param[in]       roomCentroidGround_m_in
- *                  Room centroid on the ground plane, in
- *                  metres.
- *
- * @param[out]      roomObservationGaps_out
- *                  Sectors wider than the threshold that
- *                  no wall covers.
- *
- * @param[in]       gapThreshold_rad_in
- *                  Smallest angle between neighbouring
- *                  wall midpoints reported as a gap, in
- *                  radians.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus computeRoomObservationGaps(
-    const std::vector<FiniteWallSegment2d>      &wallSegments_in,
-    const Eigen::Vector2d                       &roomCentroidGround_m_in,
-    /* An axis-aligned (or any) rectangle's four wall midpoints sit exactly
-     * on its principal axes as seen from the centroid -- always exactly 90
-     * deg apart by construction, regardless of aspect ratio. The threshold
-     * must clear that deterministic case with margin, or every well-formed
-     * rectangular room reports four phantom gaps. */
-    std::vector<semantic::Room::ObservationGap> &roomObservationGaps_out,
-    double gapThreshold_rad_in = 100.0 * M_PI / 180.0);
-
-/*!
- * @brief           Computes the unsigned area of an ordered horizontal polygon.
- *
- * @param[in]       polygonVertices_world_m_in
- *                  Vertices in order, in metres; fewer
- *                  than three give an area of 0.
- *
- * @param[out]      polygonArea_m2_out
- *                  Area, in square metres.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
-[[nodiscard]] SemanticsManagerStatus computePolygonArea_m2(
-    const std::vector<Eigen::Vector2d> &polygonVertices_world_m_in,
-    double                             &polygonArea_m2_out);
-
-/*!
- * @brief           Core aperture-crossing math shared by both a confirmed
- *                  Passage and a still-unconfirmed OpenPassageEvidence
- *                  hypothesis (see segmentCrossesOpenPassageEvidence below) --
- *                  the two differ only in where the plane equation, centroid,
- *                  and opening size come from, never in how the crossing test
- *                  itself works.
+ * @brief           Core aperture-crossing math behind
+ *                  segmentCrossesPassageOpening(), taking the aperture plane,
+ *                  centroid and opening size directly.
  *
  * @param[in]       segmentStart_world_m_in
  *                  First endpoint, in metres.
@@ -534,45 +277,6 @@ Eigen::Quaterniond
                                  const bool   requirePassable_in = true);
 
 /*!
- * @brief           Same aperture-crossing test as segmentCrossesPassageOpening,
- *                  but against a still-unconfirmed OpenPassageEvidence
- *                  hypothesis instead of a confirmed Passage.
- *
- *                  Passage confirmation requires several genuinely independent
- *                  Voxblox skeleton snapshots (minimumConfirmationSnapshots,
- *                  config-gated to guard against double-counting one latched
- *                  ROS message -- see the skeleton-fingerprint check in
- *                  detectDoorsAndDoorways()) and therefore real elapsed
- *                  exploration time. Until that confirmation completes, no
- *                  Passage object exists for mpAtlas->GetAllPassages() to
- *                  return, so any far-side-routing check that only consults
- *                  confirmed passages is blind for that entire window -- a wall
- *                  genuinely on the far side of a real, already-evidenced
- *                  opening falls through to ordinary admission and gets bound
- *                  to the WRONG (near) room, exactly the corruption far-side
- *                  routing exists to prevent. Using the same aperture geometry
- *                  math against the pending evidence (its supporting wall's
- *                  plane stands in for the eventual passage plane, its
- *                  openingRadius_m/heightSpan_m for the eventual width/height
- *                  -- the same derivation createMapPassage() itself uses once
- *                  confirmed) closes that window without weakening the
- *                  confirmation gate itself: the passage still is not created,
- *                  only wall ADMISSION becomes conservative while its identity
- *                  is still ambiguous.
- */
-[[nodiscard]] SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
-    const Eigen::Vector3d &segmentStart_world_m_in,
-    const Eigen::Vector3d &segmentEnd_world_m_in,
-    geometric::Plane      *p_evidenceSupportingWall_in,
-    const Eigen::Vector3d &evidenceCentroid_world_m_in,
-    const double           evidenceOpeningRadius_m_in,
-    const double           evidenceHeightSpan_m_in,
-    const Eigen::Vector3d &groundNormal_world_in,
-    const double           openingMargin_m_in,
-    const double           minimumSideDistance_m_in,
-    bool                  &crossesOpenPassageEvidence_out);
-
-/*!
  * @brief           Tests whether a straight segment between two points is
  *                  blocked by a wall belonging to a room other than the ones
  *                  the segment is meant to connect.
@@ -635,67 +339,297 @@ Eigen::Quaterniond
     bool        &crossesForeignWall_out);
 
 /*!
- * @brief           Tests whether two maps observe a common tagged room name.
+ * @brief           Fills the OPPOSITE_FACE match evidence of a WALL Plane from
+ *                  one geometry snapshot: equation, support cloud and
+ *                  centroid, plus the stamped observation origin as the
+ *                  observer side (left empty when the plane has none).
  *
- *                  A new map is a deterministic merge candidate for the current
- *                  map only when at least one non-empty room tag collected from
- *                  the other map's detected and marker-based rooms also appears
- *                  among the current map's tagged rooms. Room tags originate
- *                  from context snapshots and are propagated by
- *                  matchRoomsToContext, so they are a stable correspondences
- *                  key between maps.
+ * @param[in]       p_wall_in
+ *                  Wall plane, non-owning and non-null.
  *
- * @param[in]       p_firstMap_in
- *                  Map whose detected and marker-based room tags are collected.
- *
- * @param[in]       p_secondMap_in
- *                  Map whose tagged rooms are tested against the collected
- *                  tags.
- *
- * @param[out]      sharesRoomNameTag_out
- *                  True when both maps observe at least one shared room tag.
+ * @param[out]      wallEvidence_out
+ *                  Evidence for utils::utils::Utils::findMatchingPlane().
  *
  * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticsManagerStatus
-    sharesRoomNameTag(map::Map *p_firstMap_in,
-                      map::Map *p_secondMap_in,
-                      bool     &sharesRoomNameTag_out);
+    buildWallFaceEvidence(geometric::Plane            *p_wall_in,
+                          utils::utils::PlaneEvidence &wallEvidence_out);
 
 /*!
- * @brief           Projects a WALL Plane's finite support cloud onto a shared
- *                  in-plane tangent frame, returning the resulting axis-aligned
- *                  interval.
+ * @brief           Fills the OPPOSITE_FACE settings bundle of the wall-face
+ *                  pairing: room_seg.walls_parallelism_thresh as the angle
+ *                  and sem_seg.wall_pairing.maximum_thickness and
+ *                  minimum_overlap_ratio.
  *
- * @return          false when the plane has no usable geometry (null/empty
- *                  cloud, or a degenerate equation); the caller must treat that
- *                  as "cannot claim overlap" rather than as a zero-size
- *                  interval.
+ * @param[in]       groundNormal_world_in
+ *                  Ground normal in the world frame; zero when unknown.
+ *
+ * @param[out]      matchSettings_out
+ *                  Settings for utils::utils::Utils::findMatchingPlane().
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
-[[nodiscard]] SemanticsManagerStatus
-    projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
-                                        const Eigen::Vector3d &axisU_world_in,
-                                        const Eigen::Vector3d &axisV_world_in,
-                                        double                &minimumU_m_out,
-                                        double                &maximumU_m_out,
-                                        double                &minimumV_m_out,
-                                        double                &maximumV_m_out,
-                                        bool                  &isProjected_out);
+[[nodiscard]] SemanticsManagerStatus buildWallFaceMatchSettings(
+    const Eigen::Vector3d            &groundNormal_world_in,
+    utils::utils::PlaneMatchSettings &matchSettings_out);
 
 /*!
- * @brief           Decides whether two WALL Planes are plausibly the two
- *                  opposite faces of the same physical wall (axiom (e)):
- *                  parallel, a plausible wall thickness apart, observed from
- *                  opposite exterior sides, and overlapping in-plane footprint.
+ * @brief           Names a plane variant for log and pipeline output.
+ *
+ * @param[in]       planeVariant_in
+ *                  Variant to name.
+ *
+ * @param[out]      variantName_out
+ *                  Static, null-terminated name: WALL, GROUND, DOOR, WINDOW,
+ *                  CEILING or UNDEFINED (also for any unlisted variant); not
+ *                  owned by the caller.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticsManagerStatus
-    arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
-                              geometric::Plane      *p_second_in,
-                              double                 minimumThickness_m_in,
-                              double                 maximumThickness_m_in,
-                              double                 minimumOverlapRatio_in,
-                              const Eigen::Vector3d &groundNormal_world_in,
-                              bool &arePlausibleTwinWallFaces_out);
+    getPlaneVariantName(const geometric::Plane::PlaneVariant planeVariant_in,
+                        const char                         *&variantName_out);
+
+/*!
+ * @brief           Finds the room whose walls include a wall.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms to search; null and bad rooms are skipped.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall to look up; non-owning.
+ *
+ * @param[out]      p_wallRoom_out
+ *                  First room owning the wall; null when none does.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus
+    findWallRoom(const std::vector<semantic::Room *> &rooms_in,
+                 geometric::Plane                    *p_wall_in,
+                 semantic::Room                     *&p_wallRoom_out);
+
+/*!
+ * @brief           Checks the topology rules of one passage: one or two walls,
+ *                  two walls in different rooms once both are owned, at most
+ *                  two linked rooms, and a prospective room other than the
+ *                  host wall's room.
+ *
+ * @param[in]       wallRooms_in
+ *                  Owning room of each valid wall, host wall first; null for
+ *                  an unowned wall.
+ *
+ * @param[in]       linkedRoomCount_in
+ *                  Number of rooms listing the passage.
+ *
+ * @param[in]       p_prospectiveRoom_in
+ *                  Prospective room of the passage; null when it has none.
+ *
+ * @param[out]      isPassageTopologyValid_out
+ *                  True when every rule holds.
+ *
+ * @param[out]      violationReason_out
+ *                  First broken rule; empty when valid.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus
+    isPassageTopologyValid(const std::vector<semantic::Room *> &wallRooms_in,
+                           std::size_t     linkedRoomCount_in,
+                           semantic::Room *p_prospectiveRoom_in,
+                           bool           &isPassageTopologyValid_out,
+                           std::string    &violationReason_out);
+
+/*!
+ * @brief           Computes the floor-plane box that holds every wall-extent
+ *                  corner of a room. Each wall's corners come from its
+ *                  Plane::getGeometryMetadataSnapshot() min/max U/V extents,
+ *                  the same data the S-Graph archive writes. The box is
+ *                  aligned to the horizontal normal of the longest wall.
+ *
+ * @param[in]       roomWalls_in
+ *                  Walls of the room, non-owning; null, bad and extent-less
+ *                  walls and planes facing up or down are skipped.
+ *
+ * @param[in]       upDirection_world_in
+ *                  Map up direction (Map::getUpDirection()); the floor plane
+ *                  is perpendicular to it. Need not be unit length.
+ *
+ * @param[out]      footprint_out
+ *                  The box; written only when hasFootprint_out is true.
+ *
+ * @param[out]      hasFootprint_out
+ *                  False when the up direction is invalid or the walls do not
+ *                  span a box: no usable wall, or no wall more than 45 degrees
+ *                  from parallel to the longest wall.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the walls' map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus computeRoomWallFootprint(
+    const std::vector<geometric::Plane *> &roomWalls_in,
+    const Eigen::Vector3d                 &upDirection_world_in,
+    RoomWallFootprint                     &footprint_out,
+    bool                                  &hasFootprint_out);
+
+/*!
+ * @brief           Computes the semantic centre of a room from its walls: the
+ *                  centre of computeRoomWallFootprint()'s box on the floor
+ *                  plane of the room's map, at the height of the fallback
+ *                  below. When the walls do not span a box (a single wall,
+ *                  or only parallel walls) the centre is the fallback: the
+ *                  mean of the wall centroids, each pushed 0.10 m inward
+ *                  along Room::getWallNormalTowardRoom_world(). Undamped;
+ *                  callers apply their own damping.
+ *
+ * @param[in]       p_room_in
+ *                  Room the walls belong to, non-owning; its current
+ *                  centroid orients the inward normals and its map gives the
+ *                  up direction (no map: fallback only).
+ *
+ * @param[in]       roomWalls_in
+ *                  Walls of the room, non-owning; null, bad and non-finite
+ *                  walls are skipped.
+ *
+ * @param[out]      roomCentre_world_m_out
+ *                  The centre; empty when the room is null or no wall is
+ *                  usable.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the room's map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus computeRoomCentreFromWalls(
+    semantic::Room                        *p_room_in,
+    const std::vector<geometric::Plane *> &roomWalls_in,
+    std::optional<Eigen::Vector3d>        &roomCentre_world_m_out);
+
+/*!
+ * @brief           Tests whether a point lies on the side of a wall face
+ *                  opposite to where the face was first observed from
+ *                  (Plane::getObservationOrigin_world()). Only the side of a
+ *                  surface turned toward a camera can be seen, so the face
+ *                  bounds the space on its observed side, never the point's.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall face, non-owning; null or bad gives false.
+ *
+ * @param[in]       point_world_m_in
+ *                  Point to test.
+ *
+ * @param[out]      isOnForeignSide_out
+ *                  True only when the face has an observation origin and both
+ *                  the origin and the point lie at least 0.10 m from the
+ *                  plane, on opposite sides; false whenever a side does not
+ *                  resolve.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ *
+ * @frame           World (the wall's map frame).
+ *
+ * @units           metres
+ */
+[[nodiscard]] SemanticsManagerStatus
+    isPointOnForeignSideOfWallFace(geometric::Plane      *p_wall_in,
+                                   const Eigen::Vector3d &point_world_m_in,
+                                   bool                  &isOnForeignSide_out);
+
+/*!
+ * @brief           Tests whether a room wall frames a passage opening: it is
+ *                  one of the passage's supporting walls, or a wall surface
+ *                  aligned with the passage plane, close to it, whose support
+ *                  points reach the opening frame.
+ *
+ * @param[in]       p_roomWall_in
+ *                  Room wall, non-owning; null or bad gives false.
+ *
+ * @param[in]       supportingWalls_in
+ *                  Walls the passage is linked to.
+ *
+ * @param[in]       passageEquation_world_in
+ *                  Unit-normal passage plane, world frame.
+ *
+ * @param[in]       passageCentroid_world_m_in
+ *                  Passage centroid, world frame, metres.
+ *
+ * @param[in]       passageWidth_m_in
+ *                  Passage width, metres; a non-positive width gives false.
+ *
+ * @param[in]       openingFrameReach_m_in
+ *                  Largest distance in the wall plane from the passage
+ *                  centroid to a wall point that frames the opening, metres.
+ *
+ * @param[out]      isAtPassageOpening_out
+ *                  True when the wall frames the opening.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus isWallAtPassageOpening(
+    geometric::Plane                      *p_roomWall_in,
+    const std::vector<geometric::Plane *> &supportingWalls_in,
+    const Eigen::Vector4d                 &passageEquation_world_in,
+    const Eigen::Vector3d                 &passageCentroid_world_m_in,
+    double                                 passageWidth_m_in,
+    double                                 openingFrameReach_m_in,
+    bool                                  &isAtPassageOpening_out);
+
+/*!
+ * @brief           Tests whether a room centroid lies on the known side of a
+ *                  passage plane.
+ *
+ * @param[in]       p_room_in
+ *                  Room, non-owning; null gives false.
+ *
+ * @param[in]       passageEquation_world_in
+ *                  Unit-normal passage plane, world frame.
+ *
+ * @param[in]       knownSide_in
+ *                  Known-side provenance of the passage; without a direction
+ *                  the result is false.
+ *
+ * @param[in]       knownSideSign_in
+ *                  Sign of the known-side direction along the passage
+ *                  normal; near 0 gives false.
+ *
+ * @param[out]      isOnKnownSide_out
+ *                  True when the room centroid is on the known side.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus isRoomOnKnownSide(
+    semantic::Room                               *p_room_in,
+    const Eigen::Vector4d                        &passageEquation_world_in,
+    const semantic::Passage::KnownSideProvenance &knownSide_in,
+    double                                        knownSideSign_in,
+    bool                                         &isOnKnownSide_out);
+
+/*!
+ * @brief           Links a passage to a room unless a passage with the same
+ *                  id is already linked, and logs links the room did not
+ *                  hold before this pass.
+ *
+ * @param[in,out]   p_room_inout
+ *                  Room to link; null does nothing.
+ *
+ * @param[in]       p_passage_in
+ *                  Passage to link; not null.
+ *
+ * @param[in]       previousPassageIdsByRoom_in
+ *                  Passage ids each room held before this pass.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
+ */
+[[nodiscard]] SemanticsManagerStatus linkRoomToPassage(
+    semantic::Room    *p_room_inout,
+    semantic::Passage *p_passage_in,
+    const std::unordered_map<semantic::Room *, std::unordered_set<int>>
+        &previousPassageIdsByRoom_in);
 
 } /* namespace core */
 } /* namespace vs_graphs */

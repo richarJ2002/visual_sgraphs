@@ -45,31 +45,14 @@ namespace atlas
 AtlasStatus Atlas::getAllMaps(std::vector<map::Map *> &allMaps_out)
 {
     std::unique_lock<std::mutex> lock(atlasMutex);
-    struct CompFunctor
+    /* maps is keyed by id, so this copy is already in ascending id order. */
+    std::vector<map::Map *>      mapList{};
+    mapList.reserve(maps.size());
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
     {
-        inline bool operator()(map::Map *p_elem1_inout, map::Map *p_elem2_inout)
-        {
-            unsigned long elem1Id{};
-            if (p_elem1_inout->getId(elem1Id) != map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            unsigned long elem2Id{};
-            if (p_elem2_inout->getId(elem2Id) != map::MapStatus::MAP_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return elem1Id < elem2Id;
-        }
-    };
-    std::vector<map::Map *> mapList(maps.begin(), maps.end());
-    std::sort(mapList.begin(), mapList.end(), CompFunctor());
+        mapList.push_back(mapEntry.second.get());
+    }
     allMaps_out = mapList;
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

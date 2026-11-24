@@ -1,16 +1,16 @@
 ###############################################################################
 # 📋 Table of Contents (auto-summary; keep in sync with top-level sections)  #
 ###############################################################################
-# general:                      General mode & env database path              #
-# markers:                      Marker trust impact                            #
+# general:                      General mode of operation                      #
 # optimization:                 Plane-based optimization factors               #
 # refine_map_points:            Refining map points using semantics            #
 # plane_based_covisibility:     Plane-based covisibility graph config        #
 # seg:                          Common segmentation parameters               #
-# geo_seg:                      Geometric segmentation parameters              #
+# plane_checkpoint:             Per-patch checks before matching and voting    #
 # sem_seg:                      Semantic segmentation parameters               #
 # room_seg:                     Room segmentation parameters                 #
-# room_tracking:                Room-tracking state machine (WP13 Section 18.4) #
+# room_tracking:                Room-tracking state machine                    #
+# semantics_manager:            Semantic cycle timing, start environment       #
 # candidate_gen:                Candidate generation & topology              #
 # verification:                 Geometric verification gates                   #
 # factor:                     Edge-plane transform noise model                 #
@@ -19,21 +19,10 @@
 
 ################################ General Parameters #############################################
 general:
-  # Specify the mode of operation for the segmentation pipeline
-  # 0: Semantic Segmentation runs in conjunction with Geometric Segmentation
-  # 1: Semantic Segmentation runs independently
-  # 2: Geometric Segmentation runs independently
-  # run with 2 if semantic segmentation is not running - this clears the pointclouds
+  # Segmentation switch; geometry always decides the plane label
+  # 1: segmenter on - its class is the label guess, planes are extracted per class
+  # 2: segmenter off - planes are extracted from the whole keyframe cloud
   mode_of_operation: 1
-
-  # The path of the high level semantic information of the environment
-  # [TODO] - the path looks ugly, possible workaround?
-  env_database: ""
-
-#################################### Marker Parameters ###########################################
-markers:
-  # Read but not used: no optimisation step weights markers by it at present
-  impact: 0.1
 
 ################################## Optimization Parameters #######################################
 optimization:
@@ -51,6 +40,78 @@ optimization:
   plane_point:
     enabled: true
     information_gain: 0.3
+
+  # Minimum wall thickness enforced by the optimiser between twin wall faces.
+  # At least 0.08 m; the one-sided hinge contributes nothing when satisfied.
+  wall_thickness:
+    enabled: true
+    minimum_thickness: 0.08 # metres
+    information_gain: 10000.0 # information (sigma = 1 cm)
+
+  # Room centre to facing-wall-pair midpoint factor, in global and local BA.
+  # Weighs the error only along the wall normals; rooms with a closed boundary.
+  # Off: it did not keep the merge bench inside its previous room/wall bands.
+  room_wall:
+    enabled: false
+    information_gain: 25.0 # information, 1/m^2 (sigma = 20 cm)
+
+  # Largest normal change an optimised plane equation may apply to a mapped
+  # plane; a larger change is refused and the plane keeps its geometry.
+  max_plane_normal_correction: 5.0 # degrees
+
+################################ Map-wide semantic limits #######################################
+semantics:
+  # Map-wide cap on plane points: a point is not added to a plane when its
+  # voxel already holds max_points points from any plane of the map.
+  point_density:
+    # Voxel edge (metres, > 0); 0.03 matches the per-plane thinning
+    # (refine_map_points.octree.resolution).
+    voxel_m: 0.03
+    # Most points per voxel (>= 1); 2 lets two planes meet at a corner while
+    # a third duplicate adds nothing there.
+    max_points: 2
+  plane:
+    # Semantic cycles (>= 1) without growth a wall may stay with no room,
+    # passage or live skeleton cluster before it is deleted. The first
+    # sighting is always spared one cycle, so room creation in the same
+    # cycle can still claim it.
+    max_unassigned_cycles: 5
+  visibility:
+    # Consecutive semantic cycles (>= 1) in which the visibility rules
+    # refuse a wall for one room before growth no longer spares the wall
+    # from max_unassigned_cycles; an offer that is not refused resets it.
+    min_rejecting_views: 5
+  room:
+    # Erase the key frames of a room that is deleted as invalid (not of a
+    # room fused into another, whose key frames move to the survivor).
+    # LocalMapping erases them on its own thread and keeps the map's first
+    # key frame, tracking's reference and last key frames, queued key
+    # frames and loop-closure key frames.
+    erase_deleted_room_keyframes: false
+  # Semantic layout factors added to local and global bundle adjustment.
+  # They act on wall plane vertices only; rooms are inputs, not variables.
+  factors:
+    # Corners meet: two crossing walls (more than 45 degrees apart) whose
+    # end points lie within max_gap_m of each other are pulled so that each
+    # wall's end point lies on the other wall's plane.
+    wall_edge:
+      enabled: true
+      # Largest horizontal distance (metres, > 0) between the two end points.
+      max_gap_m: 0.3
+      # Information, 1/m^2, per end-point distance (sigma = 10 cm).
+      information_gain: 100.0
+    # Rooms and walls do not overlap: a wall of another room whose segment
+    # lies inside a COMPLETE room's wall footprint is pushed out of it.
+    room_overlap:
+      enabled: true
+      # Overlap tolerated before the penalty starts (metres, >= 0).
+      margin_m: 0.05
+      # A room's footprint is used only when each of its walls lies within
+      # this distance (metres, >= 0) of a footprint side, i.e. the room is
+      # a box; an L-shaped room's bounding box would cover its neighbours.
+      max_wall_inset_m: 0.25
+      # Information, 1/m^2, on the penetration depth (sigma = 20 cm).
+      information_gain: 25.0
 
 ################################ Refining map points using semantics Parameters ##################
 refine_map_points:
@@ -79,14 +140,7 @@ seg:
     distance_thresh: 0.12 # meters (Checks if planes are too far apart along normal direction)
     centroid_thresh: 2.5 # meters (Checks if planes centroids are too far apart - will enable check for clustring)
     cluster_separation:
-      enabled: true
       tolerance: 0.35 # euclidean distance for cutting planes
-      downsample:
-        leaf_size: 0.08
-        min_points_per_voxel: 2
-
-  # The maximum distance for point to be considered part of a plane
-  plane_point_dist_thresh: 0.02
 
   ransac:
     # The maximum number of planes to be detected in one pointcloud
@@ -98,13 +152,38 @@ seg:
     # The maximum number of iterations for the RANSAC algorithm
     max_iterations: 800
 
-############################ Geometric Segmentation Parameters ####################################
-geo_seg:
-  pointcloud:
-    # pointcloud downsampling parmeters
-    downsample:
-      leaf_size: 0.08
-      min_points_per_voxel: 10
+################################ Plane Checkpoint Parameters ######################################
+# Every candidate plane patch of a keyframe must pass these tests before it
+# may match a mapped plane or vote. A failed patch is dropped.
+plane_checkpoint:
+  # Minimum points in any patch (all labels)
+  minimum_point_count: 50
+  # Largest RMS distance of the patch points from its plane (metres); equal to
+  # seg.ransac.distance_thresh, so it only drops fits RANSAC itself would not give
+  maximum_fit_rms: 0.05
+
+  # Orientation against the map up direction (sine of the tilt angle):
+  # ground normal parallel to up; wall, door and window normal perpendicular.
+  # The map-level re-check after bundle adjustment or a merge uses the same values.
+  max_tilt_ground: 0.2
+  max_tilt_wall: 0.2
+
+  # Size and connectivity every wall patch needs, new or matching a mapped wall
+  wall_size:
+    minimum_point_count: 350
+    minimum_major_extent: 0.80 # metres
+    minimum_minor_extent: 0.30 # metres
+    minimum_area: 0.40 # square metres
+    connectivity:
+      enabled: true
+      cluster_tolerance: 0.15 # metres
+      minimum_component_point_count: 300
+      # A wall's own doorway/window splits its single-frame mask into two
+      # large, independently-valid fragments of near-equal size (ratio
+      # ~0.50), not one dominant blob -- 0.70 rejected every such wall
+      # outright. 0.40 clears that case with margin while still catching
+      # genuinely scattered/sparse candidates.
+      minimum_component_ratio: 0.40
 
 ############################## Semantic Segmentation Parameters ####################################
 sem_seg:
@@ -127,10 +206,6 @@ sem_seg:
   # The maximum height above the main ground to be a valid stepped ground plane (in meters)
   max_step_elevation: 0.5
 
-  # The maximum tilt heuristic for a wall/ground plane (checks respective component of plane equation)
-  max_tilt_wall: 0.2
-  max_tilt_ground: 0.2
-
   # ------------------ Door/Passage Parameters ------------------
   enable_passage_detection: true
   # Maximum wall to door distance for a door to be associated with a wall (in meters)
@@ -139,23 +214,19 @@ sem_seg:
   max_door_width: 1.25
   # Maximum door height for a door to be valid (in meters)
   max_door_height: 2.0
-  # Maximum Keyframe to passage distance for checking passing through a passage (in meters)
+  # Camera to passage distance within which an uncrossed passage is never retired as closed (in meters)
   max_kf_passage_distance: 1.0
   # The size of the KeyFrame window to check for passing through a passage (in number of KeyFrames)
   passage_kf_window: 10
   # Passage centroid distance threshold for associating passages (in meters)
   passage_centroid_distance_thresh: 1.0
 
-  # Open-passage evidence derived from Voxblox skeleton edges. A passage is
-  # still detected before a room is complete, but a single noisy post-merge
-  # skeleton snapshot is not sufficient to create a permanent graph entity.
+  # Open passages measured from the Voxblox free space through each wall. A
+  # passage is still detected before a room is complete, but one profile is
+  # not sufficient to create a permanent graph entity.
   passage_detection:
     # Minimum signed distance of both edge endpoints from the wall (metres).
     minimum_side_distance: 0.15
-    # Minimum alignment between the skeleton edge and wall normal.
-    minimum_edge_normal_alignment: 0.50
-    # Minimum empty in-plane radius at a candidate opening (metres).
-    minimum_opening_radius: 0.30
     # Finite wall-bound tolerance used only for passage detection (metres).
     wall_bounds_margin: 0.10
     # Maximum distance for tracking the same opening across revisions (metres).
@@ -166,53 +237,45 @@ sem_seg:
     ambiguous_duplicate_normal_alignment: 0.70
     # Maximum wall-plane offset for suppressing an ambiguous duplicate (metres).
     ambiguous_duplicate_plane_separation: 0.75
-    # Maximum separation between crossings forming one opening (metres).
-    crossing_cluster_distance: 0.65
-    # Number of distinct skeleton snapshots required for confirmation. No
-    # longer gates passage creation (see minimum_crossing_cluster_size
-    # below) -- retained only to cap the temporal-evidence smoothing weight.
-    minimum_confirmation_snapshots: 4
-    # Individual skeleton-edge crossings that must cluster into one opening
-    # in a SINGLE cycle before a passage is created for it -- same-cycle
-    # evidence-quantity gate, same semantic level/priority as a wall's own
-    # admission (cluster point count / connectivity ratio). Enough of the
-    # free-space skeleton breaking through the wall this cycle is
-    # sufficient on its own; no separate multi-cycle waiting period.
-    minimum_crossing_cluster_size: 2
-    # Number of missed snapshots before an unconfirmed track is discarded.
-    maximum_missed_snapshots: 4
-    # Required observed wall extent on both horizontal sides of an opening.
-    minimum_horizontal_flank_extent: 0.35
-    # Minimum wall-cloud points required on each side of an opening.
-    minimum_horizontal_flank_points: 12
+    # Free-space gap measurement in wall slabs from the Voxblox TSDF.
+    # Door band searched for free space, heights above the floor (metres).
+    door_band_min_height_m: 0.5
+    door_band_max_height_m: 1.5
+    # Accepted gap width range and minimum gap height (metres).
+    minimum_opening_width_m: 0.6
+    maximum_opening_width_m: 2.5
+    minimum_opening_height_m: 1.5
+    # Highest gap bottom above the floor (metres).
+    maximum_sill_height_m: 0.3
+    # Slab raster cell size and half thickness across the wall (metres).
+    slab_cell_size_m: 0.10
+    slab_half_thickness_m: 0.20
+    # Fraction of door-band rows that must be bounded by wall on both ends.
+    minimum_bounded_band_fraction: 0.5
+    # Fraction of aperture cells observed before a verdict is given.
+    minimum_observed_fraction: 0.5
+    # Wall support points inside the shrunk aperture that mean "closed".
+    maximum_aperture_wall_points: 25
+    # Consecutive open verdicts to create a passage.
+    minimum_open_verdicts: 2
+    # Consecutive closed verdicts to delete an observed passage or block a
+    # traversed one.
+    closed_confirmation_count: 3
+    # Consecutive open verdicts to unblock a blocked passage.
+    reopen_confirmation_count: 2
+    # A profile is used only while its wall plane still matches (degrees,
+    # metres).
+    plane_match_angle_deg: 2.0
+    plane_match_offset_m: 0.05
 
   # The amount of votes (votes are weighted votes) for a plane to be finally classified with a semantic label
   min_votes: 1.0
-
-  # Admission policy for a new persistent wall plane. Small observations may
-  # still update an existing wall, but cannot independently become a wall.
-  wall_creation:
-    minimum_point_count: 350
-    minimum_major_extent: 0.80 # metres
-    minimum_minor_extent: 0.30 # metres
-    minimum_area: 0.40 # square metres
-    connectivity:
-      enabled: true
-      cluster_tolerance: 0.15 # metres
-      minimum_component_point_count: 300
-      # A wall's own doorway/window splits its single-frame mask into two
-      # large, independently-valid fragments of near-equal size (ratio
-      # ~0.50), not one dominant blob -- 0.70 rejected every such wall
-      # outright. 0.40 clears that case with margin while still catching
-      # genuinely scattered/sparse candidates.
-      minimum_component_ratio: 0.40
 
   # Twin-face reconciliation: a physical wall can produce two independent
   # WALL Planes, one per face, distinguished by observationOrigin_World_m.
   # These thresholds decide when two such Planes are plausibly the two faces
   # of the same physical wall (SemanticsManager::reconcileWallFacePairs()).
   wall_pairing:
-    minimum_thickness: 0.05 # metres -- thinnest plausible physical wall
     maximum_thickness: 0.60 # metres -- thickest plausible physical wall
     minimum_overlap_ratio: 0.30 # required in-plane footprint overlap
 
@@ -254,11 +317,6 @@ room_seg:
   # The maximum distance between two room centroids to be considered the same room (in meters)
   center_distance_thresh: 2.0
 
-  # [deprecated] Parameters for the geometrically-based closest walls room segmentation
-  geo_based:
-    # The maximum distance from a marker to a wall to be considered part of the room
-    marker_wall_distance_thresh: 6.0
-
   # Parameters for skeleton voxblox free-space room segmentation
   skeleton_based:
     # The minimum number of points needed to form a cluster
@@ -271,15 +329,6 @@ room_seg:
     minimum_wall_support_points: 2
     # Minimum keyframe observations needed before creating an orphan-wall structural element
     minimum_wall_observations: 3
-    # Stale semantic cycles retained before an unused weak wall is retired.
-    # A wall with no room, no passage association, and no growing evidence
-    # should not persist as a floating orphan in the sgraph/visualization --
-    # 1 is the minimum the retirement logic allows (the first sighting of
-    # an undefended wall is always spared one cycle so newly-created
-    # evidence isn't retired before room-creation logic in the same Run()
-    # cycle gets a chance to claim it; this is the very next check after
-    # that).
-    minimum_undefended_wall_hold_cycles: 5
     # Fraction of nearby skeleton points which must project inside the observed wall bounds
     minimum_wall_support_ratio: 0.5
     # Tolerance around the observed finite wall bounds (metres)
@@ -319,7 +368,9 @@ room_seg:
     edge_vertex_association_distance: 0.15
     # Fall back to the original component if too little graph is reconstructed.
     minimum_graph_coverage_ratio: 0.65
-    # Extra half-width/half-height around a passage used to cut an edge (metres).
+    # Extra half-width/half-height around a passage used to cut an edge, and
+    # the jamb tolerance beyond half the opening width within which a wall
+    # not linked to a passage may border it (metres).
     opening_margin: 0.20
     # Minimum edge-endpoint distance from the passage plane (metres).
     minimum_side_distance: 0.10
@@ -328,12 +379,26 @@ room_seg:
     # Minimum room/wall centroid distance from opposite passage sides (metres).
     wall_centroid_minimum_side_distance: 0.30
 
+  # Hold a wall of the room the camera is in as pending while the line from the
+  # camera to the wall's centroid passes through a nearer wall of that room
+  # (a wall seen through a doorway). The hold ends when the doorway becomes a
+  # confirmed passage or the camera crosses the nearer wall's plane. Uses
+  # passage_partition.minimum_side_distance and
+  # sem_seg.reassociate.wall_extension.maximum_in_plane_gap.
+  see_through_gate:
+    enabled: true
+    # Judge a wall offered to a room from the sight lines of its observers
+    # taken in that room (keyframe camera centre to wall centroid) instead
+    # of the camera or room centroid; refused when more than half are
+    # blocked. Off keeps today's single viewpoint.
+    observer_sight_lines: false
+
   # Parameters for GNN-based room segmentation
   gnn_based:
     # Version of the GNN-based room segmentation to use
     gnn_version: 1 # 1: Older version used in S-Graphs, 2: Newer version used in VS-Graphs
 
-# Room-tracking state machine (WP13 Section 18.4). Calibration-dependent
+# Room-tracking state machine. Calibration-dependent
 # initial values; tunned against the simulated office_clean survey.
 room_tracking:
   # Minimum continuous dwell in the crossing guard before committing the
@@ -351,6 +416,16 @@ room_tracking:
   reacquire_max_retries: 3
   # Minimum planes required to attempt a reacquire.
   reacquire_min_planes: 3
+
+# Semantic cycle timing.
+semantics_manager:
+  # Wall-clock period of one semantic cycle (seconds); a cycle that runs
+  # longer starts the next one after a 1 ms yield.
+  run_interval_s: 3.0
+  # Where the robot starts: "indoor" creates building 0, floor 0 and room 0 at
+  # the start; "outdoor" creates the environment node only, and the building,
+  # floor and room appear when the first room is detected.
+  start_environment: indoor
 
 candidate_gen:
   top_k: 10
@@ -390,26 +465,25 @@ factor:
 
 # Map-merge & axiom thresholds
 map_merge:
-  # Fixed spherical tolerance for passage association across maps (metres)
-  passage_match_tolerance_m: 0.20
-  # Wall coplanarity angle threshold (degrees); planes within this angle are
-  # considered coplanar and merge-eligible.
+  # Largest angle between two normals for their planes (walls, floors and
+  # passage planes) to count as coplanar after the merge transform (degrees).
   wall_coplanar_angle_deg: 5.0
-  # Edges within this distance count as overlapping / the same wall.
+  # Largest distance between two coplanar wall planes, measured at the wall
+  # centroid (metres).
+  wall_coplanar_offset_m: 0.20
+  # Two wall patches pair only when their in-plane extents overlap or are no
+  # further apart than this along either in-plane axis (metres).
   wall_edge_overlap_m: 0.50
-  # Floor match tolerance for through-doorway wall axiom (metres).
+  # Largest vertical offset between two floors for them to count as coplanar
+  # (metres).
   floor_match_tolerance_m: 0.10
-  # Max first-to-latest observation origins checked by the through-doorway
-  # wall axiom.
-  observation_ray_check_cap: 5
-  # Cooldown between consecutive-map merge attempts for the same old map (s).
-  merge_cooldown_s: 30
-  # Minimum tag-matched anchor rooms required to estimate alignment.
-  min_anchor_rooms: 2
-  # Minimum rooms required in each map before attempting a match.
-  min_rooms_per_map: 1
-  # Minimum walls required in each map before attempting a match.
-  min_walls_per_map: 3
-  # Maximum anchor-room centroid distance after alignment (metres). Rooms
-  # are matched by tag; this only bounds residual centre drift.
-  room_centroid_tolerance_m: 0.50
+  # Two rooms pair when at least this fraction of the smaller room's walls
+  # pair with walls of the other room (dimensionless, 0 to 1).
+  room_pair_wall_fraction: 0.6
+  # Two rooms pair only when at least this many wall pairs exist.
+  room_pair_min_walls: 2
+  # Same-map loop closure: refuse a loop whose current and matched key frames
+  # lie in two different rooms that share no passage or wall. A key frame
+  # without a room always passes. Off: the check only logs loop_room_check
+  # (shadow) until replays show its refusals are wrong loops.
+  loop_room_check: false

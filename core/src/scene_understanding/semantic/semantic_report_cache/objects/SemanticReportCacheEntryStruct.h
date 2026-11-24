@@ -70,7 +70,7 @@ struct SemanticReportCacheEntry
     AxiomEvaluationReport evaluationReport;
 
     /*!
-     * @brief           The complete map-completeness shadow results for
+     * @brief           The complete map-completeness results for
      *                  \c snapshot.
      */
     std::vector<MapCompletenessResult> completenessResults;

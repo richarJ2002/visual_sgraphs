@@ -1,0 +1,24 @@
+# SemanticsManager graph query methods: exactly this subpackage's translation
+# units.
+set(VS_GRAPHS_SEMANTICSMANAGER_GRAPH_QUERIES_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllFloorsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllPassagesInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getAllRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorPassagesInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloorRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFrontierPassages.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getIncompleteRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapCandidateRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapDetectedRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapFloorsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassageById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapPassagesInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomSnapshots.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomsByIds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMapRoomsInIdOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPassageById.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomById.cc
+)

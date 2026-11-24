@@ -21,12 +21,15 @@
 
 #include "image_grabber/objects/ImageGrabberClass.h"
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs::image_grabber
 {
 
 void ImageGrabber::grabVoxbloxSkeletonGraph(
     const visualization_msgs::msg::MarkerArray &msgSkeletonGraph_in)
 {
+    PROFILE_FUNCTION();
     /*!
      * Pass the skeleton graph to a buffer to be processed by the
      * SemanticSegmentation thread

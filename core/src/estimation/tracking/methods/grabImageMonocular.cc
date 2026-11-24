@@ -38,7 +38,6 @@
 #include "map_state/frame/frame.h"
 #include "map_state/frame/objects/FrameStatusEnum.h"
 #include "sensor_models/imu_types/calib/calib.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "execution/system/system.h"
 
 namespace vs_graphs
@@ -48,12 +47,10 @@ namespace core
 namespace tracking
 {
 
-TrackingStatus Tracking::grabImageMonocular(
-    const cv::Mat                        &image_in,
-    const double                         &timestamp_in,
-    std::string                           filename_in,
-    const std::vector<semantic::Marker *> markers_in,
-    Sophus::SE3f                         &cameraPose_out)
+TrackingStatus Tracking::grabImageMonocular(const cv::Mat &image_in,
+                                            const double  &timestamp_in,
+                                            std::string    filename_in,
+                                            Sophus::SE3f  &cameraPose_out)
 {
     /* Adaptive FAST threshold: adjust before feature extraction */
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -94,8 +91,7 @@ TrackingStatus Tracking::grabImageMonocular(
                                         mbf,
                                         depthThreshold,
                                         nullptr,
-                                        imu_types::calib::Calib(),
-                                        markers_in);
+                                        imu_types::calib::Calib());
         else
             currentFrame = frame::Frame(image_in,
                                         imageGray,
@@ -107,8 +103,7 @@ TrackingStatus Tracking::grabImageMonocular(
                                         mbf,
                                         depthThreshold,
                                         nullptr,
-                                        imu_types::calib::Calib(),
-                                        markers_in);
+                                        imu_types::calib::Calib());
     }
     else if (sensor == system::System::IMU_MONOCULAR)
     {
@@ -124,8 +119,7 @@ TrackingStatus Tracking::grabImageMonocular(
                                         mbf,
                                         depthThreshold,
                                         &lastFrame,
-                                        *p_imuCalibration,
-                                        markers_in);
+                                        *p_imuCalibration);
         }
         else
             currentFrame = frame::Frame(image_in,
@@ -138,16 +132,11 @@ TrackingStatus Tracking::grabImageMonocular(
                                         mbf,
                                         depthThreshold,
                                         &lastFrame,
-                                        *p_imuCalibration,
-                                        markers_in);
+                                        *p_imuCalibration);
     }
 
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
-
-#ifdef REGISTER_TIMES
-    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
-#endif
 
     lastId = currentFrame.id;
     if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)

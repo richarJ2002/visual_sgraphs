@@ -31,12 +31,13 @@
  */
 
 #include "map_state/atlas/objects/AtlasClass.h"
-#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
-#include "sensor_models/camera_models/geometric_camera/objects/GeometricCameraStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "sensor_models/camera_models/geometric_camera/geometric_camera.h"
+#include "sensor_models/camera_models/geometric_camera/objects/GeometricCameraStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -65,17 +66,61 @@ AtlasStatus Atlas::postLoad()
         camerasById[cameraId] = p_camera;
     }
 
+    /* The loaded maps replace maps: the old scene graphs go, and each loaded
+     * map gets an empty scene graph once it has re-linked below (while no
+     * semantics manager is attached, Atlas::setSemanticsManager() registers
+     * them). Rooms,
+     * floors and passages are not part of a saved map, so there is nothing
+     * to restore into it. */
+    for (const std::pair<const unsigned long, std::unique_ptr<map::Map>>
+             &mapEntry : maps)
+    {
+        if ((p_semanticsManager != nullptr) &&
+            (p_semanticsManager->eraseSceneGraph(mapEntry.first) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseSceneGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+    /* The replaced maps stay owned (retired): other threads and the old
+     * active map pointer may still refer to them. */
+    for (std::pair<const unsigned long, std::unique_ptr<map::Map>> &mapEntry :
+         maps)
+    {
+        retiredMaps.push_back(std::move(mapEntry.second));
+    }
     maps.clear();
     unsigned long int keyFrameCount = 0, mapPointCount = 0;
     for (map::Map *p_map : backupMaps)
     {
-        maps.insert(p_map);
+        unsigned long loadedMapId{};
+        if (p_map->getId(loadedMapId) != map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        maps[loadedMapId] = std::unique_ptr<map::Map>(p_map);
         if (p_map->postLoad(p_keyFrameDatabase, p_orbVocabulary, camerasById) !=
             map::MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: postLoad returned a failure status although it "
                          "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if ((p_semanticsManager != nullptr) &&
+            (p_semanticsManager->addSceneGraph(*p_map) !=
+             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addSceneGraph returned a failure "
+                         "status although it cannot fail; continuing as "
+                         "before.",
                          __func__);
         }
         std::vector<keyframe::KeyFrame *> mapAllKeyFrames{};

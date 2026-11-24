@@ -80,13 +80,6 @@ void LocalMapping::run()
         }
         if (hasNewKeyFrames && !isImuBad)
         {
-#ifdef REGISTER_TIMES
-            double timeLocalBa_ms         = 0;
-            double timeKeyFrameCulling_ms = 0;
-
-            std::chrono::steady_clock::time_point processKeyFrameStartTime =
-                std::chrono::steady_clock::now();
-#endif
             /* BoW conversion and insertion in map::Map */
             if (processNewKeyFrame() !=
                 LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -96,17 +89,6 @@ void LocalMapping::run()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point processKeyFrameEndTime =
-                std::chrono::steady_clock::now();
-
-            double timeProcessKeyFrame =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    processKeyFrameEndTime - processKeyFrameStartTime)
-                    .count();
-            keyFrameInsertTimes_ms.push_back(timeProcessKeyFrame);
-#endif
 
             /* Check recent MapPoints */
             if (mapPointCulling() !=
@@ -117,17 +99,6 @@ void LocalMapping::run()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point mapPointCullingEndTime =
-                std::chrono::steady_clock::now();
-
-            double timeMapPointCulling =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    mapPointCullingEndTime - processKeyFrameEndTime)
-                    .count();
-            mapPointCullingTimes_ms.push_back(timeMapPointCulling);
-#endif
 
             /* Triangulate new MapPoints */
             if (createNewMapPoints() !=
@@ -166,21 +137,6 @@ void LocalMapping::run()
                         __func__);
                 }
             }
-
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point mapPointCreationEndTime =
-                std::chrono::steady_clock::now();
-
-            double timeMapPointCreation =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    mapPointCreationEndTime - mapPointCullingEndTime)
-                    .count();
-            mapPointCreationTimes_ms.push_back(timeMapPointCreation);
-#endif
-
-            /* Only consumed by the REGISTER_TIMES statistics block below. */
-            [[maybe_unused]] bool wasLocalBaExecuted = false;
 
             int baFixedKeyFrameCount     = 0;
             int baOptimizedKeyFrameCount = 0;
@@ -377,7 +333,6 @@ void LocalMapping::run()
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        wasLocalBaExecuted = true;
                     }
                     else
                     {
@@ -391,15 +346,27 @@ void LocalMapping::run()
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
+                        SemanticsManager *p_semanticsManager = nullptr;
+                        if (p_atlas->getSemanticsManager(p_semanticsManager) !=
+                            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getSemanticsManager returned a "
+                                         "failure status "
+                                         "although it cannot fail; continuing "
+                                         "as before.",
+                                         __func__);
+                        }
                         if (optimizer::Optimizer::localBundleAdjustment(
                                 p_currentKeyFrame,
                                 &shouldAbortBa,
                                 p_currentKeyFrameMap4,
+                                p_semanticsManager,
                                 baFixedKeyFrameCount,
                                 baOptimizedKeyFrameCount,
                                 baMapPointCount,
-                                baEdgeCount) !=
-                            optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                                baEdgeCount) != optimizer::OptimizerStatus::
+                                                    OPTIMIZER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                                          "%s: localBundleAdjustment returned a "
@@ -407,35 +374,8 @@ void LocalMapping::run()
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        wasLocalBaExecuted = true;
                     }
                 }
-#ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point localBaEndTime =
-                    std::chrono::steady_clock::now();
-
-                if (wasLocalBaExecuted)
-                {
-                    timeLocalBa_ms =
-                        std::chrono::duration_cast<
-                            std::chrono::duration<double, std::milli>>(
-                            localBaEndTime - mapPointCreationEndTime)
-                            .count();
-                    localBaTimes_ms.push_back(timeLocalBa_ms);
-
-                    localBaExecutionCount += 1;
-                    if (shouldAbortBa)
-                    {
-                        localBaAbortCount += 1;
-                    }
-                    localBaEdgeCounts.push_back(baEdgeCount);
-                    localBaOptimizedKeyFrameCounts.push_back(
-                        baOptimizedKeyFrameCount);
-                    localBaFixedKeyFrameCounts.push_back(baFixedKeyFrameCount);
-                    localBaMapPointCounts.push_back(baMapPointCount);
-                }
-
-#endif
 
                 /* IMU initialization */
                 map::Map *p_currentKeyFrameMap5 = nullptr;
@@ -497,17 +437,17 @@ void LocalMapping::run()
                         __func__);
                 }
 
-#ifdef REGISTER_TIMES
-                std::chrono::steady_clock::time_point keyFrameCullingEndTime =
-                    std::chrono::steady_clock::now();
-
-                timeKeyFrameCulling_ms =
-                    std::chrono::duration_cast<
-                        std::chrono::duration<double, std::milli>>(
-                        keyFrameCullingEndTime - localBaEndTime)
-                        .count();
-                keyFrameCullingTimes_ms.push_back(timeKeyFrameCulling_ms);
-#endif
+                /* Erase the key frames of rooms deleted as invalid */
+                if (eraseRequestedKeyFrames() !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseRequestedKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as "
+                        "before.",
+                        __func__);
+                }
 
                 /*!
                  * Staged IMU initialization
@@ -770,11 +710,6 @@ void LocalMapping::run()
                 }
             }
 
-#ifdef REGISTER_TIMES
-            localBaSyncTimes_ms.push_back(timeKeyFrameCulling_ms);
-            keyFrameCullingSyncTimes_ms.push_back(timeKeyFrameCulling_ms);
-#endif
-
             if (p_loopCloser->insertKeyFrame(p_currentKeyFrame) !=
                 loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
             {
@@ -783,18 +718,6 @@ void LocalMapping::run()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point localMapEndTime =
-                std::chrono::steady_clock::now();
-
-            double timeLocalMap =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    localMapEndTime - processKeyFrameStartTime)
-                    .count();
-            localMappingTotalTimes_ms.push_back(timeLocalMap);
-#endif
         }
         else
         {

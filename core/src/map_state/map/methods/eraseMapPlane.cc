@@ -36,6 +36,8 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
+#include <vector>
 
 namespace vs_graphs
 {
@@ -46,6 +48,17 @@ namespace map
 
 MapStatus Map::eraseMapPlane(geometric::Plane *p_plane_in)
 {
+    /* The plane gives back its voxels before it leaves the map. */
+    std::vector<bool> isPointAdmitted{};
+    if (admitPlanePoints(p_plane_in, nullptr, {}, isPointAdmitted) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: admitPlanePoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
     std::unique_lock<std::mutex> lock(mapMutex);
     planes.erase(p_plane_in);
 

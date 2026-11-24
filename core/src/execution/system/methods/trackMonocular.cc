@@ -32,7 +32,6 @@
 
 #include "mapping/local_mapping/local_mapping.h"
 #include "sensor_models/imu_types/point/point.h"
-#include "scene_understanding/semantic/marker/marker.h"
 #include "estimation/tracking/objects/TrackingStatusEnum.h"
 #include "configuration/settings/objects/SettingsStatusEnum.h"
 #include "execution/system/objects/SystemClass.h"
@@ -48,13 +47,12 @@ namespace core
 namespace system
 {
 
-SystemStatus
-    System::trackMonocular(const cv::Mat                        &image_in,
-                           const double                         &timestamp_in,
-                           Sophus::SE3f                         &cameraPose_out,
-                           const std::vector<imu_types::point::Point>        &imuMeas_in,
-                           std::string                           filename_in,
-                           const std::vector<semantic::Marker *> markers_in)
+SystemStatus System::trackMonocular(
+    const cv::Mat                              &image_in,
+    const double                               &timestamp_in,
+    Sophus::SE3f                               &cameraPose_out,
+    const std::vector<imu_types::point::Point> &imuMeas_in,
+    std::string                                 filename_in)
 {
     /* Multi-thread to prevent race conditions */
     {
@@ -134,7 +132,6 @@ SystemStatus
     if (p_tracker->grabImageMonocular(imToFeed,
                                       timestamp_in,
                                       filename_in,
-                                      markers_in,
                                       cameraPose_worldToCamera) !=
         tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

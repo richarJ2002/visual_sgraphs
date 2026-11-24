@@ -88,7 +88,6 @@ namespace core
 {
 namespace semantic
 {
-class Marker;
 class Room;
 } /* namespace semantic */
 } /* namespace core */
@@ -435,19 +434,6 @@ class Tracking
             else
                 std::cout << " is unknown!" << std::endl;
         }
-
-#ifdef REGISTER_TIMES
-        stereoRectificationTimes_ms.clear();
-        imageResizeTimes_ms.clear();
-        orbExtractionTimes_ms.clear();
-        stereoMatchTimes_ms.clear();
-        imuIntegrationTimes_ms.clear();
-        posePredictionTimes_ms.clear();
-        localMapTrackTimes_ms.clear();
-        newKeyFrameTimes_ms.clear();
-        trackTotalTimes_ms.clear();
-#endif
-
     }
 
         /*!
@@ -525,9 +511,6 @@ class Tracking
          * @param[in]       filename_in
          *                  Name of the image file, stored in the frame.
          *
-         * @param[in]       markers_in
-         *                  Markers detected in this image, handed to the frame.
-         *
          * @param[out]      cameraPose_out
          *                  Pose the current frame holds after tracking, mapping
          *                  world-frame points into the camera frame. Read state
@@ -535,13 +518,12 @@ class Tracking
          *
          * @return          TRACKING_STATUS_SUCCESS always.
          */
-        [[nodiscard]] TrackingStatus grabImageStereo(
-            const cv::Mat                        &imageRectifiedLeft_in,
-            const cv::Mat                        &imageRectifiedRight_in,
-            const double                         &timestamp_in,
-            std::string                           filename_in,
-            const std::vector<semantic::Marker *> markers_in,
-            Sophus::SE3f                         &cameraPose_out);
+        [[nodiscard]] TrackingStatus
+            grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
+                            const cv::Mat &imageRectifiedRight_in,
+                            const double  &timestamp_in,
+                            std::string    filename_in,
+                            Sophus::SE3f  &cameraPose_out);
         /*!
          * @brief           Converts an RGB-D image to grayscale and metric
          * depth, extracts features, then tracks the frame.
@@ -562,9 +544,6 @@ class Tracking
          * @param[in]       filename_in
          *                  Name of the image file, stored in the frame.
          *
-         * @param[in]       markers_in
-         *                  Markers detected in this image, handed to the frame.
-         *
          * @param[out]      cameraPose_out
          *                  Pose the current frame holds after tracking, mapping
          *                  world-frame points into the camera frame. Read state
@@ -578,7 +557,6 @@ class Tracking
             const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
             const double                                 &timestamp_in,
             std::string                                   filename_in,
-            const std::vector<semantic::Marker *>         markers_in,
             Sophus::SE3f                                 &cameraPose_out);
         /*!
          * @brief           Converts a monocular image to grayscale, extracts
@@ -595,9 +573,6 @@ class Tracking
          * @param[in]       filename_in
          *                  Name of the image file, stored in the frame.
          *
-         * @param[in]       markers_in
-         *                  Markers detected in this image, handed to the frame.
-         *
          * @param[out]      cameraPose_out
          *                  Pose the current frame holds after tracking, mapping
          *                  world-frame points into the camera frame. Read state
@@ -605,12 +580,11 @@ class Tracking
          *
          * @return          TRACKING_STATUS_SUCCESS always.
          */
-        [[nodiscard]] TrackingStatus grabImageMonocular(
-            const cv::Mat                        &image_in,
-            const double                         &timestamp_in,
-            std::string                           filename_in,
-            const std::vector<semantic::Marker *> markers_in,
-            Sophus::SE3f                         &cameraPose_out);
+        [[nodiscard]] TrackingStatus
+            grabImageMonocular(const cv::Mat &image_in,
+                               const double  &timestamp_in,
+                               std::string    filename_in,
+                               Sophus::SE3f  &cameraPose_out);
 
         /*!
          * @brief           Queues one IMU measurement, to be preintegrated with
@@ -751,6 +725,22 @@ class Tracking
         }
 
         /*!
+         * @brief           Gives the reference key frame of the current frame.
+         *
+         * @param[out]      p_referenceKeyFrame_out
+         *                  Reference key frame, or null before the first key
+         *                  frame. Borrowed.
+         *
+         * @return          TRACKING_STATUS_SUCCESS always.
+         */
+        [[nodiscard]] TrackingStatus
+            getReferenceKeyFrame(keyframe::KeyFrame *&p_referenceKeyFrame_out)
+        {
+            p_referenceKeyFrame_out = p_referenceKF;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
+
+        /*!
          * @brief           Gives the camera pose of the current frame.
          *
          * @param[out]      cameraPose_cameraToWorld_out
@@ -847,19 +837,6 @@ class Tracking
         [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out) const;
 
         /* Semantic Entities */
-        /*!
-         * @brief           Get the points close to a given marker
-         *
-         * @param[in]       p_currentMarker_in
-         *                  the address of the current marker
-         *
-         * @param[out]      pointsClose_out
-         *                  the map points close to the marker
-         */
-        [[nodiscard]] TrackingStatus findPointsCloseToMarker(
-            const semantic::Marker             *p_currentMarker_in,
-            std::vector<map_point::MapPoint *> &pointsClose_out);
-
         /*!
          * @brief           Get the points close to a given location
          *
@@ -1041,22 +1018,6 @@ class Tracking
          * the acceleration changed enough.
          */
         bool isFastInitEnabled = false;
-
-#ifdef REGISTER_TIMES
-        [[nodiscard]] TrackingStatus localMapStats2File();
-        [[nodiscard]] TrackingStatus trackStats2File();
-        [[nodiscard]] TrackingStatus printTimeStats();
-
-        std::vector<double> stereoRectificationTimes_ms;
-        std::vector<double> imageResizeTimes_ms;
-        std::vector<double> orbExtractionTimes_ms;
-        std::vector<double> stereoMatchTimes_ms;
-        std::vector<double> imuIntegrationTimes_ms;
-        std::vector<double> posePredictionTimes_ms;
-        std::vector<double> localMapTrackTimes_ms;
-        std::vector<double> newKeyFrameTimes_ms;
-        std::vector<double> trackTotalTimes_ms;
-#endif /* VS_GRAPHS_CORE_SRC_TRACKING_OBJECTS_TRACKING_CLASS_H */
 
       protected:
         /*!

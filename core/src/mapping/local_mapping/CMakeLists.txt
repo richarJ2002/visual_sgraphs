@@ -4,6 +4,7 @@ set(VS_GRAPHS_LOCALMAPPING_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/checkNewKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/createNewMapPoints.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/emptyQueue.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseRequestedKeyFrames.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentKeyFrame.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentKeyFrameTime.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/initializeIMU.cc

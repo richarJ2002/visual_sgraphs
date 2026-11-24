@@ -30,36 +30,36 @@
  *                  Optimizer.h.
  */
 
-#include "optimization/optimizer/objects/OptimizerClass.h"
-#include "mapping/geometric/Plane/Plane.h"
-#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "execution/system/objects/VerboseStatusEnum.h"
 #include "map_state/keyframe/keyframe.h"
 #include "map_state/keyframe/objects/KeyFrameStatusEnum.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
 #include "map_state/map_point/map_point.h"
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
-#include "scene_understanding/semantic/marker/marker.h"
-#include "scene_understanding/semantic/marker/objects/MarkerStatusEnum.h"
-#include "scene_understanding/semantic/room/objects/RoomStatusEnum.h"
-#include "scene_understanding/semantic/room/room.h"
-#include "execution/system/objects/VerboseStatusEnum.h"
-#include "configuration/types/objects/SystemParamsStatusEnum.h"
-#include "configuration/types/types.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include "mapping/geometry_helpers/objects/UtilsStatusEnum.h"
+#include "optimization/optimizer/objects/OptimizerClass.h"
 
-#include "optimization/optimizable_types/EdgeSE3KFPointToPlane/EdgeSE3KFPointToPlane.h"
+#include "mapping/geometry_helpers/utils.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZ/EdgeSE3ProjectXYZ.h"
 #include "optimization/optimizable_types/EdgeSE3ProjectXYZToBody/EdgeSE3ProjectXYZToBody.h"
-#include "optimization/optimizable_types/EdgeVertexPlaneParallelism/EdgeVertexPlaneParallelism.h"
-#include "optimization/optimizable_types/EdgeVertexPlanePerpendicularity/EdgeVertexPlanePerpendicularity.h"
-#include "optimization/optimizable_types/EdgeVertexPlaneProjectSE3KF/EdgeVertexPlaneProjectSE3KF.h"
 #include "optimization/optimizer/private_functions/private_functions.h"
-#include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/semantic_factors/EdgeSE3KFPointToPlane/EdgeSE3KFPointToPlane.h"
+#include "scene_understanding/semantic_factors/EdgeVertexPlaneParallelism/EdgeVertexPlaneParallelism.h"
+#include "scene_understanding/semantic_factors/EdgeVertexPlanePerpendicularity/EdgeVertexPlanePerpendicularity.h"
+#include "scene_understanding/semantic_factors/EdgeVertexPlaneProjectSE3KF/EdgeVertexPlaneProjectSE3KF.h"
+#include "scene_understanding/semantic_factors/EdgeWallFaceThickness/EdgeWallFaceThickness.h"
+#include "scene_understanding/semantic_factors/semantic_factors.h"
 
 #include "../private_functions/private_functions.h"
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
+#include <set>
+#include <unordered_map>
 
 namespace vs_graphs
 {
@@ -71,17 +71,21 @@ namespace optimizer
 OptimizerStatus Optimizer::bundleAdjustment(
     const std::vector<vs_graphs::core::keyframe::KeyFrame *>  &keyFrames_in,
     const std::vector<vs_graphs::core::map_point::MapPoint *> &mapPoints_in,
-    const std::vector<vs_graphs::core::semantic::Marker *>    &markers_in,
     const std::vector<vs_graphs::core::geometric::Plane *>    &planes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>      &rooms_in,
-    int                     iterationCount_in,
-    bool                   *p_stopFlag_inout,
-    const unsigned long     loopKeyFrameId_in,
-    const bool              useRobustKernel_in,
-    const std::atomic_bool *p_stopRequested_in)
+    const std::vector<RoomSnapshot>                           &rooms_in,
+    std::map<int, Eigen::Vector3d> &optimizedRoomCentroids_out,
+    int                             iterationCount_in,
+    bool                           *p_stopFlag_inout,
+    const unsigned long             loopKeyFrameId_in,
+    const bool                      useRobustKernel_in,
+    const std::atomic_bool         *p_stopRequested_in)
 {
-    /* System parameters */
+    optimizedRoomCentroids_out.clear();
+
+    /* Declare pointer which will hold the system parameters */
     vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
+
+    /* Extrcat the system parameters */
     if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
@@ -91,14 +95,22 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      __func__);
     }
 
-    /* Variables */
+    /* Declare variable which will indicate if map points are excluded */
     std::vector<bool> mapPointExcludedFlags;
+
+    /* Allocate memory to match length of map points size */
     mapPointExcludedFlags.resize(mapPoints_in.size());
 
+    /* If there are no keyframes to optimize, return */
     if (keyFrames_in.empty())
+    {
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
+    }
 
+    /* Declare variable to get map of current keyframes */
     vs_graphs::core::map::Map *p_map = nullptr;
+
+    /* Extract the map which the keyframes will be optimized over */
     if (keyFrames_in[0]->getMap(p_map) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -134,10 +146,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     const int expectedEdgeCount = (keyFrames_in.size()) * mapPoints_in.size();
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *> monoEdges;
+    std::vector<optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *>
+        monoEdges;
     monoEdges.reserve(expectedEdgeCount);
 
-    std::vector<optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *> bodyEdges;
+    std::vector<
+        optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *>
+        bodyEdges;
     bodyEdges.reserve(expectedEdgeCount);
 
     std::vector<keyframe::KeyFrame *> monoEdgeKeyFrames;
@@ -213,7 +228,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
     int planeCount              = 1;
     int roomCount               = 1;
     int maxGlobalOptimizationId = 0;
-    int markerCount             = 1;
 
     /* [GBA] MapPoints */
     for (size_t elementIndex = 0; elementIndex < mapPoints_in.size();
@@ -299,8 +313,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 observation << undistortedKeyPoint.pt.x,
                     undistortedKeyPoint.pt.y;
 
-                optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *p_edge =
-                    new optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ();
+                optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ
+                    *p_edge = new optimizable_types::EdgeSE3ProjectXYZ::
+                        EdgeSE3ProjectXYZ();
 
                 p_edge->setVertex(0,
                                   dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -396,8 +411,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
                         p_keyFrame->keyPointsRight[rightIndex];
                     observation << rightKeyPoint.pt.x, rightKeyPoint.pt.y;
 
-                    optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody *p_edge =
-                        new optimizable_types::EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody();
+                    optimizable_types::EdgeSE3ProjectXYZToBody::
+                        EdgeSE3ProjectXYZToBody *p_edge =
+                            new optimizable_types::EdgeSE3ProjectXYZToBody::
+                                EdgeSE3ProjectXYZToBody();
 
                     p_edge->setVertex(
                         0,
@@ -456,57 +473,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    /* [GBA] Markers */
-    for (semantic::Marker *const &marker : markers_in)
-    {
-        /* Adding a vertex for each marker */
-        g2o::VertexSE3Expmap *p_markerPoseVertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3f          markerGlobalPose{};
-        if (marker->getGlobalPose(markerGlobalPose) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        Sophus::SE3f markerGlobalPose2{};
-        if (marker->getGlobalPose(markerGlobalPose2) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getGlobalPose returned a failure status although "
-                         "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        p_markerPoseVertex->setEstimate(
-            g2o::SE3Quat(markerGlobalPose.unit_quaternion().cast<double>(),
-                         markerGlobalPose2.translation().cast<double>()));
-        int globalOptimizationId = maxGlobalOptimizationId + markerCount;
-        p_markerPoseVertex->setId(globalOptimizationId);
-        optimizer.addVertex(p_markerPoseVertex);
-        markerCount++;
-
-        /* Setting the Global Optimization ID for the marker */
-        if (marker->setOpIdG(globalOptimizationId) !=
-            semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: setOpIdG returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-
-        /*!
-         * The edge used to connect a Marker vertex (SE3) to a
-         * keyframe::KeyFrame vertex (SE3) 🚧 [vS-Graphs v.2.0] This edge is not
-         * used anymore, in contrast to the previous version. [Note]: it creates
-         * constraint for six measurements, i.e., (x, y, z, roll, pitch, yaw)
-         */
-    }
-
-    maxGlobalOptimizationId += markerCount;
-
     /* [GBA] Planes */
     for (geometric::Plane *const &plane : planes_in)
     {
@@ -521,7 +487,21 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          __func__);
         }
         if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
+        {
+            /*!
+             * A skipped plane gets no vertex in this pass, so clear the id
+             * from an earlier pass; a stale id could name another vertex.
+             */
+            if (plane->setOpIdG(-1) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
+        }
         /* Adding a vertex for each plane */
         g2o::VertexPlane *p_planeVertex = new g2o::VertexPlane();
         int globalOptimizationId        = maxGlobalOptimizationId + planeCount;
@@ -608,8 +588,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
             {
                 if (p_systemParams->optimization.planeKf.enabled)
                 {
-                    optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF *p_edge =
-                        new optimizable_types::EdgeVertexPlaneProjectSE3KF::EdgeVertexPlaneProjectSE3KF();
+                    optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                        EdgeVertexPlaneProjectSE3KF *p_edge =
+                            new optimizable_types::EdgeVertexPlaneProjectSE3KF::
+                                EdgeVertexPlaneProjectSE3KF();
                     p_edge->setVertex(
                         0,
                         dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -634,8 +616,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 /* adding plane-point constraints */
                 if (p_systemParams->optimization.planePoint.enabled)
                 {
-                    /* get the class index of the plane */
-                    int                            planeClassIndex{};
+                    /*!
+                     * Every labelled plane (ground, ceiling, wall, door,
+                     * window) gets the point-plane factor; an unlabelled
+                     * plane does not.
+                     */
                     geometric::Plane::PlaneVariant planeType2{};
                     if (plane->getPlaneType(planeType2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -646,21 +631,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (utils::utils::Utils::getClassIdFromPlaneType(
-                            planeType2,
-                            planeClassIndex) !=
-                        utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-                    {
-                        /*!
-                         * getClassIdFromPlaneType cannot fail; continue as
-                         * before.
-                         */
-                    }
-                    if (planeClassIndex != -1)
+                    if (planeType2 != geometric::Plane::PlaneVariant::UNDEFINED)
                     {
                         /* add the plane-point constraint */
-                        optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane *p_edge =
-                            new optimizable_types::EdgeSE3KFPointToPlane::EdgeSE3KFPointToPlane();
+                        optimizable_types::EdgeSE3KFPointToPlane::
+                            EdgeSE3KFPointToPlane *p_edge =
+                                new optimizable_types::EdgeSE3KFPointToPlane::
+                                    EdgeSE3KFPointToPlane();
                         p_edge->setVertex(
                             0,
                             dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -686,31 +663,21 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 }
             }
         }
-
-        /*!
-         * 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
-         * S-Graphs, where there was an edge between Markers and Planes, in this
-         * version we removed that edge
-         */
     }
 
     maxGlobalOptimizationId += planeCount;
 
     /* [GBA] Rooms */
-    for (semantic::Room *const &room : rooms_in)
+    std::unordered_map<int, geometric::Plane *> planesById{};
+    indexPlanesById(planes_in, planesById);
+    std::map<int, int> roomVertexIds{};
+    for (const RoomSnapshot &room : rooms_in)
     {
         try
         {
             /* Variables */
             std::vector<vs_graphs::core::geometric::Plane *> walls{};
-            if (room->getWalls(walls) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getWalls returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            resolveRoomWallPlanes(room, planesById, walls);
 
             /* No need to optimize if there are no walls */
             if (walls.empty())
@@ -722,39 +689,20 @@ OptimizerStatus Optimizer::bundleAdjustment(
             /* Setting the local optimization ID for the room */
             int globalOptimizationId = maxGlobalOptimizationId + roomCount;
             p_roomPoseVertex->setId(globalOptimizationId);
-            if (room->setOpIdG(globalOptimizationId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setOpIdG returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
+            roomVertexIds[room.id] = globalOptimizationId;
             roomCount++;
 
             /* Initialize the room vertex (centroid estimate) */
-            Eigen::Vector3d roomCentroid{};
-            if (room->getCentroid(roomCentroid) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getCentroid returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
             p_roomPoseVertex->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
-                             roomCentroid.cast<double>()));
+                             room.centroid_world_m));
             p_roomPoseVertex->setFixed(true);
             optimizer.addVertex(p_roomPoseVertex);
 
             /*
-             * The legacy multi-plane room projection factor averages closest
-             * points from every wall. That estimate is not the center of a
-             * bounded room and can pull otherwise valid wall planes during a
-             * map re-merge. Keep the front-end room centroid fixed and retain
-             * only the well-defined plane parallel/perpendicular constraints
-             * below.
+             * The room centre stays fixed at the front-end estimate; the
+             * room-wall edges (added after this loop) pull its facing wall
+             * pairs towards it along their normals only.
              */
 
             /* Optimizing the parallel walls of the room */
@@ -851,12 +799,17 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                              __func__);
                             }
 
-                            if (optimizer.vertex(globalOptimizationId) &&
+                            if (firstWallOptimizationId >= 0 &&
+                                secondWallOptimizationId >= 0 &&
+                                optimizer.vertex(globalOptimizationId) &&
                                 optimizer.vertex(firstWallOptimizationId) &&
                                 optimizer.vertex(secondWallOptimizationId))
                             {
-                                optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism
-                                    *p_edge = new optimizable_types::EdgeVertexPlaneParallelism::EdgeVertexPlaneParallelism();
+                                optimizable_types::EdgeVertexPlaneParallelism::
+                                    EdgeVertexPlaneParallelism *p_edge =
+                                        new optimizable_types::
+                                            EdgeVertexPlaneParallelism::
+                                                EdgeVertexPlaneParallelism();
                                 p_edge->setVertex(
                                     0,
                                     dynamic_cast<g2o::OptimizableGraph::Vertex
@@ -924,12 +877,17 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                          __func__);
                         }
 
-                        if (optimizer.vertex(globalOptimizationId) &&
+                        if (firstWallOptimizationId >= 0 &&
+                            secondWallOptimizationId >= 0 &&
+                            optimizer.vertex(globalOptimizationId) &&
                             optimizer.vertex(firstWallOptimizationId) &&
                             optimizer.vertex(secondWallOptimizationId))
                         {
-                            optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity
-                                *p_edge = new optimizable_types::EdgeVertexPlanePerpendicularity::EdgeVertexPlanePerpendicularity();
+                            optimizable_types::EdgeVertexPlanePerpendicularity::
+                                EdgeVertexPlanePerpendicularity *p_edge =
+                                    new optimizable_types::
+                                        EdgeVertexPlanePerpendicularity::
+                                            EdgeVertexPlanePerpendicularity();
                             p_edge->setVertex(
                                 0,
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -967,6 +925,41 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
+    /* [BA] Twin-face thickness edges + parallel term between twins. C4 */
+    auto getVertexIdG = [](geometric::Plane *p_plane_in) -> int
+    {
+        int opId{};
+        if (p_plane_in->getOpIdG(opId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            return -1;
+        }
+        return opId;
+    };
+    (void)addTwinFaceThicknessEdges(optimizer,
+                                    planes_in,
+                                    getVertexIdG,
+                                    p_systemParams,
+                                    huberThreshold1D);
+
+    /* [GBA] Room-wall edges */
+    (void)addRoomWallEdges(optimizer,
+                           rooms_in,
+                           planesById,
+                           getVertexIdG,
+                           roomVertexIds,
+                           p_systemParams,
+                           huberThreshold3D);
+
+    /* [GBA] Semantic layout edges between the walls */
+    (void)addSemanticLayoutEdges(optimizer,
+                                 planes_in,
+                                 getVertexIdG,
+                                 rooms_in,
+                                 p_map,
+                                 p_systemParams,
+                                 "GBA");
+
     maxGlobalOptimizationId += roomCount;
 
     /* Optimize! */
@@ -976,7 +969,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     optimizer.removePreIterationAction(&stopBridge);
     optimizer.removePostIterationAction(&stopBridge);
     if (system::Verbose::printMess("BA: End of the optimization",
-                           system::Verbose::VERBOSITY_NORMAL) !=
+                                   system::Verbose::VERBOSITY_NORMAL) !=
         system::VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1069,8 +1062,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      edgeIndex < edgeCount;
                      edgeIndex++)
                 {
-                    optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ *p_edge =
-                        monoEdges[edgeIndex];
+                    optimizable_types::EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ
+                                        *p_edge = monoEdges[edgeIndex];
                     map_point::MapPoint *p_mapPoint =
                         monoEdgeMapPoints[edgeIndex];
                     keyframe::KeyFrame *p_edgeSourceKeyFrame = nullptr;
@@ -1233,61 +1226,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    /*
-     * Apply semantic vertices immediately only for the initial-map BA. A
-     * loop-triggered GBA runs on a worker and must not mutate semantic state
-     * before loop_closing::LoopClosing validates its generation and acquires
-     * the semantic transaction lock. The validated post-GBA deformation pass
-     * updates markers and rooms for that case.
-     */
-    keyframe::KeyFrame *p_mapOriginKeyFrame4 = nullptr;
-    if (p_map->getOriginKeyFrame(p_mapOriginKeyFrame4) !=
-        map::MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getOriginKeyFrame returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-    if (loopKeyFrameId_in == p_mapOriginKeyFrame4->id)
-    {
-        /* [GBA] Globally optimized markers */
-        for (semantic::Marker *p_marker : markers_in)
-        {
-            int markerOpIdG{};
-            if (p_marker->getOpIdG(markerOpIdG) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getOpIdG returned a failure status although "
-                             "it cannot fail; continuing as before.",
-                             __func__);
-            }
-            g2o::VertexSE3Expmap *p_markerVertex =
-                static_cast<g2o::VertexSE3Expmap *>(
-                    optimizer.vertex(markerOpIdG));
-
-            if (p_markerVertex == nullptr)
-            {
-                continue;
-            }
-
-            const g2o::SE3Quat markerPose_markerToWorld =
-                p_markerVertex->estimate();
-
-            if (p_marker->setGlobalPose(Sophus::SE3f(
-                    markerPose_markerToWorld.rotation().cast<float>(),
-                    markerPose_markerToWorld.translation().cast<float>())) !=
-                semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: setGlobalPose returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-        }
-    }
-
     /* [GBA] Globally optimized planes */
     for (geometric::Plane *const &plane : planes_in)
     {
@@ -1300,7 +1238,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (optimizer.vertex(planeGetOpIdG))
+        if (planeGetOpIdG >= 0 && optimizer.vertex(planeGetOpIdG))
         {
             int planeGetOpIdG2{};
             if (plane->getOpIdG(planeGetOpIdG2) !=
@@ -1329,9 +1267,12 @@ OptimizerStatus Optimizer::bundleAdjustment(
                  * Keep the finite wall cloud, centroid, bounds, octree, and
                  * optimized equation in one frame. Updating only the equation
                  * leaves the displayed wall and every geometric association at
-                 * the pre-BA pose.
+                 * the pre-BA pose. A refused target keeps the plane unchanged
+                 * (logged inside).
                  */
-                if (plane->alignGeometryToEquation(p_planeVertex->estimate()) !=
+                bool isEquationApplied{};
+                if (plane->alignGeometryToEquation(p_planeVertex->estimate(),
+                                                   isEquationApplied) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -1349,6 +1290,13 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
+    /*
+     * Apply semantic vertices immediately only for the initial-map BA. A
+     * loop-triggered GBA runs on a worker and must not mutate semantic state
+     * before loop_closing::LoopClosing validates its generation and acquires
+     * the semantic transaction lock. The validated post-GBA deformation pass
+     * updates rooms for that case.
+     */
     /* [GBA] Globally optimized rooms */
     keyframe::KeyFrame *p_mapOriginKeyFrame6 = nullptr;
     if (p_map->getOriginKeyFrame(p_mapOriginKeyFrame6) !=
@@ -1361,36 +1309,18 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
     if (loopKeyFrameId_in == p_mapOriginKeyFrame6->id)
     {
-        for (semantic::Room *p_room : rooms_in)
+        for (const std::pair<const int, int> &roomVertexEntry : roomVertexIds)
         {
             try
             {
-                int roomOpIdG{};
-                if (p_room->getOpIdG(roomOpIdG) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getOpIdG returned a failure status although it "
-                        "cannot fail; continuing as before.",
-                        __func__);
-                }
                 g2o::VertexSE3Expmap *p_roomVertex =
                     static_cast<g2o::VertexSE3Expmap *>(
-                        optimizer.vertex(roomOpIdG));
+                        optimizer.vertex(roomVertexEntry.second));
 
                 if (p_roomVertex != nullptr)
                 {
-                    if (p_room->setCentroid(
-                            p_roomVertex->estimate().translation()) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: setCentroid returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
+                    optimizedRoomCentroids_out[roomVertexEntry.first] =
+                        p_roomVertex->estimate().translation();
                 }
             }
             catch (const std::exception &caughtException)

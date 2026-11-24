@@ -42,6 +42,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,6 +53,7 @@ namespace tracking
 
 TrackingStatus Tracking::preintegrateIMU()
 {
+    PROFILE_FUNCTION();
     if (!currentFrame.p_previousFrame)
     {
         if (system::Verbose::printMess("non prev frame ", system::Verbose::VERBOSITY_NORMAL) !=

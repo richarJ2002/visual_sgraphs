@@ -1,13 +1,14 @@
 # Plane object sources: exactly this object's translation units.
 set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/absorb.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/addObservation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/alignGeometryToEquation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/beginMapCloudRefit.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/castWeightedVote.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/clearTwinFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/completeMapCloudRefit.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/eraseObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/fitEquationToCloud.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getCentroid.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getColor.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/getExpectedPlaneType.cc
@@ -29,7 +30,7 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/getTwinFace.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isPointinPlaneCloud.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reapplyDensityCap.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/rebuildSemanticVotesWithoutLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/replaceMapClouds.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/resetPlaneSemantics.cc
@@ -45,9 +46,9 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/setObservationOrigin_world.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/setPlaneType.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/setTwinFace.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/thinMapCloudWithoutLock.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/transformPlaneEquation.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/updatePlaneBoundsWithoutLock.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/updateSizeOfPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/public_functions/computeInPlaneAxes.cc
 )

@@ -39,6 +39,7 @@
 #include "map_state/map/map.h"
 #include "map_state/map_point/map_point.h"
 #include "optimization/optimizer/objects/OptimizerStatusEnum.h"
+#include "scene_understanding/semantics_manager/objects/RoomSnapshotStruct.h"
 
 #include <boost/bind.hpp>
 #include <math.h>
@@ -54,12 +55,17 @@
 #include <vs_graphs_g2o/types/types_six_dof_expmap.h>
 
 #include <atomic>
+#include <map>
 
 namespace vs_graphs::core::frame { class Frame; }
 namespace vs_graphs::core::keyframe { class KeyFrame; }
 namespace vs_graphs::core::loop_closing { class LoopClosing; }
 namespace vs_graphs::core::map { class Map; }
 namespace vs_graphs::core::map_point { class MapPoint; }
+namespace vs_graphs::core
+{
+class SemanticsManager;
+}
 
 namespace vs_graphs
 {
@@ -109,17 +115,17 @@ class Optimizer
   public:
     /*!
      * @brief           Runs bundle adjustment over the given keyframes, map
-     *                  points, markers, planes and rooms.
+     *                  points, planes and rooms.
      *
      *                  When loopKeyFrameId_in equals the id of the map's origin
      *                  keyframe (the initial-map run), the optimised keyframe
-     *                  poses, map point positions, planes, markers and room
-     *                  centroids are written straight into those objects.
+     *                  poses, map point positions, planes and room centroids
+     *                  are written straight into those objects.
      *                  Otherwise (a loop-triggered run) keyframe poses, map
      *                  point positions and planes are stored in their
      *                  global-BA fields for the loop closing thread to apply,
-     *                  and markers and rooms are left unchanged. Returns
-     *                  without optimising when keyFrames_in is empty.
+     *                  and rooms are left unchanged. Returns without
+     *                  optimising when keyFrames_in is empty.
      *
      * @param[in]       keyFrames_in
      *                  Keyframes to optimise; the map is taken from the first.
@@ -127,14 +133,16 @@ class Optimizer
      * @param[in]       mapPoints_in
      *                  map::Map points to optimise.
      *
-     * @param[in]       markers_in
-     *                  Fiducial markers to optimise.
-     *
      * @param[in]       planes_in
      *                  Planes to optimise.
      *
      * @param[in]       rooms_in
-     *                  Rooms to optimise.
+     *                  Snapshots of the rooms to optimise.
+     *
+     * @param[out]      optimizedRoomCentroids_out
+     *                  Centroid of each room (by room id) that the initial-map
+     *                  run optimised, for the caller to apply through the
+     *                  semantics manager; empty for a loop-triggered run.
      *
      * @param[in]       iterationCount_in
      *                  Number of optimiser iterations.
@@ -161,9 +169,9 @@ class Optimizer
     [[nodiscard]] static OptimizerStatus bundleAdjustment(
         const std::vector<vs_graphs::core::keyframe::KeyFrame *>  &keyFrames_in,
         const std::vector<vs_graphs::core::map_point::MapPoint *> &mapPoints_in,
-        const std::vector<vs_graphs::core::semantic::Marker *>    &markers_in,
         const std::vector<vs_graphs::core::geometric::Plane *>    &planes_in,
-        const std::vector<vs_graphs::core::semantic::Room *>      &rooms_in,
+        const std::vector<RoomSnapshot>                           &rooms_in,
+        std::map<int, Eigen::Vector3d> &optimizedRoomCentroids_out,
         int                     iterationCount_in  = 5,
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,
@@ -172,7 +180,7 @@ class Optimizer
 
     /*!
      * @brief           Runs bundle adjustment over every keyframe, map point,
-     *                  marker, plane and room of a map.
+     *                  plane and room of a map.
      *
      *                  Delegates to bundleAdjustment() with the map's full
      *                  contents; see it for how results are applied or
@@ -180,6 +188,10 @@ class Optimizer
      *
      * @param[in]       p_map_in
      *                  map::Map to optimise; shall be non-null, borrowed.
+     *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph, whose
+     *                  rooms are optimised; borrowed.
      *
      * @param[in]       iterationCount_in
      *                  Number of optimiser iterations.
@@ -207,6 +219,7 @@ class Optimizer
      */
     [[nodiscard]] static OptimizerStatus globalBundleAdjustment(
         map::Map               *p_map_in,
+        SemanticsManager       *p_semanticsManager_in,
         int                     iterationCount_in  = 5,
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,
@@ -299,6 +312,10 @@ class Optimizer
      * @param[in,out]   p_map_inout
      *                  map::Map holding the keyframe; shall be non-null.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the map's S-Graph, whose
+     *                  rooms are optimised; borrowed.
+     *
      * @param[out]      fixedKeyFrameCount_inout
      *                  Number of fixed keyframes in the problem; set to 0 on
      *                  entry, then overwritten.
@@ -319,6 +336,7 @@ class Optimizer
         localBundleAdjustment(keyframe::KeyFrame *p_keyFrame_inout,
                               bool               *p_pbStopFlag_in,
                               map::Map           *p_map_inout,
+                              SemanticsManager   *p_semanticsManager_in,
                               int                &fixedKeyFrameCount_inout,
                               int                &optKeyFrameCount_out,
                               int                &mapPointCount_out,
@@ -479,6 +497,10 @@ class Optimizer
      *                  Source map whose semantic graph follows the optimized
      *                  keyframe deformation.
      *
+     * @param[in]       p_semanticsManager_in
+     *                  Semantics manager that serves the source map's S-Graph;
+     *                  borrowed.
+     *
      * @param[in]       fixedKeyFrames_in
      *                  Fixed KeyFrames
      *
@@ -498,6 +520,7 @@ class Optimizer
     [[nodiscard]] static OptimizerStatus optimizeEssentialGraph(
         vs_graphs::core::keyframe::KeyFrame *p_currentKeyFrame_in,
         vs_graphs::core::map::Map           *p_sourceMap_in,
+        vs_graphs::core::SemanticsManager   *p_semanticsManager_in,
         std::vector<vs_graphs::core::keyframe::KeyFrame *> &fixedKeyFrames_in,
         std::vector<vs_graphs::core::keyframe::KeyFrame *>
             &fixedCorrectedKeyFrames_in,

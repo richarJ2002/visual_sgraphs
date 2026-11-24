@@ -30,15 +30,19 @@
 
 #include <limits>
 #include <optional>
+#include <unordered_set>
+#include <vector>
 
 #include <Eigen/Dense>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include "map_state/atlas/atlas.h"
 #include "mapping/geometric/Plane/Plane.h"
-#include "scene_understanding/semantic/passage/passage.h"
 #include "mapping/geometry_helpers/utils.h"
+#include "scene_understanding/scene_graph/passage/Passage.h"
+#include "scene_understanding/scene_graph/room/Room.h"
 
 namespace vs_graphs
 {
@@ -155,15 +159,29 @@ struct ProjectedPlaneBounds
  * @brief           Tests whether two finite clouds overlap or extend one
  *                  another along the same plane.
  *
+ *                  Fragments that do not overlap are separated when a mapped
+ *                  WALL roughly perpendicular to the face lies between them,
+ *                  reaches the face and runs at least 0.50 m into the
+ *                  observed side: they are faces of neighbouring rooms meeting
+ *                  at a partition, not one surface broken by a door.
+ *
  * @param[in]       p_firstCloud_in
  *                  First finite plane support cloud.
  *
  * @param[in]       p_secondCloud_in
  *                  Second finite plane support cloud.
  *
- * @param[in]       commonNormal_world_in
- *                  Unit normal shared by the already equation-compatible
- *                  planes.
+ * @param[in]       commonEquation_world_in
+ *                  Equation shared by the already equation-compatible planes,
+ *                  in the active map frame.
+ *
+ * @param[in]       observerSide_m_in
+ *                  Signed observer distance from commonEquation_world_in, in
+ *                  metres; 0 when unknown, which skips the separation test.
+ *
+ * @param[in]       mappedPlanes_in
+ *                  Mapped planes searched for a separating wall, non-owning;
+ *                  null, bad and non-WALL entries are ignored.
  *
  * @param[in]       maximumInPlaneGap_m_in
  *                  Maximum permitted extension gap along either tangent.
@@ -171,61 +189,241 @@ struct ProjectedPlaneBounds
  * @param[in]       minimumOrthogonalOverlap_m_in
  *                  Required overlap along the other tangent.
  *
+ * @param[in]       touchingTolerance_m_in
+ *                  Distance, in metres, within which a fragment end or the
+ *                  separating wall still touches.
+ *
  * @param[out]      areCompatible_out
  *                  True when the clouds overlap or form adjacent finite
  *                  extensions.
+ *
+ * @param[out]      isSeparatedByCrossingWall_out
+ *                  True when a mapped wall separates the fragments; the
+ *                  caller shall not join them by any other test.
  *
  * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_secondCloud_in,
-    const Eigen::Vector3d                              &commonNormal_world_in,
+    const Eigen::Vector4d                              &commonEquation_world_in,
+    const double                                        observerSide_m_in,
+    const std::vector<geometric::Plane *>              &mappedPlanes_in,
     const double                                        maximumInPlaneGap_m_in,
     const double minimumOrthogonalOverlap_m_in,
-    bool        &areCompatible_out);
+    const double touchingTolerance_m_in,
+    bool        &areCompatible_out,
+    bool        &isSeparatedByCrossingWall_out);
 
 /*!
- * @brief           Tests whether a segment traverses a passable passage
- *                  aperture.
+ * @brief           Applies the OPPOSITE_FACE test of Utils::findMatchingPlane()
+ *                  to one candidate, in this order: candidate valid,
+ *                  normals parallel, equations and observed centroid valid,
+ *                  face separation within the maximum thickness, both
+ *                  stamped observation origins present, each origin at least
+ *                  0.10 m from both planes, origins on opposite sides of both
+ *                  planes, and footprints on ground-anchored axes overlapping
+ *                  by the minimum ratio.
  *
- *                  Mirrors the far-side wall-routing crossing test used by
- *                  the semantic manager so that the merge path can apply
- *                  the same rule when imported walls are copied into a
- *                  retained room.
+ * @param[in]       observedPlane_in
+ *                  Observed plane evidence; its observer side is the stamped
+ *                  observation origin.
  *
- * @param[in]       segmentStart_world_m_in
- *                  First endpoint in the active map frame.
+ * @param[in]       p_mappedPlane_in
+ *                  Candidate plane, non-owning; may be null.
  *
- * @param[in]       segmentEnd_world_m_in
- *                  Second endpoint in the active map frame.
+ * @param[in]       matchSettings_in
+ *                  Angle, maximum thickness, minimum overlap ratio and
+ *                  ground normal.
  *
- * @param[in]       p_passage_in
- *                  Passable passage defining the finite aperture.
- *
- * @param[in]       groundNormal_world_in
- *                  Unit ground normal in the active map frame.
- *
- * @param[in]       openingMargin_m_in
- *                  Aperture expansion used for noisy geometry.
- *
- * @param[in]       minimumSideDistance_m_in
- *                  Required endpoint distance from plane.
- *
- * @param[out]      crossesOpening_out
- *                  True only when the segment crosses inside the finite
- *                  opening.
+ * @param[out]      candidateVerdict_out
+ *                  PLAUSIBLE or the first failed check, with its
+ *                  measurement.
  *
  * @return          UTILS_STATUS_SUCCESS.
  */
-[[nodiscard]] UtilsStatus crossesPassablePassageOpening(
-    const Eigen::Vector3d              &segmentStart_world_m_in,
-    const Eigen::Vector3d              &segmentEnd_world_m_in,
-    vs_graphs::core::semantic::Passage *p_passage_in,
-    const Eigen::Vector3d              &groundNormal_world_in,
-    const double                        openingMargin_m_in,
-    const double                        minimumSideDistance_m_in,
-    bool                               &crossesOpening_out);
+[[nodiscard]] UtilsStatus
+    checkOppositeFacePair(const PlaneEvidence      &observedPlane_in,
+                          geometric::Plane         *p_mappedPlane_in,
+                          const PlaneMatchSettings &matchSettings_in,
+                          PlaneMatchVerdict        &candidateVerdict_out);
+
+/*!
+ * @brief           Returns the room itself when it is non-null, not bad and in
+ *                  the active room set; otherwise null.
+ *
+ * @param[in]       activeRoomSet_in
+ *                  Rooms currently live in the map, non-owning.
+ *
+ * @param[in]       p_room_in
+ *                  Room to resolve, non-owning; may be null.
+ *
+ * @param[out]      p_liveRoom_out
+ *                  The live room, or null.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus resolveLiveRoomHandle(
+    const std::unordered_set<semantic::Room *> &activeRoomSet_in,
+    semantic::Room                             *p_room_in,
+    semantic::Room                            *&p_liveRoom_out);
+
+/*!
+ * @brief           Tells whether a room lies on the proven far side of a
+ *                  passage: its centroid more than 0.20 m behind the passage
+ *                  centroid along the known-side direction.
+ *
+ * @param[in]       knownSide_in
+ *                  Known-side provenance of the passage.
+ *
+ * @param[in]       passageCentroid_world_m_in
+ *                  Passage centroid in the world frame, metres.
+ *
+ * @param[in]       p_room_in
+ *                  Room to test, non-owning; may be null.
+ *
+ * @param[out]      isFarSide_out
+ *                  True when the room is on the proven far side.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus isRoomOnProvenFarSide(
+    const semantic::Passage::KnownSideProvenance &knownSide_in,
+    const Eigen::Vector3d                        &passageCentroid_world_m_in,
+    semantic::Room                               *p_room_in,
+    bool                                         &isFarSide_out);
+
+/*!
+ * @brief           Fuses the attributes of a duplicate passage into the
+ *                  retained passage.
+ *
+ * @param[in,out]   p_retainedPassage_inout
+ *                  Passage that is kept, non-owning.
+ *
+ * @param[in]       p_candidatePassage_in
+ *                  Duplicate passage whose attributes are fused, non-owning.
+ *
+ * @param[in]       retainedEquation_in
+ *                  Plane equation of the retained passage.
+ *
+ * @param[in]       retainedCentroid_world_m_in
+ *                  Retained passage centroid in the world frame, metres.
+ *
+ * @param[in]       candidateCentroid_world_m_in
+ *                  Duplicate passage centroid in the world frame, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus fuseDuplicatePassageAttributes(
+    semantic::Passage     *p_retainedPassage_inout,
+    semantic::Passage     *p_candidatePassage_in,
+    const Eigen::Vector4d &retainedEquation_in,
+    const Eigen::Vector3d &retainedCentroid_world_m_in,
+    const Eigen::Vector3d &candidateCentroid_world_m_in);
+
+/*!
+ * @brief           Runs the OPPOSITE_FACE pass of Utils::findMatchingPlane()
+ *                  over all mapped planes.
+ *
+ * @param[in]       mappedPlanes_in
+ *                  Mapped candidate planes, non-owning.
+ *
+ * @param[in]       observedPlane_in
+ *                  Observed plane evidence.
+ *
+ * @param[in]       matchSettings_in
+ *                  Match thresholds and ground normal.
+ *
+ * @param[out]      matchedPlaneId_out
+ *                  Id of the matched plane, unchanged when none matches.
+ *
+ * @param[out]      p_candidateVerdicts_out
+ *                  Per-candidate verdicts; may be null.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus findOppositeFaceMatch(
+    const std::vector<geometric::Plane *> &mappedPlanes_in,
+    const PlaneEvidence                   &observedPlane_in,
+    const PlaneMatchSettings              &matchSettings_in,
+    int                                   &matchedPlaneId_out,
+    std::vector<PlaneMatchVerdict>        *p_candidateVerdicts_out);
+
+/*!
+ * @brief           Checks that the observer and the mapped plane's
+ *                  observing cameras are on the same side of the plane.
+ *
+ * @param[in]       p_mappedPlane_in
+ *                  Candidate plane, non-owning.
+ *
+ * @param[in]       mappedEquation_in
+ *                  Candidate plane equation.
+ *
+ * @param[in]       p_cameraCentre_world_m_in
+ *                  Observer camera centre in the world frame, metres.
+ *
+ * @param[in]       hasCameraCentre_in
+ *                  True when the camera centre is valid.
+ *
+ * @param[in]       p_observingCameras_in
+ *                  Observation-side snapshot of the plane; may be null.
+ *
+ * @param[in]       minimumReliableSideDistance_m_in
+ *                  Smallest distance, metres, at which a side is reliable.
+ *
+ * @param[out]      isOppositeSide_out
+ *                  True when the candidate must be rejected.
+ *
+ * @param[out]      observerSide_m_out
+ *                  Signed observer distance to the plane, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus checkObserverSideAgreement(
+    geometric::Plane                                *p_mappedPlane_in,
+    const Eigen::Vector4d                           &mappedEquation_in,
+    const Eigen::Vector3d                           *p_cameraCentre_world_m_in,
+    bool                                             hasCameraCentre_in,
+    const geometric::Plane::ObservationSideSnapshot *p_observingCameras_in,
+    double  minimumReliableSideDistance_m_in,
+    bool   &isOppositeSide_out,
+    double &observerSide_m_out);
+
+/*!
+ * @brief           Samples the observed cloud and counts points within the
+ *                  maximum distance of the mapped cloud.
+ *
+ * @param[in]       p_observedCloud_in
+ *                  Observed plane cloud.
+ *
+ * @param[in]       p_mappedCloud_in
+ *                  Mapped plane cloud.
+ *
+ * @param[in]       maximumSampleCount_in
+ *                  Largest number of observed points sampled.
+ *
+ * @param[in]       maximumFiniteCloudDistance_in
+ *                  Overlap distance, metres.
+ *
+ * @param[out]      sampledPointCount_out
+ *                  Number of sampled points.
+ *
+ * @param[out]      overlappingPointCount_out
+ *                  Number of sampled points within the overlap distance.
+ *
+ * @param[out]      minimumCloudDistance_out
+ *                  Smallest sampled point distance, metres.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
+ */
+[[nodiscard]] UtilsStatus measureFiniteCloudOverlap(
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_observedCloud_in,
+    const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_mappedCloud_in,
+    std::size_t                                         maximumSampleCount_in,
+    double       maximumFiniteCloudDistance_in,
+    std::size_t &sampledPointCount_out,
+    std::size_t &overlappingPointCount_out,
+    double      &minimumCloudDistance_out);
 
 } /* namespace utils */
 } /* namespace utils */

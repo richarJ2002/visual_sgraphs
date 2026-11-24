@@ -26,9 +26,12 @@
 #ifndef VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_MERGE_ROOM_EVIDENCE_STRUCT_H
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_VERIFY_OBJECTS_SEMANTIC_MERGE_ROOM_EVIDENCE_STRUCT_H
 
-#include "scene_understanding/semantic/room/objects/RoomContextSnapshotStruct.h"
+#include "scene_understanding/scene_graph/room/objects/RoomContextSnapshotStruct.h"
 #include "scene_understanding/semantic/semantic_verify/objects/VerifyWallObservationStruct.h"
 
+#include <Eigen/Core>
+
+#include <optional>
 #include <vector>
 
 namespace vs_graphs
@@ -53,6 +56,12 @@ struct SemanticMergeRoomEvidence
      *                  frame.
      */
     std::vector<VerifyWallObservation> walls;
+    /*!
+     * @brief           Floor plane (n^T x + d = 0, unit normal, room centroid
+     *                  on the positive side) in the room's own map world
+     *                  frame; empty when the room has no floor plane yet.
+     */
+    std::optional<Eigen::Vector4d>     floorPlane_world;
 };
 
 } /* namespace semantic */

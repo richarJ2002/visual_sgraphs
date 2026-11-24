@@ -46,6 +46,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -56,6 +58,7 @@ namespace optimizer
 OptimizerStatus Optimizer::optimizeEssentialGraph(
     vs_graphs::core::keyframe::KeyFrame                *p_currentKeyFrame_in,
     vs_graphs::core::map::Map                          *p_sourceMap_in,
+    vs_graphs::core::SemanticsManager                  *p_semanticsManager_in,
     std::vector<vs_graphs::core::keyframe::KeyFrame *> &fixedKeyFrames_in,
     std::vector<vs_graphs::core::keyframe::KeyFrame *>
         &fixedCorrectedKeyFrames_in,
@@ -64,6 +67,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                     &nonCorrectedMapPoints_in,
     const g2o::Sim3 &mergeTransform_mergeWorldToCurrentWorld_in)
 {
+    PROFILE_FUNCTION();
     /* Variables */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
@@ -884,6 +888,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     {
         if (utils::utils::Utils::propagateSemanticPoseCorrections(
                 p_sourceMap_in,
+                p_semanticsManager_in,
                 keyFramePosesBefore_worldToCamera,
                 keyFramePosesAfter_worldToCamera,
                 mergeTransform_mergeWorldToCurrentWorld_in) !=
@@ -912,6 +917,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                &loopConnections_in,
     const bool &isScaleFixed_in)
 {
+    PROFILE_FUNCTION();
     /* Setup optimizer */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);

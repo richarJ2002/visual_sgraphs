@@ -40,6 +40,8 @@
 #include "visual_features/orb_matcher/orb_matcher.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -49,6 +51,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::searchInNeighbors()
 {
+    PROFILE_FUNCTION();
     /* Retrieve neighbor keyframes */
     int neighborKeyFrameCount = 10;
     if (isMonocular)

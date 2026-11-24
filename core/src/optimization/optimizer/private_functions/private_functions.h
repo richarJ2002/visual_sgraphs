@@ -19,14 +19,30 @@
 #include <vector>
 
 #include "optimization/optimizer/objects/OptimizerEdgeLookupStatusEnum.h"
+#include "optimization/optimizer/objects/OptimizerStatusEnum.h"
 #include "optimization/optimizer/optimizer.h"
 #include <vs_graphs_g2o/core/hyper_graph_action.h>
 
-namespace vs_graphs::core::frame { class Frame; }
-namespace vs_graphs::core::g2o_types::edge_mono_only_pose { class EdgeMonoOnlyPose; }
-namespace vs_graphs::core::g2o_types::edge_stereo_only_pose { class EdgeStereoOnlyPose; }
-namespace vs_graphs::core::g2o_types::vertex_pose { class VertexPose; }
-namespace vs_graphs::core::map_point { class MapPoint; }
+namespace vs_graphs::core::frame
+{
+class Frame;
+}
+namespace vs_graphs::core::g2o_types::edge_mono_only_pose
+{
+class EdgeMonoOnlyPose;
+}
+namespace vs_graphs::core::g2o_types::edge_stereo_only_pose
+{
+class EdgeStereoOnlyPose;
+}
+namespace vs_graphs::core::g2o_types::vertex_pose
+{
+class VertexPose;
+}
+namespace vs_graphs::core::map_point
+{
+class MapPoint;
+}
 
 namespace g2o
 {
@@ -37,12 +53,6 @@ namespace vs_graphs
 {
 namespace core
 {
-
-
-
-
-
-
 
 /*!
  * @brief           Bridges a thread-safe cancellation request into g2o's
@@ -186,10 +196,10 @@ bool sortByVal(const std::pair<map_point::MapPoint *, int> &firstEntry_in,
  * @return          OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS always.
  */
 template <typename PointerT>
-inline optimizer::OptimizerEdgeLookupStatus edgeSourceKeyFrame(
-    const std::vector<PointerT> &edgeKeyFrames_in,
-    std::size_t                  index_in,
-    PointerT                    &p_keyFrame_out)
+inline optimizer::OptimizerEdgeLookupStatus
+    edgeSourceKeyFrame(const std::vector<PointerT> &edgeKeyFrames_in,
+                       std::size_t                  index_in,
+                       PointerT                    &p_keyFrame_out)
 {
     p_keyFrame_out = index_in < edgeKeyFrames_in.size()
                          ? edgeKeyFrames_in[index_in]
@@ -236,15 +246,17 @@ inline optimizer::OptimizerEdgeLookupStatus edgeSourceKeyFrame(
  * @return          OPTIMIZER_STATUS_SUCCESS always.
  */
 [[nodiscard]] optimizer::OptimizerStatus addPoseOnlyObservationEdges(
-    frame::Frame                             *p_frame_inout,
-    g2o_types::vertex_pose::VertexPose                        *p_poseVertex_in,
-    g2o::SparseOptimizer              &optimizer_inout,
-    std::vector<g2o_types::edge_mono_only_pose::EdgeMonoOnlyPose *>   &edgesMonos_inout,
-    std::vector<g2o_types::edge_stereo_only_pose::EdgeStereoOnlyPose *> &edgesStereos_inout,
-    std::vector<size_t>               &monoEdgeIndices_inout,
-    std::vector<size_t>               &stereoEdgeIndices_inout,
-    int                               &initialMonoCorrespondenceCount_inout,
-    int                               &initialStereoCorrespondenceCount_inout);
+    frame::Frame                       *p_frame_inout,
+    g2o_types::vertex_pose::VertexPose *p_poseVertex_in,
+    g2o::SparseOptimizer               &optimizer_inout,
+    std::vector<g2o_types::edge_mono_only_pose::EdgeMonoOnlyPose *>
+        &edgesMonos_inout,
+    std::vector<g2o_types::edge_stereo_only_pose::EdgeStereoOnlyPose *>
+                        &edgesStereos_inout,
+    std::vector<size_t> &monoEdgeIndices_inout,
+    std::vector<size_t> &stereoEdgeIndices_inout,
+    int                 &initialMonoCorrespondenceCount_inout,
+    int                 &initialStereoCorrespondenceCount_inout);
 
 } /* namespace core */
 } /* namespace vs_graphs */

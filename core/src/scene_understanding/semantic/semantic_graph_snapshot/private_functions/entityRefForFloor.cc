@@ -23,10 +23,10 @@
  *                  private_functions.h.
  */
 
-#include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
 #include "map_state/map/objects/MapStatusEnum.h"
-#include "scene_understanding/semantic/floor/floor.h"
-#include "scene_understanding/semantic/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/scene_graph/floor/Floor.h"
+#include "scene_understanding/scene_graph/floor/objects/FloorStatusEnum.h"
+#include "scene_understanding/semantic/semantic_graph_snapshot/private_functions/private_functions.h"
 
 #include "map_state/map/map.h"
 #include <rclcpp/logging.hpp>

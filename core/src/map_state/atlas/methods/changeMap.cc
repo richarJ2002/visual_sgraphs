@@ -33,6 +33,7 @@
 #include "map_state/atlas/objects/AtlasClass.h"
 #include "map_state/map/map.h"
 #include "map_state/map/objects/MapStatusEnum.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -73,6 +74,14 @@ AtlasStatus Atlas::changeMap(map::Map *p_map_in)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_semanticsManager->setActiveMap(mapId) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setActiveMap returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }

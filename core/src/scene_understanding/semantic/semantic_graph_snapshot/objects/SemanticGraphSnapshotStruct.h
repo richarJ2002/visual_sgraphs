@@ -27,7 +27,6 @@
 #define VS_GRAPHS_CORE_SRC_SEMANTIC_SEMANTIC_GRAPH_SNAPSHOT_OBJECTS_SEMANTICGRAPHSNAPSHOT_STRUCT_H
 
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/MapSnapshotStruct.h"
-#include "scene_understanding/semantic/semantic_graph_snapshot/objects/OpenPassageHypothesisRecordStruct.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/UnavailableReasonEnum.h"
 #include "scene_understanding/semantic/semantic_graph_snapshot/objects/UnresolvedWallHypothesisRecordStruct.h"
 
@@ -111,29 +110,6 @@ struct SemanticGraphSnapshot
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 
     /*!
-     * @brief           Value-only copy of SemanticsManager::openPassageEvidence
-     *                   (SemanticsManager.h), converted and populated by
-     *                   SemanticsManager itself at the semantic transaction
-     *                   boundary
-     *                  (captureSemanticGraphSnapshot() cannot see this private
-     *                  member); empty and meaningless whenever
-     *                  managerPrivateOpenPassageHypothesesReason != NONE.
-     */
-    std::vector<OpenPassageHypothesisRecord>
-        managerPrivateOpenPassageHypotheses;
-
-    /*!
-     * @brief           NOT_CAPTURED_IN_FOUNDATION_SLICE for a snapshot built
-     *                  only by captureSemanticGraphSnapshot() (e.g. a test
-     *                  fixture, or the legacy replay path); NONE once
-     *                  SemanticsManager::Run() has populated
-     *                  managerPrivateOpenPassageHypotheses above for this
-     *                  cycle.
-     */
-    UnavailableReason managerPrivateOpenPassageHypothesesReason{
-        UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
-
-    /*!
      * @brief           Value-only copy of SemanticsManager::undefendedWalls
      *                  (SemanticsManager.h), converted and populated by
      *                  SemanticsManager itself at the semantic transaction
@@ -144,9 +120,11 @@ struct SemanticGraphSnapshot
         managerPrivateUnresolvedWallHypotheses;
 
     /*!
-     * @brief           Same convention as
-     *                  managerPrivateOpenPassageHypothesesReason, for
-     *                  managerPrivateUnresolvedWallHypotheses.
+     * @brief           NOT_CAPTURED_IN_FOUNDATION_SLICE for a snapshot built
+     *                  only by captureSemanticGraphSnapshot(); NONE once
+     *                  SemanticsManager::Run() has populated
+     *                  managerPrivateUnresolvedWallHypotheses above for this
+     *                  cycle.
      */
     UnavailableReason managerPrivateUnresolvedWallHypothesesReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};

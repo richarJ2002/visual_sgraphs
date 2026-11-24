@@ -156,11 +156,6 @@ class LocalMapping
         initializationStartTime = 0.f;
         isImuBad                = false;
         matchesInliers          = 0;
-
-#ifdef REGISTER_TIMES
-        localBaExecutionCount = 0;
-        localBaAbortCount     = 0;
-#endif
     }
 
     /*!
@@ -473,23 +468,6 @@ class LocalMapping
      */
     float farPointsThreshold;
 
-#ifdef REGISTER_TIMES
-    std::vector<double> keyFrameInsertTimes_ms;
-    std::vector<double> mapPointCullingTimes_ms;
-    std::vector<double> mapPointCreationTimes_ms;
-    std::vector<double> localBaTimes_ms;
-    std::vector<double> keyFrameCullingTimes_ms;
-    std::vector<double> localMappingTotalTimes_ms;
-
-    std::vector<double> localBaSyncTimes_ms;
-    std::vector<double> keyFrameCullingSyncTimes_ms;
-    std::vector<int>    localBaEdgeCounts;
-    std::vector<int>    localBaOptimizedKeyFrameCounts;
-    std::vector<int>    localBaFixedKeyFrameCounts;
-    std::vector<int>    localBaMapPointCounts;
-    int                 localBaExecutionCount;
-    int                 localBaAbortCount;
-#endif /* VS_GRAPHS_CORE_SRC_LOCAL_MAPPING_OBJECTS_LOCAL_MAPPING_CLASS_H */
   protected:
     /*!
      * @brief           Reports whether any key frame is queued.
@@ -542,6 +520,19 @@ class LocalMapping
      * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus keyFrameCulling();
+
+    /*!
+     * @brief           Erases the key frames of deleted rooms that the
+     *                  semantics manager queued, keeping the map's first key
+     *                  frame, tracking's reference and last key frames, the
+     *                  key frame being processed and queued key frames. In
+     *                  inertial mode the IMU chain is repaired as in
+     *                  keyFrameCulling(), and a key frame whose neighbours
+     *                  cannot be joined is kept.
+     *
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
+     */
+    [[nodiscard]] LocalMappingStatus eraseRequestedKeyFrames();
 
     /*!
      * @brief           True when the sensor is monocular (set from the

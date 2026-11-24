@@ -64,16 +64,16 @@ MapStatus Map::clear()
     }
 
     planes.clear();
-    markers.clear();
-    passages.clear();
-    floors.clear();
     mapPoints.clear();
+    {
+        std::lock_guard<std::mutex> densityLock(pointDensityMutex);
+        pointCountByVoxel.clear();
+        voxelKeysByPlane.clear();
+        ++densityRevision;
+    }
     keyFrames.clear();
 
     planeIndex.clear();
-    markerIndex.clear();
-    passageIndex.clear();
-    floorIndex.clear();
     keyFrameIndex.clear();
     roomWallPlaneIndex.clear();
 
@@ -86,8 +86,14 @@ MapStatus Map::clear()
 
     maxKeyFrameId        = initKeyFrameId;
     hasImuInitialization = false;
-    detectedRooms.clear();
-    markerBasedRooms.clear();
+    upDirection_world    = Eigen::Vector3d(0.0, -1.0, 0.0);
+    isUpFromImuGravity   = false;
+    /* The rooms go with the map (the caller clears its scene graph), so do
+     * the mission-chain ends that point at them; the next bootstrap sets the
+     * starting room again. */
+    startingRoom_id           = NO_LINKED_ROOM_ID;
+    finalRoom_id              = NO_LINKED_ROOM_ID;
+    finalRoomBeyondPassage_id = NO_LINKED_ROOM_ID;
     referenceMapPoints.clear();
     keyFrameOrigins.clear();
     hasInertialBA1 = false;

@@ -7,18 +7,18 @@
 
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 
+#include "map_state/map/map.h"
 #include "mapping/geometric/Plane/Plane.h"
 #include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
-#include "map_state/map/map.h"
 
+#include "configuration/types/types.h"
+#include "scene_understanding/scene_graph/room/objects/RoomClass.h"
 #include <vs_graphs_g2o/core/block_solver.h>
 #include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
 #include <vs_graphs_g2o/core/robust_kernel_impl.h>
 #include <vs_graphs_g2o/core/sparse_optimizer.h>
 #include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
 #include <vs_graphs_g2o/types/sim3.h>
-#include "configuration/types/types.h"
-#include "scene_understanding/semantic/room/objects/RoomClass.h"
 
 #include <algorithm>
 #include <cmath>
@@ -38,11 +38,8 @@ namespace semantic
 
 /*!
  * @brief           Horn-style SVD rotation fit on signed normal correspondences
- *                  (same closed-form pattern as
- *                  Utils::computeMapTransform_Horn's covariance/SVD step,
- *                  applied to plane normals instead of point positions --
- *                  Horn's function itself is not called; it is point-based and
- *                  unsuitable here).
+ *                  (Horn's covariance/SVD step applied to plane normals
+ *                  instead of point positions).
  */
 SemanticVerifyStatus
     fitRotationFromNormals(const std::vector<Eigen::Vector3d> &normalsA_in,

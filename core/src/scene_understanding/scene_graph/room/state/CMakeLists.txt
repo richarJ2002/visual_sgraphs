@@ -1,0 +1,24 @@
+# room object, state subpackage: exactly this subpackage's translation units.
+set(VS_GRAPHS_SCENEGRAPH_ROOM_STATE_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCentroid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHasKnownLabel.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMatchedContext.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRoomVariant.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/hasPreviouslyVisited.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setHasKnownLabel.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMatchedContext.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setPreviouslyVisited.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setRoomVariant.cc
+)
