@@ -75,40 +75,41 @@ namespace vs_graphs
 {
 namespace core
 {
+
+class SemanticsManager;
+
 namespace semantic
 {
 class Room;
-}
+class Floor;
+class Passage;
+} // namespace semantic
 
 namespace geometric
 {
 class Plane;
-}
-namespace semantic
-{
-class Floor;
-}
-namespace semantic
-{
-class Passage;
-}
+} // namespace geometric
+
 namespace keyframe_database
 {
 class KeyFrameDatabase;
-} /* namespace keyframe_database */
+} // namespace keyframe_database
+
 namespace keyframe
 {
 class KeyFrame;
-} /* namespace keyframe */
+} // namespace keyframe
+
 namespace map_point
 {
 class MapPoint;
-} /* namespace map_point */
+} // namespace map_point
+
 namespace atlas
 {
 class Atlas;
-} /* namespace atlas */
-class SemanticsManager;
+} // namespace atlas
+
 namespace map
 {
 
@@ -186,6 +187,7 @@ class Map
     {
         id = nextId++;
     }
+
     /*!
      * @brief           Creates an empty map that takes the next free map id and
      *                  starts counting key frame ids at the given value.
@@ -234,6 +236,7 @@ class Map
         referenceMapPoints.clear();
         keyFrameOrigins.clear();
     }
+
     /*!
      * @brief           Copying is forbidden: the map holds mutexes, which
      *                  cannot be copied.

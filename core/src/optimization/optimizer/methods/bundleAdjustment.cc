@@ -82,8 +82,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
 {
     optimizedRoomCentroids_out.clear();
 
-    /* System parameters */
+    /* Declare pointer which will hold the system parameters */
     vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
+
+    /* Extrcat the system parameters */
     if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
@@ -93,14 +95,22 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      __func__);
     }
 
-    /* Variables */
+    /* Declare variable which will indicate if map points are excluded */
     std::vector<bool> mapPointExcludedFlags;
+
+    /* Allocate memory to match length of map points size */
     mapPointExcludedFlags.resize(mapPoints_in.size());
 
+    /* If there are no keyframes to optimize, return */
     if (keyFrames_in.empty())
+    {
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
+    }
 
+    /* Declare variable to get map of current keyframes */
     vs_graphs::core::map::Map *p_map = nullptr;
+
+    /* Extract the map which the keyframes will be optimized over */
     if (keyFrames_in[0]->getMap(p_map) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {

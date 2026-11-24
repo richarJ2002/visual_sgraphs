@@ -98,12 +98,14 @@ namespace core
  *                  building -> storey -> rooms and passages.
  *
  *                  Each Map owns its S-Graph content (Map::getSceneGraph());
- * the manager only finds it by map id and adds the shared lock. The atlas
- * registers a map's scene graph when it creates or loads the map and
- * unregisters it when it drops the map. The S-Graph is the only list of the
- * map's rooms, storeys and passages and it owns them: a scene graph owns its
- * rooms and passages, a building owns its storeys. They are added and removed
- * through the graph mutations only, which also enforce the id rules.
+ *                  the manager only finds it by map id and adds the shared
+ *                  lock. The atlas registers a map's scene graph when it
+ *                  creates or loads the map and unregisters it when it drops
+ *                  the map. The S-Graph is the only list of the map's rooms,
+ *                  storeys and passages and it owns them: a scene graph owns
+ *                  its rooms and passages, a building owns its storeys. They
+ *                  are added and removed through the graph mutations only,
+ *                  which also enforce the id rules.
  *
  *                  Deletion. markRoomBad() flags a node; every query hides a
  *                  flagged node, so to readers it is gone at once. Nothing is
@@ -151,9 +153,9 @@ class SemanticsManager
      */
     mutable std::mutex currentRoomMutex;
 
-    /* Shutdown control (LocalMapping-style handshake) */
     /*!
      * @brief           Protects isFinishRequested and hasFinished.
+     *                  Shutdown control (LocalMapping-style handshake)
      */
     std::mutex finishMutex;
 
