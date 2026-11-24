@@ -357,14 +357,15 @@ def generate_launch_description():
                 parameters=[{
                     "use_sim_time": LaunchConfiguration("use_sim_time")
                 }],
+                # Intel RealSense D435i IMU (BMI055) pose in the colour optical
+                # frame "camera" (right-down-forward), metres. This is the
+                # inverse of the YAML IMU.T_b_c1 (camera pose in the IMU
+                # frame), so both come from the same offsets; the IMU frame
+                # shares the optical axes, hence the identity rotation.
                 arguments=[
-                    "--x", "0.0",
-                    "--y", "0.08",
-                    "--z", "-0.22",
-                    "--qx", "0.5",
-                    "--qy", "-0.5",
-                    "--qz", "0.5",
-                    "--qw", "0.5",
+                    "--x", "0.02052",
+                    "--y", "-0.0051",
+                    "--z", "-0.01174",
                     "--frame-id", "camera",
                     "--child-frame-id", "imu",
                 ],
